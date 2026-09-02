@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "kind": "hackhub-quest-editor/project",
+  "mod": {
+    "id": "twotter-qatest-7",
+    "name": "Twotter QA Test 7",
+    "version": "7.0.0",
+    "author": "Zeis",
+    "description": "7th Twotter QA Test with r30",
+    "tags": [],
+    "dependencies": [],
+    "minSdkVersion": "0.21.0",
+    "apiVersion": 1
+  },
+  "quests": [
+    {
+      "id": "4nEuQF2qiF",
+      "name": "QATest7",
+      "title": "QA Twotter Test 7",
+      "description": "QA Twotter Test 7 - avatar+tweet",
+      "group": "sandbox",
+      "rewards": {
+        "money": 0,
+        "xp": 0
+      },
+      "employer": {},
+      "autoStart": true,
+      "autoComplete": true,
+      "questsToComplete": [],
+      "abandonable": true,
+      "hasCompleteButton": false,
+      "twotterAccounts": [
+        {
+          "id": "BZhly3Vi",
+          "username": "qatester7",
+          "displayName": "QA Tester 7",
+          "verified": false,
+          "bio": "7th Twotter QA Tester"
+        }
+      ],
+      "dialog": [],
+      "dataKeys": [],
+      "graph": {
+        "nodes": [
+          {
+            "id": "lR2-RelC7N",
+            "type": "entry.start",
+            "position": {
+              "x": -349.426565138073,
+              "y": -1057.2423432615815
+            },
+            "data": {}
+          },
+          {
+            "id": "_TFkQQU9UO",
+            "type": "comms.tweet",
+            "position": {
+              "x": 3.573434861927126,
+              "y": -1069.2423432615815
+            },
+            "data": {
+              "accountId": "BZhly3Vi",
+              "content": "Test 7 yay!",
+              "postLive": false,
+              "timeMode": "now",
+              "showInTimeline": false
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "Hy0_r1Kqn6",
+            "source": "lR2-RelC7N",
+            "sourceHandle": "out",
+            "target": "_TFkQQU9UO",
+            "targetHandle": "in",
+            "kind": "flow"
+          }
+        ]
+      }
+    }
+  ],
+  "websites": [],
+  "editor": {
+    "activeQuestId": "4nEuQF2qiF",
+    "viewports": {
+      "4nEuQF2qiF": {
+        "x": 840.4265651380729,
+        "y": 1621.2423432615815,
+        "zoom": 1
+      }
+    }
+  }
+}

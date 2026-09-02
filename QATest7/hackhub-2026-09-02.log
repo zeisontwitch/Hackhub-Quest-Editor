@@ -1,0 +1,1968 @@
+
+==============================================
+  HACKHUB LOG FILE
+  Started: 02/09/2026, 10:32:55
+  Version: 1.1.2
+  Platform: win32
+  Arch: x64
+==============================================
+
+
+==============================================
+[02/09/2026, 10:32:58] [INFO]
+----------------------------------------------
+Steamworks initalized: Zeis [ZF] - 76561197976480835
+==============================================
+
+==============================================
+[02/09/2026, 10:32:58] [INFO]
+----------------------------------------------
+[WorkshopController] initialized with appId: 2980270
+==============================================
+
+==============================================
+[02/09/2026, 10:32:59] [INFO]
+----------------------------------------------
+[RENDERER] [Markdown Note Editor] Mod loaded.
+==============================================
+
+==============================================
+[02/09/2026, 10:32:59] [INFO]
+----------------------------------------------
+[RENDERER] [nemesis-protocol-stage1] Nemesis Protocol loaded. The mission is waiting in the HackHub feed.
+==============================================
+
+==============================================
+[02/09/2026, 10:32:59] [INFO]
+----------------------------------------------
+[RENDERER] Custom Browser mod loaded with ordered categories!
+==============================================
+
+==============================================
+[02/09/2026, 10:32:59] [INFO]
+----------------------------------------------
+[RENDERER] RetroArcade v1.0.0 loaded!
+==============================================
+
+==============================================
+[02/09/2026, 10:32:59] [INFO]
+----------------------------------------------
+[RENDERER] [darknet-tree] Darknet-Tree loaded! Check the App Store for NotePad.
+==============================================
+
+==============================================
+[02/09/2026, 10:32:59] [INFO]
+----------------------------------------------
+[RENDERER] [synthetik-wallet] Synthetik Wallet loaded! Find it in the App Store.
+==============================================
+
+==============================================
+[02/09/2026, 10:32:59] [INFO]
+----------------------------------------------
+[RENDERER] [GhostLink] v1.0.2 loaded
+==============================================
+
+==============================================
+[02/09/2026, 10:32:59] [INFO]
+----------------------------------------------
+[RENDERER] [python-is-python3] Mod loaded! Run: apt-get install python-is-python3
+==============================================
+
+==============================================
+[02/09/2026, 10:32:59] [INFO]
+----------------------------------------------
+[RENDERER] Lockchain Wallet mod loaded: websites, phone wallet, marketplace, miner, and isolated RPC registered.
+==============================================
+
+==============================================
+[02/09/2026, 10:32:59] [INFO]
+----------------------------------------------
+[RENDERER] [Fishception] biological daemon loaded
+==============================================
+
+==============================================
+[02/09/2026, 10:32:59] [INFO]
+----------------------------------------------
+[RENDERER] [Beginner Handbook+] Registered 109 handbook pages without title prefixes. Language: en.
+==============================================
+
+==============================================
+[02/09/2026, 10:32:59] [INFO]
+----------------------------------------------
+[RENDERER] [vault-manager] Vault Manager loaded — password vault & sticky notes ready.
+==============================================
+
+==============================================
+[02/09/2026, 10:33:00] [ERROR]
+----------------------------------------------
+(node:9248) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `Hackhub --trace-deprecation ...` to show where the warning was created)
+==============================================
+
+==============================================
+[02/09/2026, 10:33:29] [WARN]
+----------------------------------------------
+[RENDERER] Deprecation warning: value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.
+Arguments: 
+[0] _isAMomentObject: true, _isUTC: false, _useUTC: false, _l: undefined, _i: Wed Sep 02 2026 10:32:58 GMT+0200 (Central European Summer Time), _f: undefined, _strict: undefined, _locale: [object Object]
+Error
+    at O.createFromInputFallback (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:3)
+    at zm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:25839)
+    at Xm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29577)
+    at qo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29441)
+    at Jm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29155)
+    at Ko (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29944)
+    at ne (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29978)
+    at O (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:6:31)
+    at file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/sharedbundle18.js:17:45881
+    at Array.map (<anonymous>)
+    at Cv (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/sharedbundle18.js:17:45433)
+    at mo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:16959)
+    at Wa (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:43694)
+    at Va (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39499)
+    at ud (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39430)
+    at Zr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39289)
+    at Ii (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:36456)
+    at pt (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:3258)
+    at file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:34060
+==============================================
+
+==============================================
+[02/09/2026, 10:36:57] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:37:00] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:37:08] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" locked by unlocksAfter; queued as pending for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:37:08] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:37:08] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" locked by unlocksAfter; queued as pending for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:37:10] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "go_to_settings" already completed (in-memory) for quest pDPDbqwtWH
+==============================================
+
+==============================================
+[02/09/2026, 10:37:11] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "turn_on_hotspot" already completed (in-memory) for quest pDPDbqwtWH
+==============================================
+
+==============================================
+[02/09/2026, 10:37:14] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:37:14] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" locked by unlocksAfter; queued as pending for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:37:21] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:37:21] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" locked by unlocksAfter; queued as pending for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:37:25] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:37:25] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" locked by unlocksAfter; queued as pending for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:40:55] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:40:55] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" locked by unlocksAfter; queued as pending for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:41:10] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:41:10] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" locked by unlocksAfter; queued as pending for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:41:56] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:41:56] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" locked by unlocksAfter; queued as pending for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:42:25] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:42:25] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" locked by unlocksAfter; queued as pending for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:42:38] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:42:38] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" locked by unlocksAfter; queued as pending for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:43:14] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:43:14] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:43:17] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:43:17] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:43:58] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:43:58] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:44:08] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:44:08] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:44:18] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:44:18] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:44:18] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:44:18] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:44:19] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_phone" already completed (in-memory) for quest pDPDbqwtWH
+==============================================
+
+==============================================
+[02/09/2026, 10:44:20] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "go_to_settings" already completed (in-memory) for quest pDPDbqwtWH
+==============================================
+
+==============================================
+[02/09/2026, 10:44:24] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "turn_on_hotspot" already completed (in-memory) for quest pDPDbqwtWH
+==============================================
+
+==============================================
+[02/09/2026, 10:46:32] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_phone" already completed (in-memory) for quest pDPDbqwtWH
+==============================================
+
+==============================================
+[02/09/2026, 10:46:59] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:46:59] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:47:54] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_phone" already completed (in-memory) for quest pDPDbqwtWH
+==============================================
+
+==============================================
+[02/09/2026, 10:48:36] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_bettercap" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:48:36] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "install_hashcat" already completed (in-memory) for quest X2WMW2WqbG
+==============================================
+
+==============================================
+[02/09/2026, 10:49:34] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_phone" already completed (in-memory) for quest pDPDbqwtWH
+==============================================
+
+==============================================
+[02/09/2026, 10:49:43] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 203ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 10:49:44] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam failed after 46ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 10:49:45] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 50ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+  APPLICATION CLOSING
+  Time: 02/09/2026, 10:49:48
+==============================================
+
+==============================================
+  APPLICATION CLOSING
+  Time: 02/09/2026, 10:49:48
+==============================================
+
+==============================================
+  HACKHUB LOG FILE
+  Started: 02/09/2026, 10:50:51
+  Version: 1.1.2
+  Platform: win32
+  Arch: x64
+==============================================
+
+
+==============================================
+[02/09/2026, 10:50:51] [INFO]
+----------------------------------------------
+Steamworks initalized: Zeis [ZF] - 76561197976480835
+==============================================
+
+==============================================
+[02/09/2026, 10:50:51] [INFO]
+----------------------------------------------
+[WorkshopController] initialized with appId: 2980270
+==============================================
+
+==============================================
+[02/09/2026, 10:50:52] [INFO]
+----------------------------------------------
+[RENDERER] [Markdown Note Editor] Mod loaded.
+==============================================
+
+==============================================
+[02/09/2026, 10:50:52] [INFO]
+----------------------------------------------
+[RENDERER] [nemesis-protocol-stage1] Nemesis Protocol loaded. The mission is waiting in the HackHub feed.
+==============================================
+
+==============================================
+[02/09/2026, 10:50:52] [INFO]
+----------------------------------------------
+[RENDERER] Custom Browser mod loaded with ordered categories!
+==============================================
+
+==============================================
+[02/09/2026, 10:50:52] [INFO]
+----------------------------------------------
+[RENDERER] RetroArcade v1.0.0 loaded!
+==============================================
+
+==============================================
+[02/09/2026, 10:50:52] [INFO]
+----------------------------------------------
+[RENDERER] [darknet-tree] Darknet-Tree loaded! Check the App Store for NotePad.
+==============================================
+
+==============================================
+[02/09/2026, 10:50:52] [INFO]
+----------------------------------------------
+[RENDERER] [synthetik-wallet] Synthetik Wallet loaded! Find it in the App Store.
+==============================================
+
+==============================================
+[02/09/2026, 10:50:52] [INFO]
+----------------------------------------------
+[RENDERER] [GhostLink] v1.0.2 loaded
+==============================================
+
+==============================================
+[02/09/2026, 10:50:52] [INFO]
+----------------------------------------------
+[RENDERER] [python-is-python3] Mod loaded! Run: apt-get install python-is-python3
+==============================================
+
+==============================================
+[02/09/2026, 10:50:52] [INFO]
+----------------------------------------------
+[RENDERER] Lockchain Wallet mod loaded: websites, phone wallet, marketplace, miner, and isolated RPC registered.
+==============================================
+
+==============================================
+[02/09/2026, 10:50:52] [INFO]
+----------------------------------------------
+[RENDERER] [Fishception] biological daemon loaded
+==============================================
+
+==============================================
+[02/09/2026, 10:50:52] [INFO]
+----------------------------------------------
+[RENDERER] [Beginner Handbook+] Registered 109 handbook pages without title prefixes. Language: en.
+==============================================
+
+==============================================
+[02/09/2026, 10:50:52] [INFO]
+----------------------------------------------
+[RENDERER] [vault-manager] Vault Manager loaded — password vault & sticky notes ready.
+==============================================
+
+==============================================
+[02/09/2026, 10:50:52] [ERROR]
+----------------------------------------------
+(node:27440) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `Hackhub --trace-deprecation ...` to show where the warning was created)
+==============================================
+
+==============================================
+[02/09/2026, 10:51:07] [WARN]
+----------------------------------------------
+[RENDERER] Deprecation warning: value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.
+Arguments: 
+[0] _isAMomentObject: true, _isUTC: false, _useUTC: false, _l: undefined, _i: Wed Sep 02 2026 10:50:51 GMT+0200 (Central European Summer Time), _f: undefined, _strict: undefined, _locale: [object Object]
+Error
+    at O.createFromInputFallback (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:3)
+    at zm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:25839)
+    at Xm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29577)
+    at qo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29441)
+    at Jm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29155)
+    at Ko (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29944)
+    at ne (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29978)
+    at O (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:6:31)
+    at file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/sharedbundle18.js:17:45881
+    at Array.map (<anonymous>)
+    at Cv (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/sharedbundle18.js:17:45433)
+    at mo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:16959)
+    at Wa (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:43694)
+    at Va (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39499)
+    at ud (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39430)
+    at Zr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39289)
+    at Ii (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:36456)
+    at pt (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:3258)
+    at file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:34060
+==============================================
+
+==============================================
+[02/09/2026, 11:16:23] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/git/repos/nullcert failed after 287ms: ERR_BAD_REQUEST Request failed with status code 404
+==============================================
+
+==============================================
+[02/09/2026, 11:27:22] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/git/repos/fastappraise failed after 196ms: ERR_BAD_REQUEST Request failed with status code 404
+==============================================
+
+==============================================
+[02/09/2026, 11:27:44] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/git/repos/notmysql failed after 138ms: ERR_BAD_REQUEST Request failed with status code 404
+==============================================
+
+==============================================
+[02/09/2026, 11:38:52] [ERROR]
+----------------------------------------------
+[RENDERER] [synthetik-wallet] tickPrices:farm failed: [ContentSDK] Mod "null" tried to use UI.toast without "ui" permission. Add "ui" to the permissions array in your manifest.json. Error: [ContentSDK] Mod "null" tried to use UI.toast without "ui" permission. Add "ui" to the permissions array in your manifest.json.
+    at ph (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171006:51009)
+    at Object.toast (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171006:76958)
+    at Object.s [as toast] (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171006:44638)
+    at SynthetikWallet.tickPricesInner (eval at KDr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171006:85724), <anonymous>:5056:45)
+    at SynthetikWallet.tickPrices (eval at KDr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171006:85724), <anonymous>:4998:12)
+    at eval (eval at KDr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171006:85724), <anonymous>:4884:14)
+==============================================
+
+==============================================
+[02/09/2026, 11:39:34] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 162ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 11:39:34] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 46ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 11:39:35] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 40ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+  APPLICATION CLOSING
+  Time: 02/09/2026, 11:39:51
+==============================================
+
+==============================================
+  APPLICATION CLOSING
+  Time: 02/09/2026, 11:39:51
+==============================================
+
+==============================================
+  HACKHUB LOG FILE
+  Started: 02/09/2026, 18:04:53
+  Version: 1.1.2
+  Platform: win32
+  Arch: x64
+==============================================
+
+
+==============================================
+[02/09/2026, 18:04:53] [INFO]
+----------------------------------------------
+Steamworks initalized: Zeis [ZF] - 76561197976480835
+==============================================
+
+==============================================
+[02/09/2026, 18:04:53] [INFO]
+----------------------------------------------
+[WorkshopController] initialized with appId: 2980270
+==============================================
+
+==============================================
+[02/09/2026, 18:04:54] [INFO]
+----------------------------------------------
+[RENDERER] [Markdown Note Editor] Mod loaded.
+==============================================
+
+==============================================
+[02/09/2026, 18:04:54] [INFO]
+----------------------------------------------
+[RENDERER] [nemesis-protocol-stage1] Nemesis Protocol loaded. The mission is waiting in the HackHub feed.
+==============================================
+
+==============================================
+[02/09/2026, 18:04:54] [INFO]
+----------------------------------------------
+[RENDERER] Custom Browser mod loaded with ordered categories!
+==============================================
+
+==============================================
+[02/09/2026, 18:04:54] [INFO]
+----------------------------------------------
+[RENDERER] RetroArcade v1.0.0 loaded!
+==============================================
+
+==============================================
+[02/09/2026, 18:04:54] [INFO]
+----------------------------------------------
+[RENDERER] [darknet-tree] Darknet-Tree loaded! Check the App Store for NotePad.
+==============================================
+
+==============================================
+[02/09/2026, 18:04:54] [INFO]
+----------------------------------------------
+[RENDERER] [synthetik-wallet] Synthetik Wallet loaded! Find it in the App Store.
+==============================================
+
+==============================================
+[02/09/2026, 18:04:54] [INFO]
+----------------------------------------------
+[RENDERER] [GhostLink] v1.0.2 loaded
+==============================================
+
+==============================================
+[02/09/2026, 18:04:54] [INFO]
+----------------------------------------------
+[RENDERER] [python-is-python3] Mod loaded! Run: apt-get install python-is-python3
+==============================================
+
+==============================================
+[02/09/2026, 18:04:54] [INFO]
+----------------------------------------------
+[RENDERER] Lockchain Wallet mod loaded: websites, phone wallet, marketplace, miner, and isolated RPC registered.
+==============================================
+
+==============================================
+[02/09/2026, 18:04:54] [INFO]
+----------------------------------------------
+[RENDERER] [Fishception] biological daemon loaded
+==============================================
+
+==============================================
+[02/09/2026, 18:04:54] [INFO]
+----------------------------------------------
+[RENDERER] [Beginner Handbook+] Registered 109 handbook pages without title prefixes. Language: en.
+==============================================
+
+==============================================
+[02/09/2026, 18:04:54] [INFO]
+----------------------------------------------
+[RENDERER] [vault-manager] Vault Manager loaded — password vault & sticky notes ready.
+==============================================
+
+==============================================
+[02/09/2026, 18:04:55] [ERROR]
+----------------------------------------------
+(node:25520) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `Hackhub --trace-deprecation ...` to show where the warning was created)
+==============================================
+
+==============================================
+[02/09/2026, 18:04:57] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 1704ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 18:05:08] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_email" already completed (in-memory) for quest pFjtJ795zG
+==============================================
+
+==============================================
+[02/09/2026, 18:05:08] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_bank" already completed (in-memory) for quest pFjtJ795zG
+==============================================
+
+==============================================
+[02/09/2026, 18:05:09] [ERROR]
+----------------------------------------------
+[RENDERER] [HandleAutoClaims] failed to auto-claim a quest: Error: [ContentSDK] Mod "twotter-qatest-5" tried to use Network.getPlayerIp without "network" permission. Add "network" to the permissions array in your manifest.json.
+Error: [ContentSDK] Mod "twotter-qatest-5" tried to use Network.getPlayerIp without "network" permission. Add "network" to the permissions array in your manifest.json.
+    at ph (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171006:51009)
+    at Object.getPlayerIp (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171006:72392)
+    at Object.L [as getPlayerIp] (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171006:41540)
+    at dataScope (eval at KDr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171006:85724), <anonymous>:392:78)
+    at scopeOf (eval at KDr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171006:85724), <anonymous>:407:20)
+    at runFlow (eval at KDr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171006:85724), <anonymous>:456:25)
+    at eval (eval at KDr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171006:85724), <anonymous>:727:49)
+    at Array.forEach (<anonymous>)
+    at cls.OnStart (eval at KDr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171006:85724), <anonymous>:727:26)
+    at i.Start (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:171323:3791)
+    at k.Claim (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:165614:51871)
+    at async k.HandleAutoClaims (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:165614:52395)
+==============================================
+
+==============================================
+[02/09/2026, 18:05:21] [WARN]
+----------------------------------------------
+[RENDERER] Deprecation warning: value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.
+Arguments: 
+[0] _isAMomentObject: true, _isUTC: false, _useUTC: false, _l: undefined, _i: Wed Sep 02 2026, _f: undefined, _strict: undefined, _locale: [object Object]
+Error
+    at O.createFromInputFallback (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:3)
+    at zm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:25839)
+    at Xm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29577)
+    at qo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29441)
+    at Jm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29155)
+    at Ko (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29944)
+    at ne (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29978)
+    at O (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:6:31)
+    at FSe (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:102594)
+    at mo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:16959)
+    at Wa (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:43694)
+    at Va (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39499)
+    at ud (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39430)
+    at Zr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39289)
+    at Ua (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:34440)
+    at E (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1562)
+    at MessagePort.un (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1930)
+==============================================
+
+==============================================
+[02/09/2026, 18:05:35] [ERROR]
+----------------------------------------------
+[RENDERER] TypeError: Cannot read properties of undefined (reading 'toLowerCase')
+TypeError: Cannot read properties of undefined (reading 'toLowerCase')
+    at file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130685
+    at Array.filter (<anonymous>)
+    at file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130631
+    at Object.va [as useMemo] (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:21288)
+    at T.useMemo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:9:6193)
+    at ahl (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130615)
+    at mo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:16959)
+    at Su (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:3134)
+    at Wa (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:44467)
+    at Va (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39499)
+    at ud (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39430)
+    at Zr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39289)
+    at Ou (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:35710)
+    at Ua (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:34666)
+    at E (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1562)
+    at MessagePort.un (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1930)
+==============================================
+
+==============================================
+  APPLICATION CLOSING
+  Time: 02/09/2026, 18:05:49
+==============================================
+
+==============================================
+  HACKHUB LOG FILE
+  Started: 02/09/2026, 18:30:06
+  Version: 1.1.2
+  Platform: win32
+  Arch: x64
+==============================================
+
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+Steamworks initalized: Zeis [ZF] - 76561197976480835
+==============================================
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+[WorkshopController] initialized with appId: 2980270
+==============================================
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+[RENDERER] [Markdown Note Editor] Mod loaded.
+==============================================
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+[RENDERER] [quest-editor] repaired Twotter account @qatest5: filled bio — these were undefined, which crashes Twotter search
+==============================================
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+[RENDERER] [nemesis-protocol-stage1] Nemesis Protocol loaded. The mission is waiting in the HackHub feed.
+==============================================
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+[RENDERER] Custom Browser mod loaded with ordered categories!
+==============================================
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+[RENDERER] RetroArcade v1.0.0 loaded!
+==============================================
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+[RENDERER] [darknet-tree] Darknet-Tree loaded! Check the App Store for NotePad.
+==============================================
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+[RENDERER] [synthetik-wallet] Synthetik Wallet loaded! Find it in the App Store.
+==============================================
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+[RENDERER] [GhostLink] v1.0.2 loaded
+==============================================
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+[RENDERER] [python-is-python3] Mod loaded! Run: apt-get install python-is-python3
+==============================================
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+[RENDERER] Lockchain Wallet mod loaded: websites, phone wallet, marketplace, miner, and isolated RPC registered.
+==============================================
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+[RENDERER] [Fishception] biological daemon loaded
+==============================================
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+[RENDERER] [Beginner Handbook+] Registered 109 handbook pages without title prefixes. Language: en.
+==============================================
+
+==============================================
+[02/09/2026, 18:30:06] [INFO]
+----------------------------------------------
+[RENDERER] [vault-manager] Vault Manager loaded — password vault & sticky notes ready.
+==============================================
+
+==============================================
+[02/09/2026, 18:30:07] [ERROR]
+----------------------------------------------
+(node:26200) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `Hackhub --trace-deprecation ...` to show where the warning was created)
+==============================================
+
+==============================================
+[02/09/2026, 18:30:09] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 1639ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 18:30:09] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 550ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 18:30:11] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 564ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 18:30:12] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 524ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 18:30:12] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 533ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 18:30:16] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam failed after 539ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 18:30:16] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/stats failed after 526ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 18:30:16] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/announcements?limit=10 failed after 542ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 18:30:16] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/polls failed after 1341ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 18:30:16] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/dlc-store/config failed after 1354ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 18:30:16] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/actions failed after 1357ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 18:30:16] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/featured-mods failed after 1358ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 18:30:16] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/pages failed after 1362ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 18:30:18] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_email" already completed (in-memory) for quest pFjtJ795zG
+==============================================
+
+==============================================
+[02/09/2026, 18:30:18] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_bank" already completed (in-memory) for quest pFjtJ795zG
+==============================================
+
+==============================================
+[02/09/2026, 18:30:18] [INFO]
+----------------------------------------------
+[RENDERER] [quest-editor] repaired Twotter account @qatest5: filled bio — these were undefined, which crashes Twotter search
+==============================================
+
+==============================================
+[02/09/2026, 18:30:20] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam failed after 568ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 18:30:22] [WARN]
+----------------------------------------------
+[RENDERER] Deprecation warning: value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.
+Arguments: 
+[0] _isAMomentObject: true, _isUTC: false, _useUTC: false, _l: undefined, _i: Wed Sep 02 2026, _f: undefined, _strict: undefined, _locale: [object Object]
+Error
+    at O.createFromInputFallback (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:3)
+    at zm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:25839)
+    at Xm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29577)
+    at qo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29441)
+    at Jm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29155)
+    at Ko (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29944)
+    at ne (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29978)
+    at O (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:6:31)
+    at FSe (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:102594)
+    at mo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:16959)
+    at Wa (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:43694)
+    at Va (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39499)
+    at ud (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39430)
+    at Zr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39289)
+    at Ua (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:34440)
+    at E (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1562)
+    at MessagePort.un (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1930)
+==============================================
+
+==============================================
+[02/09/2026, 18:30:30] [ERROR]
+----------------------------------------------
+[RENDERER] TypeError: Cannot read properties of undefined (reading 'toLowerCase')
+TypeError: Cannot read properties of undefined (reading 'toLowerCase')
+    at file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130685
+    at Array.filter (<anonymous>)
+    at file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130631
+    at Object.va [as useMemo] (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:21288)
+    at T.useMemo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:9:6193)
+    at ahl (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130615)
+    at mo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:16959)
+    at Su (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:3134)
+    at Wa (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:44467)
+    at Va (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39499)
+    at ud (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39430)
+    at Zr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39289)
+    at Ou (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:35710)
+    at Ua (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:34666)
+    at E (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1562)
+    at MessagePort.un (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1930)
+==============================================
+
+==============================================
+  APPLICATION CLOSING
+  Time: 02/09/2026, 18:30:32
+==============================================
+
+==============================================
+  HACKHUB LOG FILE
+  Started: 02/09/2026, 18:31:09
+  Version: 1.1.2
+  Platform: win32
+  Arch: x64
+==============================================
+
+
+==============================================
+[02/09/2026, 18:31:09] [INFO]
+----------------------------------------------
+Steamworks initalized: Zeis [ZF] - 76561197976480835
+==============================================
+
+==============================================
+[02/09/2026, 18:31:09] [INFO]
+----------------------------------------------
+[WorkshopController] initialized with appId: 2980270
+==============================================
+
+==============================================
+[02/09/2026, 18:31:10] [INFO]
+----------------------------------------------
+[RENDERER] [Markdown Note Editor] Mod loaded.
+==============================================
+
+==============================================
+[02/09/2026, 18:31:10] [INFO]
+----------------------------------------------
+[RENDERER] [nemesis-protocol-stage1] Nemesis Protocol loaded. The mission is waiting in the HackHub feed.
+==============================================
+
+==============================================
+[02/09/2026, 18:31:10] [INFO]
+----------------------------------------------
+[RENDERER] Custom Browser mod loaded with ordered categories!
+==============================================
+
+==============================================
+[02/09/2026, 18:31:10] [INFO]
+----------------------------------------------
+[RENDERER] RetroArcade v1.0.0 loaded!
+==============================================
+
+==============================================
+[02/09/2026, 18:31:10] [INFO]
+----------------------------------------------
+[RENDERER] [darknet-tree] Darknet-Tree loaded! Check the App Store for NotePad.
+==============================================
+
+==============================================
+[02/09/2026, 18:31:10] [INFO]
+----------------------------------------------
+[RENDERER] [synthetik-wallet] Synthetik Wallet loaded! Find it in the App Store.
+==============================================
+
+==============================================
+[02/09/2026, 18:31:10] [INFO]
+----------------------------------------------
+[RENDERER] [GhostLink] v1.0.2 loaded
+==============================================
+
+==============================================
+[02/09/2026, 18:31:10] [INFO]
+----------------------------------------------
+[RENDERER] [python-is-python3] Mod loaded! Run: apt-get install python-is-python3
+==============================================
+
+==============================================
+[02/09/2026, 18:31:10] [INFO]
+----------------------------------------------
+[RENDERER] Lockchain Wallet mod loaded: websites, phone wallet, marketplace, miner, and isolated RPC registered.
+==============================================
+
+==============================================
+[02/09/2026, 18:31:10] [INFO]
+----------------------------------------------
+[RENDERER] [Fishception] biological daemon loaded
+==============================================
+
+==============================================
+[02/09/2026, 18:31:10] [INFO]
+----------------------------------------------
+[RENDERER] [Beginner Handbook+] Registered 109 handbook pages without title prefixes. Language: en.
+==============================================
+
+==============================================
+[02/09/2026, 18:31:10] [INFO]
+----------------------------------------------
+[RENDERER] [vault-manager] Vault Manager loaded — password vault & sticky notes ready.
+==============================================
+
+==============================================
+[02/09/2026, 18:31:10] [ERROR]
+----------------------------------------------
+(node:7792) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `Hackhub --trace-deprecation ...` to show where the warning was created)
+==============================================
+
+==============================================
+[02/09/2026, 18:31:24] [WARN]
+----------------------------------------------
+[RENDERER] [PruneOrphanQuests] Dropping "QATest5" (qyBkRHLZXy): no installed content defines it.
+==============================================
+
+==============================================
+[02/09/2026, 18:31:24] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_email" already completed (in-memory) for quest pFjtJ795zG
+==============================================
+
+==============================================
+[02/09/2026, 18:31:24] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_bank" already completed (in-memory) for quest pFjtJ795zG
+==============================================
+
+==============================================
+[02/09/2026, 18:31:28] [WARN]
+----------------------------------------------
+[RENDERER] Deprecation warning: value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.
+Arguments: 
+[0] _isAMomentObject: true, _isUTC: false, _useUTC: false, _l: undefined, _i: Wed Sep 02 2026, _f: undefined, _strict: undefined, _locale: [object Object]
+Error
+    at O.createFromInputFallback (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:3)
+    at zm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:25839)
+    at Xm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29577)
+    at qo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29441)
+    at Jm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29155)
+    at Ko (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29944)
+    at ne (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29978)
+    at O (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:6:31)
+    at FSe (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:102594)
+    at mo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:16959)
+    at Wa (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:43694)
+    at Va (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39499)
+    at ud (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39430)
+    at Zr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39289)
+    at Ua (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:34440)
+    at E (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1562)
+    at MessagePort.un (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1930)
+==============================================
+
+==============================================
+[02/09/2026, 18:31:32] [ERROR]
+----------------------------------------------
+[RENDERER] TypeError: Cannot read properties of undefined (reading 'toLowerCase')
+TypeError: Cannot read properties of undefined (reading 'toLowerCase')
+    at file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130685
+    at Array.filter (<anonymous>)
+    at file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130631
+    at Object.useMemo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:23228)
+    at T.useMemo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:9:6193)
+    at ahl (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130615)
+    at mo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:16959)
+    at Wa (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:43694)
+    at Va (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39499)
+    at ud (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39430)
+    at Zr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39289)
+    at Ou (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:35710)
+    at Ua (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:34666)
+    at E (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1562)
+    at MessagePort.un (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1930)
+==============================================
+
+==============================================
+  APPLICATION CLOSING
+  Time: 02/09/2026, 18:31:33
+==============================================
+
+==============================================
+  HACKHUB LOG FILE
+  Started: 02/09/2026, 18:32:19
+  Version: 1.1.2
+  Platform: win32
+  Arch: x64
+==============================================
+
+
+==============================================
+[02/09/2026, 18:32:20] [INFO]
+----------------------------------------------
+Steamworks initalized: Zeis [ZF] - 76561197976480835
+==============================================
+
+==============================================
+[02/09/2026, 18:32:20] [INFO]
+----------------------------------------------
+[WorkshopController] initialized with appId: 2980270
+==============================================
+
+==============================================
+[02/09/2026, 18:32:20] [INFO]
+----------------------------------------------
+[RENDERER] [Markdown Note Editor] Mod loaded.
+==============================================
+
+==============================================
+[02/09/2026, 18:32:20] [INFO]
+----------------------------------------------
+[RENDERER] [nemesis-protocol-stage1] Nemesis Protocol loaded. The mission is waiting in the HackHub feed.
+==============================================
+
+==============================================
+[02/09/2026, 18:32:20] [INFO]
+----------------------------------------------
+[RENDERER] Custom Browser mod loaded with ordered categories!
+==============================================
+
+==============================================
+[02/09/2026, 18:32:20] [INFO]
+----------------------------------------------
+[RENDERER] RetroArcade v1.0.0 loaded!
+==============================================
+
+==============================================
+[02/09/2026, 18:32:20] [INFO]
+----------------------------------------------
+[RENDERER] [darknet-tree] Darknet-Tree loaded! Check the App Store for NotePad.
+==============================================
+
+==============================================
+[02/09/2026, 18:32:20] [INFO]
+----------------------------------------------
+[RENDERER] [synthetik-wallet] Synthetik Wallet loaded! Find it in the App Store.
+==============================================
+
+==============================================
+[02/09/2026, 18:32:20] [INFO]
+----------------------------------------------
+[RENDERER] [GhostLink] v1.0.2 loaded
+==============================================
+
+==============================================
+[02/09/2026, 18:32:20] [INFO]
+----------------------------------------------
+[RENDERER] [python-is-python3] Mod loaded! Run: apt-get install python-is-python3
+==============================================
+
+==============================================
+[02/09/2026, 18:32:20] [INFO]
+----------------------------------------------
+[RENDERER] Lockchain Wallet mod loaded: websites, phone wallet, marketplace, miner, and isolated RPC registered.
+==============================================
+
+==============================================
+[02/09/2026, 18:32:20] [INFO]
+----------------------------------------------
+[RENDERER] [Fishception] biological daemon loaded
+==============================================
+
+==============================================
+[02/09/2026, 18:32:20] [INFO]
+----------------------------------------------
+[RENDERER] [Beginner Handbook+] Registered 109 handbook pages without title prefixes. Language: en.
+==============================================
+
+==============================================
+[02/09/2026, 18:32:20] [INFO]
+----------------------------------------------
+[RENDERER] [vault-manager] Vault Manager loaded — password vault & sticky notes ready.
+==============================================
+
+==============================================
+[02/09/2026, 18:32:21] [ERROR]
+----------------------------------------------
+(node:27612) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `Hackhub --trace-deprecation ...` to show where the warning was created)
+==============================================
+
+==============================================
+[02/09/2026, 18:32:25] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam failed after 530ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 18:32:25] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 523ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 18:32:26] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 527ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 18:32:28] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 561ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 18:32:28] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 543ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 18:32:49] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_email" already completed (in-memory) for quest pFjtJ795zG
+==============================================
+
+==============================================
+[02/09/2026, 18:32:49] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_bank" already completed (in-memory) for quest pFjtJ795zG
+==============================================
+
+==============================================
+[02/09/2026, 18:32:53] [WARN]
+----------------------------------------------
+[RENDERER] Deprecation warning: value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.
+Arguments: 
+[0] _isAMomentObject: true, _isUTC: false, _useUTC: false, _l: undefined, _i: Wed Sep 02 2026, _f: undefined, _strict: undefined, _locale: [object Object]
+Error
+    at O.createFromInputFallback (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:3)
+    at zm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:25839)
+    at Xm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29577)
+    at qo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29441)
+    at Jm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29155)
+    at Ko (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29944)
+    at ne (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29978)
+    at O (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:6:31)
+    at FSe (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:102594)
+    at mo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:16959)
+    at Wa (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:43694)
+    at Va (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39499)
+    at ud (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39430)
+    at Zr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39289)
+    at Ua (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:34440)
+    at E (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1562)
+    at MessagePort.un (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1930)
+==============================================
+
+==============================================
+  APPLICATION CLOSING
+  Time: 02/09/2026, 18:33:02
+==============================================
+
+==============================================
+  HACKHUB LOG FILE
+  Started: 02/09/2026, 18:46:00
+  Version: 1.1.2
+  Platform: win32
+  Arch: x64
+==============================================
+
+
+==============================================
+[02/09/2026, 18:46:01] [INFO]
+----------------------------------------------
+Steamworks initalized: Zeis [ZF] - 76561197976480835
+==============================================
+
+==============================================
+[02/09/2026, 18:46:01] [INFO]
+----------------------------------------------
+[WorkshopController] initialized with appId: 2980270
+==============================================
+
+==============================================
+[02/09/2026, 18:46:02] [INFO]
+----------------------------------------------
+[RENDERER] [Markdown Note Editor] Mod loaded.
+==============================================
+
+==============================================
+[02/09/2026, 18:46:02] [INFO]
+----------------------------------------------
+[RENDERER] [nemesis-protocol-stage1] Nemesis Protocol loaded. The mission is waiting in the HackHub feed.
+==============================================
+
+==============================================
+[02/09/2026, 18:46:02] [INFO]
+----------------------------------------------
+[RENDERER] Custom Browser mod loaded with ordered categories!
+==============================================
+
+==============================================
+[02/09/2026, 18:46:02] [INFO]
+----------------------------------------------
+[RENDERER] RetroArcade v1.0.0 loaded!
+==============================================
+
+==============================================
+[02/09/2026, 18:46:02] [INFO]
+----------------------------------------------
+[RENDERER] [darknet-tree] Darknet-Tree loaded! Check the App Store for NotePad.
+==============================================
+
+==============================================
+[02/09/2026, 18:46:02] [INFO]
+----------------------------------------------
+[RENDERER] [synthetik-wallet] Synthetik Wallet loaded! Find it in the App Store.
+==============================================
+
+==============================================
+[02/09/2026, 18:46:02] [INFO]
+----------------------------------------------
+[RENDERER] [GhostLink] v1.0.2 loaded
+==============================================
+
+==============================================
+[02/09/2026, 18:46:02] [INFO]
+----------------------------------------------
+[RENDERER] [python-is-python3] Mod loaded! Run: apt-get install python-is-python3
+==============================================
+
+==============================================
+[02/09/2026, 18:46:02] [INFO]
+----------------------------------------------
+[RENDERER] Lockchain Wallet mod loaded: websites, phone wallet, marketplace, miner, and isolated RPC registered.
+==============================================
+
+==============================================
+[02/09/2026, 18:46:02] [INFO]
+----------------------------------------------
+[RENDERER] [Fishception] biological daemon loaded
+==============================================
+
+==============================================
+[02/09/2026, 18:46:02] [INFO]
+----------------------------------------------
+[RENDERER] [Beginner Handbook+] Registered 109 handbook pages without title prefixes. Language: en.
+==============================================
+
+==============================================
+[02/09/2026, 18:46:02] [INFO]
+----------------------------------------------
+[RENDERER] [vault-manager] Vault Manager loaded — password vault & sticky notes ready.
+==============================================
+
+==============================================
+[02/09/2026, 18:46:03] [ERROR]
+----------------------------------------------
+(node:24112) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `Hackhub --trace-deprecation ...` to show where the warning was created)
+==============================================
+
+==============================================
+[02/09/2026, 18:46:04] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/multiplayer/status failed after 1139ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:46:09] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/announcements?limit=10 failed after 796ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:46:09] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/stats failed after 796ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:46:09] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/polls failed after 796ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:46:09] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/pages failed after 799ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:46:09] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/actions failed after 799ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:46:09] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/featured-mods failed after 799ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:46:09] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/dlc-store/config failed after 800ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:46:10] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/player-notifications?limit=50 failed after 788ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:46:10] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/player-notifications?limit=50 failed after 791ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:46:22] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/player-notifications?limit=50 failed after 789ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:46:41] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/multiplayer/status failed after 800ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:46:41] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/player-notifications?limit=50 failed after 801ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:46:53] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/player-notifications?limit=50 failed after 979ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:47:33] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/player-notifications?limit=50 failed after 985ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:47:34] [WARN]
+----------------------------------------------
+[RENDERER] [NetworkHealth] backend unreachable (status: none, code: ECONNRESET, timedOut: false)
+==============================================
+
+==============================================
+[02/09/2026, 18:47:39] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/player-notifications?limit=50 failed after 798ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:47:41] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/multiplayer/status failed after 799ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:47:45] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/player-notifications?limit=50 failed after 795ms: ECONNRESET Client network socket disconnected before secure TLS connection was established
+==============================================
+
+==============================================
+[02/09/2026, 18:47:52] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_email" already completed (in-memory) for quest pFjtJ795zG
+==============================================
+
+==============================================
+[02/09/2026, 18:47:52] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_bank" already completed (in-memory) for quest pFjtJ795zG
+==============================================
+
+==============================================
+[02/09/2026, 18:47:52] [INFO]
+----------------------------------------------
+[RENDERER] [quest-editor] repaired Twotter account @qatest6: filled bio — these were undefined, which crashes Twotter search
+==============================================
+
+==============================================
+[02/09/2026, 18:47:52] [INFO]
+----------------------------------------------
+[RENDERER] [quest-editor] repaired Twotter account @qatest6: filled bio — these were undefined, which crashes Twotter search
+==============================================
+
+==============================================
+[02/09/2026, 18:47:56] [WARN]
+----------------------------------------------
+[RENDERER] Deprecation warning: value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.
+Arguments: 
+[0] _isAMomentObject: true, _isUTC: false, _useUTC: false, _l: undefined, _i: Wed Sep 02 2026, _f: undefined, _strict: undefined, _locale: [object Object]
+Error
+    at O.createFromInputFallback (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:3)
+    at zm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:25839)
+    at Xm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29577)
+    at qo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29441)
+    at Jm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29155)
+    at Ko (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29944)
+    at ne (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29978)
+    at O (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:6:31)
+    at FSe (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:102594)
+    at mo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:16959)
+    at Wa (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:43694)
+    at Va (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39499)
+    at ud (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39430)
+    at Zr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39289)
+    at Ua (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:34440)
+    at E (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1562)
+    at MessagePort.un (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1930)
+==============================================
+
+==============================================
+[02/09/2026, 18:48:03] [ERROR]
+----------------------------------------------
+[RENDERER] TypeError: Cannot read properties of undefined (reading 'toLowerCase')
+TypeError: Cannot read properties of undefined (reading 'toLowerCase')
+    at file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130685
+    at Array.filter (<anonymous>)
+    at file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130631
+    at Object.va [as useMemo] (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:21288)
+    at T.useMemo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:9:6193)
+    at ahl (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130615)
+    at mo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:16959)
+    at Su (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:3134)
+    at Wa (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:44467)
+    at Va (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39499)
+    at ud (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39430)
+    at Zr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39289)
+    at Ou (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:35710)
+    at Ua (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:34666)
+    at E (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1562)
+    at MessagePort.un (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1930)
+==============================================
+
+==============================================
+  APPLICATION CLOSING
+  Time: 02/09/2026, 18:48:04
+==============================================
+
+==============================================
+  HACKHUB LOG FILE
+  Started: 02/09/2026, 19:09:32
+  Version: 1.1.2
+  Platform: win32
+  Arch: x64
+==============================================
+
+
+==============================================
+[02/09/2026, 19:09:32] [INFO]
+----------------------------------------------
+Steamworks initalized: Zeis [ZF] - 76561197976480835
+==============================================
+
+==============================================
+[02/09/2026, 19:09:32] [INFO]
+----------------------------------------------
+[WorkshopController] initialized with appId: 2980270
+==============================================
+
+==============================================
+[02/09/2026, 19:09:33] [INFO]
+----------------------------------------------
+[RENDERER] [Markdown Note Editor] Mod loaded.
+==============================================
+
+==============================================
+[02/09/2026, 19:09:33] [INFO]
+----------------------------------------------
+[RENDERER] [nemesis-protocol-stage1] Nemesis Protocol loaded. The mission is waiting in the HackHub feed.
+==============================================
+
+==============================================
+[02/09/2026, 19:09:33] [INFO]
+----------------------------------------------
+[RENDERER] Custom Browser mod loaded with ordered categories!
+==============================================
+
+==============================================
+[02/09/2026, 19:09:33] [INFO]
+----------------------------------------------
+[RENDERER] RetroArcade v1.0.0 loaded!
+==============================================
+
+==============================================
+[02/09/2026, 19:09:33] [INFO]
+----------------------------------------------
+[RENDERER] [darknet-tree] Darknet-Tree loaded! Check the App Store for NotePad.
+==============================================
+
+==============================================
+[02/09/2026, 19:09:33] [INFO]
+----------------------------------------------
+[RENDERER] [synthetik-wallet] Synthetik Wallet loaded! Find it in the App Store.
+==============================================
+
+==============================================
+[02/09/2026, 19:09:33] [INFO]
+----------------------------------------------
+[RENDERER] [GhostLink] v1.0.2 loaded
+==============================================
+
+==============================================
+[02/09/2026, 19:09:33] [INFO]
+----------------------------------------------
+[RENDERER] [python-is-python3] Mod loaded! Run: apt-get install python-is-python3
+==============================================
+
+==============================================
+[02/09/2026, 19:09:33] [INFO]
+----------------------------------------------
+[RENDERER] Lockchain Wallet mod loaded: websites, phone wallet, marketplace, miner, and isolated RPC registered.
+==============================================
+
+==============================================
+[02/09/2026, 19:09:33] [INFO]
+----------------------------------------------
+[RENDERER] [Fishception] biological daemon loaded
+==============================================
+
+==============================================
+[02/09/2026, 19:09:33] [INFO]
+----------------------------------------------
+[RENDERER] [Beginner Handbook+] Registered 109 handbook pages without title prefixes. Language: en.
+==============================================
+
+==============================================
+[02/09/2026, 19:09:33] [INFO]
+----------------------------------------------
+[RENDERER] [vault-manager] Vault Manager loaded — password vault & sticky notes ready.
+==============================================
+
+==============================================
+[02/09/2026, 19:09:33] [ERROR]
+----------------------------------------------
+(node:27588) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `Hackhub --trace-deprecation ...` to show where the warning was created)
+==============================================
+
+==============================================
+[02/09/2026, 19:09:37] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam failed after 531ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 19:09:41] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam failed after 524ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 19:09:43] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 522ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 19:09:44] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 523ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 19:09:44] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam failed after 524ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 19:09:46] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_email" already completed (in-memory) for quest pFjtJ795zG
+==============================================
+
+==============================================
+[02/09/2026, 19:09:46] [WARN]
+----------------------------------------------
+[RENDERER] [CompleteObjective] Objective "open_bank" already completed (in-memory) for quest pFjtJ795zG
+==============================================
+
+==============================================
+[02/09/2026, 19:09:46] [WARN]
+----------------------------------------------
+[Network] POST https://gateway.hotbunny.dev/hackhub/auth/steam/challenge failed after 1359ms: ERR_BAD_REQUEST Request failed with status code 429
+==============================================
+
+==============================================
+[02/09/2026, 19:09:46] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/player-notifications?limit=50 failed after 1339ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 19:09:46] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/player-notifications?limit=50 failed after 1341ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 19:09:46] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/polls failed after 519ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 19:09:46] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/announcements?limit=10 failed after 521ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 19:09:46] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/stats failed after 525ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 19:09:46] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/actions failed after 1333ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 19:09:46] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/featured-mods failed after 1334ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 19:09:46] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/dlc-store/config failed after 1348ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 19:09:46] [WARN]
+----------------------------------------------
+[Network] GET https://gateway.hotbunny.dev/hackhub/pages failed after 1365ms: ERR_BAD_REQUEST Request failed with status code 401
+==============================================
+
+==============================================
+[02/09/2026, 19:09:46] [INFO]
+----------------------------------------------
+[RENDERER] [quest-editor] Twotter account @qatester7 is missing bio — Twotter search lowercases these, so any search that does not match sooner crashes the game. Record: id:string username:string name:string surname:string avatar:string banner:string bio:undefined joinedAt:string followers:number following:number verified:boolean password:string isMine:undefined
+==============================================
+
+==============================================
+[02/09/2026, 19:09:46] [INFO]
+----------------------------------------------
+[RENDERER] [quest-editor] could not repair Twotter account @qatester7; it still reads back as id:string username:string name:string surname:string avatar:string banner:string bio:undefined joinedAt:string followers:number following:number verified:boolean password:string isMine:undefined. Twotter search will crash on a term that matches nothing — please report this record to the game authors
+==============================================
+
+==============================================
+[02/09/2026, 19:09:51] [WARN]
+----------------------------------------------
+[RENDERER] Deprecation warning: value provided is not in a recognized RFC2822 or ISO format. moment construction falls back to js Date(), which is not reliable across all browsers and versions. Non RFC2822/ISO date formats are discouraged. Please refer to http://momentjs.com/guides/#/warnings/js-date/ for more info.
+Arguments: 
+[0] _isAMomentObject: true, _isUTC: false, _useUTC: false, _l: undefined, _i: Wed Sep 02 2026, _f: undefined, _strict: undefined, _locale: [object Object]
+Error
+    at O.createFromInputFallback (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:3)
+    at zm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:25839)
+    at Xm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29577)
+    at qo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29441)
+    at Jm (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29155)
+    at Ko (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29944)
+    at ne (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:9:29978)
+    at O (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/utils.js:6:31)
+    at FSe (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:102594)
+    at mo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:16959)
+    at Wa (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:43694)
+    at Va (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39499)
+    at ud (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39430)
+    at Zr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39289)
+    at Ua (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:34440)
+    at E (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1562)
+    at MessagePort.un (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1930)
+==============================================
+
+==============================================
+[02/09/2026, 19:09:55] [ERROR]
+----------------------------------------------
+[RENDERER] TypeError: Cannot read properties of undefined (reading 'toLowerCase')
+TypeError: Cannot read properties of undefined (reading 'toLowerCase')
+    at file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130685
+    at Array.filter (<anonymous>)
+    at file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130631
+    at Object.useMemo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:23228)
+    at T.useMemo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:9:6193)
+    at ahl (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/index.js:166770:130615)
+    at mo (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:30:16959)
+    at Wa (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:43694)
+    at Va (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39499)
+    at ud (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39430)
+    at Zr (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:39289)
+    at Ou (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:35710)
+    at Ua (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:32:34666)
+    at E (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1562)
+    at MessagePort.un (file:///S:/SteamLibrary/steamapps/common/Hackhub/resources/app.asar/dist/assets/vendor.js:17:1930)
+==============================================
+
+==============================================
+  APPLICATION CLOSING
+  Time: 02/09/2026, 19:09:57
+==============================================

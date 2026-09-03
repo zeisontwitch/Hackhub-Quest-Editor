@@ -1,0 +1,1062 @@
+{
+  "schemaVersion": 1,
+  "kind": "hackhub-quest-editor/project",
+  "mod": {
+    "id": "the-ledger-contract12",
+    "name": "The Ledger Contract12",
+    "version": "12.0.0",
+    "author": "zeis",
+    "description": "r50 | The standard contract hack: a name, an OSINT lookup, a whois, a scan, an exploit, a deleted file — and a client who checks before she pays.",
+    "tags": [
+      "quest",
+      "hacking",
+      "recon",
+      "metasploit",
+      "beginner-friendly"
+    ],
+    "dependencies": [],
+    "minSdkVersion": "0.21.0",
+    "apiVersion": 1
+  },
+  "quests": [
+    {
+      "id": "q-contract-hack",
+      "name": "TheLedgerContract12",
+      "title": "Contract: The Q3 Ledger",
+      "description": "A client wants one file gone from one man's machine. Find him, find his server, get in, delete it.",
+      "group": "side",
+      "rewards": {
+        "money": 4000,
+        "xp": 180
+      },
+      "employer": {
+        "firstName": "Ines",
+        "lastName": "Faber",
+        "email": "i.faber@ghostmail.io"
+      },
+      "autoStart": true,
+      "autoComplete": true,
+      "questsToComplete": [],
+      "abandonable": true,
+      "hasCompleteButton": false,
+      "dialog": [],
+      "dataKeys": [
+        {
+          "key": "ledger",
+          "type": "string"
+        }
+      ],
+      "graph": {
+        "nodes": [
+          {
+            "id": "entry-start1",
+            "type": "entry.start",
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "data": {}
+          },
+          {
+            "id": "entry-load2",
+            "type": "entry.load",
+            "position": {
+              "x": 0,
+              "y": 160
+            },
+            "data": {}
+          },
+          {
+            "id": "entry-complete3",
+            "type": "entry.complete",
+            "position": {
+              "x": 0,
+              "y": 640
+            },
+            "data": {}
+          },
+          {
+            "id": "world-network4",
+            "type": "world.network",
+            "position": {
+              "x": 360,
+              "y": 560
+            },
+            "data": {
+              "ipMode": "fixed",
+              "device": {
+                "id": "dev-router",
+                "ip": "45.33.32.156",
+                "name": "meridian-edge",
+                "type": "ROUTER",
+                "domainName": "meridian-capital.net",
+                "vulnerabilities": [],
+                "users": [],
+                "ports": [
+                  {
+                    "id": "p-http",
+                    "external": 80,
+                    "internal": 80,
+                    "active": true,
+                    "service": "http"
+                  },
+                  {
+                    "id": "p-ssh",
+                    "external": 22,
+                    "internal": 22,
+                    "active": true,
+                    "service": "ssh",
+                    "version": "OpenSSH 1.7.2"
+                  }
+                ],
+                "model": "MikroTik hEX S",
+                "accessable": true,
+                "rules": [],
+                "rootFiles": [],
+                "children": [
+                  {
+                    "id": "dev-host",
+                    "ip": "10.0.0.12",
+                    "name": "ritter-ws",
+                    "type": "DEVICE",
+                    "vulnerabilities": [],
+                    "users": [
+                      {
+                        "id": "u-ritter",
+                        "username": "aritter",
+                        "password": "Sommer2019!",
+                        "firstName": "Anselm",
+                        "lastName": "Ritter",
+                        "files": [
+                          {
+                            "id": "f-ledger",
+                            "name": "ledger_q3",
+                            "isFolder": false,
+                            "data": "Q3 consolidated ledger - internal only. Rows 412-478 flagged by compliance.",
+                            "extension": "xlsx"
+                          },
+                          {
+                            "id": "f-notes",
+                            "name": "reminders",
+                            "isFolder": false,
+                            "data": "Renew the cert. Call Ines back. Stop keeping the ledger on this machine.",
+                            "extension": "txt"
+                          }
+                        ],
+                        "acceptReverseTCP": true
+                      }
+                    ],
+                    "ports": [
+                      {
+                        "id": "p-ssh-host",
+                        "external": 22,
+                        "internal": 22,
+                        "active": true,
+                        "service": "ssh",
+                        "version": "OpenSSH 7.2.0"
+                      }
+                    ],
+                    "rules": [],
+                    "rootFiles": [],
+                    "children": []
+                  }
+                ]
+              },
+              "destroyOnComplete": true
+            }
+          },
+          {
+            "id": "world-toolResponse5",
+            "type": "world.toolResponse",
+            "position": {
+              "x": 720,
+              "y": 720
+            },
+            "data": {
+              "command": "lynx",
+              "input": "Anselm Ritter",
+              "dataText": "Name:      Anselm Ritter\nRole:      Head of Compliance, Meridian Capital AG\nLocation:  Munich, DE\nWeb:       https://meridian-capital.net\nEmail:     a.ritter@meridian-capital.net",
+              "removeOnComplete": true
+            }
+          },
+          {
+            "id": "world-toolResponse6",
+            "type": "world.toolResponse",
+            "position": {
+              "x": 1080,
+              "y": 720
+            },
+            "data": {
+              "command": "whois",
+              "input": "meridian-capital.net",
+              "dataText": "Domain:     meridian-capital.net\nIP:         45.33.32.156\nRegistrant: Meridian Capital AG\nEmail:      hostmaster@meridian-capital.net\nStatus:     active",
+              "removeOnComplete": true
+            }
+          },
+          {
+            "id": "comms-dialogue7",
+            "type": "comms.dialogue",
+            "position": {
+              "x": 1440,
+              "y": 720
+            },
+            "data": {
+              "kind": "mail",
+              "phone": {
+                "branch": "default",
+                "startIndex": 0
+              },
+              "kisscord": {
+                "contactId": "",
+                "messages": []
+              },
+              "mail": {
+                "from": "i.faber@ghostmail.io",
+                "subject": "One file, one man, no trace",
+                "content": "His name is Anselm Ritter. That is all you get, and all you need.\n\nOn his machine there is a spreadsheet called ledger_q3.xlsx. I want it gone. Not copied, not read to me — gone.\n\nWhen it is done, tell me through the drop page: meridian-capital.net/terminal/secure-reply. Do not reply to this address.",
+                "replyable": true
+              },
+              "weechat": {
+                "host": "",
+                "password": "",
+                "registerServer": true,
+                "messages": []
+              },
+              "postLive": false
+            }
+          },
+          {
+            "id": "fx-notify35",
+            "type": "fx.notify",
+            "position": {
+              "x": 360,
+              "y": 880
+            },
+            "data": {
+              "message": "Contract closed. Faber will be in touch.",
+              "variant": "toast",
+              "tone": "success"
+            }
+          },
+          {
+            "id": "objective8",
+            "type": "objective",
+            "position": {
+              "x": 360,
+              "y": 1040
+            },
+            "data": {
+              "name": "read-brief",
+              "description": "Read the contract",
+              "hint": "It is in your mailbox.",
+              "hidden": false
+            }
+          },
+          {
+            "id": "objective9",
+            "type": "objective",
+            "position": {
+              "x": 720,
+              "y": 880
+            },
+            "data": {
+              "name": "identify-target",
+              "description": "Find out who Anselm Ritter is",
+              "hint": "lynx looks people up. Give it the full name, in quotes.",
+              "terminalCommand": "lynx \"Anselm Ritter\"",
+              "hidden": false
+            }
+          },
+          {
+            "id": "objective10",
+            "type": "objective",
+            "position": {
+              "x": 1080,
+              "y": 880
+            },
+            "data": {
+              "name": "find-server",
+              "description": "Find the server behind his company's website",
+              "hint": "whois turns a domain into an address.",
+              "terminalCommand": "whois meridian-capital.net",
+              "hidden": false
+            }
+          },
+          {
+            "id": "objective11",
+            "type": "objective",
+            "position": {
+              "x": 1440,
+              "y": 880
+            },
+            "data": {
+              "name": "scan-server",
+              "description": "See which services that server is running",
+              "hint": "nmap with -sV reports versions as well as open ports. Versions are what exploits are picked by.",
+              "terminalCommand": "nmap 45.33.32.156 -sV",
+              "hidden": false
+            }
+          },
+          {
+            "id": "objective12",
+            "type": "objective",
+            "position": {
+              "x": 1800,
+              "y": 800
+            },
+            "data": {
+              "name": "get-a-shell",
+              "description": "Get onto the machine",
+              "hint": "Port 22 is answering, and the SSH version is old. metasploit has a module for it.",
+              "terminalCommand": "msfconsole",
+              "hidden": false
+            }
+          },
+          {
+            "id": "objective13",
+            "type": "objective",
+            "position": {
+              "x": 2160,
+              "y": 800
+            },
+            "data": {
+              "name": "delete-ledger",
+              "description": "Delete ledger_q3.xlsx from his home directory",
+              "hint": "It is in /home/aritter.",
+              "terminalCommand": "rm ledger_q3.xlsx",
+              "hidden": false
+            }
+          },
+          {
+            "id": "objective14",
+            "type": "objective",
+            "position": {
+              "x": 2520,
+              "y": 880
+            },
+            "data": {
+              "name": "report-back",
+              "description": "Tell the client the job is done",
+              "hint": "She left a reply terminal on the drop site. Mash the keys — the words are already written.",
+              "hidden": false
+            }
+          },
+          {
+            "id": "trigger-event15",
+            "type": "trigger.event",
+            "position": {
+              "x": 0,
+              "y": 1440
+            },
+            "data": {
+              "event": "Mail.Read",
+              "conditions": [
+                {
+                  "id": "c1",
+                  "join": "and",
+                  "field": "subject",
+                  "op": "contains",
+                  "value": "One file"
+                }
+              ]
+            }
+          },
+          {
+            "id": "trigger-event17",
+            "type": "trigger.event",
+            "position": {
+              "x": 0,
+              "y": 800
+            },
+            "data": {
+              "event": "Terminal.Lynx.Search",
+              "conditions": [
+                {
+                  "id": "c1",
+                  "join": "and",
+                  "field": "query",
+                  "op": "contains",
+                  "value": "Ritter"
+                }
+              ]
+            }
+          },
+          {
+            "id": "trigger-event19",
+            "type": "trigger.event",
+            "position": {
+              "x": 0,
+              "y": 960
+            },
+            "data": {
+              "event": "Terminal.Whois",
+              "conditions": [
+                {
+                  "id": "c1",
+                  "join": "and",
+                  "field": "domain",
+                  "op": "equals",
+                  "value": "meridian-capital.net"
+                }
+              ]
+            }
+          },
+          {
+            "id": "trigger-event21",
+            "type": "trigger.event",
+            "position": {
+              "x": 0,
+              "y": 1120
+            },
+            "data": {
+              "event": "Terminal.NmapScan",
+              "conditions": [
+                {
+                  "id": "c1",
+                  "join": "and",
+                  "field": "ip",
+                  "op": "equals",
+                  "value": "45.33.32.156"
+                }
+              ]
+            }
+          },
+          {
+            "id": "trigger-event23",
+            "type": "trigger.event",
+            "position": {
+              "x": 0,
+              "y": 320
+            },
+            "data": {
+              "event": "Metasploit.Meterpreter.Connected",
+              "conditions": []
+            }
+          },
+          {
+            "id": "trigger-event25",
+            "type": "trigger.event",
+            "position": {
+              "x": 0,
+              "y": 480
+            },
+            "data": {
+              "event": "Files.Deleted",
+              "conditions": [
+                {
+                  "id": "c1",
+                  "join": "and",
+                  "field": "name",
+                  "op": "contains",
+                  "value": "ledger_q3"
+                }
+              ]
+            }
+          },
+          {
+            "id": "trigger-event27",
+            "type": "trigger.event",
+            "position": {
+              "x": 0,
+              "y": 1280
+            },
+            "data": {
+              "event": "QE.reply.sent",
+              "conditions": []
+            }
+          },
+          {
+            "id": "fx-setData29",
+            "type": "fx.setData",
+            "position": {
+              "x": 2520,
+              "y": 720
+            },
+            "data": {
+              "key": "ledger",
+              "value": "deleted"
+            }
+          },
+          {
+            "id": "reply-hackertyper30",
+            "type": "reply.hackertyper",
+            "position": {
+              "x": 360,
+              "y": 720
+            },
+            "data": {
+              "surface": "website",
+              "targetRef": "meridian-capital.net",
+              "text": "> job closed\n> ledger_q3.xlsx no longer exists on the host\n> logs cleared\n> send the rest of the money",
+              "charsPerKeypress": 4,
+              "heading": "Secure reply",
+              "eventName": "QE.reply.sent"
+            }
+          },
+          {
+            "id": "flow-branch31",
+            "type": "flow.branch",
+            "position": {
+              "x": 2880,
+              "y": 800
+            },
+            "data": {
+              "conditions": [
+                {
+                  "id": "h1",
+                  "join": "and",
+                  "field": "ledger",
+                  "op": "equals",
+                  "value": "deleted"
+                }
+              ],
+              "source": "data"
+            }
+          },
+          {
+            "id": "comms-dialogue32",
+            "type": "comms.dialogue",
+            "position": {
+              "x": 3240,
+              "y": 720
+            },
+            "data": {
+              "kind": "mail",
+              "phone": {
+                "branch": "default",
+                "startIndex": 0
+              },
+              "kisscord": {
+                "contactId": "",
+                "messages": []
+              },
+              "mail": {
+                "from": "i.faber@ghostmail.io",
+                "subject": "Received",
+                "content": "Checked. It is gone. The rest of the money is with you.\n\nI will have more work.",
+                "replyable": false
+              },
+              "weechat": {
+                "host": "",
+                "password": "",
+                "registerServer": true,
+                "messages": []
+              },
+              "postLive": false
+            }
+          },
+          {
+            "id": "fx-pay33",
+            "type": "fx.pay",
+            "position": {
+              "x": 3600,
+              "y": 800
+            },
+            "data": {
+              "amountMode": "fixed",
+              "amount": 4000,
+              "percent": 10,
+              "description": "Contract settled",
+              "fromName": "I. Faber"
+            }
+          },
+          {
+            "id": "comms-dialogue34",
+            "type": "comms.dialogue",
+            "position": {
+              "x": 3240,
+              "y": 880
+            },
+            "data": {
+              "kind": "mail",
+              "phone": {
+                "branch": "default",
+                "startIndex": 0
+              },
+              "kisscord": {
+                "contactId": "",
+                "messages": []
+              },
+              "mail": {
+                "from": "i.faber@ghostmail.io",
+                "subject": "Re: job closed",
+                "content": "You must be joking. The file is still sitting in his home directory — I am looking at it.\n\nDo the job, then write to me.",
+                "replyable": false
+              },
+              "weechat": {
+                "host": "",
+                "password": "",
+                "registerServer": true,
+                "messages": []
+              },
+              "postLive": false
+            }
+          },
+          {
+            "id": "flow-note36",
+            "type": "flow.note",
+            "position": {
+              "x": 0,
+              "y": 1600
+            },
+            "data": {
+              "text": "The trail: a name in the mail → lynx finds the company → whois finds the server → nmap finds port 22 → metasploit gets a shell → the file is deleted.\n\nEach objective is completed by a real game event (the grey node under it). Change an IP or a name and change it in the matching trigger too.\n\nThe last part is the useful pattern: deleting the file writes ledger=deleted, and the reply branches on it — so claiming the job is done without doing it gets the player told off instead of paid.\n\nTwo things the game handles by itself: connecting to a machine is logged there, and the player cleans that log (or pays for it in suspicion) — no node needed. And keep port version numbers plain: a letter in the version has been seen to stop metasploit matching an exploit.",
+              "width": 340
+            }
+          },
+          {
+            "id": "V8VLDov6gK",
+            "type": "flow.debug",
+            "position": {
+              "x": 2031.8179158721664,
+              "y": 464.815706531408
+            },
+            "data": {
+              "label": "OnComplete-Access-PC-Through-Metasploit",
+              "toast": false,
+              "includeData": true,
+              "includePayload": true
+            }
+          },
+          {
+            "id": "LN-ORrsLyT",
+            "type": "flow.debug",
+            "position": {
+              "x": 2860.0831181783074,
+              "y": 444.1850353033153
+            },
+            "data": {
+              "label": "OnComplete-Set-quest-data-ledger-deleted",
+              "toast": false,
+              "includeData": true,
+              "includePayload": true
+            }
+          },
+          {
+            "id": "rNNQEbM6Vr",
+            "type": "flow.debug",
+            "position": {
+              "x": 3221.238903659723,
+              "y": 430.6935835468256
+            },
+            "data": {
+              "label": "QuestData-Branch-Yes",
+              "toast": false,
+              "includeData": true,
+              "includePayload": true
+            }
+          },
+          {
+            "id": "h02bD2Z1BD",
+            "type": "flow.debug",
+            "position": {
+              "x": 3220.201099678454,
+              "y": 1151.9673505283865
+            },
+            "data": {
+              "label": "QuestData-Branch-No",
+              "toast": false,
+              "includeData": true,
+              "includePayload": true
+            }
+          },
+          {
+            "id": "rivkuJ4qGP",
+            "type": "flow.debug",
+            "position": {
+              "x": 3737.0274823501336,
+              "y": 506.4532741794212
+            },
+            "data": {
+              "label": "Email-Received-FileDeleted",
+              "toast": false,
+              "includeData": true,
+              "includePayload": true
+            }
+          },
+          {
+            "id": "HMPlXusUnb",
+            "type": "flow.debug",
+            "position": {
+              "x": 3788.917681413555,
+              "y": 1013.9394210196849
+            },
+            "data": {
+              "label": "Email-Received-FileNotDeleted",
+              "toast": false,
+              "includeData": true,
+              "includePayload": true
+            }
+          },
+          {
+            "id": "LEDEf_OLWQ",
+            "type": "flow.debug",
+            "position": {
+              "x": 3954.9663184165042,
+              "y": 787.6981531031664
+            },
+            "data": {
+              "label": "MoneyReceived",
+              "toast": false,
+              "includeData": true,
+              "includePayload": true
+            }
+          },
+          {
+            "id": "DV92IXzNg-",
+            "type": "flow.debug",
+            "position": {
+              "x": 874.9448095700744,
+              "y": 310.82704366220577
+            },
+            "data": {
+              "label": "CreateRouterNode",
+              "toast": false,
+              "includeData": true,
+              "includePayload": true
+            }
+          },
+          {
+            "id": "fGNovT-CrK",
+            "type": "flow.debug",
+            "position": {
+              "x": 1825.6741123345014,
+              "y": 1083.1060745334726
+            },
+            "data": {
+              "label": "OnComplete-ScanServerObjective",
+              "toast": false,
+              "includeData": true,
+              "includePayload": true
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge37",
+            "source": "entry-start1",
+            "sourceHandle": "out",
+            "target": "world-network4",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "edge38",
+            "source": "world-network4",
+            "sourceHandle": "out",
+            "target": "world-toolResponse5",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "edge39",
+            "source": "world-toolResponse5",
+            "sourceHandle": "out",
+            "target": "world-toolResponse6",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "edge40",
+            "source": "world-toolResponse6",
+            "sourceHandle": "out",
+            "target": "comms-dialogue7",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "edge41",
+            "source": "objective8",
+            "sourceHandle": "unlock",
+            "target": "objective9",
+            "targetHandle": "unlocked-by",
+            "kind": "unlock"
+          },
+          {
+            "id": "edge42",
+            "source": "objective9",
+            "sourceHandle": "unlock",
+            "target": "objective10",
+            "targetHandle": "unlocked-by",
+            "kind": "unlock"
+          },
+          {
+            "id": "edge43",
+            "source": "objective10",
+            "sourceHandle": "unlock",
+            "target": "objective11",
+            "targetHandle": "unlocked-by",
+            "kind": "unlock"
+          },
+          {
+            "id": "edge44",
+            "source": "objective11",
+            "sourceHandle": "unlock",
+            "target": "objective12",
+            "targetHandle": "unlocked-by",
+            "kind": "unlock"
+          },
+          {
+            "id": "edge45",
+            "source": "objective12",
+            "sourceHandle": "unlock",
+            "target": "objective13",
+            "targetHandle": "unlocked-by",
+            "kind": "unlock"
+          },
+          {
+            "id": "edge46",
+            "source": "objective13",
+            "sourceHandle": "unlock",
+            "target": "objective14",
+            "targetHandle": "unlocked-by",
+            "kind": "unlock"
+          },
+          {
+            "id": "edge16",
+            "source": "trigger-event15",
+            "sourceHandle": "when",
+            "target": "objective8",
+            "targetHandle": "trigger",
+            "kind": "condition"
+          },
+          {
+            "id": "edge18",
+            "source": "trigger-event17",
+            "sourceHandle": "when",
+            "target": "objective9",
+            "targetHandle": "trigger",
+            "kind": "condition"
+          },
+          {
+            "id": "edge20",
+            "source": "trigger-event19",
+            "sourceHandle": "when",
+            "target": "objective10",
+            "targetHandle": "trigger",
+            "kind": "condition"
+          },
+          {
+            "id": "edge22",
+            "source": "trigger-event21",
+            "sourceHandle": "when",
+            "target": "objective11",
+            "targetHandle": "trigger",
+            "kind": "condition"
+          },
+          {
+            "id": "edge24",
+            "source": "trigger-event23",
+            "sourceHandle": "when",
+            "target": "objective12",
+            "targetHandle": "trigger",
+            "kind": "condition"
+          },
+          {
+            "id": "edge26",
+            "source": "trigger-event25",
+            "sourceHandle": "when",
+            "target": "objective13",
+            "targetHandle": "trigger",
+            "kind": "condition"
+          },
+          {
+            "id": "edge28",
+            "source": "trigger-event27",
+            "sourceHandle": "when",
+            "target": "objective14",
+            "targetHandle": "trigger",
+            "kind": "condition"
+          },
+          {
+            "id": "edge47",
+            "source": "objective13",
+            "sourceHandle": "done",
+            "target": "fx-setData29",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "edge48",
+            "source": "entry-load2",
+            "sourceHandle": "out",
+            "target": "reply-hackertyper30",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "edge49",
+            "source": "objective14",
+            "sourceHandle": "done",
+            "target": "flow-branch31",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "edge50",
+            "source": "flow-branch31",
+            "sourceHandle": "true",
+            "target": "comms-dialogue32",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "edge51",
+            "source": "comms-dialogue32",
+            "sourceHandle": "out",
+            "target": "fx-pay33",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "edge52",
+            "source": "flow-branch31",
+            "sourceHandle": "false",
+            "target": "comms-dialogue34",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "edge53",
+            "source": "entry-complete3",
+            "sourceHandle": "out",
+            "target": "fx-notify35",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "tqQeRdvARn",
+            "source": "objective12",
+            "sourceHandle": "done",
+            "target": "V8VLDov6gK",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "1XPGaVFU23",
+            "source": "fx-setData29",
+            "sourceHandle": "out",
+            "target": "LN-ORrsLyT",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "oZbAOM_yts",
+            "source": "flow-branch31",
+            "sourceHandle": "true",
+            "target": "rNNQEbM6Vr",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "O6locqperT",
+            "source": "flow-branch31",
+            "sourceHandle": "false",
+            "target": "h02bD2Z1BD",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "wxTbrZa7P6",
+            "source": "comms-dialogue32",
+            "sourceHandle": "out",
+            "target": "rivkuJ4qGP",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "jyQoXCKIBc",
+            "source": "comms-dialogue34",
+            "sourceHandle": "out",
+            "target": "HMPlXusUnb",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "semiptr6_O",
+            "source": "fx-pay33",
+            "sourceHandle": "out",
+            "target": "LEDEf_OLWQ",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "04J1UqGjcj",
+            "source": "world-network4",
+            "sourceHandle": "out",
+            "target": "DV92IXzNg-",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "HsJQarXEfi",
+            "source": "objective11",
+            "sourceHandle": "done",
+            "target": "fGNovT-CrK",
+            "targetHandle": "in",
+            "kind": "flow"
+          }
+        ]
+      }
+    }
+  ],
+  "websites": [
+    {
+      "id": "site-meridian",
+      "host": "meridian-capital.net",
+      "name": "Meridian Capital",
+      "pages": [
+        {
+          "id": "page-meridian-1",
+          "path": "/",
+          "title": "Home",
+          "seo": true,
+          "template": "corp-home",
+          "content": "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>Meridian Capital — Discreet asset management</title>\n<style>\n:root{--navy:#0d2b45;--navy2:#123a5c;--gold:#c9a227;--ink:#22303e;--mut:#5c6b7a;--bg:#f5f7fa;--line:#dfe6ee}\n*{box-sizing:border-box;margin:0}\nbody{font:15px/1.6 system-ui,-apple-system,\"Segoe UI\",Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}\na{color:var(--navy)}\nheader{background:var(--navy);color:#fff;position:sticky;top:0;z-index:5}\n.nav{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:26px;padding:13px 20px}\n.logo{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.4px}\n.logo svg{width:24px;height:24px}\nnav{margin-left:auto;display:flex;gap:20px;font-size:13.5px}\nnav a{color:#cfd9e4;text-decoration:none}\nnav a:hover{color:#fff}\nmain{max-width:1040px;margin:0 auto;padding:48px 20px}\nh1.pg{font-size:30px;margin-bottom:8px}\np.sub{color:var(--mut);margin-bottom:28px;max-width:64ch}\nfooter{background:var(--navy);color:#9db1c5;font-size:12.5px;padding:24px 20px;margin-top:40px}\n.foot{max-width:1040px;margin:0 auto;display:flex;gap:22px;flex-wrap:wrap}\nfooter a{color:#cfd9e4;text-decoration:none}\n.btn{display:inline-block;background:var(--gold);color:#152238;font-weight:600;padding:11px 20px;border-radius:6px;text-decoration:none;font-size:14px}\n.btn.ghost{background:transparent;color:#fff;border:1px solid #46617c;margin-left:10px}\n\n.hero{background:linear-gradient(135deg,var(--navy),var(--navy2) 70%);color:#fff;padding:76px 20px 88px}\n.hero-in{max-width:1040px;margin:0 auto}\n.hero h1{font-size:42px;line-height:1.12;max-width:620px;font-weight:750}\n.hero p{margin:16px 0 26px;color:#c4d2e0;max-width:540px;font-size:16px}\n.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}\n.card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px}\n.card .tag{font-size:11px;color:var(--navy);background:#e8eef5;border-radius:99px;padding:2px 10px;display:inline-block;margin-bottom:12px}\n.card h3{font-size:15.5px;margin-bottom:8px}\n.card p{font-size:13.5px;color:var(--mut)}\n.band{background:#fff;border-block:1px solid var(--line);padding:46px 20px;text-align:center}\n.band p{max-width:620px;margin:0 auto;color:var(--mut)}\n</style>\n</head>\n<body>\n\n<header><div class=\"nav\">\n  <span class=\"logo\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#c9a227\" stroke-width=\"2\"><path d=\"M3 21V7l7-4 7 4v14\"/><path d=\"M3 21h18\"/><path d=\"M10 21v-6h4v6\"/></svg>Meridian Capital</span>\n  <nav><a href=\"/\">Home</a><a href=\"/about/team\">Team</a><a href=\"/status\">Status</a><a href=\"/contact\">Contact</a></nav>\n</div></header>\n<div class=\"hero\"><div class=\"hero-in\">\n  <h1>Discreet asset management for a connected world.</h1>\n  <p>Meridian Capital safeguards portfolios, settles privately, and reports honestly — since 2009.</p>\n  <a class=\"btn\" href=\"/contact\">Open an enquiry</a><a class=\"btn ghost\" href=\"/about/team\">Meet the team</a>\n</div></div>\n<main>\n  <div class=\"cards\">\n    <div class=\"card\"><span class=\"tag\">Custody</span><h3>Portfolio custody</h3><p>Cold storage, dual control, and quarterly attestation for every client position.</p></div>\n    <div class=\"card\"><span class=\"tag\">Analytics</span><h3>Risk analytics</h3><p>Exposure dashboards refreshed hourly, stress-tested against your own thresholds.</p></div>\n    <div class=\"card\"><span class=\"tag\">Settlement</span><h3>Private settlements</h3><p>Counterparty-matched settlement windows with end-to-end encrypted statements.</p></div>\n  </div>\n</main>\n<div class=\"band\"><p>“We keep a low profile on purpose. The less the internet knows about us, the better we sleep.” — H. Voss, Chief Executive</p></div>\n\n<footer><div class=\"foot\">\n  <span>© 2026 Meridian Capital AG</span><span>Hafnerweg 12, Munich</span>\n  <a href=\"/contact\">Contact</a><a href=\"/status\">Service status</a>\n</div></footer>\n</body>\n</html>"
+        },
+        {
+          "id": "page-meridian-2",
+          "path": "/about/team",
+          "title": "Our team",
+          "seo": true,
+          "template": "team",
+          "content": "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>Our team — Meridian Capital</title>\n<style>\n:root{--navy:#0d2b45;--navy2:#123a5c;--gold:#c9a227;--ink:#22303e;--mut:#5c6b7a;--bg:#f5f7fa;--line:#dfe6ee}\n*{box-sizing:border-box;margin:0}\nbody{font:15px/1.6 system-ui,-apple-system,\"Segoe UI\",Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}\na{color:var(--navy)}\nheader{background:var(--navy);color:#fff;position:sticky;top:0;z-index:5}\n.nav{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:26px;padding:13px 20px}\n.logo{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.4px}\n.logo svg{width:24px;height:24px}\nnav{margin-left:auto;display:flex;gap:20px;font-size:13.5px}\nnav a{color:#cfd9e4;text-decoration:none}\nnav a:hover{color:#fff}\nmain{max-width:1040px;margin:0 auto;padding:48px 20px}\nh1.pg{font-size:30px;margin-bottom:8px}\np.sub{color:var(--mut);margin-bottom:28px;max-width:64ch}\nfooter{background:var(--navy);color:#9db1c5;font-size:12.5px;padding:24px 20px;margin-top:40px}\n.foot{max-width:1040px;margin:0 auto;display:flex;gap:22px;flex-wrap:wrap}\nfooter a{color:#cfd9e4;text-decoration:none}\n.btn{display:inline-block;background:var(--gold);color:#152238;font-weight:600;padding:11px 20px;border-radius:6px;text-decoration:none;font-size:14px}\n.btn.ghost{background:transparent;color:#fff;border:1px solid #46617c;margin-left:10px}\n\n.people{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}\n.person{background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px;text-align:center}\n.ava{width:64px;height:64px;border-radius:50%;background:var(--navy);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;margin:0 auto 12px}\n.person h3{font-size:15.5px}\n.person .role{color:var(--mut);font-size:12.5px;margin:4px 0 10px}\n.person a{font-size:12.5px}\n</style>\n</head>\n<body>\n\n<header><div class=\"nav\">\n  <span class=\"logo\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#c9a227\" stroke-width=\"2\"><path d=\"M3 21V7l7-4 7 4v14\"/><path d=\"M3 21h18\"/><path d=\"M10 21v-6h4v6\"/></svg>Meridian Capital</span>\n  <nav><a href=\"/\">Home</a><a href=\"/about/team\">Team</a><a href=\"/status\">Status</a><a href=\"/contact\">Contact</a></nav>\n</div></header>\n<main>\n  <h1 class=\"pg\">Our team</h1>\n  <p class=\"sub\">Small on purpose. Every account is known by name, not by number.</p>\n  <div class=\"people\">\n    <div class=\"person\"><div class=\"ava\">HV</div><h3>H. Voss</h3><p class=\"role\">Chief Executive</p><a href=\"mailto:h.voss@meridian-capital.net\">h.voss@meridian-capital.net</a></div>\n    <div class=\"person\"><div class=\"ava\">MI</div><h3>M. Iyer</h3><p class=\"role\">Head of Settlements</p><a href=\"mailto:m.iyer@meridian-capital.net\">m.iyer@meridian-capital.net</a></div>\n    <div class=\"person\"><div class=\"ava\">DO</div><h3>D. Okafor</h3><p class=\"role\">Systems Administrator</p><a href=\"mailto:d.okafor@meridian-capital.net\">d.okafor@meridian-capital.net</a></div>\n  </div>\n</main>\n\n<footer><div class=\"foot\">\n  <span>© 2026 Meridian Capital AG</span><span>Hafnerweg 12, Munich</span>\n  <a href=\"/contact\">Contact</a><a href=\"/status\">Service status</a>\n</div></footer>\n</body>\n</html>"
+        },
+        {
+          "id": "page-meridian-3",
+          "path": "/status",
+          "title": "Service status",
+          "seo": true,
+          "template": "status",
+          "content": "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>Status — Meridian Capital</title>\n<style>\n*{box-sizing:border-box;margin:0}\nbody{font:14px/1.6 system-ui,-apple-system,\"Segoe UI\",Roboto,Arial,sans-serif;color:#1f2937;background:#f8fafc}\n.wrap{max-width:860px;margin:0 auto;padding:40px 20px}\nh1{font-size:22px;margin-bottom:4px}\np.upd{color:#64748b;font-size:12.5px;margin-bottom:22px}\n.banner{display:flex;align-items:center;gap:10px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;border-radius:8px;padding:12px 16px;font-weight:600;margin-bottom:26px}\n.dot{width:10px;height:10px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 4px #dcfce7}\n.row{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin-bottom:8px}\n.row .name{font-weight:600}\n.row .up{margin-left:auto;color:#64748b;font-size:12px;font-family:ui-monospace,Menlo,Consolas,monospace}\n.badge{font-size:11px;font-weight:700;border-radius:99px;padding:3px 10px}\n.ok{background:#dcfce7;color:#15803d}\n.warn{background:#fef3c7;color:#b45309}\nh2{font-size:15px;margin:28px 0 10px}\n.inc{border-left:3px solid #f59e0b;background:#fffbeb;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:8px;font-size:13px}\n.inc .d{font-family:ui-monospace,Menlo,Consolas,monospace;color:#92400e;font-size:11.5px}\n</style>\n</head>\n<body>\n<div class=\"wrap\">\n  <h1>Meridian Capital — service status</h1>\n  <p class=\"upd\">Updated 5 minutes ago · All times CET</p>\n  <div class=\"banner\"><span class=\"dot\"></span>All systems operational</div>\n  <div class=\"row\"><span class=\"name\">Client portal</span><span class=\"up\">99.98% · 90d</span><span class=\"badge ok\">Operational</span></div>\n  <div class=\"row\"><span class=\"name\">Settlement API</span><span class=\"up\">99.91% · 90d</span><span class=\"badge ok\">Operational</span></div>\n  <div class=\"row\"><span class=\"name\">VPN concentrator</span><span class=\"up\">97.40% · 90d</span><span class=\"badge warn\">Degraded</span></div>\n  <h2>Past incidents</h2>\n  <div class=\"inc\"><span class=\"d\">2026-07-14</span> — VPN concentrator rebooted after firmware update (ticket NC-1187). Resolved 02:41.</div>\n  <div class=\"inc\"><span class=\"d\">2026-05-02</span> — Mail relay delay, resolved within the hour.</div>\n</div>\n</body>\n</html>"
+        },
+        {
+          "id": "page-meridian-4",
+          "path": "/contact",
+          "title": "Contact",
+          "seo": true,
+          "template": "contact",
+          "content": "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<title>Contact — Meridian Capital</title>\n<style>\n:root{--navy:#0d2b45;--navy2:#123a5c;--gold:#c9a227;--ink:#22303e;--mut:#5c6b7a;--bg:#f5f7fa;--line:#dfe6ee}\n*{box-sizing:border-box;margin:0}\nbody{font:15px/1.6 system-ui,-apple-system,\"Segoe UI\",Roboto,Arial,sans-serif;color:var(--ink);background:var(--bg)}\na{color:var(--navy)}\nheader{background:var(--navy);color:#fff;position:sticky;top:0;z-index:5}\n.nav{max-width:1040px;margin:0 auto;display:flex;align-items:center;gap:26px;padding:13px 20px}\n.logo{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.4px}\n.logo svg{width:24px;height:24px}\nnav{margin-left:auto;display:flex;gap:20px;font-size:13.5px}\nnav a{color:#cfd9e4;text-decoration:none}\nnav a:hover{color:#fff}\nmain{max-width:1040px;margin:0 auto;padding:48px 20px}\nh1.pg{font-size:30px;margin-bottom:8px}\np.sub{color:var(--mut);margin-bottom:28px;max-width:64ch}\nfooter{background:var(--navy);color:#9db1c5;font-size:12.5px;padding:24px 20px;margin-top:40px}\n.foot{max-width:1040px;margin:0 auto;display:flex;gap:22px;flex-wrap:wrap}\nfooter a{color:#cfd9e4;text-decoration:none}\n.btn{display:inline-block;background:var(--gold);color:#152238;font-weight:600;padding:11px 20px;border-radius:6px;text-decoration:none;font-size:14px}\n.btn.ghost{background:transparent;color:#fff;border:1px solid #46617c;margin-left:10px}\n\n.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}\n.box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:22px}\n.box h3{font-size:14px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);margin-bottom:10px}\n.box p{font-size:14px}\n.note{margin-top:22px;border:1px dashed var(--line);background:#fff;border-radius:10px;padding:16px 20px;color:var(--mut);font-size:13px}\n</style>\n</head>\n<body>\n\n<header><div class=\"nav\">\n  <span class=\"logo\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#c9a227\" stroke-width=\"2\"><path d=\"M3 21V7l7-4 7 4v14\"/><path d=\"M3 21h18\"/><path d=\"M10 21v-6h4v6\"/></svg>Meridian Capital</span>\n  <nav><a href=\"/\">Home</a><a href=\"/about/team\">Team</a><a href=\"/status\">Status</a><a href=\"/contact\">Contact</a></nav>\n</div></header>\n<main>\n  <h1 class=\"pg\">Contact</h1>\n  <p class=\"sub\">We answer within one business day. Usually sooner.</p>\n  <div class=\"grid\">\n    <div class=\"box\"><h3>Visit</h3><p>Hafnerweg 12<br>80992 Munich<br>By appointment only.</p></div>\n    <div class=\"box\"><h3>Write</h3><p><a href=\"mailto:press@meridian-capital.net\">press@meridian-capital.net</a><br><a href=\"mailto:clients@meridian-capital.net\">clients@meridian-capital.net</a></p></div>\n    <div class=\"box\"><h3>Call</h3><p>+49 89 000 000<br>Mon–Fri, 9:00–17:00</p></div>\n  </div>\n  <div class=\"note\">We do not accept unsolicited security research. Reports sent to personal mailboxes are deleted unread.</div>\n</main>\n\n<footer><div class=\"foot\">\n  <span>© 2026 Meridian Capital AG</span><span>Hafnerweg 12, Munich</span>\n  <a href=\"/contact\">Contact</a><a href=\"/status\">Service status</a>\n</div></footer>\n</body>\n</html>"
+        },
+        {
+          "id": "page-meridian-5",
+          "path": "/files/internal/q3-audit",
+          "title": "Q3 internal audit",
+          "seo": false,
+          "template": "hidden-leak",
+          "content": "<!doctype html>\n<html>\n<head>\n<meta charset=\"utf-8\">\n<title>q3-audit.txt</title>\n<style>\nbody{font:13.5px/1.7 Georgia,\"Times New Roman\",serif;color:#111;background:#fdfdf8;padding:48px 20px}\n.sheet{max-width:680px;margin:0 auto;background:#fff;border:1px solid #d8d4c8;padding:44px 48px;box-shadow:0 1px 4px rgba(0,0,0,.08)}\n.stamp{display:inline-block;border:3px double #b91c1c;color:#b91c1c;font-weight:700;letter-spacing:2px;padding:4px 12px;transform:rotate(-2deg);font-size:15px;margin-bottom:18px}\n.meta{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#555;border-bottom:1px solid #ccc;padding-bottom:10px;margin-bottom:18px}\nh1{font-size:19px;margin-bottom:12px}\np{margin:0 0 10px}\nstrong.red{background:#ffe4e6}\n</style>\n</head>\n<body>\n<div class=\"sheet\">\n  <span class=\"stamp\">INTERNAL — DO NOT DISTRIBUTE</span>\n  <div class=\"meta\">doc: Q3-SETTLEMENT-AUDIT · rev 3 · authored d.okafor · retention: 7y</div>\n  <h1>Q3 settlement audit — findings</h1>\n  <p>1. The offshore batch continues to settle through <strong class=\"red\">router 10.9.4.2</strong> until the Frankfurt move completes.</p>\n  <p>2. Archive access rotates weekly. Current procedure: ask <strong>D. Okafor</strong> on the internal channel; the temporary phrase follows the usual <strong class=\"red\">month-favourite-planet</strong> scheme.</p>\n  <p>3. Stop printing this document.</p>\n</div>\n</body>\n</html>"
+        }
+      ]
+    }
+  ],
+  "editor": {
+    "activeQuestId": "q-contract-hack",
+    "viewports": {
+      "q-contract-hack": {
+        "x": -1432.7170287243157,
+        "y": -538.4487182877588,
+        "zoom": 1.278512286082632
+      }
+    }
+  }
+}

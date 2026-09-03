@@ -1,0 +1,25 @@
+{
+  "id": "nemesis-protocol-stage1",
+  "name": "Nemesis Protocol",
+  "version": "0.0.66",
+  "apiVersion": 1,
+  "author": "tz1k",
+  "description": "A cinematic investigation mission for HackHub.\nTrace Marek’s last trail through compromised networks, hidden archives, classified evidence, and the buried machinery behind Operation Nemesis.",
+  "permissions": [
+    "events",
+    "mail",
+    "network",
+    "ui",
+    "shell",
+    "filesystem"
+  ],
+  "dependencies": [],
+  "tags": [
+    "quest",
+    "story",
+    "website",
+    "network"
+  ],
+  "icon": "assets/nemesis-mod-logo.png",
+  "cover": "assets/nemesis-workshop-cover.png"
+}

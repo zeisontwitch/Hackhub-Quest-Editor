@@ -1877,6 +1877,34 @@ function __qeRegisterProject(sdk, PROJECT) {
                                 return;
                             }
                             fired = true;
+                            /* Story beats FIRST, tick the objective LAST.
+
+                               completeObjective on the final objective makes
+                               the engine retire the quest and call OnComplete
+                               synchronously, from inside this very handler -
+                               which is itself running inside the engine's own
+                               event dispatch. QA's log shows the nesting
+                               plainly: "OnComplete: starting" printed BEFORE
+                               "objective send-manifest completed by Mail.Sent".
+                               Anything we did after that call - sending the
+                               closing mail, paying the player - ran three
+                               levels deep inside a dispatch the engine thought
+                               it had finished, and the renderer froze (r82).
+
+                               Doing the author's wires first means that by the
+                               time the engine re-enters us there is nothing of
+                               ours left on the stack, so the nested OnComplete
+                               unwinds cleanly.
+
+                               Deliberately NOT deferred to a timer: r45 - the
+                               engine only grants this mod permissions inside a
+                               call it made, and work moved to a later tick
+                               loses that identity. Nemesis sends mail straight
+                               from a Mail.Sent handler and is fine; what it
+                               never does is call completeObjective there. */
+                            doneEdges.forEach(function (e) {
+                                runFlow(e.target, { payload: data, vars: {} }, 0);
+                            });
                             if (n.data.name) {
                                 try {
                                     self.completeObjective(n.data.name);
@@ -1886,9 +1914,6 @@ function __qeRegisterProject(sdk, PROJECT) {
                                         (e && e.message ? e.message : e));
                                 }
                             }
-                            doneEdges.forEach(function (e) {
-                                runFlow(e.target, { payload: data, vars: {} }, 0);
-                            });
                         };
                         listenFor.forEach(function (evName) {
                             self.Events.on(evName, function (data) { onEvent(data, evName); });

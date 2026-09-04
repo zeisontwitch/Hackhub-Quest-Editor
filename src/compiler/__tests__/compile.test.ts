@@ -5169,3 +5169,61 @@ describe("r81: the Harbour template leaves its server behind", () => {
         expect(calls.filter((c) => c.startsWith("destroy:"))).toEqual([]);
     });
 });
+
+describe("r82: finishing the last objective does not re-enter the engine mid-flow", () => {
+    /* Build a quest whose final objective is completed by an event, with a
+       mail + payment wired to its "done" handle - QA's exact shape. */
+    function build() {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const obj = node("objective", { name: "send-manifest", description: "Send it" });
+        const trig = node("trigger.event", { event: "Mail.Sent", conditions: [] });
+        const pay = node("fx.pay", {
+            amountMode: "fixed", amount: 2500,
+            description: "Manifest from {{data.targetIp}}", fromName: "D. Okonkwo",
+        });
+        p.quests[0].graph.nodes = [obj, trig, pay];
+        p.quests[0].graph.edges = [
+            edge(trig.id, obj.id, "condition"),
+            { ...edge(obj.id, pay.id, "flow"), sourceHandle: "done" },
+        ];
+        const calls: string[] = [];
+        const listeners: [string, (d: unknown) => void][] = [];
+        const sdk = stubSdk(calls, listeners) as any;
+        sdk.Bank = { transaction: (t: { description: string }) => calls.push(`pay:${t.description}`) };
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        quest.Data.targetIp = "203.0.113.7";
+        quest.OnStart();
+        if (quest.OnObjectivesStart) quest.OnObjectivesStart();
+        return { quest, calls, listeners };
+    }
+
+    it("runs the author's story beats before ticking the objective", () => {
+        const { calls, listeners } = build();
+        const fire = listeners.find(([e]) => e === "Mail.Sent")![1];
+        fire({ id: "m1", from: "a@b.c", to: "d@e.f", subject: "File", content: "x" });
+        const payAt = calls.findIndex((c) => c.startsWith("pay:"));
+        const tickAt = calls.findIndex((c) => c === "complete:send-manifest");
+        expect(payAt).toBeGreaterThanOrEqual(0);
+        expect(tickAt).toBeGreaterThanOrEqual(0);
+        expect(payAt, "payment must land before the objective ticks").toBeLessThan(tickAt);
+    });
+
+    it("survives the engine retiring the quest inside completeObjective", () => {
+        // The real engine calls OnComplete synchronously from completeObjective
+        // on the last objective. Reproduce that re-entry exactly.
+        const { quest, calls, listeners } = build();
+        const orig = quest.completeObjective.bind(quest);
+        quest.completeObjective = (name: string) => {
+            orig(name);
+            quest.Data = undefined; // the engine retires the quest's data
+            quest.OnComplete();
+        };
+        const fire = listeners.find(([e]) => e === "Mail.Sent")![1];
+        expect(() => fire({ id: "m1", from: "a@b.c", to: "d@e.f", subject: "File", content: "x" })).not.toThrow();
+        // and the payment still carried the live value, not a blank
+        expect(calls).toContain("pay:Manifest from 203.0.113.7");
+    });
+});

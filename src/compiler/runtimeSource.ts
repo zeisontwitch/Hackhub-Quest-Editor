@@ -447,12 +447,18 @@ function __qeRegisterProject(sdk, PROJECT) {
                 .filter(function (e) { return e.kind === "condition" && e.target === n.id; })
                 .map(function (e) { return byId[e.source]; })
                 .filter(function (s) { return s && s.type === "trigger.event"; })[0];
-            var o = { name: n.data.name, description: n.data.description };
+            /* Objective text carries {{tokens}} like everything else an author
+               writes - and since r73 the target address is one, because the
+               game allocates it. This list is built when the class is defined,
+               before CreateData() has run, so the tokens cannot be resolved
+               yet; refillObjectives() below does it once the quest starts.
+               QA saw the raw "nmap {{data.targetIp}} -sV" in the quest panel. */
+            var o = { name: n.data.name, description: __QE.fill(n.data.description || "", dataScope()) };
             if (unlocks.length) o.unlocksAfter = unlocks;
             if (n.data.hidden) o.hidden = true;
-            if (n.data.hint) o.hint = n.data.hint;
-            if (n.data.info) o.info = n.data.info;
-            if (n.data.terminalCommand) o.terminalCommand = n.data.terminalCommand;
+            if (n.data.hint) o.hint = __QE.fill(n.data.hint, dataScope());
+            if (n.data.info) o.info = __QE.fill(n.data.info, dataScope());
+            if (n.data.terminalCommand) o.terminalCommand = __QE.fill(n.data.terminalCommand, dataScope());
             /* The declarative trigger is still declared, even though
                OnObjectivesStart now completes the objective imperatively as
                well. Whichever one the build honours, the objective ticks off,
@@ -468,6 +474,22 @@ function __qeRegisterProject(sdk, PROJECT) {
             }
             return o;
         });
+
+        /* Fill the objectives' {{tokens}} again now that the quest has its
+           Data. Called at the top of OnStart, which is the first moment
+           CreateData() has run and {{data.targetIp}} resolves to a real
+           address. Writes onto the array the engine is holding. */
+        function refillObjectives() {
+            if (!questRef || !questRef.Objectives) return;
+            objectiveNodes.forEach(function (n, i) {
+                var o = questRef.Objectives[i];
+                if (!o) return;
+                o.description = __QE.fill(n.data.description || "", dataScope());
+                if (n.data.hint) o.hint = __QE.fill(n.data.hint, dataScope());
+                if (n.data.info) o.info = __QE.fill(n.data.info, dataScope());
+                if (n.data.terminalCommand) o.terminalCommand = __QE.fill(n.data.terminalCommand, dataScope());
+            });
+        }
 
         /* Builds the scope object {{token}} fields resolve against.
            data/Data both point at the quest's own persisted Data (set via
@@ -933,6 +955,19 @@ function __qeRegisterProject(sdk, PROJECT) {
                        of the quest with it. */
                     if (sdk.Shell && sdk.Shell.addCommandData) {
                         var trInput = __qeCommandInput(d, scope);
+                        /* Scripted tool answers live in the SAVE, the same as
+                           networks do, and an older build's answer wins over a
+                           new one for the same input. QA scanned a fresh random
+                           address and whois still printed the address a
+                           previous export had written - so the scan objective
+                           could never match.
+
+                           removeCommandData returns void, not a promise, so
+                           clearing first is safe here: no race, no await, and
+                           the quest keeps its permissions. */
+                        if (sdk.Shell.removeCommandData) {
+                            __QE.safe(function () { sdk.Shell.removeCommandData(d.command, trInput); });
+                        }
                         sdk.Shell.addCommandData(d.command, trInput, __qeCommandData(d.command, __QE.fill(d.dataText || "", scope)));
                         if (d.removeOnComplete !== false) {
                             questCleanup.push({ kind: "commandData", command: d.command, input: trInput });
@@ -1429,6 +1464,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                        complete objectives, so bind it here rather than trusting
                        whatever the last constructor saw. */
                     questRef = this;
+                    refillObjectives();
                     var ctx = { payload: {}, vars: {} };
                     var starts = g.nodes.filter(function (n) { return n.type === "entry.start"; });
                     /* Logged unconditionally. A quest whose OnStart never runs

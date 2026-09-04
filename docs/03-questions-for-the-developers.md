@@ -47,6 +47,23 @@ Every network now takes a game-allocated address (`Network.randomIp()` in
 
 ---
 
+## 1b. Does `Shell.addCommandData` also persist in the save?
+
+**What we see.** Yes, apparently, and with the same "older entry wins" rule as
+networks. A quest that had allocated a fresh address still had `whois` answer
+with the address a *previous export* of the same mod had written, so the player
+scanned a machine that no longer existed.
+
+**Where we landed.** We call `removeCommandData(command, input)` before every
+`addCommandData` for the same input. That one returns `void` rather than a
+promise, so unlike the network case there is no race to lose.
+
+**What we would like to know.** Is scripted command data expected to outlive the
+mod that registered it? Is `removeCommandData` the right way to replace an
+entry, or is there an overwrite we should be using instead?
+
+---
+
 ## 2. Is `QuestObjectiveDefinition.trigger` honoured?
 
 **What we see.** Declaring an objective with

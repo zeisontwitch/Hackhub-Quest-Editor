@@ -1,4 +1,16 @@
 /**
+ * The address of the machine a quest is built around.
+ *
+ * The game allocates it per playthrough (`Network.randomIp()` in
+ * `CreateData()`), and the author never types it: networks live in the save and
+ * outlive the mod, so a fixed address meant a re-exported build collided with
+ * its own older self (r73). Anywhere an author needs the address — a whois
+ * answer, an objective hint, a mail — this token is filled in for them, and the
+ * inspector shows "Random IP" rather than the token itself.
+ */
+export const TARGET_IP_TOKEN = "{{data.targetIp}}";
+
+/**
  * Shared primitives for the project document.
  *
  * Everything here is deliberately JSON-serialisable: the document is the single

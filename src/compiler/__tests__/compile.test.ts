@@ -4214,3 +4214,98 @@ describe("network addresses come from the game, not from the author", () => {
         expect(JSON.stringify(toolData.whois)).toContain(q.Data.targetIp);
     });
 });
+
+/**
+ * QA, round 74. With addresses allocated by the game (r73), a fresh run built
+ * its server at 126.117.10.72 — and `whois` still answered 203.0.113.47, an
+ * address a *previous export* had written. The player scanned that, found
+ * nothing, and the objective could not match.
+ *
+ * So scripted tool answers persist in the save exactly like networks do, and an
+ * older entry for the same input wins. Unlike `destroyNetwork`,
+ * `removeCommandData` returns `void`, so clearing first costs nothing: no
+ * promise, no race, no permission window to leave.
+ */
+describe("scripted tool answers replace whatever an older build left behind", () => {
+    function run() {
+        const p = getTemplate("data-grab")!.build();
+        /* A save that already holds a previous export's whois answer. */
+        const store: Record<string, unknown> = { "whois|harbourline-logistics.com": { ip: "203.0.113.47" } };
+        const sdk = stubSdk([], []) as any;
+        sdk.Shell = {
+            addCommandData: (c: string, i: unknown, d: unknown) => { store[`${c}|${String(i)}`] = d; },
+            removeCommandData: (c: string, i: unknown) => { delete store[`${c}|${String(i)}`]; },
+        };
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = q.CreateData();
+        q.OnStart();
+        return { store, q };
+    }
+
+    it("answers with this build's address, not the one already in the save", () => {
+        const { store, q } = run();
+        const whois = store["whois|harbourline-logistics.com"] as { ip: string };
+        expect(whois.ip).toBe(q.Data.targetIp);
+        expect(whois.ip).not.toBe("203.0.113.47");
+    });
+
+    it("clears the old entry before writing, and never awaits", () => {
+        // removeCommandData is void — that is why this is safe here and the
+        // same trick was not safe for networks (r55/r56/r72).
+        const order: string[] = [];
+        const p = getTemplate("data-grab")!.build();
+        const sdk = stubSdk([], []) as any;
+        sdk.Shell = {
+            addCommandData: (c: string) => order.push(`add:${c}`),
+            removeCommandData: (c: string) => order.push(`remove:${c}`),
+        };
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = q.CreateData();
+        q.OnStart();
+        expect(order.indexOf("remove:whois")).toBeLessThan(order.indexOf("add:whois"));
+    });
+
+    it("works on a build with no removeCommandData", () => {
+        const p = getTemplate("data-grab")!.build();
+        const sdk = stubSdk([], []) as any;
+        sdk.Shell = { addCommandData: () => {} };
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = q.CreateData();
+        expect(() => q.OnStart()).not.toThrow();
+    });
+});
+
+/**
+ * QA, round 74. The quest panel showed `nmap {{data.targetIp}} -sV` — the raw
+ * token, not an address. Objectives are built when the quest class is defined,
+ * which is before `CreateData()` has allocated anything, so the token could not
+ * resolve. They are refilled at the top of `OnStart`.
+ */
+describe("objectives show the address, not the token", () => {
+    function objectivesAfterStart() {
+        const p = getTemplate("data-grab")!.build();
+        const sdk = stubSdk([], []) as any;
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = q.CreateData();
+        q.OnStart();
+        return { objectives: q.Objectives as { name: string; description: string; hint?: string; terminalCommand?: string }[], ip: q.Data.targetIp };
+    }
+
+    it("fills the token in the command the player is told to run", () => {
+        const { objectives, ip } = objectivesAfterStart();
+        const scan = objectives.find((o) => o.name === "scan-server")!;
+        expect(scan.terminalCommand).toBe(`nmap ${ip} -sV`);
+    });
+
+    it("leaves no raw token anywhere in the quest panel text", () => {
+        const { objectives } = objectivesAfterStart();
+        for (const o of objectives) {
+            const text = `${o.description} ${o.hint ?? ""} ${o.terminalCommand ?? ""}`;
+            expect(text, o.name).not.toContain("{{");
+        }
+    });
+});

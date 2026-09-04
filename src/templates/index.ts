@@ -7,6 +7,7 @@
  * tests stay stable.
  */
 import { createProject, createQuest, type ProjectDocument } from "@/schema/project";
+import { TARGET_IP_TOKEN } from "@/schema/common";
 import { NODE_TYPES_REGISTRY, nodeTypeDef, sourcesOf } from "@/schema/registry";
 import type { NodeDoc, NodeType } from "@/schema/nodes";
 import type { EdgeDoc } from "@/schema/edges";
@@ -687,7 +688,7 @@ function buildContractHack(): ProjectDocument {
     const TARGET = "Anselm Ritter";
     const DOMAIN = "meridian-capital.net";
     /* Allocated by the game; {{data.targetIp}} reads it back (r73). */
-    const IP = "{{data.targetIp}}";
+    const IP = TARGET_IP_TOKEN;
     const HOST_IP = "192.168.1.24";
     const FILE = "ledger_q3";
 
@@ -1155,7 +1156,7 @@ function buildDataGrab(): ProjectDocument {
     /* The game allocates the address; {{data.targetIp}} reads it back. Typed
        addresses were removed in r73 — networks outlive the mod in the save, so
        a fixed one made a re-export collide with its own older build. */
-    const IP = "{{data.targetIp}}";
+    const IP = TARGET_IP_TOKEN;
     const FILE = "manifest_q4";
     const CLIENT = "d.okonkwo@nullpost.io";
 
@@ -1485,7 +1486,7 @@ function buildDirhunter(): ProjectDocument {
     resetIds();
     const HOST = "naza.gov";
     /* Allocated by the game; {{data.targetIp}} reads it back (r73). */
-    const EDGE_IP = "{{data.targetIp}}";
+    const EDGE_IP = TARGET_IP_TOKEN;
     const BOX_IP = "10.10.4.7";
     const USER = "t.reyes";
     const PASSWORD = "treyes3419";

@@ -58,6 +58,7 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 
 | Round | Item |
 |---|---|
+| r74 | Three from one test run: scripted tool answers persist in the save too, so `whois` still returned a previous export's address (now cleared before writing); objective text kept its raw `{{data.targetIp}}` because objectives are built before `CreateData()` runs (now refilled on start); and the device IP field shows a read-only **"Random IP"** instead of the token. |
 | r73 | **The game hung on "loading mods".** r72 returned a promise from `OnModPackageLoaded`, which the loader awaits — `destroyNetwork` on an address with no network never settled, so the game never reached its menu. Fixed at the cause instead: **manual IP entry is gone**, every network takes a game-allocated address, and a re-export can no longer collide with its own older build. New: `docs/03-questions-for-the-developers.md`. |
 | r72 | Reinstated the clear-the-address step r71 wrongly removed, in the one place it works: **`OnModPackageLoaded`**, which the SDK declares `void | Promise<void>` and which runs once before any quest. The destroy has settled by the time a quest builds, so the create stays synchronous and keeps its permissions. |
 | r71 | `nmap` reported "Host is down, no ports found": the destroy-before-create dance introduced in r55 was still racing — the async `destroyNetwork` resolved *after* the synchronous create and deleted the new network. The reference mod never calls `destroyNetwork` or `getSubnet` at all, so neither do we now. |

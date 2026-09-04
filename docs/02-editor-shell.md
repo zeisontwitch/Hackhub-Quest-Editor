@@ -3572,3 +3572,53 @@ being deleted, so the same ground is not covered twice.
 
 **Verification:** 686 tests (21 files, +3), `tsc --noEmit` clean, `vite build`
 clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r73"`.
+
+## Round 74 — three faults in one screenshot
+
+r73 moved addresses to the game. The next run found three things wrong with it,
+all visible in a single test.
+
+### The whois answer was still the old one
+
+The log said `saved { targetIp="126.117.10.72" }` and the game printed
+`Server: 203.0.113.47` — an address a *previous export* had written. So
+**`Shell.addCommandData` persists in the save exactly like a network does**, and
+an older entry for the same input wins. The player scanned a machine that no
+longer existed, and the scan objective could never match.
+
+`removeCommandData(command, input)` before each write fixes it. Worth noting
+why that is safe when the equivalent for networks was not: it returns `void`,
+not a promise. No race to lose, nothing to await, and the quest stays inside its
+permission window. The five rounds of pain over `destroyNetwork` were entirely
+down to it being async.
+
+### Objectives showed the raw token
+
+The quest panel read `nmap {{data.targetIp}} -sV`. Objectives are built when the
+quest class is *defined*, which is before `CreateData()` has allocated anything,
+so the token had nothing to resolve against. They are now filled at definition
+time (harmless) and **refilled at the top of `OnStart`**, once the address
+exists. A test asserts no `{{` survives into any objective's text.
+
+This was a consequence of r73 that r73 did not think through: making the address
+dynamic meant every place an author writes it had to become dynamic too, and
+objectives were the one path that never ran the token filler.
+
+### The IP field showed the token
+
+QA's point, and correct: an author should never see `{{data.targetIp}}`. The
+device IP field now renders a disabled input reading **"Random IP"** for the
+machine the quest is built around, with a hint explaining that the game gives it
+a fresh address each playthrough and that it is filled in wherever it is needed.
+Machines *behind* a router keep a real, editable LAN address, because those the
+author does choose.
+
+The token itself now lives in one place, `TARGET_IP_TOKEN` in
+`src/schema/common.ts`, so the editor, the compiler and the templates agree on
+it without three copies of a magic string.
+
+**Verification:** 691 tests (21 files, +5), `tsc --noEmit` clean, `vite build`
+clean. Driven against a save pre-loaded with a previous export's whois answer:
+the network is built at the new address, whois returns the new address, and the
+objective reads `nmap 126.117.10.72 -sV`. Export stamp:
+`EDITOR_BUILD = "2026-09-04.r74"`.

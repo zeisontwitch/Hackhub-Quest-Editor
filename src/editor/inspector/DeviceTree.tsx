@@ -12,6 +12,7 @@ import { nanoid } from "nanoid";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/Icon";
 import { DEVICE_TYPES, DEVICE_TYPE_LABELS, type DeviceType, type NetworkDevice } from "@/schema/common";
+import { TARGET_IP_TOKEN } from "@/schema/common";
 import { FIELD_GROUPS } from "@/schema/registry";
 import { useEditor } from "@/store/editor";
 import { ListEditor } from "./ListEditor";
@@ -56,7 +57,7 @@ export function DeviceEditor({
                     aria-hidden
                 />
                 <span className="truncate font-mono text-[11.5px] text-ink-2">
-                    {device.ip || "no IP"}
+                    {device.ip === TARGET_IP_TOKEN ? "Random IP" : device.ip || "no IP"}
                 </span>
                 <span className="ml-auto text-[10px] tracking-wider text-ink-4 uppercase">
                     {DEVICE_TYPE_LABELS[device.type]}
@@ -73,14 +74,30 @@ export function DeviceEditor({
                     />
                 </FieldShell>
 
-                <FieldShell label="IP address" hint="Use the {{data.targetIp}} token for the router of a randomly-addressed quest.">
-                    <TextInput
-                        ariaLabel="IP address"
-                        value={device.ip}
-                        onChange={(ip) => write({ ip })}
-                        mono
-                    />
-                </FieldShell>
+                {/* The address of the machine a quest is built around is
+                    allocated by the game, not typed (r73): networks live in the
+                    save and outlive the mod, so a fixed address meant a
+                    re-exported build collided with its own older self. The
+                    field shows "Random IP" rather than the raw token, because
+                    the author never has to know the token exists. Machines
+                    BEHIND a router keep a real, editable LAN address. */}
+                {device.ip === TARGET_IP_TOKEN ? (
+                    <FieldShell
+                        label="IP address"
+                        hint="The game gives this machine a fresh address every playthrough, so a re-exported mod can never clash with an older copy of itself. Anywhere you need the address — a whois answer, a hint, a mail — it is filled in for you."
+                    >
+                        <TextInput ariaLabel="IP address" value="Random IP" onChange={() => {}} disabled mono />
+                    </FieldShell>
+                ) : (
+                    <FieldShell label="IP address" hint="The address of this machine on the network behind the router.">
+                        <TextInput
+                            ariaLabel="IP address"
+                            value={device.ip}
+                            onChange={(ip) => write({ ip })}
+                            mono
+                        />
+                    </FieldShell>
+                )}
 
                 <FieldShell label="Hostname">
                     <TextInput

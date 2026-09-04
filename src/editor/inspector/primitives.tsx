@@ -93,6 +93,7 @@ export function TextInput({
     mono,
     id,
     ariaLabel,
+    disabled,
 }: {
     value: string;
     onChange: (value: string) => void;
@@ -100,6 +101,8 @@ export function TextInput({
     mono?: boolean;
     id?: string;
     ariaLabel?: string;
+    /** Shown but not editable — the value is decided for the author. */
+    disabled?: boolean;
 }) {
     return (
         <input
@@ -107,8 +110,9 @@ export function TextInput({
             aria-label={ariaLabel}
             value={value}
             placeholder={placeholder}
+            disabled={disabled}
             onChange={(e) => onChange(e.target.value)}
-            className={cn("field-input", mono && "font-mono text-[12px]")}
+            className={cn("field-input", mono && "font-mono text-[12px]", disabled && "cursor-not-allowed opacity-60")}
         />
     );
 }

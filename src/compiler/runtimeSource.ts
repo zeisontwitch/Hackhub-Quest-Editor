@@ -432,8 +432,10 @@ function __qeRegisterProject(sdk, PROJECT) {
                 return;
             }
             cleanedUp = true;
+            __QE.log("cleanup starting: " + questCleanup.length + " item(s) to undo");
             while (questCleanup.length) {
                 var item = questCleanup.pop();
+                __QE.log("cleanup: " + item.kind + " " + (item.ip || item.domain || item.command || item.id || ""));
                 try {
                     if (item.kind === "network" && sdk.Network.destroyNetwork) {
                         /* destroyNetwork is the ONLY cleanup call that returns
@@ -441,7 +443,14 @@ function __qeRegisterProject(sdk, PROJECT) {
                            the renderer with it. r75 guarded the copy in
                            reclaimDomain and missed this one (r79). */
                         var dp = sdk.Network.destroyNetwork(item.ip);
-                        if (dp && typeof dp.then === "function") dp.then(function () {}, function () {});
+                        if (dp && typeof dp.then === "function") {
+                            (function (ip) {
+                                dp.then(
+                                    function () { __QE.log("cleanup: network " + ip + " destroyed"); },
+                                    function (err) { __QE.log("cleanup: destroying network " + ip + " failed: " + err); }
+                                );
+                            })(item.ip);
+                        }
                     }
                     if (item.kind === "domain" && sdk.Network.removeDomain) sdk.Network.removeDomain(item.domain);
                     if (item.kind === "commandData" && sdk.Shell && sdk.Shell.removeCommandData) sdk.Shell.removeCommandData(item.command, item.input);
@@ -452,8 +461,12 @@ function __qeRegisterProject(sdk, PROJECT) {
                         if (item.action === "close" && sdk.Network.openPort) sdk.Network.openPort(item.ip, item.port);
                         if (item.action === "add" && sdk.Network.removePort) sdk.Network.removePort(item.ip, item.port);
                     }
-                } catch (e) { /* the world may already be gone; never block cleanup */ }
+                } catch (e) {
+                    /* the world may already be gone; never block cleanup */
+                    __QE.log("cleanup: " + item.kind + " failed (continuing): " + e);
+                }
             }
+            __QE.log("cleanup finished");
         }
 
         var objectiveNodes = g.nodes.filter(function (n) { return n.type === "objective"; });
@@ -1869,13 +1882,20 @@ function __qeRegisterProject(sdk, PROJECT) {
                        whatever the last constructor saw. */
                     questRef = this;
                     var ctx = { payload: {}, vars: {} };
+                    /* These traces exist because a freeze here leaves no other
+                       evidence: the renderer dies mid-hook and the log simply
+                       stops. Whichever line is last tells us the phase (r80). */
+                    __QE.log("OnComplete: starting");
                     runQuestCleanup();
+                    __QE.log("OnComplete: cleanup done, removing weechat servers");
                     weechatServers.forEach(function (s) {
                         if (sdk.WeeChat && sdk.WeeChat.removeServer) sdk.WeeChat.removeServer(s.host, s.password);
                     });
+                    __QE.log("OnComplete: running end-of-quest nodes");
                     g.nodes
                         .filter(function (n) { return n.type === "entry.complete"; })
                         .forEach(function (n) { runFlow(n.id, ctx, 0); });
+                    __QE.log("OnComplete: finished, handing back to the game");
                 }
                 OnAbandon() {
                     /* The engine may build this class more than once (metadata
@@ -1885,13 +1905,20 @@ function __qeRegisterProject(sdk, PROJECT) {
                        whatever the last constructor saw. */
                     questRef = this;
                     var ctx = { payload: {}, vars: {} };
+                    /* These traces exist because a freeze here leaves no other
+                       evidence: the renderer dies mid-hook and the log simply
+                       stops. Whichever line is last tells us the phase (r80). */
+                    __QE.log("OnAbandon: starting");
                     runQuestCleanup();
+                    __QE.log("OnAbandon: cleanup done, removing weechat servers");
                     weechatServers.forEach(function (s) {
                         if (sdk.WeeChat && sdk.WeeChat.removeServer) sdk.WeeChat.removeServer(s.host, s.password);
                     });
+                    __QE.log("OnAbandon: running end-of-quest nodes");
                     g.nodes
                         .filter(function (n) { return n.type === "entry.abandon"; })
                         .forEach(function (n) { runFlow(n.id, ctx, 0); });
+                    __QE.log("OnAbandon: finished, handing back to the game");
                 }
             };
             return cls;

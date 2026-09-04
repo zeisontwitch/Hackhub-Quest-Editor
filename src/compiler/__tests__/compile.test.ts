@@ -5008,6 +5008,43 @@ describe("finishing a quest never takes the game down with it", () => {
         expect(calls.some((c) => c.startsWith("destroy:"))).toBe(true);
     });
 
+    it("leaves a trail through OnComplete so a freeze has a last known line", async () => {
+        // The renderer dying mid-hook leaves no stack, only a log that stops.
+        // Whichever of these lines is last names the phase that froze (r80).
+        const seen: string[] = [];
+        const spy = vi.spyOn(console, "log").mockImplementation((m: unknown) => { seen.push(String(m)); });
+        try {
+            const { quest } = build();
+            quest.OnComplete();
+            await settle();
+        } finally {
+            spy.mockRestore();
+        }
+        const line = (frag: string) => seen.some((l) => l.includes(frag));
+        expect(line("OnComplete: starting")).toBe(true);
+        expect(line("cleanup starting: 1 item(s) to undo")).toBe(true);
+        expect(line("cleanup: network")).toBe(true);
+        expect(line("cleanup finished")).toBe(true);
+        expect(line("OnComplete: cleanup done")).toBe(true);
+        expect(line("OnComplete: running end-of-quest nodes")).toBe(true);
+        expect(line("OnComplete: finished, handing back to the game")).toBe(true);
+    });
+
+    it("says so in the log when destroying the network fails", async () => {
+        const seen: string[] = [];
+        const spy = vi.spyOn(console, "log").mockImplementation((m: unknown) => { seen.push(String(m)); });
+        try {
+            const { quest } = build({ destroyResult: () => Promise.reject(new Error("no such network")) });
+            quest.OnComplete();
+            await settle();
+        } finally {
+            spy.mockRestore();
+        }
+        expect(seen.some((l) => l.includes("failed: Error: no such network"))).toBe(true);
+        // and the hook still ran to the end
+        expect(seen.some((l) => l.includes("OnComplete: finished"))).toBe(true);
+    });
+
     it("does not tear the same world down twice", () => {
         // AutoComplete plus an already-completed objective can bring OnComplete
         // round again; destroying an absent network is the call that hung the

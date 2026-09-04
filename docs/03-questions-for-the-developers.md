@@ -209,18 +209,28 @@ without one; we have added it, but do not know if it is related.
 
 ## 9. Is Twotter available to mods?
 
-**What we see.** The declarations include a `Twotter` namespace and
-`Twotter.*` events, but no way to *create* a profile. Searching a handle that
-has no profile behind it crashes the game
-(`Cannot read properties of undefined (reading 'toLowerCase')`) and corrupts
-the save.
+**Correction (r89).** An earlier version of this entry said there was "no way
+to create a profile". That is **wrong** — `Twotter.createUser`, `addUser`,
+`postTweet`, `removeTweet`, `getUserByUsername`, `getUserById` and `toggleLike`
+all exist. The real fault is narrower and worse, and is written up properly as
+BUG 3 in `05-bug-report-for-hotbunny.md`.
+
+**What we see.** A quest-declared `TwotterAccountDefinition` becomes a
+`TwotterUser` in the save whose `bio` is `undefined`. Twotter's search calls
+`.toLowerCase()` on that field, so the next search term that does not
+short-circuit on the username crashes the game
+(`Cannot read properties of undefined (reading 'toLowerCase')`). The record is
+in the **save**, so the crash survives uninstalling the mod, and no mod can
+repair it: there is no `Twotter.removeUser`, reads return a copy, and
+re-`addUser` under the same id leaves the field unchanged.
 
 **Where we landed.** We removed Twotter support from the editor and stopped
 templates advertising handles.
 
-**What we would like to know.** Is Twotter intended to be moddable? And can the
-crash on an unknown handle be guarded, since a mod can trigger it just by
-mentioning a name?
+**What we would like to know.** Can `bio` default to `""` when the record is
+created, and/or the search comparison be guarded against undefined fields? The
+latter would also repair saves that are already broken. Is a `Twotter.removeUser`
+possible?
 
 ---
 

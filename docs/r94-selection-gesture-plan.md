@@ -80,3 +80,50 @@ Stop inferring intent from change batches. Track the gesture explicitly:
   and ignore React Flow's own node-selection batches for the duration.
 - Leaves ctrl+click, plain click and plain drag on their existing, working
   paths - all covered by r93's mounted gesture tests, which must stay green.
+
+---
+
+# r95 — ctrl+drag over already-selected nodes
+
+## Evidence
+
+Reproduced in a test (probe, not shipped): with BOTH nodes already selected, a
+ctrl+box-drag over them produces **zero** calls to `onNodesChange` — nothing is
+logged at all, and the selection is unchanged.
+
+The cause is `getSelectionChanges` (@xyflow/react 12.11.5, line 785):
+
+```js
+if (!(item.selected === undefined && !willBeSelected) && item.selected !== willBeSelected) {
+    changes.push(createSelectionChange(item.id, willBeSelected));
+}
+```
+
+A change is emitted only when a node's selected state *differs* from what the
+box wants. Ctrl+dragging over already-selected nodes means
+`true !== true` → false → **no change, no callback**. r94's box branch lives in
+`onNodesChange`, so it can never run for exactly the gesture it was written
+for. That is why shift+drag works (it selects previously-unselected nodes, so
+changes do fire) while ctrl+drag does not.
+
+## Fix
+
+Stop depending on `onNodesChange` for the box result. React Flow's own store
+holds everything needed:
+
+- `userSelectionRect` — the box, in flow coordinates (set on pointerdown,
+  nulled on pointerup BEFORE `onSelectionEnd`, so it must be captured during
+  the move).
+- `nodeLookup` — every node with `measured` size and
+  `internals.positionAbsolute`.
+- `transform` — pane pan/zoom.
+
+Track the rect on each pointermove, and at `onSelectionEnd` compute which nodes
+it covers with the same overlap maths React Flow uses, then apply
+`boxSelectionResult`. Independent of whether any node's state happened to
+change.
+
+`getNodesInside` is exported from `@xyflow/system`, but that is a transitive
+dependency, not one we declare — importing it directly would break silently on
+a hoist change. The overlap test is a few lines, so it is written out locally
+against the documented store fields.

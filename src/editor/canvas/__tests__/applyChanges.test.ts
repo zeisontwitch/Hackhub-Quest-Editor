@@ -5,7 +5,7 @@
  * sequentially yields [B].
  */
 import { describe, expect, it } from "vitest";
-import { altersSelection, nextSelection, onlyDeselects, resolveSelection } from "@/editor/canvas/applyChanges";
+import { altersSelection, nextSelection, nodesInBox, onlyDeselects, resolveSelection } from "@/editor/canvas/applyChanges";
 
 describe("nextSelection", () => {
     it("switches to a newly clicked node, dropping the previous one", () => {
@@ -161,5 +161,33 @@ describe("resolveSelection with a modifier held", () => {
     it("does not clear a wire selection while adding nodes", () => {
         expect(resolveSelection("nodes", sel([], ["e1"]), pick("a"), false, true))
             .toEqual(sel(["a"], ["e1"]));
+    });
+});
+
+describe("nodesInBox", () => {
+    const node = (id: string, x: number, y: number, w = 100, h = 50) => ({
+        id, measured: { width: w, height: h }, internals: { positionAbsolute: { x, y } },
+    });
+
+    it("finds nodes the box overlaps, even partially", () => {
+        const nodes = [node("a", 0, 0), node("b", 400, 0)];
+        expect([...nodesInBox(nodes, { x: 350, y: -10, width: 500, height: 200 })]).toEqual(["b"]);
+        expect([...nodesInBox(nodes, { x: -10, y: -10, width: 80, height: 80 })]).toEqual(["a"]);
+        expect([...nodesInBox(nodes, { x: -10, y: -10, width: 900, height: 200 })]).toEqual(["a", "b"]);
+    });
+
+    it("ignores a box that touches nothing", () => {
+        expect([...nodesInBox([node("a", 0, 0)], { x: 900, y: 900, width: 50, height: 50 })]).toEqual([]);
+    });
+
+    it("skips hidden and unselectable nodes", () => {
+        const box = { x: -50, y: -50, width: 999, height: 999 };
+        expect([...nodesInBox([{ ...node("a", 0, 0), hidden: true }], box)]).toEqual([]);
+        expect([...nodesInBox([{ ...node("a", 0, 0), selectable: false }], box)]).toEqual([]);
+    });
+
+    it("skips nodes with no resolved position", () => {
+        expect([...nodesInBox([{ id: "a", measured: { width: 10, height: 10 } }],
+            { x: -50, y: -50, width: 999, height: 999 })]).toEqual([]);
     });
 });

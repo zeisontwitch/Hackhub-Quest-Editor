@@ -29,7 +29,7 @@ import {
 } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { GraphNode, type GraphRFNode } from "./GraphNode";
-import { boxSelectionResult, onlyDeselects, resolveSelection } from "./applyChanges";
+import { boxSelectionResult, nodesInBox, onlyDeselects, resolveSelection } from "./applyChanges";
 import { TypedEdge, toRFEdge, type TypedRFEdge } from "./TypedEdge";
 import { setWireMotion, subscribeWireMotion, wireMotionEnabled } from "./wireMotion";
 import {
@@ -176,6 +176,8 @@ function CanvasInner() {
         commitTransient();
     };
 
+    /** React Flow's own store: node geometry, the selection box, modifier state. */
+    const rfStore = useStoreApi();
     /**
      * Which modifier is being held, tracked from the raw events on `window`.
      *
@@ -190,8 +192,9 @@ function CanvasInner() {
     useEffect(() => {
         const read = (e: PointerEvent | MouseEvent | KeyboardEvent) => {
             mods.current = { shift: e.shiftKey, ctrl: e.ctrlKey || e.metaKey };
-            if (e.type === "pointerdown") pointerDown.current = true;
+            if (e.type === "pointerdown") { pointerDown.current = true; lastRect.current = null; }
             if (e.type === "pointerup") pointerDown.current = false;
+
         };
         const opts = { capture: true } as const;
         window.addEventListener("pointerdown", read, opts);
@@ -207,6 +210,24 @@ function CanvasInner() {
             window.removeEventListener("keyup", read, opts);
         };
     }, []);
+
+    /*
+     * Keep the latest selection box. Subscribing to the store is the only
+     * reliable way to see it: our own pointer listeners run in the capture
+     * phase, before React Flow's pane handler has written the new rect, so
+     * reading it there yields the previous value — at pointerup that means the
+     * zero-size rect from pointerdown. React Flow also nulls the rect on
+     * pointerup *before* calling onSelectionEnd, so the last non-null value has
+     * to be remembered here.
+     */
+    useEffect(() => {
+        return rfStore.subscribe((state: { userSelectionRect: { x: number; y: number; width: number; height: number } | null }) => {
+            const r = state.userSelectionRect;
+            if (r && (r.width > 0 || r.height > 0)) {
+                lastRect.current = { x: r.x, y: r.y, width: r.width, height: r.height };
+            }
+        });
+    }, [rfStore]);
 
     /**
      * The selection as it stood when a box drag began, plus which modifier was
@@ -225,6 +246,12 @@ function CanvasInner() {
     const pendingBoxStart = useRef<string[] | null>(null);
     /** Whether a primary button is currently down, so we know a drag is live. */
     const pointerDown = useRef(false);
+    /**
+     * The selection box, in flow coordinates, sampled while it is open. React
+     * Flow nulls `userSelectionRect` on pointerup *before* onSelectionEnd runs,
+     * so it cannot be read there.
+     */
+    const lastRect = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
 
     // React Flow reports a node's measured size as a "dimensions" change. The
     // MiniMap only draws nodes whose user-node carries dimensions, so fold the
@@ -511,7 +538,6 @@ function CanvasInner() {
      * change arrives rather than tracked with our own key listeners, which
      * would drift whenever the window loses focus mid-drag.
      */
-    const rfStore = useStoreApi();
     /**
      * Whether the user is adding to / toggling the existing selection.
      *
@@ -707,9 +733,28 @@ function CanvasInner() {
                     };
                 }}
                 onSelectionEnd={() => {
+                    /*
+                     * Settle the box here rather than in onNodesChange.
+                     * getSelectionChanges only emits when a node's selected
+                     * state actually differs from what the box wants, so
+                     * ctrl+dragging over an existing selection produces no
+                     * change events at all and the handler never fires (r95).
+                     * Reading the geometry ourselves works either way.
+                     */
+                    const box = boxStart.current;
+                    const rect = lastRect.current;
+                    if (box && rect && (box.shift || box.ctrl)) {
+                        const st = rfStore.getState();
+                        const inside = nodesInBox(st.nodeLookup.values(), rect);
+                        select({
+                            nodeIds: boxSelectionResult(box.nodeIds, inside, box),
+                            edgeIds: useEditor.getState().selection.edgeIds,
+                        });
+                    }
                     boxSelecting.current = false;
                     boxStart.current = null;
                     pendingBoxStart.current = null;
+                    lastRect.current = null;
                 }}
                 /*
                  * Ctrl+click raises `contextmenu` on Windows and Linux before

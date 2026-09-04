@@ -121,3 +121,47 @@ export function boxSelectionResult(
     if (keys.shift) return [...new Set([...start, ...inside])];
     return [...inside];
 }
+
+/** A node as React Flow's `nodeLookup` describes it, trimmed to what we read. */
+export interface BoxTestNode {
+    id: string;
+    measured?: { width?: number; height?: number };
+    width?: number;
+    height?: number;
+    initialWidth?: number;
+    initialHeight?: number;
+    hidden?: boolean;
+    selectable?: boolean;
+    internals?: { positionAbsolute?: { x: number; y: number } };
+}
+
+/**
+ * Which nodes a selection box covers.
+ *
+ * React Flow computes this internally but only *reports* it as change events,
+ * and it emits none when the boxed nodes are already in the state the box
+ * wants — which is exactly ctrl+dragging over a live selection. So the same
+ * overlap test is done here, from the store's own geometry.
+ *
+ * `rect` and the node positions are both in flow coordinates. Matches
+ * SelectionMode.Partial: any overlap counts.
+ */
+export function nodesInBox(
+    nodes: Iterable<BoxTestNode>,
+    rect: { x: number; y: number; width: number; height: number },
+): Set<string> {
+    const x2 = rect.x + rect.width;
+    const y2 = rect.y + rect.height;
+    const hits = new Set<string>();
+    for (const n of nodes) {
+        if (n.hidden || n.selectable === false) continue;
+        const pos = n.internals?.positionAbsolute;
+        if (!pos) continue;
+        const w = n.measured?.width ?? n.width ?? n.initialWidth ?? 0;
+        const h = n.measured?.height ?? n.height ?? n.initialHeight ?? 0;
+        if (pos.x < x2 && pos.x + w > rect.x && pos.y < y2 && pos.y + h > rect.y) {
+            hits.add(n.id);
+        }
+    }
+    return hits;
+}

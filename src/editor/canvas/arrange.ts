@@ -12,6 +12,13 @@ export interface XY {
     y: number;
 }
 
+/** A node plus its measured size, when the canvas has measured it. */
+export interface SizedNode {
+    id: string;
+    position: XY;
+    size?: { width: number; height: number };
+}
+
 /** Spacing of the snap grid, in flow units. Matches the canvas dot pattern. */
 export const GRID = 22;
 
@@ -48,31 +55,34 @@ export type AlignAxis = "row" | "column";
  * nothing writes nothing.
  */
 export function alignPositions(
-    nodes: { id: string; position: XY; size?: { width: number; height: number } }[],
+    nodes: SizedNode[],
     axis: AlignAxis,
+    /**
+     * Grid to snap the shared line to, if snapping is on. The LINE is snapped
+     * once, not each card afterwards: snapping every corner independently
+     * pushes cards of different sizes back off the line, which is what made
+     * r97's centring look like it had not worked at all (r98).
+     */
+    grid = 0,
 ): Record<string, XY> {
     if (nodes.length < 2) return {};
     const key = axis === "row" ? "y" : "x";
     const extent = axis === "row" ? "height" : "width";
+    const sizeOf = (n: SizedNode) => n.size?.[extent] ?? 0;
     /*
-     * Align CENTRES, not top-left corners.
-     *
-     * A node's position is its top-left. Giving a short "Tool response" card
-     * and a tall "Dialogue" card the same y lines up their top edges and
-     * leaves their middles — and the wires between them — visibly off, which
-     * reads as "the button barely did anything". Centring is what an author
-     * means by a straight line.
-     *
-     * Sizes come from React Flow's measurements and can be missing for a node
-     * that has not been rendered yet; those fall back to corner alignment,
-     * which is the old behaviour rather than a crash.
+     * Align to the centre of the selection's bounding box, which is what
+     * Photoshop's "Align Vertical/Horizontal Centers" does: every item's centre
+     * moves to the collective centre. Averaging the individual centres instead
+     * would let a cluster of small cards drag the line towards itself.
      */
-    const centre = (n: { position: XY; size?: { width: number; height: number } }) =>
-        n.position[key] + (n.size?.[extent] ?? 0) / 2;
-    const mean = nodes.reduce((sum, n) => sum + centre(n), 0) / nodes.length;
+    const starts = nodes.map((n) => n.position[key]);
+    const ends = nodes.map((n) => n.position[key] + sizeOf(n));
+    let line = (Math.min(...starts) + Math.max(...ends)) / 2;
+    if (grid > 0) line = Math.round(line / grid) * grid;
+
     const moved: Record<string, XY> = {};
     for (const n of nodes) {
-        const target = Math.round(mean - (n.size?.[extent] ?? 0) / 2);
+        const target = Math.round(line - sizeOf(n) / 2) + 0;
         if (n.position[key] === target) continue;
         moved[n.id] = { ...n.position, [key]: target };
     }
@@ -80,27 +90,37 @@ export function alignPositions(
 }
 
 /**
- * Spread the given nodes evenly between the two outermost, along one axis.
+ * Spread the given nodes so the GAPS between them are equal.
  *
- * Complements alignment: line up a row, then even out the gaps. The end nodes
- * never move, so the group keeps its extent.
+ * Photoshop separates "Distribute Horizontally" (equal gaps) from "Distribute
+ * Horizontal Centers" (equal centre spacing); with items of differing sizes
+ * only the former looks evenly spaced, so that is what "Even" does here. The
+ * outermost nodes never move, so the group keeps its extent.
  */
 export function distributePositions(
-    nodes: { id: string; position: XY }[],
+    nodes: SizedNode[],
     axis: AlignAxis,
 ): Record<string, XY> {
     if (nodes.length < 3) return {};
     const key = axis === "row" ? "x" : "y";
+    const extent = axis === "row" ? "width" : "height";
+    const sizeOf = (n: SizedNode) => n.size?.[extent] ?? 0;
     const sorted = [...nodes].sort((a, b) => a.position[key] - b.position[key]);
-    const first = sorted[0].position[key];
-    const last = sorted[sorted.length - 1].position[key];
-    const step = (last - first) / (sorted.length - 1);
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    const span = last.position[key] - (first.position[key] + sizeOf(first));
+    const inner = sorted.slice(1, -1);
+    const totalInner = inner.reduce((sum, n) => sum + sizeOf(n), 0);
+    // One gap between each neighbouring pair.
+    const gap = (span - totalInner) / (sorted.length - 1);
+
     const moved: Record<string, XY> = {};
-    sorted.forEach((n, i) => {
-        const target = Math.round(first + step * i);
-        if (n.position[key] === target) return;
-        moved[n.id] = { ...n.position, [key]: target };
-    });
+    let cursor = first.position[key] + sizeOf(first) + gap;
+    for (const n of inner) {
+        const target = Math.round(cursor) + 0;
+        if (n.position[key] !== target) moved[n.id] = { ...n.position, [key]: target };
+        cursor += sizeOf(n) + gap;
+    }
     return moved;
 }
 

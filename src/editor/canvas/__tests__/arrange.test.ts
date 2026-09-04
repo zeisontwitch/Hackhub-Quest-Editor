@@ -46,12 +46,13 @@ describe("alignPositions with measured cards", () => {
     });
 
     it("centres cards of different heights, so their tops differ", () => {
-        // Centres start at 30 and 150; the mean is 90.
+        // Bounding box spans 0..200, so the shared centre line is 100 —
+        // Photoshop aligns to the selection's centre, not the mean of centres.
         const a = sized("a", 0, 0, 200, 60);
         const b = sized("b", 300, 100, 200, 100);
         const moved = alignPositions([a, b], "row");
-        expect(moved.a.y).toBe(60); // 90 - 30
-        expect(moved.b.y).toBe(40); // 90 - 50
+        expect(moved.a.y).toBe(70); // 100 - 30
+        expect(moved.b.y).toBe(50); // 100 - 50
         // Different tops, same centre - which is the whole point.
         expect(moved.a.y).not.toBe(moved.b.y);
         expect(moved.a.y + 30).toBe(moved.b.y + 50);
@@ -91,11 +92,11 @@ describe("alignPositions", () => {
         expect(moved).toEqual({ a: { x: 50, y: 0 }, b: { x: 50, y: 100 } });
     });
 
-    it("uses the average so the group does not jump to one node", () => {
-        // Averaging keeps the row where the author left it. Snapping to the
-        // first node's y would drag everything up to 0.
+    it("centres the group rather than jumping to one node", () => {
+        // The selection spans y 0..90, so everything lands on 45. Snapping to
+        // the first node's y would instead drag the whole row up to 0.
         const moved = alignPositions([n("a", 0, 0), n("b", 10, 90), n("c", 20, 90)], "row");
-        expect(moved.a.y).toBe(60);
+        expect(moved.a.y).toBe(45);
     });
 
     it("does nothing for fewer than two nodes", () => {
@@ -122,5 +123,68 @@ describe("distributePositions", () => {
     it("works down a column too", () => {
         const moved = distributePositions([n("a", 0, 0), n("b", 0, 5), n("c", 0, 200)], "column");
         expect(moved).toEqual({ b: { x: 0, y: 100 } });
+    });
+});
+
+describe("r98: alignment survives grid snapping", () => {
+    const sized = (id: string, x: number, y: number, w: number, h: number) => ({
+        id, position: { x, y }, size: { width: w, height: h },
+    });
+
+    it("keeps the centres on one line when snapping is on", () => {
+        /*
+         * The r98 bug: centring, then snapping each corner to the grid, pushed
+         * cards of different heights back off the line. With the screenshot's
+         * real heights (62 and 78) the centres ended up 8px apart.
+         */
+        const nodes = [sized("shell", 40, 130, 175, 62), sized("dialogue", 480, 38, 200, 78)];
+        const moved = alignPositions(nodes, "row", GRID);
+        const centres = nodes.map((n) => (moved[n.id]?.y ?? n.position.y) + n.size.height / 2);
+        expect(centres[0]).toBe(centres[1]);
+    });
+
+    it("puts the shared line on the grid", () => {
+        const nodes = [sized("a", 0, 5, 100, 40), sized("b", 200, 95, 100, 40)];
+        const moved = alignPositions(nodes, "row", GRID);
+        const line = (moved.a?.y ?? 5) + 20;
+        expect(line % GRID).toBe(0);
+    });
+
+    it("still centres exactly when snapping is off", () => {
+        const nodes = [sized("shell", 40, 130, 175, 62), sized("dialogue", 480, 38, 200, 78)];
+        const moved = alignPositions(nodes, "row");
+        const centres = nodes.map((n) => (moved[n.id]?.y ?? n.position.y) + n.size.height / 2);
+        expect(centres[0]).toBe(centres[1]);
+    });
+});
+
+describe("r98: distribute leaves equal gaps, not equal corners", () => {
+    const sized = (id: string, x: number, y: number, w: number, h: number) => ({
+        id, position: { x, y }, size: { width: w, height: h },
+    });
+
+    it("equalises the space between cards of different widths", () => {
+        // 100-wide, 300-wide and 100-wide across a 0..1000 span.
+        const nodes = [
+            sized("a", 0, 0, 100, 50),
+            sized("b", 200, 0, 300, 50),
+            sized("c", 900, 0, 100, 50),
+        ];
+        const moved = distributePositions(nodes, "row");
+        const at = (n: typeof nodes[number]) => moved[n.id]?.x ?? n.position.x;
+        const gap1 = at(nodes[1]) - (at(nodes[0]) + 100);
+        const gap2 = at(nodes[2]) - (at(nodes[1]) + 300);
+        expect(gap1).toBe(gap2);
+    });
+
+    it("never moves the outermost nodes", () => {
+        const nodes = [
+            sized("a", 0, 0, 100, 50),
+            sized("b", 200, 0, 300, 50),
+            sized("c", 900, 0, 100, 50),
+        ];
+        const moved = distributePositions(nodes, "row");
+        expect(moved.a).toBeUndefined();
+        expect(moved.c).toBeUndefined();
     });
 });

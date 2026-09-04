@@ -41,27 +41,28 @@ describe("arrange toolbar", () => {
         await waitFor(() => expect(btn("Align in a row").disabled).toBe(true));
     });
 
-    it("aligns the selected nodes into a row on their average height", async () => {
+    it("aligns the selected nodes into a row on the selection's centre", async () => {
         const { a, b, c, user } = await threeNodes();
         act(() => useEditor.getState().select({ nodeIds: [a, b, c], edgeIds: [] }));
         await waitFor(() => expect(btn("Align in a row").disabled).toBe(false));
         await user.click(btn("Align in a row"));
-        // mean of 0, 90, 30
-        expect(posOf(a).y).toBe(40);
-        expect(posOf(b).y).toBe(40);
-        expect(posOf(c).y).toBe(40);
+        // The selection spans y 0..90, so the shared line is 45 — Photoshop
+        // aligns to the centre of the selection, not the mean of the centres.
+        expect(posOf(a).y).toBe(45);
+        expect(posOf(b).y).toBe(45);
+        expect(posOf(c).y).toBe(45);
         // the spread across is untouched
         expect(posOf(a).x).toBe(0);
         expect(posOf(c).x).toBe(400);
     });
 
-    it("stacks them into a column on their average left edge", async () => {
+    it("stacks them into a column on the selection's centre", async () => {
         const { a, b, c, user } = await threeNodes();
         act(() => useEditor.getState().select({ nodeIds: [a, b, c], edgeIds: [] }));
         await user.click(btn("Align in a column"));
-        expect(posOf(a).x).toBe(167); // mean of 0, 100, 400
-        expect(posOf(b).x).toBe(167);
-        expect(posOf(c).x).toBe(167);
+        expect(posOf(a).x).toBe(200); // selection spans x 0..400
+        expect(posOf(b).x).toBe(200);
+        expect(posOf(c).x).toBe(200);
     });
 
     it("spreads the gaps evenly, leaving the outer nodes alone", async () => {
@@ -83,7 +84,7 @@ describe("arrange toolbar", () => {
         const { a, b, c, user } = await threeNodes();
         act(() => useEditor.getState().select({ nodeIds: [a, b, c], edgeIds: [] }));
         await user.click(btn("Align in a row"));
-        expect(posOf(a).y).toBe(40);
+        expect(posOf(a).y).toBe(45);
         act(() => useEditor.getState().undo());
         // One step puts every node back.
         expect(posOf(a).y).toBe(0);

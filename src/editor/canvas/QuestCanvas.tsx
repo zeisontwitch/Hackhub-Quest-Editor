@@ -30,7 +30,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { GraphNode, type GraphRFNode } from "./GraphNode";
 import { boxSelectionResult, onlyDeselects, resolveSelection } from "./applyChanges";
-import { alignPositions, distributePositions, GRID, snapPositions } from "./arrange";
+import { alignPositions, distributePositions, GRID } from "./arrange";
 import { setSnapEnabled, snapEnabled, subscribeSnap } from "./snapGrid";
 import { TypedEdge, toRFEdge, type TypedRFEdge } from "./TypedEdge";
 import { setWireMotion, subscribeWireMotion, wireMotionEnabled } from "./wireMotion";
@@ -555,17 +555,21 @@ function CanvasInner() {
                 // line up their top-left corners (r97).
                 .map((n) => ({ ...n, size: measured[n.id] }));
             if (chosen.length < 2) return;
+            /*
+             * Snapping is handed to alignPositions so it can snap the shared
+             * LINE once. Snapping each card's corner afterwards would shift
+             * cards of different sizes back off that line by up to half a grid
+             * square each — which is precisely how r97's centring came to look
+             * as though it had done nothing (r98).
+             *
+             * Spreading is left unsnapped: its whole purpose is equal gaps, and
+             * rounding each position to the grid would make them unequal again.
+             */
             const moved =
                 what === "row" || what === "column"
-                    ? alignPositions(chosen, what)
+                    ? alignPositions(chosen, what, snapEnabled() ? GRID : 0)
                     : distributePositions(chosen, what === "spread-row" ? "row" : "column");
-            const final = snapEnabled() ? snapPositions(
-                Object.entries(moved).map(([id, position]) => ({ id, position })),
-            ) : moved;
-            // snapPositions only reports what it changed, so fold it back over
-            // the aligned set rather than replacing it.
-            const merged = { ...moved, ...final };
-            arrangeNodes(merged);
+            arrangeNodes(moved);
         },
         [activeQuest, arrangeNodes, measured, selection.nodeIds],
     );

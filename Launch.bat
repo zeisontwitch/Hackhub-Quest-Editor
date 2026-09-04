@@ -22,13 +22,28 @@ if errorlevel 1 (
 
 echo.
 echo   [1/3] Installing dependencies (fast if already installed)...
-call npm install
+rem Skip the install entirely when the folder is already set up: this is the
+rem common case, and it turns a ten-second start into an instant one.
+if exist "node_modules\.package-lock.json" (
+    echo         already installed, skipping.
+    goto :installed
+)
+rem "npm ci" installs exactly what package-lock.json pins. "npm install"
+rem re-resolves the whole tree against the registry first, which took SEVEN
+rem MINUTES here against 28 seconds for the same result.
+call npm ci
 if errorlevel 1 (
     echo.
-    echo   npm install failed — check the messages above.
+    echo   Falling back to npm install...
+    call npm install
+)
+if errorlevel 1 (
+    echo.
+    echo   Installing dependencies failed — check the messages above.
     pause
     exit /b 1
 )
+:installed
 
 echo   [2/3] Starting the editor...
 start "HackHub Quest Mod Editor" cmd /k "npm run dev"

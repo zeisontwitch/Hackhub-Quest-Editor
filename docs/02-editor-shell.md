@@ -2885,3 +2885,62 @@ machine. The test now does that.
 **Verification:** 592 tests (20 files, +3), `tsc --noEmit` clean, `vite build`
 clean, and a clean `npm install` prints no warnings. Export stamp:
 `EDITOR_BUILD = "2026-09-03.r61"`.
+
+## Round 62 — undoing two rounds of chasing a cosmetic warning
+
+QA: the launcher used to finish a **fresh** download-and-run in under ten
+seconds, and after r61 it appeared to hang. That measurement is the one that
+mattered, and it made the cause obvious.
+
+r60 upgraded jsdom to silence `npm warn deprecated whatwg-encoding`. r61 then
+had to fix the `EBADENGINE` warning *that* caused, by settling on jsdom 28. What
+neither round checked was the weight of what came with it:
+
+```
+added by jsdom 28:  undici 1.6 MB · css-tree 1.4 MB · mdn-data 0.7 MB
+                    + 9 more, ~3.7 MB of packages jsdom 26 never needed
+```
+
+A cosmetic warning in a **dev-only** dependency — one that never touches an
+exported mod, and that only appears while installing — is not worth minutes of
+an author's time on every fresh setup. Both upgrades are reverted; jsdom is back
+on 26 and the deprecation notice comes back with it. That is the right trade,
+and I made it the wrong way round twice.
+
+### The launcher was also doing more work than it needed
+
+Measured here on the same lockfile:
+
+```
+npm ci       28 seconds
+npm install   7 minutes   (identical result)
+```
+
+`npm install` re-resolves the whole tree against the registry before it does
+anything; `npm ci` installs exactly what `package-lock.json` already pins.
+`Launch.bat` now:
+
+1. **skips the install entirely** when `node_modules/.package-lock.json` exists,
+   which is the common case — an author who already ran it once starts instantly;
+2. uses **`npm ci`** when there is nothing installed yet;
+3. falls back to `npm install` only if `npm ci` fails, so a hand-edited or
+   missing lockfile still recovers rather than dead-ending.
+
+### Guarded
+
+The r61 test file now checks the thing that actually costs the author something
+rather than the cosmetics:
+
+- no package may require a Node newer than `engines.node` (the r61 bug);
+- the tree stays at or under 285 packages;
+- `undici`, `css-tree` and `mdn-data` are named individually, so if one returns
+  the failure says *"undici is back — a first install just got slower"*.
+
+Re-adding them to the lockfile makes that test fail with exactly that message.
+
+The `whatwg-encoding` assertion is gone: it is a warning we have deliberately
+chosen to live with, and a test demanding otherwise would just push the next
+person into repeating r60.
+
+**Verification:** 593 tests (20 files), `tsc --noEmit` clean. Export stamp:
+`EDITOR_BUILD = "2026-09-04.r62"`.

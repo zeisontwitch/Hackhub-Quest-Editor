@@ -46,7 +46,7 @@ dropped once it has stayed fixed for a few rounds.
 
 | Round | Item |
 |---|---|
-| r61 | r60's jsdom upgrade swapped a deprecation warning for an EBADENGINE one — it wanted a newer Node than the project asks for. jsdom 28 clears both. A test now reads `package-lock.json` and fails if any package demands a Node above our declared floor. |
+| r62 | Reverted r60/r61's jsdom upgrades: chasing a cosmetic deprecation warning added ~3.7 MB of transitives and turned a sub-10-second first run into minutes. jsdom stays on 26. `Launch.bat` now skips the install when the folder is already set up and uses `npm ci` when it is not (28s against 7min for the same result). |
 | r60 | Debug probes now re-name themselves when moved to a different wire (a name the author typed is still never touched). `jsdom` upgraded to 30, which removes the deprecated `whatwg-encoding` warning on install. |
 | r59 | The briefing arrived blank (`subject=""`), so `Mail.Read` could never match. Cause: r56's "wait for the destroy" path cost the quest its permissions mid-build, `Mail.send` was refused, and the fallback delivered the engine's empty copy. The destroy is no longer awaited, and the fallback refuses to send a mail the engine has no usable copy of. |
 | r58 | The Ledger network now has the shape every reference-mod network has: the router serves the website only (port 80, locked), and the exploitable SSH sits on the workstation behind it. `locked` was in the schema and inspector but never reached the engine — now it does. |

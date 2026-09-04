@@ -1,18 +1,22 @@
 /**
- * The install has to be quiet.
+ * The install has to be quiet AND fast.
  *
- * `Launch.bat` runs `npm install` in front of a non-coder, and anything npm
- * prints there looks like something has gone wrong. Two warnings have reached
- * QA that way:
+ * `Launch.bat` runs an install in front of a non-coder, so anything npm prints
+ * there reads as a fault — and anything slow reads as a hang. Three problems
+ * have reached QA this way, the last two self-inflicted:
  *
- *   npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead
- *   npm warn EBADENGINE  package: 'jsdom@30.0.1',
- *                        required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' }
- *                        current:  { node: 'v24.14.1' }
+ *   1. npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead
+ *   2. npm warn EBADENGINE jsdom@30.0.1 wants node ^22.22.2 || ^24.15.0 …
+ *      (fixing 1 by taking the newest jsdom, which wants a newer Node than
+ *      the project supports)
+ *   3. a first-run install going from under 10 seconds to several minutes
+ *      (fixing 2 with jsdom 28, which drags in undici, css-tree and mdn-data —
+ *      about 3.7 MB of packages jsdom 26 never needed)
  *
- * The second was self-inflicted: fixing the first by taking the newest jsdom
- * pulled in one that demanded a newer Node than the project asks for. These
- * tests make both mistakes mechanical to catch.
+ * A cosmetic warning in a dev-only dependency is not worth minutes of an
+ * author's time, so jsdom stays on 26 and the deprecation notice stays. What
+ * is guarded here is the part that actually costs the author something: the
+ * Node floor, and the weight of the dependency tree.
  */
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
@@ -78,8 +82,21 @@ describe("the toolchain installs without warnings", () => {
         ).toEqual([]);
     });
 
-    it("does not depend on whatwg-encoding, which npm reports as deprecated", () => {
-        const present = Object.keys(lock.packages).filter((p) => p.endsWith("node_modules/whatwg-encoding"));
-        expect(present).toEqual([]);
+    it("keeps the dependency tree small enough to install quickly", () => {
+        /* r61 took jsdom 28 to silence a deprecation warning and pulled in
+           undici (1.6 MB), css-tree (1.4 MB) and mdn-data (0.7 MB). A first
+           run went from under ten seconds to minutes. The exact count matters
+           less than noticing a jump: if this fails, check what was added and
+           whether it is worth the wait. */
+        const count = Object.keys(lock.packages).filter((p) => p).length;
+        expect(count).toBeLessThanOrEqual(285);
+    });
+
+    it("does not pull the heavy transitives jsdom 28+ brings in", () => {
+        // Named individually so the failure says which one came back.
+        for (const heavy of ["undici", "css-tree", "mdn-data"]) {
+            const present = Object.keys(lock.packages).some((p) => p.endsWith(`node_modules/${heavy}`));
+            expect(present, `${heavy} is back — a first install just got slower`).toBe(false);
+        }
     });
 });

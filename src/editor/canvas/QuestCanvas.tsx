@@ -28,7 +28,7 @@ import {
 } from "@xyflow/react";
 import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { GraphNode, type GraphRFNode } from "./GraphNode";
-import { altersSelection, nextSelection } from "./applyChanges";
+import { resolveSelection } from "./applyChanges";
 import { TypedEdge, toRFEdge, type TypedRFEdge } from "./TypedEdge";
 import { setWireMotion, subscribeWireMotion, wireMotionEnabled } from "./wireMotion";
 import {
@@ -438,6 +438,21 @@ function CanvasInner() {
         return !!sourceKind && sourceKind === targetKind;
     }, []);
 
+    /**
+     * True only while the user is dragging a selection box.
+     *
+     * React Flow adds every wire touching a selected node to the selection
+     * during a box drag (XYUserSelection in @xyflow/react 12.11.5 — it walks
+     * connectionLookup for each selected node). The user's intent was the
+     * nodes, so we drop those edge changes on the floor while the box is open.
+     *
+     * Done here rather than through defaultEdgeOptions.selectable, which looks
+     * like the natural switch but is not: EdgeWrapper merges those options into
+     * every edge, so `selectable: false` would also stop a plain click
+     * selecting a wire.
+     */
+    const boxSelecting = useRef(false);
+
     const onNodesChange = useCallback(
         (changes: NodeChange<GraphRFNode>[]) => {
             const positions: Record<string, { x: number; y: number }> = {};
@@ -458,11 +473,10 @@ function CanvasInner() {
             if (removed.length > 0) removeNodes(removed);
             if (Object.keys(dims).length > 0) setMeasured((prev) => ({ ...prev, ...dims }));
             // Fold the whole batch onto the running selection — see applyChanges.
-            if (altersSelection(changes)) {
-                select({ nodeIds: nextSelection(selection.nodeIds, changes), edgeIds: [] });
-            }
+            const next = resolveSelection("nodes", selection, changes, boxSelecting.current);
+            if (next) select(next);
         },
-        [removeNodes, select, selection.nodeIds, setNodePositions],
+        [removeNodes, select, selection, setNodePositions],
     );
 
     const onEdgesChange = useCallback(
@@ -472,11 +486,10 @@ function CanvasInner() {
                 if (change.type === "remove") removed.push(change.id);
             }
             if (removed.length > 0) removeEdges(removed);
-            if (altersSelection(changes)) {
-                select({ nodeIds: [], edgeIds: nextSelection(selection.edgeIds, changes) });
-            }
+            const next = resolveSelection("edges", selection, changes, boxSelecting.current);
+            if (next) select(next);
         },
-        [removeEdges, select, selection.edgeIds],
+        [removeEdges, select, selection],
     );
 
     /**
@@ -571,6 +584,12 @@ function CanvasInner() {
                 onDragOver={(e) => {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = "move";
+                }}
+                onSelectionStart={() => {
+                    boxSelecting.current = true;
+                }}
+                onSelectionEnd={() => {
+                    boxSelecting.current = false;
                 }}
                 onPaneClick={() => select({ nodeIds: [], edgeIds: [] })}
                 onEdgeDoubleClick={(_event, edge) => insertReroute(edge.id)}

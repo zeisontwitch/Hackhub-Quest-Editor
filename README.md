@@ -38,12 +38,11 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 |---|---|---|
 | 5 | Snap-to-Grid toggle button | To make nodes snap to a grid on the canvas | 
 | 6 | Align horizontally/vertically button | (around where the Tidy up button is), that aligns the selected nodes horizontally or vertically |
-| 7 | Selection Fix | When attempting to select multiple nodes, often the wires get selected instead of the nodes. Multiple wires should never be selected by a drag selection |
-| 8 | Right-Click node search | On canvas with auto-complete suggestion |
-| 9 | Properly styled color-wheel | With preset colors and RGB/HSL sliders; used when colouring groups (rather than the OS-specific color wheel) or anything else that might be coloured in the future |
-| 10 | Wire/noodle physics | Pulling a wire makes it hang and bounce; past a distance it pulls straight; releasing snaps it back before it disappears. Sag derived from slack, ~200ms non-interactive ghost on delete, physics only on the held wire, must honour the wire-motion toggle. Ensure this doesn't tank the render performance or cause lags. **Must write inside the canvas, never the document root** (see r42). |
-| 11 | "Contact-driven story" template | Phone brief → Kisscord drip gated on objectives → WeeChat timed to a beat. |
-| 12 | "Branching consequence" template | A choice that changes which ending the player gets. |
+| 7 | Right-Click node search | On canvas with auto-complete suggestion |
+| 8 | Properly styled color-wheel | With preset colors and RGB/HSL sliders; used when colouring groups (rather than the OS-specific color wheel) or anything else that might be coloured in the future |
+| 9 | Wire/noodle physics | Pulling a wire makes it hang and bounce; past a distance it pulls straight; releasing snaps it back before it disappears. Sag derived from slack, ~200ms non-interactive ghost on delete, physics only on the held wire, must honour the wire-motion toggle. Ensure this doesn't tank the render performance or cause lags. **Must write inside the canvas, never the document root** (see r42). |
+| 10 | "Contact-driven story" template | Phone brief → Kisscord drip gated on objectives → WeeChat timed to a beat. |
+| 11 | "Branching consequence" template | A choice that changes which ending the player gets. |
 
 ### Known limitations (not bugs)
 
@@ -58,6 +57,7 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 
 | Round | Item |
 |---|---|
+| r90 | **Drag-selection fix** (roadmap 7). Two faults, one symptom. (a) The node and edge handlers each cleared the *other* kind, so during a box drag whichever batch arrived second wiped what the first had selected. A batch that only ever deselects is React Flow tidying up and no longer clears anything. (b) React Flow adds every wire touching a box-selected node to the selection; those edge changes are now dropped while a box is open. Wires stay clickable one at a time. Not done through `defaultEdgeOptions.selectable`, which looks like the switch for this but is merged into every edge and would have killed click-select too — caught by reading the 12.11.5 source. |
 | r74 | Three from one test run: scripted tool answers persist in the save too, so `whois` still returned a previous export's address (now cleared before writing); objective text kept its raw `{{data.targetIp}}` because objectives are built before `CreateData()` runs (now refilled on start); and the device IP field shows a read-only **"Random IP"** instead of the token. |
 | r73 | **The game hung on "loading mods".** r72 returned a promise from `OnModPackageLoaded`, which the loader awaits — `destroyNetwork` on an address with no network never settled, so the game never reached its menu. Fixed at the cause instead: **manual IP entry is gone**, every network takes a game-allocated address, and a re-export can no longer collide with its own older build. New: `docs/03-questions-for-the-developers.md`. |
 | r72 | Reinstated the clear-the-address step r71 wrongly removed, in the one place it works: **`OnModPackageLoaded`**, which the SDK declares `void | Promise<void>` and which runs once before any quest. The destroy has settled by the time a quest builds, so the create stays synchronous and keeps its permissions. |

@@ -34,3 +34,53 @@ export function nextSelection(current: string[], changes: SelectionDelta[]): str
 export function altersSelection(changes: SelectionDelta[]): boolean {
     return changes.some((c) => c.type === "select");
 }
+
+/**
+ * True when a batch only ever *deselects*.
+ *
+ * A box drag makes React Flow emit node changes and edge changes as two
+ * separate batches. Our node handler used to write `edgeIds: []` and the edge
+ * handler `nodeIds: []`, so whichever batch arrived second wiped what the first
+ * had just selected — the user drags a box around three nodes and ends up with
+ * the wires between them selected instead.
+ *
+ * Telling the two apart needs no guesswork: a batch that *adds* something is
+ * the user choosing that kind of thing, and may clear the other kind. A batch
+ * that only clears is React Flow tidying up, and must leave the other kind
+ * alone.
+ */
+export function onlyDeselects(changes: SelectionDelta[]): boolean {
+    const selects = changes.filter((c) => c.type === "select");
+    return selects.length > 0 && selects.every((c) => !c.selected);
+}
+
+/**
+ * What a batch of selection changes should do to the store's selection.
+ *
+ * Extracted from the canvas so the rules can be tested without mounting React
+ * Flow. `kind` is the sort of thing the batch is about; `boxSelecting` is true
+ * while a selection box is open.
+ */
+export function resolveSelection(
+    kind: "nodes" | "edges",
+    current: { nodeIds: string[]; edgeIds: string[] },
+    changes: SelectionDelta[],
+    boxSelecting: boolean,
+): { nodeIds: string[]; edgeIds: string[] } | null {
+    if (!altersSelection(changes)) return null;
+    // React Flow sweeps up every wire touching a box-selected node. The user
+    // was pointing at nodes, so those edge changes are ignored outright.
+    if (kind === "edges" && boxSelecting) return null;
+    const tidyUp = onlyDeselects(changes);
+    if (kind === "nodes") {
+        return {
+            nodeIds: nextSelection(current.nodeIds, changes),
+            // Only wipe the other kind when the user actually picked something.
+            edgeIds: tidyUp ? current.edgeIds : [],
+        };
+    }
+    return {
+        nodeIds: tidyUp ? current.nodeIds : [],
+        edgeIds: nextSelection(current.edgeIds, changes),
+    };
+}

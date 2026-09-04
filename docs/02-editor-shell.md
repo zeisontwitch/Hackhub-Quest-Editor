@@ -3341,3 +3341,63 @@ that "the compiler mentions this key" is a weaker guarantee than it looks.
 **Verification:** 655 tests (21 files, +9), `tsc --noEmit` clean, `vite build`
 clean. Reverting the WeeChat fix fails its test. Export stamp:
 `EDITOR_BUILD = "2026-09-04.r69"`.
+
+## Round 70 — removing the Hackertyper node
+
+r69 established that the game's scripted-reply mechanic is `isMine: true` on a
+chat message, and that the Hackertyper node reached none of it: it generated a
+bespoke HTML page with a keydown handler and hosted it as an extra page on one
+of the mod's websites. QA's call was to remove it — a neat trick that uses no
+game feature is bloat in an editor whose whole job is to expose the game.
+
+Gone: the registry entry, the data schema, the canvas summary, the permissions
+case, the export warning, the runtime's page builder and event helper, and the
+reference-sheet entry. Node types are back to 31.
+
+The Ledger Contract used it for the player's sign-off, so that step is now a
+**typed answer** (`reply.input`) — a real SDK `Command` with a prompt, which is
+the reply route the other templates already use. Its "Correct" output runs the
+honesty check exactly as before: claim the job is done without doing it and the
+client says so instead of paying.
+
+### The removal exposed a live bug
+
+Wiring the Ledger's reply onto `reply.input` failed, and the reason was not the
+template. That node declares two outputs, **Correct** (`success`) and **Wrong**
+(`failure`), and the runtime resumed the flow down a socket named `out` — which
+it does not have. Every author who wired anything to Correct got nothing, in
+silence. Fixed, with a test that plays a right and a wrong answer through a
+compiled mod and checks which branch ran.
+
+Worth noting how it surfaced: not by reading the code, but by moving a template
+onto the node and finding it dead. The r67 field audit could not see this — the
+field was read, the socket id was simply wrong.
+
+### Templates tidied
+
+QA spotted an "On start & reload" node connected to nothing on the Harbour
+canvas. Three templates had one. Harmless at runtime, but a template is a worked
+example, and a node wired to nothing reads as something the author forgot to
+finish. All three removed, and a test now fails if any template ships an entry
+point that starts nothing or a node connected to nothing. The reference sheet is
+exempt by name — it is a field catalogue, deliberately unwired.
+
+### On the brief's reply setting
+
+QA asked whether "player can reply" being off was intentional, since the player
+does have to mail the file back. It is: those are different things. Replyable
+adds a Reply button to a mail the *quest* sent; mailing the manifest is a mail
+the *player* composes in GoMail, which the quest notices with a `Mail.Sent`
+trigger. A test now pins that distinction so neither drifts.
+
+### A near miss worth recording
+
+Deleting the runtime block by line number also deleted
+`(PROJECT.quests || []).forEach(registerQuest)` — the line that registers every
+quest in the mod. The suite caught it immediately, but `runtimeSource.ts` is a
+`String.raw` template that TypeScript cannot check, so a bad edit there is
+invisible until something runs it. Exact-string replacement, verified after each
+step, is the only safe way to edit that file.
+
+**Verification:** 656 tests (21 files), `tsc --noEmit` clean, `vite build`
+clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r70"`.

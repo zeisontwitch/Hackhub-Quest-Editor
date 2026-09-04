@@ -144,7 +144,6 @@ function buildHelloHack(): ProjectDocument {
     // Only the entry points this quest actually uses. An empty lifecycle node is
     // noise a beginner has to reason about.
     const claim = makeNode("entry.start", { x: 0, y: 0 });
-    const load = makeNode("entry.load", { x: 0, y: 150 });
     const complete = makeNode("entry.complete", { x: 0, y: 300 });
 
     const notify = makeNode("fx.notify", { x: 300, y: 0 }, {
@@ -172,7 +171,7 @@ function buildHelloHack(): ProjectDocument {
     );
 
     quest.graph = {
-        nodes: [claim, load, complete, notify, objective, pay, scan.trigger],
+        nodes: [claim, complete, notify, objective, pay, scan.trigger],
         edges: [
             makeEdge(claim, "out", notify, "in"),
             makeEdge(complete, "out", pay, "in"),
@@ -205,7 +204,6 @@ function buildWifiHack(): ProjectDocument {
     });
 
     const claim = makeNode("entry.start", { x: 0, y: 0 });
-    const load = makeNode("entry.load", { x: 0, y: 300 });
     const complete = makeNode("entry.complete", { x: 0, y: 600 });
 
     const briefing = makeNode("comms.dialogue", { x: 300, y: 0 }, {
@@ -267,7 +265,6 @@ function buildWifiHack(): ProjectDocument {
     quest.graph = {
         nodes: [
             claim,
-            load,
             complete,
             briefing,
             wifi,
@@ -981,7 +978,16 @@ function buildContractHack(): ProjectDocument {
         { x: 2540, y: 360 },
     );
     const t8 = triggerFor(oDelete, "Files.Deleted", [{ field: "name", op: "contains", value: FILE }], { x: 2860, y: 360 });
-    const t9 = triggerFor(oReply, "QE.reply.sent", [], { x: 3180, y: 360 });
+    /* The report command is a real registered Command, so running it raises
+       Terminal.Command with what was typed. Match the command name rather than
+       a bespoke event: the event a typed-answer node emits is derived from its
+       node id, which an author who rebuilds the node would change. */
+    const t9 = triggerFor(
+        oReply,
+        "Terminal.Command",
+        [{ field: "command", op: "contains", value: "report" }],
+        { x: 3180, y: 360 },
+    );
 
     /* ── the honesty check ──────────────────────────────────────────────── */
 
@@ -990,13 +996,18 @@ function buildContractHack(): ProjectDocument {
        when the player finishes it by playing. */
     const remember = makeNode("fx.setData", { x: 2860, y: 520 }, { key: "ledger", value: "deleted" });
 
-    const reply = makeNode("reply.hackertyper", { x: 3180, y: 520 }, {
-        surface: "website",
-        targetRef: DOMAIN,
-        heading: "Secure reply",
-        text: "> job closed\n> ledger_q3.xlsx no longer exists on the host\n> logs cleared\n> send the rest of the money",
-        charsPerKeypress: 4,
-        eventName: "QE.reply.sent",
+    /* The player reports back with a terminal command the mod registers. A
+       typed answer is a real SDK Command (Shell prompt -> matched -> event),
+       which is why this is the reply route the templates use. */
+    const reply = makeNode("reply.input", { x: 3180, y: 520 }, {
+        commandName: "report",
+        commandDescription: "Tell the client the job is done",
+        prompt: "What do you want to tell her? >",
+        expected: "done",
+        matchMode: "contains",
+        caseSensitive: false,
+        successMessage: "Sent. She will check before she pays.",
+        failureMessage: "She will want to hear that it is done.",
     });
 
     const honest = makeNode("flow.branch", { x: 2860, y: 520 }, {
@@ -1076,6 +1087,10 @@ function buildContractHack(): ProjectDocument {
             // remember the deletion, then judge the reply
             makeEdge(oDelete, "done", remember, "in"),
             makeEdge(load, "out", reply, "in"),
+            /* A correct report runs the honesty check: it branches on whether
+               the file was really deleted, so claiming the job is done without
+               doing it gets the player told off instead of paid. */
+            makeEdge(reply, "success", honest, "in"),
             makeEdge(oReply, "done", honest, "in"),
             makeEdge(honest, "true", paid, "in"),
             makeEdge(paid, "out", pay, "in"),
@@ -1153,7 +1168,6 @@ function buildDataGrab(): ProjectDocument {
     });
 
     const claim = makeNode("entry.start", { x: 0, y: 200 });
-    const load = makeNode("entry.load", { x: 0, y: 560 });
 
     /* ── the world ──────────────────────────────────────────────────────── */
 
@@ -1393,7 +1407,7 @@ function buildDataGrab(): ProjectDocument {
 
     quest.graph = {
         nodes: [
-            claim, load,
+            claim,
             network, osint, whois, brief,
             oRead, oFind, oServer, oScan, oAccess, oTake, oSend,
             t1.trigger, t2.trigger, t3.trigger, t4.trigger, t5.trigger, t6.trigger, t7.trigger,
@@ -1839,14 +1853,6 @@ const EXAMPLES: Partial<Record<NodeType, Record<string, unknown>>> = {
             ],
         },
     },
-    "reply.hackertyper": {
-        surface: "website",
-        targetRef: "docknet.internal",
-        text: "ACCESS GRANTED\nDecrypting manifest MSKU-4471…\n214 records recovered.",
-        heading: "MANIFEST TERMINAL",
-        charsPerKeypress: 4,
-        eventName: "",
-    },
     "reply.input": {
         commandName: "decrypt",
         commandDescription: "Decrypt a sealed manifest archive",
@@ -2005,7 +2011,7 @@ export const TEMPLATES: Template[] = [
         name: "Hello Hack",
         description: "One objective completed by a single nmap scan, then a payout.",
         difficulty: "Beginner",
-        nodeCount: 7,
+        nodeCount: 6,
         build: buildHelloHack,
     },
     {
@@ -2014,7 +2020,7 @@ export const TEMPLATES: Template[] = [
         description:
             "Briefing e-mail, a crackable access point, bettercap recon, fern passphrase recovery and joining the network — all in a straight line.",
         difficulty: "Beginner",
-        nodeCount: 12,
+        nodeCount: 11,
         build: buildWifiHack,
     },
     {
@@ -2032,7 +2038,7 @@ export const TEMPLATES: Template[] = [
         description:
             "The job the game hands out constantly: a name in an e-mail, an OSINT lookup, whois, a scan, one exploit on port 22, and a file the client wants a copy of. One admin account on the server, so no password cracking — the short route, start to finish.",
         difficulty: "Beginner",
-        nodeCount: 23,
+        nodeCount: 22,
         build: buildDataGrab,
     },
     {
@@ -2059,7 +2065,7 @@ export const TEMPLATES: Template[] = [
         description:
             "Every node type on one canvas, filled with example input. Open it to see what a field expects before you build your own.",
         difficulty: "Reference",
-        nodeCount: 41,
+        nodeCount: 40,
         build: buildReference,
     },
 ];

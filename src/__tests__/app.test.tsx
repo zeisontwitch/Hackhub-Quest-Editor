@@ -122,7 +122,7 @@ describe("editor shell", () => {
 
         const quest = selectActiveQuest(useEditor.getState())!;
         expect(quest.name).toBe("NeighbourWifi");
-        expect(quest.graph.nodes).toHaveLength(12);
+        expect(quest.graph.nodes).toHaveLength(11);
     });
 
     it("undoes with the keyboard", async () => {

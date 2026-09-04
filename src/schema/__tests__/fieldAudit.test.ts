@@ -35,6 +35,7 @@ const sdk = readFileSync(resolve(root, "node_modules/@hotbunny/hackhub-content-s
  */
 const EDITOR_ONLY: Record<string, string> = {
     "layout.group.comment": "group frames are canvas furniture — they are never exported",
+    "layout.group.color": "the frame's tint on the canvas; group frames are never exported",
     "flow.note.width": "how wide the sticky note is drawn on the canvas",
     "fx.handbook.articleId": "handbook nodes are not compiled yet; export warns about them",
     "fx.handbook.category": "handbook nodes are not compiled yet; export warns about them",

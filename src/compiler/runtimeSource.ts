@@ -248,12 +248,6 @@ var __QE = (function () {
 
 function __qeRegisterProject(sdk, PROJECT) {
 
-    /* The event a hackertyper node emits when fully revealed: the field the
-       player filled in, or a generated one (the inspector promises this). */
-    function __qeHtEvent(n) {
-        return n.data.eventName && n.data.eventName.trim() ? n.data.eventName.trim() : "QE.ht." + n.id;
-    }
-
     /* ── one quest ─────────────────────────────────────────────────────── */
     function registerQuest(qd) {
         var g = qd.graph;
@@ -1095,10 +1089,9 @@ function __qeRegisterProject(sdk, PROJECT) {
                 case "entry.abandon":
                     return next();
                 case "reply.input":
-                case "reply.hackertyper":
-                    /* The player has to act before the story continues: the
-                       flow pauses here and is resumed by the terminal command
-                       (reply.input) or the reveal listener (hackertyper). */
+                    /* The player has to answer before the story continues: the
+                       flow pauses here, and the terminal command this node
+                       registers resumes it down "Correct" or "Wrong". */
                     return Promise.resolve();
                 default:
                     return next();
@@ -1480,16 +1473,6 @@ function __qeRegisterProject(sdk, PROJECT) {
                     g.nodes
                         .filter(function (n) { return n.type === "entry.load"; })
                         .forEach(function (n) { runFlow(n.id, ctx, 0); });
-                    g.nodes
-                        .filter(function (n) {
-                            return n.type === "reply.hackertyper" &&
-                                g.edges.some(function (e) { return e.source === n.id && e.kind === "flow"; });
-                        })
-                        .forEach(function (n) {
-                            self.Events.on(__qeHtEvent(n), function () {
-                                flowOuts(n.id).forEach(function (e) { runFlow(e.target, { payload: {}, vars: {} }, 0); });
-                            });
-                        });
                     /* Objectives that a game event completes.
 
                        These used to rely on QuestObjectiveDefinition.trigger,
@@ -1655,7 +1638,16 @@ function __qeRegisterProject(sdk, PROJECT) {
                                 );
                             }
                             sdk.Events.emit("QE." + moment.id + ".ok", { answer: answer });
-                            if (moment.node) flowOutsFrom(moment.node.id, "out");
+                            /* reply.input's sockets are "success" and "failure"
+                               (registry: successOut / failureOut). This
+                               followed "out", which that node does not have, so
+                               a correct answer routed nowhere and everything
+                               wired to Correct was dead (r70). A dialogue
+                               moment has no node, so both are tried. */
+                            if (moment.node) {
+                                flowOutsFrom(moment.node.id, "success");
+                                flowOutsFrom(moment.node.id, "out");
+                            }
                         } else {
                             tools.printError(input.failureText || "That is not it.");
                             sdk.Events.emit("QE." + moment.id + ".wrong", { answer: answer });
@@ -1673,10 +1665,6 @@ function __qeRegisterProject(sdk, PROJECT) {
                 .forEach(function (e) { runFlow(e.target, { payload: {}, vars: {} }, 0); });
         }
 
-        /* hackertyper widgets become pages on the referenced website */
-        g.nodes.filter(function (n) { return n.type === "reply.hackertyper"; }).forEach(function (n) {
-            __QE_HACKERTYPER.push({ node: n, questName: qd.name });
-        });
     }
 
     /* ── websites ──────────────────────────────────────────────────────── */
@@ -1702,58 +1690,12 @@ function __qeRegisterProject(sdk, PROJECT) {
         sdk.RegisterWebsite(cls);
     }
 
-    var __QE_HACKERTYPER = [];
-
-    /* The address the author can put in a mail: derived from the heading, so
-       "SECURE REPLY - FABER" lives at /terminal/secure-reply-faber rather than
-       at a generated node id nobody could ever type. */
-    function __qeHtPath(node) {
-        var slug = String(node.data.heading || "")
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "");
-        return "/terminal/" + (slug || node.id);
-    }
-
     (PROJECT.quests || []).forEach(registerQuest);
 
-    /* attach hackertyper widget pages to their target sites */
+    /* Websites are registered after the quests, so anything a quest adds to a
+       site has already been collected. */
     (PROJECT.websites || []).forEach(function (w) {
-        var extras = [];
-        __QE_HACKERTYPER.forEach(function (h) {
-            if (h.node.data.surface !== "website") return;
-            var ref = String(h.node.data.targetRef || "");
-            if (ref.indexOf(w.host) !== 0) return;
-            extras.push({
-                path: __qeHtPath(h.node),
-                title: h.node.data.heading || "Terminal",
-                /* Listed on purpose: the player has to be able to find this
-                   page. A hidden page at a generated address is a page nobody
-                   ever opens. */
-                seo: true,
-                html: [
-                    "<!DOCTYPE html><html><head><style>body{background:#000;color:#0f0;font-family:monospace;padding:24px}</style></head><body>",
-                    "<h3>" + (h.node.data.heading || "") + "</h3><pre id='t'></pre>",
-                    "<script>",
-                    "var s=" + JSON.stringify(h.node.data.text) + ";var i=0;var done=false;",
-                    "var EV=" + JSON.stringify(__qeHtEvent(h.node)) + ";",
-                    /* The page runs in a sandboxed iframe, where the SDK is
-                       exposed as HackhubSDK — not as sdk, which is what this
-                       used to call, so the finished event never fired and
-                       nothing downstream ever ran. Falls back to postMessage
-                       for builds that wire the frame up differently. */
-                    "function fire(){",
-                    "  try{ if(typeof HackhubSDK!=='undefined'&&HackhubSDK.Events&&HackhubSDK.Events.emit){HackhubSDK.Events.emit(EV);return;} }catch(e){}",
-                    "  try{ if(typeof sdk!=='undefined'&&sdk.Events&&sdk.Events.emit){sdk.Events.emit(EV);return;} }catch(e){}",
-                    "  try{ if(window.parent){window.parent.postMessage({type:'HackhubSDK.Events.emit',event:EV},'*');} }catch(e){}",
-                    "}",
-                    "document.addEventListener('keydown',function(){if(done)return;i=Math.min(s.length,i+" + (h.node.data.charsPerKeypress || 3) + ");document.getElementById('t').textContent=s.slice(0,i);if(i===s.length){done=true;fire();}});",
-                    "</script>",
-                    "</body></html>",
-                ].join(""),
-            });
-        });
-        registerWebsite(w, extras);
+        registerWebsite(w, []);
     });
     /* The mod package entry point. Every piece of content is registered by the
        quest, website and command classes above, so this class has almost

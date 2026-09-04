@@ -69,15 +69,9 @@ function scenarioProject(): ProjectDocument {
     const notifyOk = node("fx.notify", { message: "welcome" });
     const notifyBad = node("fx.notify", { message: "locked out" });
     const obj2 = node("objective", { name: "vault", description: "Reach the vault" });
-    const ht = node("reply.hackertyper", {
-        surface: "website",
-        targetRef: "target.net",
-        text: "ACCESS GRANTED",
-        eventName: "", // must be generated from the node id
-    });
     const notifyGranted = node("fx.notify", { message: "granted" });
 
-    quest.graph.nodes = [entry, mail, net, obj, trig, input, notifyOk, notifyBad, obj2, ht, notifyGranted];
+    quest.graph.nodes = [entry, mail, net, obj, trig, input, notifyOk, notifyBad, obj2, notifyGranted];
     quest.graph.edges = [
         edge(entry.id, mail.id, "flow"),
         edge(entry.id, net.id, "flow"),
@@ -86,7 +80,7 @@ function scenarioProject(): ProjectDocument {
         edge(trig.id, obj.id, "condition", "trigger", "trigger"),
         edge(input.id, notifyOk.id, "flow", "out"),
         edge(input.id, notifyBad.id, "flow", "failure"),
-        edge(ht.id, notifyGranted.id, "flow"),
+        edge(input.id, notifyGranted.id, "flow", "success"),
     ];
 
     project.websites.push({
@@ -239,37 +233,6 @@ describe("compile", () => {
         expect(calls).toContain("err:nope");
     });
 
-    it("hackertyper reveal resumes the flow and mounts a widget page", async () => {
-        const calls: string[] = [];
-        const listeners: [string, (d: unknown) => void][] = [];
-        const sdk = stubSdk(calls, listeners);
-        const { files } = compileProject(scenarioProject());
-        runMod(files.find((f) => f.path === "dist/mod.js")!.content, sdk);
-        const reg = (sdk as any).__registered;
-        const q = new reg.quests[0]();
-        q.OnObjectivesStart();
-
-        // the generated event name resumes the flow out of the hackertyper node
-        const htListener = listeners.find(([ev]) => ev.startsWith("QE.ht."));
-        expect(htListener, "no listener for the generated hackertyper event").toBeTruthy();
-        htListener![1]({});
-        await settle();
-        expect(calls).toContain("notify:granted");
-
-        // The widget page exists on the target site at an address a person
-        // could actually be told about, is findable in-game, and talks back
-        // through HackhubSDK — the global the sandboxed iframe really has.
-        // (It used to call `sdk`, which does not exist in there, so the reveal
-        // event never fired and nothing after it ever ran.)
-        const site = new reg.websites[0]();
-        const widget = site.Pages.find((p: { path: string }) => p.path.startsWith("/terminal/"));
-        expect(widget, "the hackertyper page must be on the referenced site").toBeTruthy();
-        expect(widget.seo).toBe(true);
-        expect(widget.html).toContain(htListener![0]);
-        expect(widget.html).toContain("HackhubSDK.Events.emit");
-        expect(widget.html).toContain("postMessage");
-        expect(widget.html).toContain("done=true");
-    });
 
     it("websites compile with hidden pages out of the search index", () => {
         const calls: string[] = [];
@@ -998,7 +961,18 @@ describe("the contract hack template runs", () => {
             for (const [event, cb] of listeners) if (event === "Files.Deleted") cb({ id: "f1", name: "ledger_q3.xlsx" });
             await settle();
         }
-        for (const [event, cb] of listeners) if (event === "QE.reply.sent") cb({});
+        /* The player reports back by running the command the mod registers —
+           a real SDK Command with a prompt, not a bespoke event (r70). Run it
+           the way the game would. */
+        const report = registered0(sdk).commands.find(
+            (c: new () => { CommandName: string }) => new c().CommandName === "report",
+        );
+        expect(report, "the template should register a report command").toBeDefined();
+        await new report!().Run({
+            prompt: () => Promise.resolve("done"),
+            printSuccess: () => {},
+            printError: () => {},
+        });
         await settle();
         return { calls, q };
     }
@@ -3584,42 +3558,61 @@ describe("a scripted player line is marked as the player's", () => {
     });
 });
 
+
+
 /**
- * QA, round 69. The typed-reply page offers three surfaces and builds one. The
- * other two compiled to nothing — the node vanished from the export without a
- * word, which is the failure mode the r67 audit exists to stop.
+ * QA, round 70. A typed-answer node declares two output sockets, "Correct" and
+ * "Wrong" (registry: successOut / failureOut). The runtime resumed the flow
+ * down a socket called "out", which that node does not have — so everything an
+ * author wired to Correct was dead, silently. Found by moving the Ledger's
+ * reply from the removed hackertyper node onto this one.
  */
-describe("the typed-reply page says where it can actually live", () => {
-    function warnFor(surface: string) {
+describe("a typed answer resumes the story down the socket it declares", () => {
+    function play(answer: string) {
         const p = createProject();
         p.quests[0].autoStart = true;
-        p.quests[0].graph.nodes = [
-            node("reply.hackertyper", {
-                surface,
-                targetRef: "example.net",
-                heading: "Secure reply",
-                text: "> done",
-                charsPerKeypress: 4,
-            }),
+        const input = node("reply.input", {
+            commandName: "report",
+            prompt: "Well? >",
+            expected: "done",
+            matchMode: "contains",
+        });
+        const ok = node("fx.notify", { message: "believed", variant: "toast", tone: "success" });
+        const no = node("fx.notify", { message: "not believed", variant: "toast", tone: "error" });
+        p.quests[0].graph.nodes = [input, ok, no];
+        p.quests[0].graph.edges = [
+            edge(input.id, ok.id, "flow", "success"),
+            edge(input.id, no.id, "flow", "failure"),
         ];
-        return computeWarnings(p).join("\n");
+
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        let cls: (new () => { Run: (t: unknown) => Promise<void> }) | null = null;
+        sdk.RegisterCommand = (c: new () => { Run: (t: unknown) => Promise<void> }) => (cls = c);
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = {};
+        q.OnObjectivesStart();
+        return { calls, run: () => new cls!().Run({
+            prompt: () => Promise.resolve(answer),
+            printSuccess: () => {},
+            printError: () => {},
+        }) };
     }
 
-    it("warns that a desktop app surface is not built", () => {
-        expect(warnFor("app")).toContain("not built yet");
+    it("follows Correct when the answer is right", async () => {
+        const { calls, run } = play("done");
+        await run();
+        await settle();
+        expect(calls.join(",")).toContain("toast:believed");
+        expect(calls.join(",")).not.toContain("toast:not believed");
     });
 
-    it("warns that a phone app surface is not built", () => {
-        expect(warnFor("phoneApp")).toContain("not built yet");
-    });
-
-    it("says nothing about the surface that works", () => {
-        expect(warnFor("website")).not.toContain("not built yet");
-    });
-
-    it("no shipped template picks a surface that does nothing", () => {
-        for (const t of TEMPLATES) {
-            expect(computeWarnings(t.build()).join("\n"), t.id).not.toContain("not built yet");
-        }
+    it("follows Wrong when it is not", async () => {
+        const { calls, run } = play("no idea");
+        await run();
+        await settle();
+        expect(calls.join(",")).toContain("toast:not believed");
+        expect(calls.join(",")).not.toContain("toast:believed");
     });
 });

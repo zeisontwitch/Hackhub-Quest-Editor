@@ -25,7 +25,6 @@ ClaimQuestNodeDataSchema,
     FilesNodeDataSchema,
     FirewallNodeDataSchema,
     HandbookNodeDataSchema,
-    HackertyperNodeDataSchema,
     ManualInputNodeDataSchema,
     NetworkNodeDataSchema,
     NotifyNodeDataSchema,
@@ -641,40 +640,6 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         hook: "onStart",
         fields: [],
         create: () => seed(DialogueNodeDataSchema),
-    },
-
-    "reply.hackertyper": {
-        type: "reply.hackertyper",
-        category: "reply",
-        label: "Typed reply page",
-        blurb: "A fake terminal on a website",
-        icon: "keyboard",
-        ...io,
-        hook: "onObjectivesStart",
-        fields: [
-            {
-                kind: "note",
-                tone: "info",
-                text: "This builds a page on the website you name below, at /terminal/ plus the heading in dashes — heading “Secure reply” becomes /terminal/secure-reply. Nothing links to it, so tell the player where it is: put the address in the mail or chat that sends them there.",
-            },
-            { kind: "note", tone: "info", text: "HackHub has no engine primitive for this, so the editor emits a small HTML surface that runs the effect and emits a custom event when the string is revealed." },
-            {
-                kind: "select",
-                key: "surface", hint: "Only “a website page” is built. The app surfaces are not compiled yet and the widget will not appear — export warns if you pick one.",
-                label: "Rendered as",
-                options: [
-                    { value: "website", label: "A website page" },
-                    { value: "app", label: "A desktop app" },
-                    { value: "phoneApp", label: "A phone app" },
-                ],
-            },
-            { kind: "text", key: "targetRef", hint: "Which page or app hosts the widget. Must match a website host or app name elsewhere in this mod.", label: "Website host or app name", mono: true },
-            { kind: "textarea", key: "text", hint: "The text that types itself out while the player mashes keys. Make it look like real output — that is the whole illusion.", label: "Text to reveal", mono: true, rows: 5 },
-            { kind: "text", key: "heading", hint: "The heading above the typing area.", label: "Heading" },
-            { kind: "number", key: "charsPerKeypress", hint: "How many characters each keypress reveals. Higher feels faster and less fiddly.", label: "Characters per keypress", min: 1, max: 20 },
-            { kind: "text", key: "eventName", label: "Custom event", mono: true, hint: "Left blank, one is generated from the node id." },
-        ],
-        create: () => seed(HackertyperNodeDataSchema, { text: "ACCESS GRANTED — decrypting payload…" }),
     },
 
     "reply.input": {

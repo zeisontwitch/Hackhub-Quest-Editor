@@ -200,7 +200,7 @@ describe("template registry", () => {
         const types = reference.quests[0].graph.nodes.map((n) => n.type);
 
         // Every registered type is represented.
-        expect(new Set(types).size).toBe(32);
+        expect(new Set(types).size).toBe(31);
 
         // Sticky notes double as row headers, so they are the one repeat.
         const counts = new Map<string, number>();
@@ -722,3 +722,76 @@ describe("replyable mail is offered honestly", () => {
     });
 });
 
+
+/**
+ * Round 70. QA spotted an "On start & reload" node sitting on the Harbour
+ * canvas connected to nothing. Three templates had one: harmless at runtime,
+ * but a node wired to nothing is a question mark for whoever opens the
+ * template — it looks like something the author forgot to finish.
+ *
+ * A template is a worked example. Anything on its canvas should be doing a job.
+ */
+describe("no template ships a node that does nothing", () => {
+    /** Sticky notes and group frames are canvas furniture, not quest logic. */
+    const FURNITURE = ["flow.note", "layout.group"];
+
+    for (const t of TEMPLATES) {
+        // The reference sheet is a field catalogue: every node, deliberately
+        // unwired. The blank template is empty by definition.
+        if (t.id === "reference" || t.id === "blank") continue;
+
+        it(`${t.id}: every node is wired into the quest`, () => {
+            const stranded: string[] = [];
+            for (const q of t.build().quests) {
+                const g = q.graph;
+                for (const n of g.nodes) {
+                    if (FURNITURE.includes(n.type)) continue;
+                    const hasIn = g.edges.some((e) => e.target === n.id);
+                    const hasOut = g.edges.some((e) => e.source === n.id);
+                    if (n.type.startsWith("entry.")) {
+                        // An entry point exists to start a flow. One with no
+                        // flow is the exact thing QA found.
+                        if (!hasOut) stranded.push(`${n.type} starts nothing`);
+                    } else if (!hasIn && !hasOut) {
+                        stranded.push(`${n.type} is connected to nothing`);
+                    }
+                }
+            }
+            expect(stranded).toEqual([]);
+        });
+    }
+});
+
+/**
+ * Round 70. QA asked whether the brief having "player can reply" ticked was
+ * intentional — the player does have to mail the file back, after all.
+ *
+ * They are different things. "Replyable" adds a Reply button to a mail the
+ * quest sent; sending the manifest is a mail the player composes themselves in
+ * GoMail, which the quest detects with a Mail.Sent trigger. The brief does not
+ * need a Reply button for the player to write to the client.
+ */
+describe("templates ask for a reply button only where a reply is the mechanic", () => {
+    it("leaves replyable off on every template mail", () => {
+        const on: string[] = [];
+        for (const t of TEMPLATES) {
+            for (const q of t.build().quests) {
+                for (const n of q.graph.nodes) {
+                    if (n.type !== "comms.dialogue") continue;
+                    const d = n.data as { kind: string; mail?: { replyable?: boolean; subject?: string } };
+                    if (d.kind === "mail" && d.mail?.replyable) on.push(`${t.id}: ${d.mail.subject}`);
+                }
+            }
+        }
+        expect(on).toEqual([]);
+    });
+
+    it("detects the player's own mail with a Mail.Sent trigger instead", () => {
+        // The Harbour job ends with the player mailing the file to the client.
+        const q = getTemplate("data-grab")!.build().quests[0];
+        const events = q.graph.nodes
+            .filter((n) => n.type === "trigger.event")
+            .map((n) => (n.data as { event: string }).event);
+        expect(events).toContain("Mail.Sent");
+    });
+});

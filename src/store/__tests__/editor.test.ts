@@ -147,8 +147,10 @@ describe("connecting", () => {
 
     it("stamps the edge kind from the handles", () => {
         fresh();
-        // entry.load is deliberately unused by the template, so this wire is new.
-        const start = idsOf("entry.load");
+        /* Add our own entry point rather than borrowing a spare one from the
+           template: templates no longer ship nodes that are wired to nothing
+           (r70), and a test should not depend on one existing. */
+        const start = useEditor.getState().addNode("entry.load", { x: 0, y: 0 })!;
         const briefing = idsOf("world.wifi");
         const added = useEditor.getState().connect({
             source: start,
@@ -179,7 +181,7 @@ describe("connecting", () => {
 
     it("refuses self-loops and duplicate wires", () => {
         fresh();
-        const start = idsOf("entry.load");
+        const start = useEditor.getState().addNode("entry.load", { x: 0, y: 0 })!;
         const wifi = idsOf("world.wifi");
         const before = useEditor.getState().project.quests[0].graph.edges.length;
 

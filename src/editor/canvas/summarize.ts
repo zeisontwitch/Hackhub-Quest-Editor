@@ -184,14 +184,6 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
             ];
         }
 
-        case "reply.hackertyper":
-            return [
-                { website: "Website page", app: "Desktop app", phoneApp: "Phone app" }[
-                    d.surface as "website"
-                ],
-                d.text ? clip(String(d.text), 52) : "no text yet",
-            ];
-
         case "reply.input":
             return [
                 d.commandName ? `$ ${d.commandName}` : "no command yet",

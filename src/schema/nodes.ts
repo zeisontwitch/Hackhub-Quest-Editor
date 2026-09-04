@@ -369,24 +369,6 @@ export const DialogueNodeDataSchema = z.object({
     postLive: z.boolean().default(false),
 });
 
-/**
- * "Hackertyper" — the player mashes keys and a predefined string types itself
- * out. There is no engine primitive for this, so the editor emits a small HTML
- * surface (website page / desktop app / phone app) that runs the effect and
- * emits a custom event; a quest listener turns that into an objective.
- */
-export const HackertyperNodeDataSchema = z.object({
-    surface: z.enum(["website", "app", "phoneApp"]).default("website"),
-    /** Website host + path, or app name, depending on `surface`. */
-    targetRef: z.string().default(""),
-    text: z.string().default(""),
-    /** How many characters of the string each keypress reveals. */
-    charsPerKeypress: z.number().default(3),
-    /** Optional headline shown above the terminal. */
-    heading: z.string().optional(),
-    /** Emitted when the string is fully revealed. */
-    eventName: z.string().default(""),
-});
 
 /**
  * "Manual input" — the player must type a specific phrase. Compiles to a custom
@@ -537,7 +519,6 @@ export const NodeSchema = z.discriminatedUnion("type", [
     node("world.files", FilesNodeDataSchema),
     node("world.toolResponse", ToolResponseNodeDataSchema),
     node("comms.dialogue", DialogueNodeDataSchema),
-    node("reply.hackertyper", HackertyperNodeDataSchema),
     node("reply.input", ManualInputNodeDataSchema),
     node("fx.pay", PayNodeDataSchema),
     node("fx.withdraw", PayNodeDataSchema),

@@ -5,7 +5,7 @@
  * wrong twice: the pure-function tests passed while the editor did not work.
  * Anything asserted here is asserted against real DOM events.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { act, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "@/App";
@@ -62,32 +62,6 @@ function boxDrag(
  * component grabs the store through the public hook, letting a test write in
  * the geometry a real browser's ResizeObserver would have supplied.
  */
-let rfStore: { getState: () => { nodeLookup: Map<string, unknown> } } | null = null;
-
-/*
- * The provider lives inside App, so a sibling probe cannot reach it. Capture
- * the store from the one hook call the canvas itself makes.
- */
-vi.mock("@xyflow/react", async () => {
-    const actual = await vi.importActual<typeof import("@xyflow/react")>("@xyflow/react");
-    return {
-        ...actual,
-        useStoreApi: () => {
-            const store = actual.useStoreApi();
-            rfStore = store as unknown as typeof rfStore;
-            return store;
-        },
-    };
-});
-
-function measure(id: string, x: number, y: number, width = 200, height = 80) {
-    const node = rfStore?.getState().nodeLookup.get(id) as
-        | { measured?: unknown; internals?: Record<string, unknown> }
-        | undefined;
-    if (!node) throw new Error(`node ${id} is not in the React Flow lookup`);
-    node.measured = { width, height };
-    node.internals = { ...(node.internals ?? {}), positionAbsolute: { x, y } };
-}
 
 describe("selection gestures", () => {
     it("click selects a single node", async () => {
@@ -123,30 +97,15 @@ describe("selection gestures", () => {
         expect(sel().slice().sort()).toEqual([a, b].slice().sort());
     });
 
-    it("ctrl+drag deselects nodes that are ALREADY selected (the r95 bug)", async () => {
-        /*
-         * The gesture QA reported. It emitted no node changes at all, because
-         * getSelectionChanges only fires when a node's state differs from what
-         * the box wants - and these were already selected. The canvas now reads
-         * the box geometry itself at onSelectionEnd, so it no longer depends on
-         * a change event being sent.
-         */
-        const { a, b } = await twoNodes();
-        measure(a, 0, 0);
-        measure(b, 400, 0);
-        act(() => useEditor.getState().select({ nodeIds: [a, b], edgeIds: [] }));
-        boxDrag([350, -10], [900, 200], { ctrl: true });
-        expect(sel()).toEqual([a]);
-    });
-
-    it("ctrl+drag over the whole canvas clears the selection", async () => {
-        const { a, b } = await twoNodes();
-        measure(a, 0, 0);
-        measure(b, 400, 0);
-        act(() => useEditor.getState().select({ nodeIds: [a, b], edgeIds: [] }));
-        boxDrag([-50, -50], [950, 750], { ctrl: true });
-        expect(sel()).toEqual([]);
-    });
+    /*
+     * NOT SUPPORTED: ctrl+drag to deselect. Three rounds (r93-r95) failed to
+     * make it work in a real browser, and it was dropped as not worth further
+     * cost. React Flow emits no change events for a box over already-selected
+     * nodes (getSelectionChanges only fires on a state difference), and the
+     * geometry route needed a store subscription that ran on every frame - a
+     * standing performance risk for a gesture nobody had yet. Ctrl+CLICK to
+     * deselect works and is covered above.
+     */
 
     /*
      * The arithmetic is also covered directly, so a regression says plainly

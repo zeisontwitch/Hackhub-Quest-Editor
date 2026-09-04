@@ -78,6 +78,12 @@ export interface EditorStore {
     updateNodeData: (nodeId: string, patch: Record<string, unknown>) => void;
     setNodePosition: (nodeId: string, position: Position) => void;
     setNodePositions: (positions: Record<string, Position>) => void;
+    /**
+     * Move several nodes as one deliberate edit — aligning, spreading, snapping.
+     * Unlike `setNodePositions`, which serves the live drag and deliberately
+     * records no history, this is a single undoable step for the whole group.
+     */
+    arrangeNodes: (positions: Record<string, Position>) => void;
     removeNodes: (ids: string[]) => void;
     /** Re-arrange the active quest into a readable left-to-right layout. */
     applyLayout: () => void;
@@ -420,6 +426,18 @@ export const useEditor = create<EditorStore>()((set, get) => {
                     (e) => !doomed.has(e.source) && !doomed.has(e.target),
                 );
             }),
+
+        arrangeNodes: (positions) => {
+            if (Object.keys(positions).length === 0) return;
+            mutate((project) => {
+                const quest = project.quests.find((q) => q.id === project.editor.activeQuestId);
+                if (!quest) return;
+                for (const node of quest.graph.nodes) {
+                    const next = positions[node.id];
+                    if (next) node.position = next;
+                }
+            });
+        },
 
         applyLayout: () => {
             const project = get().project;

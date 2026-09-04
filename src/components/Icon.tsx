@@ -74,6 +74,15 @@ const PATHS: Record<string, string> = {
     arrowRight: "M5 12h14 M13 6l6 6-6 6",
     layers: "M12 2 2 7l10 5 10-5-10-5Z M2 17l10 5 10-5 M2 12l10 5 10-5",
     filter: "M3 4h18l-7 8v7l-4 2v-9L3 4Z",
+    /* Two boxes side by side on a shared centre line: nodes aligned in a row. */
+    rows: "M3 12h18 M6 8h4v8H6z M14 8h4v8h-4z",
+    /* Two boxes stacked on a shared centre line: nodes aligned in a column. */
+    columns: "M12 3v18 M8 6h8v4H8z M8 14h8v4H8z",
+    /* Outer bars fixed, middle bar centred: even horizontal gaps. */
+    "spread-h": "M4 4v16 M20 4v16 M11 8h2v8h-2z",
+    /* The same, turned: even vertical gaps. */
+    "spread-v": "M4 4h16 M4 20h16 M8 11v2h8v-2z",
+    grid: "M3 9h18 M3 15h18 M9 3v18 M15 3v18",
 };
 
 export type IconName = keyof typeof PATHS;

@@ -29,7 +29,9 @@ import {
 } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { GraphNode, type GraphRFNode } from "./GraphNode";
-import { boxSelectionResult, nodesInBox, onlyDeselects, resolveSelection } from "./applyChanges";
+import { boxSelectionResult, onlyDeselects, resolveSelection } from "./applyChanges";
+import { alignPositions, distributePositions, GRID, snapPositions } from "./arrange";
+import { setSnapEnabled, snapEnabled, subscribeSnap } from "./snapGrid";
 import { TypedEdge, toRFEdge, type TypedRFEdge } from "./TypedEdge";
 import { setWireMotion, subscribeWireMotion, wireMotionEnabled } from "./wireMotion";
 import {
@@ -48,6 +50,9 @@ import type { NodeType } from "@/schema/nodes";
 import type { EdgeDoc } from "@/schema/edges";
 
 const NODE_TYPES: NodeTypes = { qe: GraphNode };
+/** Stable identity: a fresh array each render would churn React Flow's store. */
+const SNAP_GRID: [number, number] = [GRID, GRID];
+
 const EDGE_TYPES: EdgeTypes = { typed: TypedEdge };
 
 export interface CandidateConnection {
@@ -103,6 +108,7 @@ function CanvasInner() {
     const removeNodes = useEditor((s) => s.removeNodes);
     const removeEdges = useEditor((s) => s.removeEdges);
     const setNodePositions = useEditor((s) => s.setNodePositions);
+    const arrangeNodes = useEditor((s) => s.arrangeNodes);
     const insertReroute = useEditor((s) => s.insertReroute);
     const beginTransient = useEditor((s) => s.beginTransient);
     const commitTransient = useEditor((s) => s.commitTransient);
@@ -111,6 +117,8 @@ function CanvasInner() {
     const setViewport = useEditor((s) => s.setViewport);
     const applyLayout = useEditor((s) => s.applyLayout);
     const { screenToFlowPosition, getInternalNode } = useReactFlow();
+    // Per-author editor preference, kept out of the project document.
+    const snap = useSyncExternalStore(subscribeSnap, snapEnabled, () => false);
     // One animation drives every wire's dots; this is only its switch.
     const motion = useSyncExternalStore(
         subscribeWireMotion,
@@ -192,7 +200,7 @@ function CanvasInner() {
     useEffect(() => {
         const read = (e: PointerEvent | MouseEvent | KeyboardEvent) => {
             mods.current = { shift: e.shiftKey, ctrl: e.ctrlKey || e.metaKey };
-            if (e.type === "pointerdown") { pointerDown.current = true; lastRect.current = null; }
+            if (e.type === "pointerdown") pointerDown.current = true;
             if (e.type === "pointerup") pointerDown.current = false;
 
         };
@@ -211,23 +219,6 @@ function CanvasInner() {
         };
     }, []);
 
-    /*
-     * Keep the latest selection box. Subscribing to the store is the only
-     * reliable way to see it: our own pointer listeners run in the capture
-     * phase, before React Flow's pane handler has written the new rect, so
-     * reading it there yields the previous value — at pointerup that means the
-     * zero-size rect from pointerdown. React Flow also nulls the rect on
-     * pointerup *before* calling onSelectionEnd, so the last non-null value has
-     * to be remembered here.
-     */
-    useEffect(() => {
-        return rfStore.subscribe((state: { userSelectionRect: { x: number; y: number; width: number; height: number } | null }) => {
-            const r = state.userSelectionRect;
-            if (r && (r.width > 0 || r.height > 0)) {
-                lastRect.current = { x: r.x, y: r.y, width: r.width, height: r.height };
-            }
-        });
-    }, [rfStore]);
 
     /**
      * The selection as it stood when a box drag began, plus which modifier was
@@ -246,12 +237,6 @@ function CanvasInner() {
     const pendingBoxStart = useRef<string[] | null>(null);
     /** Whether a primary button is currently down, so we know a drag is live. */
     const pointerDown = useRef(false);
-    /**
-     * The selection box, in flow coordinates, sampled while it is open. React
-     * Flow nulls `userSelectionRect` on pointerup *before* onSelectionEnd runs,
-     * so it cannot be read there.
-     */
-    const lastRect = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
 
     // React Flow reports a node's measured size as a "dimensions" change. The
     // MiniMap only draws nodes whose user-node carries dimensions, so fold the
@@ -553,6 +538,34 @@ function CanvasInner() {
         [rfStore],
     );
 
+    /**
+     * Line the selected nodes up, or even out their spacing.
+     *
+     * One `arrangeNodes` call for the whole group: writing per node would
+     * re-render the graph once per node and, on a large selection, show the
+     * nodes crawling into place one at a time.
+     */
+    const arrange = useCallback(
+        (what: "row" | "column" | "spread-row" | "spread-column") => {
+            const q = activeQuest();
+            if (!q) return;
+            const chosen = q.graph.nodes.filter((n) => selection.nodeIds.includes(n.id));
+            if (chosen.length < 2) return;
+            const moved =
+                what === "row" || what === "column"
+                    ? alignPositions(chosen, what)
+                    : distributePositions(chosen, what === "spread-row" ? "row" : "column");
+            const final = snapEnabled() ? snapPositions(
+                Object.entries(moved).map(([id, position]) => ({ id, position })),
+            ) : moved;
+            // snapPositions only reports what it changed, so fold it back over
+            // the aligned set rather than replacing it.
+            const merged = { ...moved, ...final };
+            arrangeNodes(merged);
+        },
+        [activeQuest, arrangeNodes, selection.nodeIds],
+    );
+
     const onNodesChange = useCallback(
         (changes: NodeChange<GraphRFNode>[]) => {
             const positions: Record<string, { x: number; y: number }> = {};
@@ -733,28 +746,9 @@ function CanvasInner() {
                     };
                 }}
                 onSelectionEnd={() => {
-                    /*
-                     * Settle the box here rather than in onNodesChange.
-                     * getSelectionChanges only emits when a node's selected
-                     * state actually differs from what the box wants, so
-                     * ctrl+dragging over an existing selection produces no
-                     * change events at all and the handler never fires (r95).
-                     * Reading the geometry ourselves works either way.
-                     */
-                    const box = boxStart.current;
-                    const rect = lastRect.current;
-                    if (box && rect && (box.shift || box.ctrl)) {
-                        const st = rfStore.getState();
-                        const inside = nodesInBox(st.nodeLookup.values(), rect);
-                        select({
-                            nodeIds: boxSelectionResult(box.nodeIds, inside, box),
-                            edgeIds: useEditor.getState().selection.edgeIds,
-                        });
-                    }
                     boxSelecting.current = false;
                     boxStart.current = null;
                     pendingBoxStart.current = null;
-                    lastRect.current = null;
                 }}
                 /*
                  * Ctrl+click raises `contextmenu` on Windows and Linux before
@@ -776,6 +770,8 @@ function CanvasInner() {
                         ? useEditor.getState().project.editor.viewports[quest.id]
                         : { x: 0, y: 0, zoom: 0.85 }
                 }
+                snapToGrid={snap}
+                snapGrid={SNAP_GRID}
                 deleteKeyCode={["Backspace", "Delete"]}
                 selectionKeyCode={null}
                 // Middle-mouse pans. Right-drag used to pan as well, but that
@@ -826,6 +822,62 @@ function CanvasInner() {
                 >
                     <Icon name="branch" size={13} />
                     Tidy up
+                </button>
+                <div className="pointer-events-auto flex items-center gap-px rounded-md border border-line bg-surface/90">
+                    <button
+                        type="button"
+                        className="btn-ghost rounded-none rounded-l-md"
+                        onClick={() => arrange("row")}
+                        disabled={selection.nodeIds.length < 2}
+                        title="Line the selected nodes up in a row, on their average height"
+                        aria-label="Align in a row"
+                    >
+                        <Icon name="rows" size={13} />
+                    </button>
+                    <button
+                        type="button"
+                        className="btn-ghost rounded-none"
+                        onClick={() => arrange("column")}
+                        disabled={selection.nodeIds.length < 2}
+                        title="Stack the selected nodes in a column, on their average left edge"
+                        aria-label="Align in a column"
+                    >
+                        <Icon name="columns" size={13} />
+                    </button>
+                    <button
+                        type="button"
+                        className="btn-ghost rounded-none"
+                        onClick={() => arrange("spread-row")}
+                        disabled={selection.nodeIds.length < 3}
+                        title="Even out the horizontal gaps, leaving the outermost nodes where they are"
+                        aria-label="Space out across"
+                    >
+                        <Icon name="spread-h" size={13} />
+                    </button>
+                    <button
+                        type="button"
+                        className="btn-ghost rounded-none rounded-r-md"
+                        onClick={() => arrange("spread-column")}
+                        disabled={selection.nodeIds.length < 3}
+                        title="Even out the vertical gaps, leaving the outermost nodes where they are"
+                        aria-label="Space out down"
+                    >
+                        <Icon name="spread-v" size={13} />
+                    </button>
+                </div>
+                <button
+                    type="button"
+                    aria-pressed={snap}
+                    className="btn-default pointer-events-auto"
+                    onClick={() => setSnapEnabled(!snap)}
+                    title={
+                        snap
+                            ? "Nodes snap to the grid as you drag them. Click to move them freely."
+                            : "Nodes move freely. Click to make them snap to the grid."
+                    }
+                >
+                    <Icon name="grid" size={13} />
+                    {snap ? "Snapping" : "Free"}
                 </button>
                 <button
                     type="button"

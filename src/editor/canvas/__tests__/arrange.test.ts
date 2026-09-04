@@ -1,0 +1,81 @@
+import { describe, expect, it } from "vitest";
+import {
+    alignPositions,
+    distributePositions,
+    GRID,
+    snapPoint,
+    snapPositions,
+} from "@/editor/canvas/arrange";
+
+const n = (id: string, x: number, y: number) => ({ id, position: { x, y } });
+
+describe("snapPoint", () => {
+    it("rounds to the nearest grid intersection", () => {
+        expect(snapPoint({ x: 0, y: 0 })).toEqual({ x: 0, y: 0 });
+        // 10/22 rounds down to 0; 11/22 is the halfway point and rounds up.
+        expect(snapPoint({ x: 10, y: 10 })).toEqual({ x: 0, y: 0 });
+        expect(snapPoint({ x: 11, y: 33 })).toEqual({ x: GRID, y: 2 * GRID });
+    });
+
+    it("handles negative coordinates", () => {
+        expect(snapPoint({ x: -10, y: -30 })).toEqual({ x: 0, y: -GRID });
+        // -0 would be a nasty thing to write into a saved project.
+        expect(Object.is(snapPoint({ x: -10, y: -10 }).x, -0)).toBe(false);
+    });
+});
+
+describe("snapPositions", () => {
+    it("returns only the nodes that move", () => {
+        const moved = snapPositions([n("a", 0, 0), n("b", 5, 5)]);
+        expect(Object.keys(moved)).toEqual(["b"]);
+    });
+
+    it("writes nothing when everything is already on the grid", () => {
+        expect(snapPositions([n("a", 0, 0), n("b", GRID, 2 * GRID)])).toEqual({});
+    });
+});
+
+describe("alignPositions", () => {
+    it("puts nodes in a row on their average y, keeping x", () => {
+        const moved = alignPositions([n("a", 0, 0), n("b", 100, 100)], "row");
+        expect(moved).toEqual({ a: { x: 0, y: 50 }, b: { x: 100, y: 50 } });
+    });
+
+    it("stacks nodes in a column on their average x, keeping y", () => {
+        const moved = alignPositions([n("a", 0, 0), n("b", 100, 100)], "column");
+        expect(moved).toEqual({ a: { x: 50, y: 0 }, b: { x: 50, y: 100 } });
+    });
+
+    it("uses the average so the group does not jump to one node", () => {
+        // Averaging keeps the row where the author left it. Snapping to the
+        // first node's y would drag everything up to 0.
+        const moved = alignPositions([n("a", 0, 0), n("b", 10, 90), n("c", 20, 90)], "row");
+        expect(moved.a.y).toBe(60);
+    });
+
+    it("does nothing for fewer than two nodes", () => {
+        expect(alignPositions([n("a", 3, 7)], "row")).toEqual({});
+        expect(alignPositions([], "column")).toEqual({});
+    });
+
+    it("omits nodes already on the line", () => {
+        const moved = alignPositions([n("a", 0, 50), n("b", 100, 50)], "row");
+        expect(moved).toEqual({});
+    });
+});
+
+describe("distributePositions", () => {
+    it("evens out the gaps without moving the outer nodes", () => {
+        const moved = distributePositions([n("a", 0, 0), n("b", 10, 0), n("c", 300, 0)], "row");
+        expect(moved).toEqual({ b: { x: 150, y: 0 } });
+    });
+
+    it("needs at least three nodes to mean anything", () => {
+        expect(distributePositions([n("a", 0, 0), n("b", 90, 0)], "row")).toEqual({});
+    });
+
+    it("works down a column too", () => {
+        const moved = distributePositions([n("a", 0, 0), n("b", 0, 5), n("c", 0, 200)], "column");
+        expect(moved).toEqual({ b: { x: 0, y: 100 } });
+    });
+});

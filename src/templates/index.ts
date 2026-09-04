@@ -1137,7 +1137,6 @@ function buildDataGrab(): ProjectDocument {
     const CONTACT = "Yusuf Demir";
     const DOMAIN = "harbourline-logistics.com";
     const IP = "203.0.113.47";
-    const SERVER_IP = "192.168.1.10";
     const FILE = "manifest_q4";
     const CLIENT = "d.okonkwo@nullpost.io";
 
@@ -1161,94 +1160,79 @@ function buildDataGrab(): ProjectDocument {
     const network = makeNode("world.network", { x: 300, y: 0 }, {
         ipMode: "fixed",
         destroyOnComplete: true,
+        /* A single public server, reachable directly. No router in front of it:
+           the SDK's SubnetNetworkDefinition allows a Device at the top level,
+           and this template's whole job is the short route — scan the address
+           the domain resolves to, exploit what is listening, take the file.
+           The Ledger Contract is where a router, a network map and a guest
+           shell get taught. */
         device: {
-            id: "dev-router",
+            id: "dev-server",
             ip: IP,
-            name: "harbourline-edge",
-            type: "ROUTER",
-            model: "MikroTik hEX S",
+            name: "harbour-fileserver",
+            type: "DEVICE",
             domainName: DOMAIN,
-            accessable: true,
             vulnerabilities: [],
-            users: [{ id: "u-edge", username: "admin", password: "H4rbour-edge" }],
-            /* Web only, and locked: the shape every router in the working
-               reference mod has. What is worth exploiting sits behind it. */
-            ports: [{ id: "p-http", external: 80, internal: 80, active: true, locked: true, service: "http" }],
-            rules: [],
-            files: [],
-            children: [
+            ports: [
+                { id: "p-ssh", external: 22, internal: 22, active: true, locked: false, service: "ssh", version: "OpenSSH 6.4.0" },
+            ],
+            /* ONE account, and it is the administrator. On a server that is the
+               whole story: the exploit lands the player in the account that
+               owns the files, so there is nobody to switch to and no password
+               to crack. That is exactly the difference between this template
+               and the Ledger. */
+            users: [
                 {
-                    id: "dev-server",
-                    ip: SERVER_IP,
-                    name: "harbour-fileserver",
-                    type: "DEVICE",
-                    vulnerabilities: [],
-                    ports: [
-                        { id: "p-ssh", external: 22, internal: 22, active: true, locked: false, service: "ssh", version: "OpenSSH 6.4.0" },
-                    ],
-                    /* ONE account, and it is the administrator. On a server that
-                       is the whole story: the exploit lands the player in the
-                       account that owns the files, so there is nobody to switch
-                       to and no password to crack. That is exactly the
-                       difference between this template and the Ledger. */
-                    users: [
+                    id: "u-admin",
+                    username: "admin",
+                    password: "Dock19-Transit",
+                    firstName: "Harbourline",
+                    lastName: "Operations",
+                    acceptReverseTCP: true,
+                    files: [
                         {
-                            id: "u-admin",
-                            username: "admin",
-                            password: "Dock19-Transit",
-                            firstName: "Harbourline",
-                            lastName: "Operations",
-                            acceptReverseTCP: true,
-                            files: [
-                                {
-                                    id: "f-manifest",
-                                    name: FILE,
-                                    extension: "csv",
-                                    isFolder: false,
-                                    data: [
-                                        "container,origin,declared,actual,consignee",
-                                        "HLX-4471,Rotterdam,machine parts,machine parts,Harbourline BV",
-                                        "HLX-4482,Odessa,textiles,UNDECLARED,-",
-                                        "HLX-4490,Gdansk,machine parts,machine parts,Harbourline BV",
-                                        "HLX-4501,Odessa,textiles,UNDECLARED,-",
-                                    ].join("\n"),
-                                },
-                                {
-                                    id: "f-handover",
-                                    name: "handover",
-                                    extension: "txt",
-                                    isFolder: false,
-                                    data: "Quarterly manifests stay on this box. Do not e-mail them. - Ops",
-                                },
-                            ],
+                            id: "f-manifest",
+                            name: FILE,
+                            extension: "csv",
+                            isFolder: false,
+                            data: [
+                                "container,origin,declared,actual,consignee",
+                                "HLX-4471,Rotterdam,machine parts,machine parts,Harbourline BV",
+                                "HLX-4482,Odessa,textiles,UNDECLARED,-",
+                                "HLX-4490,Gdansk,machine parts,machine parts,Harbourline BV",
+                                "HLX-4501,Odessa,textiles,UNDECLARED,-",
+                            ].join("\n"),
+                        },
+                        {
+                            id: "f-handover",
+                            name: "handover",
+                            extension: "txt",
+                            isFolder: false,
+                            data: "Quarterly manifests stay on this box. Do not e-mail them. - Ops",
                         },
                     ],
-                    rules: [],
-                    /* Every device in the reference mod carries a logs folder,
-                       and "logs" is one of the engine's default root folders, so
-                       this merges into the machine's own rather than making a
-                       second one. Without it the game reports "Sys log file not
-                       found" for the address. */
-                    rootFiles: [
-                        {
-                            id: "f-logs",
-                            name: "logs",
-                            isFolder: true,
-                            children: [
-                                {
-                                    id: "f-syslog",
-                                    name: "sys",
-                                    extension: "log",
-                                    isFolder: false,
-                                    data: ["boot: ok", "sshd: listening on 22", "backup: nightly, 03:00"].join("\n"),
-                                },
-                            ],
-                        },
-                    ],
-                    files: [],
-                    children: [],
                 },
             ],
+            /* Every device in the working reference mod carries a logs folder,
+               and "logs" is one of the engine's default root folders, so this
+               merges into the machine's own rather than making a second one. */
+            rootFiles: [
+                {
+                    id: "f-logs",
+                    name: "logs",
+                    isFolder: true,
+                    children: [
+                        {
+                            id: "f-syslog",
+                            name: "sys",
+                            extension: "log",
+                            isFolder: false,
+                            data: ["boot: ok", "sshd: listening on 22", "backup: nightly, 03:00"].join("\n"),
+                        },
+                    ],
+                },
+            ],
+            files: [],
         },
     });
 
@@ -1317,36 +1301,25 @@ function buildDataGrab(): ProjectDocument {
     });
     const oScan = makeNode("objective", { x: 1580, y: 200 }, {
         name: "scan-server",
-        description: "Scan the address the domain resolves to",
+        description: "See which services the server is running",
         hint: "nmap with -sV reports versions as well as open ports.",
-        info: "That address is the company's edge router. It serves the website and nothing else — what you want is on a machine behind it.",
         terminalCommand: `nmap ${IP} -sV`,
     });
-    /* The router answers on 80 and nothing else, so the scan alone is a dead
-       end: nothing tells the player the file server exists. net_tree.py is how
-       the game reveals what a router fronts, and without this step the quest
-       cannot be finished (QA hit exactly that). */
-    const oMap = makeNode("objective", { x: 1900, y: 200 }, {
-        name: "map-network",
-        description: "Map what is behind the router",
-        hint: `net_tree.py ${IP} draws the network out. The file server is the machine behind the edge.`,
-        terminalCommand: `net_tree.py ${IP}`,
-    });
-    const oAccess = makeNode("objective", { x: 2220, y: 200 }, {
+    const oAccess = makeNode("objective", { x: 1900, y: 200 }, {
         name: "get-in",
         description: "Get into the file server",
-        hint: "The server is answering on port 22 with an old OpenSSH. metasploit has a module for it — set the version the scan reported.",
+        hint: "Port 22 is answering with an old OpenSSH. metasploit has a module for it — set the version the scan reported.",
         info: "It is a server, so the account you land in already owns the files.",
         terminalCommand: "msfconsole",
     });
-    const oTake = makeNode("objective", { x: 2540, y: 200 }, {
+    const oTake = makeNode("objective", { x: 2220, y: 200 }, {
         name: "take-manifest",
         description: `Copy ${FILE}.csv off the server`,
-        hint: `Download it — leave the original where it is. scp admin@${SERVER_IP}:${FILE}.csv .`,
+        hint: `Download it — leave the original where it is. scp admin@${IP}:${FILE}.csv .`,
         info: "The client asked for a copy on purpose. A missing file tells them somebody was here.",
-        terminalCommand: `scp admin@${SERVER_IP}:${FILE}.csv .`,
+        terminalCommand: `scp admin@${IP}:${FILE}.csv .`,
     });
-    const oSend = makeNode("objective", { x: 2860, y: 200 }, {
+    const oSend = makeNode("objective", { x: 2540, y: 200 }, {
         name: "send-manifest",
         description: "Send the manifest to the client",
         hint: `Attach it to a mail to ${CLIENT}.`,
@@ -1362,28 +1335,19 @@ function buildDataGrab(): ProjectDocument {
         "Terminal.NmapScan",
         [
             { field: "ip", op: "equals", value: IP },
-            { join: "or", field: "ip", op: "equals", value: SERVER_IP },
         ],
         { x: 1580, y: 360 },
     );
-    /* Match the tool by name and let the argument through: the player may map
-       the domain or the address. */
-    const t5 = triggerFor(
-        oMap,
-        "Terminal.Command",
-        [{ field: "command", op: "contains", value: "net_tree" }],
-        { x: 1900, y: 360 },
-    );
-    const t6 = triggerFor(oAccess, "Metasploit.Meterpreter.Connected", [], { x: 2220, y: 360 });
+    const t5 = triggerFor(oAccess, "Metasploit.Meterpreter.Connected", [], { x: 1900, y: 360 });
     /* Terminal.SSH.FileDownload is what scp raises — NOT "Files.Downloaded",
        which is not an event this engine has (r40). */
-    const t7 = triggerFor(
+    const t6 = triggerFor(
         oTake,
         "Terminal.SSH.FileDownload",
         [{ field: "name", op: "contains", value: FILE }],
         { x: 2540, y: 360 },
     );
-    const t8 = triggerFor(
+    const t7 = triggerFor(
         oSend,
         "Mail.Sent",
         [{ field: "to", op: "contains", value: CLIENT }],
@@ -1392,7 +1356,7 @@ function buildDataGrab(): ProjectDocument {
 
     /* ── the payoff ─────────────────────────────────────────────────────── */
 
-    const thanks = makeNode("comms.dialogue", { x: 3180, y: 520 }, {
+    const thanks = makeNode("comms.dialogue", { x: 2860, y: 520 }, {
         kind: "mail",
         mail: {
             from: CLIENT,
@@ -1405,7 +1369,7 @@ function buildDataGrab(): ProjectDocument {
         },
     });
 
-    const pay = makeNode("fx.pay", { x: 3500, y: 520 }, {
+    const pay = makeNode("fx.pay", { x: 3180, y: 520 }, {
         amountMode: "fixed",
         amount: 2500,
         description: "Manifest delivered",
@@ -1416,9 +1380,11 @@ function buildDataGrab(): ProjectDocument {
         text: [
             "The standard job: a name in a mail → lynx → whois → nmap → metasploit on port 22 → copy the file → mail it back.",
             "",
-            "The target is a SERVER with one administrator account, so the exploit puts the player straight into the account that owns the files. No user switching, no password cracking. If you want to teach that longer route, open The Ledger Contract instead.",
+            "ONE public server, reachable directly — no router, no network map. And one administrator account, so the exploit puts the player straight into the account that owns the files: no user switching, no password cracking.",
             "",
-            "The player takes a COPY. Nothing is destroyed, so a mistake costs nothing — and a file that vanishes is what tells a company somebody was there.",
+            "For the long route — a personal PC behind a router, net_tree.py, a guest shell and a cracked password — open The Ledger Contract instead.",
+            "",
+            "The player takes a COPY. Nothing is destroyed, so a mistake costs nothing, and a file that vanishes is what tells a company somebody was there.",
             "",
             "Two things the game handles by itself: it logs the connection on the machine, and the player wipes that log (or pays for it in Suspicion). No node needed.",
         ].join("\n"),
@@ -1429,9 +1395,8 @@ function buildDataGrab(): ProjectDocument {
         nodes: [
             claim, load,
             network, osint, whois, brief,
-            oRead, oFind, oServer, oScan, oMap, oAccess, oTake, oSend,
-            t1.trigger, t2.trigger, t3.trigger, t4.trigger,
-            t5.trigger, t6.trigger, t7.trigger, t8.trigger,
+            oRead, oFind, oServer, oScan, oAccess, oTake, oSend,
+            t1.trigger, t2.trigger, t3.trigger, t4.trigger, t5.trigger, t6.trigger, t7.trigger,
             thanks, pay, note,
         ],
         edges: [
@@ -1444,12 +1409,11 @@ function buildDataGrab(): ProjectDocument {
             makeEdge(oRead, "unlock", oFind, "unlocked-by"),
             makeEdge(oFind, "unlock", oServer, "unlocked-by"),
             makeEdge(oServer, "unlock", oScan, "unlocked-by"),
-            makeEdge(oScan, "unlock", oMap, "unlocked-by"),
-            makeEdge(oMap, "unlock", oAccess, "unlocked-by"),
+            makeEdge(oScan, "unlock", oAccess, "unlocked-by"),
             makeEdge(oAccess, "unlock", oTake, "unlocked-by"),
             makeEdge(oTake, "unlock", oSend, "unlocked-by"),
             // their triggers
-            t1.edge, t2.edge, t3.edge, t4.edge, t5.edge, t6.edge, t7.edge, t8.edge,
+            t1.edge, t2.edge, t3.edge, t4.edge, t5.edge, t6.edge, t7.edge,
             // sending it is the end of the job
             makeEdge(oSend, "done", thanks, "in"),
             makeEdge(thanks, "out", pay, "in"),
@@ -2068,7 +2032,7 @@ export const TEMPLATES: Template[] = [
         description:
             "The job the game hands out constantly: a name in an e-mail, an OSINT lookup, whois, a scan, one exploit on port 22, and a file the client wants a copy of. One admin account on the server, so no password cracking — the short route, start to finish.",
         difficulty: "Beginner",
-        nodeCount: 25,
+        nodeCount: 23,
         build: buildDataGrab,
     },
     {

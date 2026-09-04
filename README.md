@@ -16,6 +16,13 @@ Live list of what is being worked on. Newest problems at the top of each
 section; anything ticked off moves to **Done recently** and is eventually
 dropped once it has stayed fixed for a few rounds.
 
+### Standing rule
+
+**Never guess. Check, test, confirm.** Every claim about what the game or SDK
+does must be backed by one of: the SDK declarations, the working reference mod,
+or a real in-game test. A fix shipped on a theory has cost this project more
+rounds than any bug — see r41, r43, r55, r60, r61 and r66.
+
 ### In progress
 
 | # | Item | Notes |
@@ -46,6 +53,7 @@ dropped once it has stayed fixed for a few rounds.
 
 | Round | Item |
 |---|---|
+| r67 | **Full field audit.** All 122 fields the inspector renders, checked mechanically against the compiler: four were collected and silently dropped — `fx.pay` sender (IBAN + name), `reply.input` command name and success message, and `flow.random`'s "store the result as". All four now reach the engine, and a permanent test fails the build if any field goes unread. The Harbour template is a single public server again — no router, no map step. |
 | r66 | The Standard Contract Hack was unfinishable: the edge router answers on port 80 only, and nothing told the player the file server behind it existed — it now has a `net_tree.py` step. "The player can reply" does nothing on this build (`MailDefinition` has no reply flag), so it is off in every template, warned about on export, and the toggle says so. The mail attachment field now explains it is a file that arrives *with* the mail, not the file to steal. |
 | r65 | Split the contract templates in two. **Standard Contract Hack** is the short route: a server, one admin account, exploit port 22, take a copy, mail it back. **The Ledger Contract** keeps the long route and is now marked Advanced. Both machines gained the `logs` root folder every reference-mod device has, and the Ledger's target moved to a realistic `192.168.1.24`. |
 | r64 | The contract template's objectives now match the route the player actually walks: added **map the network** (`net_tree.py`) and **become Ritter** (`show users` → `/etc/passwd` → `john` → `users <n>`), and no hint or tool output hands over the internal address any more. |

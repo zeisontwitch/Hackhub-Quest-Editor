@@ -536,8 +536,11 @@ describe("the two contract templates teach different routes", () => {
         const net = p.quests[0].graph.nodes.find((n) => n.type === "world.network")!;
         return (net.data as {
             device: {
-                ports: { external: number; service?: string }[];
-                children: { ip: string; users: { username: string }[]; ports: { external: number; service?: string; locked?: boolean }[]; rootFiles?: { name: string }[] }[];
+                type: string;
+                ports: { external: number; service?: string; locked?: boolean }[];
+                users: { username: string }[];
+                children?: unknown[];
+                rootFiles?: { name: string }[];
             };
         }).device;
     };
@@ -549,8 +552,7 @@ describe("the two contract templates teach different routes", () => {
     it("gives the standard target exactly one account, and it owns the files", () => {
         /* A server, so the exploit lands in the account that owns everything.
            That is what removes the need for `show users`, /etc/passwd and john. */
-        const box = server().children[0];
-        expect(box.users.map((u) => u.username)).toEqual(["admin"]);
+        expect(server().users.map((u) => u.username)).toEqual(["admin"]);
     });
 
     it("has no password-cracking or user-switching step in the standard route", () => {
@@ -573,11 +575,9 @@ describe("the two contract templates teach different routes", () => {
         expect(names("contract-hack")).toContain("become-ritter");
     });
 
-    it("still teaches both templates to look behind the router", () => {
-        // The edge serves the website only, in both — so both need the map.
-        for (const id of ["data-grab", "contract-hack"]) {
-            expect(names(id), id).toContain("map-network");
-        }
+    it("teaches the map step only where a machine is actually hidden", () => {
+        expect(names("contract-hack")).toContain("map-network");
+        expect(names("data-grab")).not.toContain("map-network");
     });
 
     it("takes a copy rather than destroying anything", () => {
@@ -592,13 +592,20 @@ describe("the two contract templates teach different routes", () => {
         expect(names("data-grab")).toContain("send-manifest");
     });
 
-    it("routes through the router, the same as the Ledger", () => {
-        // Web on the edge, SSH on the machine behind it.
+    it("puts the server in front of the player, with no router to get past", () => {
+        /* The whole point of the short route. The SDK's SubnetNetworkDefinition
+           allows a Device at the top level, so a public server needs no router
+           — and with nothing hidden there is nothing to map. */
         const d = server();
-        expect(d.ports.map((p) => p.service)).toEqual(["http"]);
-        const ssh = d.children[0].ports.find((p) => p.service === "ssh")!;
+        expect(d.type).toBe("DEVICE");
+        expect(d.children ?? []).toHaveLength(0);
+        const ssh = d.ports.find((p) => p.service === "ssh")!;
         expect(ssh.external).toBe(22);
         expect(ssh.locked).toBe(false);
+    });
+
+    it("has no network-mapping step, because nothing is hidden", () => {
+        expect(names("data-grab")).not.toContain("map-network");
     });
 
     it("is marked as the easier of the two", () => {

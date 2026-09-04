@@ -711,7 +711,16 @@ function __qeRegisterProject(sdk, PROJECT) {
             var next = function () {
                 var edges = flowOuts(nodeId);
                 if (node.type === "flow.random" && edges.length) {
-                    edges = [edges[Math.floor(Math.random() * edges.length)]];
+                    var picked = edges[Math.floor(Math.random() * edges.length)];
+                    edges = [picked];
+                    /* "Store the result as" promised the pick would be readable
+                       through {{data.name}} and nothing ever wrote it (audit,
+                       r67). Save the socket's label, which is the thing an
+                       author names their outputs after. */
+                    if (node.data.storeAs && questRef && questRef.SetData) {
+                        var pickedLabel = picked.sourceHandle || "";
+                        __QE.safe(function () { questRef.SetData(node.data.storeAs, pickedLabel); });
+                    }
                 }
                 if (node.type === "flow.branch") {
                     var yes = __QE.matchAll(node.data.conditions, node.data.source === "data" ? (questRef ? questRef.Data : {}) : (ctx && ctx.payload) || {}, scopeOf(ctx));
@@ -949,6 +958,14 @@ function __qeRegisterProject(sdk, PROJECT) {
                             : Number(d.amount || 0);
                         if (amount > 0) {
                             var tx = { amount: amount, description: __QE.fill(d.description || "", scope) };
+                            /* BankTransactionOptions.from is { IBAN, name }. The
+                               editor has always asked for both and the compiler
+                               dropped them, so every payment came from nobody
+                               (audit, r67). The engine wants both halves or
+                               neither. */
+                            var fromName = __QE.fill(d.fromName || "", scope);
+                            var fromIBAN = __QE.fill(d.fromIBAN || "", scope);
+                            if (fromName || fromIBAN) tx.from = { IBAN: fromIBAN, name: fromName };
                             if (node.type === "fx.pay" && sdk.Bank.transaction) sdk.Bank.transaction(tx);
                             if (node.type === "fx.withdraw" && sdk.Bank.withdraw) sdk.Bank.withdraw(tx);
                         }
@@ -1570,7 +1587,14 @@ function __qeRegisterProject(sdk, PROJECT) {
         });
 
         inputMoments.forEach(function (moment) {
-            var cmdName = "qe-" + moment.id.replace(/[^a-z0-9]+/gi, "-").slice(0, 24).toLowerCase();
+            /* The author's own command name wins. The editor asks for one and
+               the compiler used to ignore it, so a quest that told the player
+               to run "reply" registered "qe-something" instead (audit, r67).
+               Fall back to a generated name only when the field is blank. */
+            var authored = moment.node && moment.node.data.commandName
+                ? String(moment.node.data.commandName).trim().replace(/\s+/g, "-").toLowerCase()
+                : "";
+            var cmdName = authored || ("qe-" + moment.id.replace(/[^a-z0-9]+/gi, "-").slice(0, 24).toLowerCase());
             var cls = class extends sdk.Command {
                 constructor() {
                     super(...arguments);
@@ -1581,7 +1605,11 @@ function __qeRegisterProject(sdk, PROJECT) {
                     var input = moment.input;
                     return tools.prompt(input && input.expected && moment.node && moment.node.data.mask ? { label: moment.label, password: true } : moment.label).then(function (answer) {
                         if (__QE.matchInput(input, answer)) {
-                            if (input.expected) tools.printSuccess("Correct.");
+                            if (input.expected) {
+                                tools.printSuccess(
+                                    (moment.node && moment.node.data.successMessage) || "Correct.",
+                                );
+                            }
                             sdk.Events.emit("QE." + moment.id + ".ok", { answer: answer });
                             if (moment.node) flowOutsFrom(moment.node.id, "out");
                         } else {

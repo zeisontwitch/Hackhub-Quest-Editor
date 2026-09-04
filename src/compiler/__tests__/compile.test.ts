@@ -3332,3 +3332,140 @@ describe("the mail fallback refuses to send a blank mail", () => {
         expect(log).toContain("could not be sent");
     });
 });
+
+/**
+ * QA, round 67 — the field audit.
+ *
+ * A mechanical sweep of all 122 fields the inspector renders found four the
+ * compiler never read. Each looked reasonable in the editor and did nothing in
+ * the game, which is the exact failure mode that cost rounds 39, 43, 52, 58 and
+ * 66. These tests prove the four now reach the engine, rather than proving the
+ * source merely mentions them.
+ */
+describe("fields the editor collects actually reach the engine", () => {
+    it("pays from the account the author named", () => {
+        /* BankTransactionOptions.from is { IBAN, name }. Both were collected and
+           dropped, so every payment came from nobody. */
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const pay = node("fx.pay", {
+            amountMode: "fixed",
+            amount: 4000,
+            description: "Contract settled",
+            fromName: "I. Faber",
+            fromIBAN: "DE44 5001 0517 0000 0000 00",
+        });
+        p.quests[0].graph.nodes = [entry, pay];
+        p.quests[0].graph.edges = [edge(entry.id, pay.id, "flow")];
+
+        const sent: Record<string, unknown>[] = [];
+        const sdk = stubSdk([], []) as any;
+        sdk.Bank = { transaction: (o: Record<string, unknown>) => sent.push(o) };
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = {};
+        q.OnStart();
+
+        expect(sent).toHaveLength(1);
+        expect(sent[0].from).toEqual({ IBAN: "DE44 5001 0517 0000 0000 00", name: "I. Faber" });
+    });
+
+    it("omits the sender entirely when the author named nobody", () => {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const pay = node("fx.pay", { amountMode: "fixed", amount: 10, description: "x", fromName: "", fromIBAN: "" });
+        p.quests[0].graph.nodes = [entry, pay];
+        p.quests[0].graph.edges = [edge(entry.id, pay.id, "flow")];
+        const sent: Record<string, unknown>[] = [];
+        const sdk = stubSdk([], []) as any;
+        sdk.Bank = { transaction: (o: Record<string, unknown>) => sent.push(o) };
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = {};
+        q.OnStart();
+        expect(sent[0]).not.toHaveProperty("from");
+    });
+
+    it("registers the command name the author typed", () => {
+        /* A quest that tells the player to run "reply" registered "qe-…"
+           instead, so the instruction on screen did not work. */
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        p.quests[0].graph.nodes = [
+            node("reply.input", {
+                commandName: "reply",
+                commandDescription: "Answer the client",
+                prompt: "Your answer:",
+                expected: "done",
+                matchMode: "contains",
+            }),
+        ];
+        const sdk = stubSdk([], []) as any;
+        const named: string[] = [];
+        sdk.RegisterCommand = (c: new () => { CommandName: string }) => named.push(new c().CommandName);
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        expect(named).toContain("reply");
+    });
+
+    it("still generates a command name when the author left it blank", () => {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        p.quests[0].graph.nodes = [
+            node("reply.input", { commandName: "", prompt: "Your answer:", expected: "done", matchMode: "contains" }),
+        ];
+        const sdk = stubSdk([], []) as any;
+        const named: string[] = [];
+        sdk.RegisterCommand = (c: new () => { CommandName: string }) => named.push(new c().CommandName);
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        expect(named[0]).toMatch(/^qe-/);
+    });
+
+    it("prints the success message the author wrote", async () => {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        p.quests[0].graph.nodes = [
+            node("reply.input", {
+                commandName: "reply",
+                prompt: "Your answer:",
+                expected: "done",
+                matchMode: "contains",
+                successMessage: "She reads it twice, then nothing.",
+            }),
+        ];
+        const sdk = stubSdk([], []) as any;
+        let cls: (new () => { Run: (t: unknown) => Promise<void> }) | null = null;
+        sdk.RegisterCommand = (c: new () => { Run: (t: unknown) => Promise<void> }) => (cls = c);
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+
+        const printed: string[] = [];
+        await new cls!().Run({
+            prompt: () => Promise.resolve("done"),
+            printSuccess: (m: string) => printed.push(m),
+            printError: () => {},
+        });
+        expect(printed).toContain("She reads it twice, then nothing.");
+    });
+
+    it("saves which branch a random pick chose", async () => {
+        /* "Store the result as" promised the pick would be readable through
+           {{data.name}} and nothing ever wrote it. */
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const pick = node("flow.random", { storeAs: "coin" });
+        const only = node("fx.notify", { message: "after", variant: "toast", tone: "info" });
+        p.quests[0].graph.nodes = [entry, pick, only];
+        p.quests[0].graph.edges = [edge(entry.id, pick.id, "flow"), edge(pick.id, only.id, "flow")];
+
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = {};
+        q.OnStart();
+        await settle();
+        expect(calls.some((c) => c.startsWith("setData:coin="))).toBe(true);
+    });
+});

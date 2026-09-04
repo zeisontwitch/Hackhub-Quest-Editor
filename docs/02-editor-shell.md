@@ -3171,3 +3171,65 @@ line. Recorded here rather than fixed.
 
 **Verification:** 629 tests (20 files, +4), `tsc --noEmit` clean, `vite build`
 clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r66"`.
+
+## Round 67 — the field audit
+
+### First, an over-correction undone
+
+r66 gave the Harbour template a `net_tree.py` step. That was wrong: the standard
+job should not have a router at all. Confirmed against the SDK rather than
+assumed — `SubnetNetworkDefinition` accepts `type: Device` at the top level, so
+a directly reachable public server is legal. The template is now one server, one
+open SSH port, one admin account, and no mapping step. The Ledger keeps the
+router, the map and the cracked password; that is what makes it the advanced
+one.
+
+### The audit
+
+QA's point: a field that looks reasonable and does nothing has cost this project
+more rounds than any real bug. So all 122 fields the inspector renders were
+checked mechanically against the compiler and runtime — not read, *checked* —
+and four were being collected and silently dropped:
+
+| Field | What the author was promised | What happened |
+|---|---|---|
+| `fx.pay.fromName` / `.fromIBAN` | the payment comes from this account | `BankTransactionOptions.from` was never set — every payment arrived from nobody |
+| `reply.input.commandName` | the player types this command | ignored; a generated `qe-…` was registered instead, so the instruction on screen did not work |
+| `reply.input.successMessage` | shown when the answer is right | ignored; always "Correct." |
+| `flow.random.storeAs` | the pick is readable as `{{data.name}}` | nothing was ever written |
+
+All four now reach the engine, each with a test that drives the compiled mod and
+asserts the *behaviour* rather than the presence of a line of code.
+
+Four fields remain unread on purpose, and are listed with reasons:
+`layout.group.comment` and `flow.note.width` are canvas furniture, and
+`fx.handbook`'s two fields belong to a node that export already warns is not
+compiled. Anything not on that list is a bug.
+
+### Kept honest from here
+
+`src/schema/__tests__/fieldAudit.test.ts` runs the sweep on every build:
+
+- every inspector field must be read by the compiler, or be listed as
+  editor-only **with a written reason**;
+- the exemption list must stay accurate — a field that starts working has to
+  leave it, so the list cannot become a place bugs hide;
+- the SDK objects we build must be filled in: `BankTransactionOptions.from`,
+  `NetworkPort.locked`, the `NetworkUser` fields the device tree offers, and the
+  `NetworkFileMap` flags a file can carry.
+
+Reverting the `fx.pay` fix makes it fail, so it is real coverage rather than
+decoration.
+
+### Also swept
+
+- **All 41 SDK calls** the runtime makes: 38 declared, and the three that are
+  not (`Network.createWifiNetwork`, `Quest.claim`, `Shell.execute`) are each
+  behind an `if (…)` guard for builds that might have them.
+- **The dialogue editor**, all four kinds. Every field it collects maps onto a
+  real member of `QuestMailDefinition`, `KisscordChatDefinition`,
+  `WeeChatChatDefinition` or `QuestDialogSpeech`. The only SDK member we never
+  set is `onSent`, a callback with no author-facing meaning.
+
+**Verification:** 644 tests (21 files, +14), `tsc --noEmit` clean, `vite build`
+clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r67"`.

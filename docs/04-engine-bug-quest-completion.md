@@ -92,6 +92,40 @@ is consistent with its author having hit this same wall and designed around it.
 5. If completion is simply broken, is a quest that never completes (Nemesis's
    shape) the supported way to ship a finite story?
 
+## What "never completes" actually looks like (Nemesis)
+
+Nemesis's entire ending is a reply mail. Its `Mail.Sent` handler checks the
+recipient, subject and payload fields, sends one reply from the contact, and
+stops:
+
+```js
+OnObjectivesStart() {
+  this.Events.on("Mail.Sent", (mail) => {
+    if (mail.to.trim().toLowerCase() !== TOMASZ_WROBEL_EMAIL) return;
+    // ...checks on subject and content fields...
+    Mail.send({ from: TOMASZ_WROBEL_EMAIL, to: mail.from,
+                subject: "Re: " + RECOVERED_DATA_SUBJECT,
+                content: TOMASZ_RECOVERED_DATA_REPLY });
+  });
+}
+OnComplete() { }
+OnAbandon() { }
+```
+
+The story ends, the player gets their reply, and **the quest entry stays in the
+quest list forever, showing 0/1 objectives**. Nemesis never even ticks its one
+objective, so its entry does not visibly progress at all.
+
+There is no way to hide it. Searching the full 2,898-line SDK for
+`abandonQuest`, `removeQuest`, `retire`, `unregisterQuest` or `completeQuest`
+returns **nothing**. `Quest.claim()` exists to start a quest programmatically;
+there is no counterpart to end one. The only engine-driven way out of the quest
+list is completion (crashes) or the player abandoning it manually.
+
+So the workaround's cost is unavoidable and permanent: a finished story leaves
+a permanent entry in the player's quest list. Our version is at least better
+than Nemesis's — every objective ticks, so the entry reads 7/7 rather than 0/1.
+
 ## Impact on this editor
 
 Every quest the editor generates is finite and meant to end. Until this is

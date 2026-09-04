@@ -22,7 +22,7 @@ import { RUNTIME_SOURCE } from "./runtimeSource";
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-04.r75";
+export const EDITOR_BUILD = "2026-09-04.r76";
 
 export interface CompiledFile {
     path: string;
@@ -154,8 +154,9 @@ export function computeWarnings(project: ProjectDocument): string[] {
                        without a word. */
                     const orphans: string[] = [];
                     const strays: string[] = [];
+                    const domains: string[] = [];
                     const walk = (d: {
-                        ip?: string; name?: string; type?: string;
+                        ip?: string; name?: string; type?: string; domainName?: string;
                         children?: unknown[]; rules?: unknown[];
                     }) => {
                         const kind = String(d.type ?? "").toUpperCase();
@@ -163,9 +164,24 @@ export function computeWarnings(project: ProjectDocument): string[] {
                         const label = d.name || d.ip || "a device";
                         if (!holds && d.children?.length) orphans.push(`${label} (${kind || "no type"})`);
                         if (kind !== "FIREWALL" && d.rules?.length) strays.push(`${label} (${kind || "no type"})`);
+                        if (d.domainName) domains.push(d.domainName);
                         (d.children ?? []).forEach((c) => walk(c as Parameters<typeof walk>[0]));
                     };
                     walk((n.data as { device?: Parameters<typeof walk>[0] }).device ?? {});
+                    /* A domain name is the one part of a network that is NOT
+                       allocated per playthrough: the address is handed out by
+                       the game, but the name is authored text and is identical
+                       in every install. If the base game or another mod has
+                       already registered it, theirs wins and this server never
+                       answers to the name - and the mod deliberately will not
+                       delete a registration it cannot prove it created (r76).
+                       So the collision is the author's to avoid, which means
+                       they have to be told it is possible. */
+                    if (domains.length) {
+                        warnings.push(
+                            `${q.name}: this network claims the domain ${domains.map((d) => `“${d}”`).join(", ")}. Domain names are shared with the whole game, so if the base game or another installed mod already uses one, that one wins and your server will not answer to it. A name nobody else is likely to pick — something tied to your own story — is the safest choice.`,
+                        );
+                    }
                     if (orphans.length) {
                         warnings.push(
                             `${q.name}: ${orphans.join(", ")} has machines behind it, but only a router or a splitter can hold other machines — those machines will not be built. Change the type to Router or Splitter, or move them.`,

@@ -186,3 +186,75 @@ lookup API; rejected destroy; domain on a child device.
 
       domain "harbourline-logistics.com" was still pointing at 203.0.113.47
       (left behind by an earlier build or playthrough); reclaiming it for <new ip>
+
+---
+
+## 9. r76 — the reclaim was unsafe as shipped, and is now scoped to our own leavings
+
+Zeis, reading the r75 code, asked the question the plan's own Q2 had flagged as
+a risk and then failed to guard:
+
+> the cleanup you just created, it won't just wipe networks and IPs created by
+> the base game or other mods if they are currently active while our mod is
+> active, right?
+
+**It would have.** r75's `reclaimDomain` looked up whoever owned the domain and
+destroyed them. No ownership check. On a name collision that is data loss
+inside another mod's content — categorically worse than the stale whois it was
+fixing. I offered "silent reclaim" as an option without specifying the guard
+that had to come with it; that was my error, not a misread instruction.
+
+### Zeis was also substantially right that this is partly a dead dragon
+
+Harbour v2 (the build that poisoned his save) is `"ipMode":"fixed"` with
+`203.0.113.47` hardcoded into both the device and the whois text. v6 is
+`"ipMode":"random"`. **A user starting fresh on r73+ can never write a
+colliding fixed record this way**, so the original failure mode is
+self-limiting.
+
+It is not *entirely* moot, for one reason: the **domain is authored text and is
+byte-identical in every build**. Author ships v1 → player plays it → author
+ships v2 with the server restructured → the old subnet still owns the name and
+still wins. That is a normal update path, not a QA artifact. So the fix earns
+its place — scoped correctly.
+
+### The ownership ledger
+
+`SaveStorage` (SDK 0.21.0, line 2192) is per-save **and** namespaced per-mod —
+the d.ts is explicit: "Each mod has its own isolated namespace within the
+save", it travels with the save, and it is deleted with the save. That is a
+real ownership record rather than a heuristic.
+
+- On registering a domain, the mod records `{ domain, ip }` under
+  `qe.ownedDomains`.
+- On a later run, a domain is reclaimed **only if the ledger says we registered
+  it at the address currently answering**.
+- Otherwise: leave it completely alone and log a line telling the author the
+  name is taken and their server will not answer to it.
+
+### Consequence Zeis needs to know
+
+**This does not rescue his current dirty save.** The ledger did not exist when
+v2 ran, so nothing proves v2's network was ours, and r76 will correctly decline
+to touch it. That is the right trade: better a mod that cannot fix one broken
+test save than a mod that can delete a stranger's network.
+
+### Editor-side warning
+
+`computeWarnings` now flags every domain a network node claims, surfaced in the
+export dialog under "Good to know" (`ExportDialog.tsx`): domain names are
+global, a collision means the other registration wins, pick something tied to
+your own story. Advice, not a commandment, per the standing copy rule.
+
+### Verification
+
+- 709 tests, 21 files (was 701) — 8 new, all on the emitted `dist/mod.js`
+- `npm run typecheck` — 0 errors; `npm run build` — clean
+- Build stamp `2026-09-04.r76`
+
+New tests cover: foreign network untouched with no ledger; quest still builds
+its own server anyway; untouched when we own a *different* domain; untouched
+when our ledger points at a different address; reclaim DOES happen once the
+ledger proves ownership; the author-facing log line; the ledger is written on a
+clean save; and a build with no `SaveStorage` at all degrades to never
+destroying anything.

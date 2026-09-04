@@ -133,6 +133,19 @@ function stubSdk(calls: string[], listeners: [string, (d: unknown) => void][]) {
             createUser: (u: unknown) => u,
             randomIp: () => "10.9.9.9",
         },
+        SaveStorage: (() => {
+            // Per-save, per-mod namespace. A plain object is a faithful stub:
+            // the real one is isolated to this mod within the current save.
+            const store: Record<string, unknown> = {};
+            return {
+                get: (k: string) => store[k],
+                set: (k: string, v: unknown) => { store[k] = v; },
+                remove: (k: string) => { delete store[k]; },
+                clear: () => { for (const k of Object.keys(store)) delete store[k]; },
+                getAll: () => store,
+                __store: store,
+            };
+        })(),
         Events: { emit: (e: string) => calls.push(`emit:${e}`), on: () => {} },
         Shell: { addCommandData: (c: string) => calls.push(`cmdData:${c}`) },
         UI: { notify: (m: string) => calls.push(`notify:${m}`), toast: (m: string) => calls.push(`toast:${m}`) },
@@ -4341,8 +4354,8 @@ describe("a domain is reclaimed from a network an older build left behind", () =
     const DOMAIN = "harbourline-logistics.com";
     const OLD_IP = "203.0.113.47";
 
-    function build(opts: { staleIp?: string | null; api?: "byDomain" | "resolve" | "none" } = {}) {
-        const { staleIp = OLD_IP, api = "byDomain" } = opts;
+    function build(opts: { staleIp?: string | null; api?: "byDomain" | "resolve" | "none"; owned?: boolean } = {}) {
+        const { staleIp = OLD_IP, api = "byDomain", owned = true } = opts;
         const p = createProject();
         p.quests[0].autoStart = true;
         const entry = node("entry.start");
@@ -4373,6 +4386,9 @@ describe("a domain is reclaimed from a network an older build left behind", () =
         }
         sdk.Network.removeDomain = (d: string) => { calls.push(`rmDomain:${d}`); owner = null; };
         sdk.Network.destroyNetwork = (ip: string) => { calls.push(`destroy:${ip}`); return Promise.resolve(); };
+        // This save's ledger says WE registered that domain at that address in
+        // an earlier run, which is what makes it ours to reclaim.
+        if (staleIp && owned) sdk.SaveStorage.set("qe.ownedDomains", [{ domain: DOMAIN, ip: staleIp }]);
 
         runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
         const quest = new (registered0(sdk).quests[0])();
@@ -4457,6 +4473,7 @@ describe("a domain is reclaimed from a network an older build left behind", () =
         sdk.Network.getSubnetByDomain = () => ({ ip: OLD_IP });
         sdk.Network.removeDomain = () => {};
         sdk.Network.destroyNetwork = () => Promise.reject(new Error("nope"));
+        sdk.SaveStorage.set("qe.ownedDomains", [{ domain: DOMAIN, ip: OLD_IP }]);
         runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
         const quest = new (registered0(sdk).quests[0])();
         quest.Data = quest.CreateData();
@@ -4483,10 +4500,157 @@ describe("a domain is reclaimed from a network an older build left behind", () =
         sdk.Network.getSubnetByDomain = (d: string) => (d === DOMAIN ? { ip: OLD_IP } : null);
         sdk.Network.removeDomain = (d: string) => calls.push(`rmDomain:${d}`);
         sdk.Network.destroyNetwork = (ip: string) => { calls.push(`destroy:${ip}`); return Promise.resolve(); };
+        sdk.SaveStorage.set("qe.ownedDomains", [{ domain: DOMAIN, ip: OLD_IP }]);
         runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
         const quest = new (registered0(sdk).quests[0])();
         quest.Data = quest.CreateData();
         quest.OnStart();
         expect(calls).toContain(`destroy:${OLD_IP}`);
+    });
+});
+
+/**
+ * QA, round 76. Zeis, reading the r75 reclaim:
+ *
+ *     the cleanup you just created, it won't just wipe networks and IPs
+ *     created by the base game or other mods if they are currently active
+ *     while our mod is active, right?
+ *
+ * As first written: it would have. reclaimDomain looked up whoever owned the
+ * domain and destroyed them, with no ownership check at all. On a name
+ * collision that is data loss inside somebody else's content - a far worse
+ * bug than the stale whois it was fixing.
+ *
+ * SDK 0.21.0 SaveStorage is per-save AND namespaced per-mod ("Each mod has its
+ * own isolated namespace within the save"), so it is a trustworthy ledger of
+ * what THIS mod created in THIS playthrough. A domain is now only reclaimed
+ * when that ledger proves we registered it. Anything else is left standing and
+ * the author is told their chosen name is taken.
+ */
+describe("reclaiming never touches a network this mod did not create", () => {
+    const DOMAIN = "harbourline-logistics.com";
+    const FOREIGN_IP = "198.51.100.9";
+
+    function build(seedLedger: { domain: string; ip: string }[] | null) {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const net = node("world.network", {
+            ipMode: "random",
+            device: {
+                id: "d1", ip: "x", type: "DEVICE", domainName: DOMAIN,
+                users: [], ports: [], children: [],
+            },
+        });
+        p.quests[0].graph.nodes = [entry, net];
+        p.quests[0].graph.edges = [edge(entry.id, net.id, "flow")];
+
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        // Somebody else's network is answering for this name.
+        sdk.Network.getSubnetByDomain = (d: string) => (d === DOMAIN ? { ip: FOREIGN_IP } : null);
+        sdk.Network.removeDomain = (d: string) => calls.push(`rmDomain:${d}`);
+        sdk.Network.destroyNetwork = (ip: string) => { calls.push(`destroy:${ip}`); return Promise.resolve(); };
+        if (seedLedger) sdk.SaveStorage.set("qe.ownedDomains", seedLedger);
+
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        return { quest, calls, sdk };
+    }
+
+    it("leaves another mod's network alone when we have no record of the domain", () => {
+        const { quest, calls } = build(null);
+        quest.OnStart();
+        expect(calls).not.toContain(`destroy:${FOREIGN_IP}`);
+        expect(calls).not.toContain(`rmDomain:${DOMAIN}`);
+    });
+
+    it("still builds its own server, so the quest is not silently dead", () => {
+        const { quest, calls } = build(null);
+        quest.OnStart();
+        expect(calls).toContain("net:10.9.9.9");
+    });
+
+    it("does not touch a foreign network even if we own a DIFFERENT domain", () => {
+        const { quest, calls } = build([{ domain: "something-else.com", ip: "10.1.1.1" }]);
+        quest.OnStart();
+        expect(calls).not.toContain(`destroy:${FOREIGN_IP}`);
+    });
+
+    it("does not touch it when our ledger points somewhere else entirely", () => {
+        // We once owned this domain, but at a different address than the one
+        // answering now - so the current occupant is not ours.
+        const { quest, calls } = build([{ domain: DOMAIN, ip: "10.2.2.2" }]);
+        quest.OnStart();
+        expect(calls).not.toContain(`destroy:${FOREIGN_IP}`);
+    });
+
+    it("DOES reclaim once the ledger proves the occupant is ours", () => {
+        const { quest, calls } = build([{ domain: DOMAIN, ip: FOREIGN_IP }]);
+        quest.OnStart();
+        expect(calls).toContain(`destroy:${FOREIGN_IP}`);
+    });
+
+    it("tells the author their domain name is already taken", () => {
+        const logs: string[] = [];
+        const spy = vi.spyOn(console, "log").mockImplementation((m?: unknown) => { logs.push(String(m)); });
+        try {
+            const { quest } = build(null);
+            quest.OnStart();
+        } finally {
+            spy.mockRestore();
+        }
+        const line = logs.find((l) => l.includes(DOMAIN) && l.includes("no record"));
+        expect(line, logs.join("\n")).toBeTruthy();
+        expect(line).toContain("another mod");
+    });
+
+    it("records a domain it registers on a clean save, so a later run can reclaim it", () => {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const net = node("world.network", {
+            ipMode: "random",
+            device: { id: "d1", ip: "x", type: "DEVICE", domainName: DOMAIN, users: [], ports: [], children: [] },
+        });
+        p.quests[0].graph.nodes = [entry, net];
+        p.quests[0].graph.edges = [edge(entry.id, net.id, "flow")];
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        // Clean save: nobody owns the domain.
+        sdk.Network.getSubnetByDomain = () => null;
+        sdk.Network.removeDomain = () => {};
+        sdk.Network.destroyNetwork = () => Promise.resolve();
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        quest.OnStart();
+        const ledger = sdk.SaveStorage.get("qe.ownedDomains");
+        expect(ledger).toEqual([{ domain: DOMAIN, ip: "10.9.9.9" }]);
+    });
+
+    it("survives a build with no SaveStorage at all", () => {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const net = node("world.network", {
+            ipMode: "random",
+            device: { id: "d1", ip: "x", type: "DEVICE", domainName: DOMAIN, users: [], ports: [], children: [] },
+        });
+        p.quests[0].graph.nodes = [entry, net];
+        p.quests[0].graph.edges = [edge(entry.id, net.id, "flow")];
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        delete sdk.SaveStorage;
+        sdk.Network.getSubnetByDomain = () => ({ ip: FOREIGN_IP });
+        sdk.Network.destroyNetwork = (ip: string) => { calls.push(`destroy:${ip}`); return Promise.resolve(); };
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        expect(() => quest.OnStart()).not.toThrow();
+        // No ledger means no proof of ownership, so nothing is destroyed.
+        expect(calls).not.toContain(`destroy:${FOREIGN_IP}`);
+        expect(calls).toContain("net:10.9.9.9");
     });
 });

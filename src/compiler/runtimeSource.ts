@@ -1331,6 +1331,46 @@ function __qeRegisterProject(sdk, PROJECT) {
             return acc;
         }
 
+        /* The ledger of what THIS mod has created in THIS save.
+
+           SaveStorage is per-save and namespaced per-mod ("Each mod has its
+           own isolated namespace within the save"), it travels with the save
+           and it is deleted when the save is. That makes it the one place we
+           can record ownership honestly: a domain listed here was registered
+           by this mod, in this playthrough, and by nobody else.
+
+           Without this, reclaiming was a guess. Zeis asked the right question
+           in r75: the first cut looked up whoever owned a domain and destroyed
+           them, which on a name collision would have deleted another mod's -
+           or the base game's - network. A display bug is not worth that. */
+        var LEDGER_KEY = "qe.ownedDomains";
+
+        function ownedDomains() {
+            var got = __QE.safe(function () {
+                return sdk.SaveStorage && sdk.SaveStorage.get ? sdk.SaveStorage.get(LEDGER_KEY) : null;
+            });
+            return got && typeof got === "object" && typeof got.length === "number" ? got : [];
+        }
+
+        function rememberDomain(domain, ip) {
+            if (!domain || !sdk.SaveStorage || !sdk.SaveStorage.set) return;
+            __QE.safe(function () {
+                var list = ownedDomains().filter(function (e) { return e && e.domain !== domain; });
+                list.push({ domain: domain, ip: ip });
+                sdk.SaveStorage.set(LEDGER_KEY, list);
+                return "";
+            });
+        }
+
+        /* What this mod recorded for a domain, or "" if it never claimed it. */
+        function ownedIpFor(domain) {
+            var list = ownedDomains();
+            for (var i = 0; i < list.length; i++) {
+                if (list[i] && list[i].domain === domain) return list[i].ip || "";
+            }
+            return "";
+        }
+
         /* Take a domain back from whatever is currently answering for it.
 
            This is the r75 fault, and it is NOT the same bug as the
@@ -1365,9 +1405,31 @@ function __qeRegisterProject(sdk, PROJECT) {
                 return "";
             });
             var oldIp = found && typeof found === "object" ? (found.ip || "") : "";
-            if (!oldIp || oldIp === keepIp) return;
+            if (!oldIp || oldIp === keepIp) {
+                rememberDomain(domain, keepIp);
+                return;
+            }
+
+            /* Only ever reclaim what this mod can PROVE it left behind.
+
+               The ledger is the proof. If this save has no record of us
+               registering this domain, the network answering for it belongs to
+               somebody else - another mod, or the base game - and destroying
+               it would be data loss in someone else's content. Leave it
+               standing and say so: the author picked a name that is already
+               taken, and that is a thing they need to know and can fix, not a
+               thing we should resolve by deleting a stranger's server. */
+            var mine = ownedIpFor(domain);
+            if (mine !== oldIp) {
+                __QE.log("domain \"" + domain + "\" is already registered to " + oldIp +
+                    ", and this mod has no record of creating it - so it belongs to the base game " +
+                    "or another mod. Leaving it alone: this quest's server at " + (keepIp || "its address") +
+                    " will NOT answer to that name. Pick a domain name nothing else uses.");
+                return;
+            }
+
             __QE.log("domain \"" + domain + "\" was still pointing at " + oldIp +
-                " (left behind by an earlier build or playthrough); reclaiming it for " +
+                " (a network this mod created in an earlier run); reclaiming it for " +
                 (keepIp || "this quest"));
             __QE.safe(function () {
                 if (sdk.Network.removeDomain) sdk.Network.removeDomain(domain);
@@ -1381,6 +1443,8 @@ function __qeRegisterProject(sdk, PROJECT) {
                 }
                 return "";
             });
+            /* The claim moves to the new address. */
+            rememberDomain(domain, keepIp);
         }
 
         function mapUsers(dev) {

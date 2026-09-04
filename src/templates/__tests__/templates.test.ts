@@ -21,14 +21,18 @@ describe("template registry", () => {
             "hello-hack",
             "wifi-hack",
             "investigation",
+            "data-grab",
             "contract-hack",
             "dirhunter-leak",
             "reference",
         ]);
         expect(getTemplate("wifi-hack")?.name).toBe("Simple Linear Wi-Fi Hack");
         expect(getTemplate("reference")?.difficulty).toBe("Reference");
-        // The standard contract hack ships the website its trail leads to —
-        // a quest template with no site would teach half the tool.
+        // Both contract templates ship the website their trail leads to — a
+        // quest template with no site would teach half the tool.
+        const standard = getTemplate("data-grab")!.build();
+        expect(standard.websites).toHaveLength(1);
+        expect(standard.websites[0].host).toBe("harbourline-logistics.com");
         const contract = getTemplate("contract-hack")!.build();
         expect(contract.websites).toHaveLength(1);
         expect(contract.websites[0].host).toBe("meridian-capital.net");
@@ -440,6 +444,12 @@ describe("the contract template is shaped the way the game plays", () => {
  */
 describe("the contract template's hints match the route the player walks", () => {
     const quest = () => getTemplate("contract-hack")!.build().quests[0];
+    /** The workstation's address, taken from the network the template builds. */
+    const hostIp = () => {
+        const net = quest().graph.nodes.find((n) => n.type === "world.network")!;
+        const device = (net.data as { device: { children: { ip: string }[] } }).device;
+        return device.children[0].ip;
+    };
     const objectives = () =>
         quest().graph.nodes
             .filter((n) => n.type === "objective")
@@ -461,11 +471,13 @@ describe("the contract template's hints match the route the player walks", () =>
     });
 
     it("never hands the player the workstation's address in a hint", () => {
-        /* 10.0.0.12 is the thing net_tree.py is there to reveal. Printing it in
-           a hint skips the step and makes the map objective pointless. */
+        /* The workstation's address is the thing net_tree.py is there to
+           reveal. Printing it in a hint skips the step and makes the map
+           objective pointless. Read it from the network rather than hard-coding
+           it, so renaming the address cannot quietly disarm this test. */
         for (const o of objectives()) {
             const text = `${o.description} ${o.hint ?? ""} ${o.info ?? ""}`;
-            expect(text, o.name).not.toContain("10.0.0.12");
+            expect(text, o.name).not.toContain(hostIp());
         }
     });
 
@@ -473,7 +485,7 @@ describe("the contract template's hints match the route the player walks", () =>
         const tools = quest().graph.nodes.filter((n) => n.type === "world.toolResponse");
         for (const t of tools) {
             const d = t.data as { command: string; dataText: string };
-            expect(d.dataText, `${d.command} leaks the internal address`).not.toContain("10.0.0.12");
+            expect(d.dataText, `${d.command} leaks the internal address`).not.toContain(hostIp());
         }
     });
 
@@ -503,4 +515,115 @@ describe("the contract template's hints match the route the player walks", () =>
             expect(wired, `${(o.data as { name: string }).name} has no trigger`).toBe(true);
         }
     });
+});
+
+/**
+ * Round 65. The Ledger Contract grew into an advanced quest as it became honest
+ * about how the game plays — SSH behind a router, a guest shell, a password
+ * cracked out of /etc/passwd. That is worth teaching, but it is not the job the
+ * game hands out constantly, and the standard template should be the short one.
+ *
+ * So there are now two, and the difference between them is the point:
+ *
+ *   Standard Contract Hack — a SERVER, one admin account, exploit and take a
+ *   copy. No user switching, nothing destroyed.
+ *
+ *   The Ledger Contract — a personal PC, guest shell, become the user, delete.
+ */
+describe("the two contract templates teach different routes", () => {
+    const server = () => {
+        const p = getTemplate("data-grab")!.build();
+        const net = p.quests[0].graph.nodes.find((n) => n.type === "world.network")!;
+        return (net.data as {
+            device: {
+                ports: { external: number; service?: string }[];
+                children: { ip: string; users: { username: string }[]; ports: { external: number; service?: string; locked?: boolean }[]; rootFiles?: { name: string }[] }[];
+            };
+        }).device;
+    };
+    const names = (id: string) =>
+        getTemplate(id)!.build().quests[0].graph.nodes
+            .filter((n) => n.type === "objective")
+            .map((n) => (n.data as { name: string }).name);
+
+    it("gives the standard target exactly one account, and it owns the files", () => {
+        /* A server, so the exploit lands in the account that owns everything.
+           That is what removes the need for `show users`, /etc/passwd and john. */
+        const box = server().children[0];
+        expect(box.users.map((u) => u.username)).toEqual(["admin"]);
+    });
+
+    it("has no password-cracking or user-switching step in the standard route", () => {
+        const objectives = names("data-grab");
+        expect(objectives).not.toContain("become-ritter");
+        expect(objectives).not.toContain("map-network");
+        const text = getTemplate("data-grab")!.build().quests[0].graph.nodes
+            .filter((n) => n.type === "objective")
+            .map((n) => JSON.stringify(n.data))
+            .join(" ");
+        expect(text).not.toContain("john");
+        expect(text).not.toContain("passwd");
+    });
+
+    it("keeps the long route in the Ledger, where it belongs", () => {
+        const objectives = names("contract-hack");
+        expect(objectives).toContain("map-network");
+        expect(objectives).toContain("become-ritter");
+    });
+
+    it("takes a copy rather than destroying anything", () => {
+        // Nothing to undo if the player gets it wrong, and a missing file is
+        // what tells a company somebody was there.
+        const objectives = names("data-grab");
+        expect(objectives).toContain("take-manifest");
+        expect(objectives).not.toContain("delete-ledger");
+    });
+
+    it("ends by sending the file to the client who asked for it", () => {
+        expect(names("data-grab")).toContain("send-manifest");
+    });
+
+    it("routes through the router, the same as the Ledger", () => {
+        // Web on the edge, SSH on the machine behind it.
+        const d = server();
+        expect(d.ports.map((p) => p.service)).toEqual(["http"]);
+        const ssh = d.children[0].ports.find((p) => p.service === "ssh")!;
+        expect(ssh.external).toBe(22);
+        expect(ssh.locked).toBe(false);
+    });
+
+    it("is marked as the easier of the two", () => {
+        expect(getTemplate("data-grab")!.difficulty).toBe("Beginner");
+        expect(getTemplate("contract-hack")!.difficulty).toBe("Advanced");
+    });
+});
+
+/**
+ * Round 65. Every device in the working reference mod carries a `logs` folder
+ * at its root, and the game logged `Sys log file not found for <ip>` against a
+ * machine of ours that had no `rootFiles` at all. `logs` is one of the engine's
+ * default root folders (with `etc`, `home` and `lib`), so ours is merged into
+ * the machine's own rather than duplicating it.
+ */
+describe("machines carry the root folders the game expects", () => {
+    const devicesOf = (id: string) => {
+        const p = getTemplate(id)!.build();
+        const out: { name?: string; rootFiles?: { name: string }[]; type?: string }[] = [];
+        const walk = (d: { name?: string; type?: string; rootFiles?: { name: string }[]; children?: unknown[] }) => {
+            out.push(d);
+            (d.children ?? []).forEach((c) => walk(c as Parameters<typeof walk>[0]));
+        };
+        for (const n of p.quests[0].graph.nodes.filter((x) => x.type === "world.network")) {
+            walk((n.data as { device: Parameters<typeof walk>[0] }).device);
+        }
+        return out;
+    };
+
+    for (const id of ["data-grab", "contract-hack"]) {
+        it(`${id}: the machine the player breaks into has a logs folder`, () => {
+            const target = devicesOf(id).find((d) => d.type === "DEVICE")!;
+            expect(target, "the template should have a device behind the router").toBeDefined();
+            expect(target.rootFiles?.map((f) => f.name)).toContain("logs");
+        });
+    }
 });

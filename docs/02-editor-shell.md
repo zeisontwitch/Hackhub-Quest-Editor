@@ -3067,3 +3067,59 @@ at, on the r41/r43 principle: a fix for an unconfirmed theory costs a round.
 
 **Verification:** 601 tests (20 files, +7), `tsc --noEmit` clean, `vite build`
 clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r64"`.
+
+## Round 65 — two contracts, because they teach different things
+
+QA's observation: with SSH behind the router, `net_tree.py`, a guest shell and a
+cracked password, the Ledger had stopped being the standard job. It is a good
+quest and worth keeping — but it is not the one the game hands out constantly,
+and the *standard* template should be the short route.
+
+So there are two now, and the difference is the whole point.
+
+**Standard Contract Hack** (`data-grab`, Beginner) — a shipping company's file
+server:
+
+```
+a name in a mail → lynx → whois → nmap → metasploit on 22 → copy the file → mail it back
+```
+
+The target is a **server**, so one administrator account is the entire story:
+the exploit lands the player in the account that already owns the files. No
+`show users`, no `/etc/passwd`, no `john`, no second terminal. And the player
+takes a **copy** — nothing is destroyed, so a mistake costs nothing, and the
+brief says why in character: *a missing file tells them somebody was there.*
+
+**The Ledger Contract** (`contract-hack`, now Advanced) keeps the long route.
+
+Tests pin the distinction rather than describing it: the standard server has
+exactly one account, its objectives mention neither `john` nor `passwd`, it
+takes rather than deletes, and the Ledger still has both the map and
+become-the-user steps.
+
+### Three fixes from QA's read of the network
+
+**A personal PC now has one account.** The Ledger's workstation carried an
+`admin` that a real person's machine would not have; it is `aritter` alone. The
+engine adds `root` and `guest` itself through the default user schema, which is
+where the three accounts QA saw came from — two of them were the engine's, and
+one was ours and wrong.
+
+**A realistic address.** `10.0.0.12` for a home machine behind a router became
+`192.168.1.24`. The test that stops a hint leaking that address now reads it
+from the network rather than hard-coding it, so renaming it cannot quietly
+disarm the check.
+
+**A `logs` folder on every target machine.** The reference mod gives one to all
+26 of its devices, and the game had been logging `Sys log file not found for
+10.0.0.12` against ours. `logs` is one of the engine's default root folders —
+with `etc`, `home` and `lib` — so what we add is merged into the machine's own
+rather than creating a second one. QA's reasoning for doing this was the right
+kind: if a mod that works does something for every single machine, the reason
+matters even when it is not documented.
+
+Whether that is also what blocks the deletion is unproven. It is the best
+candidate on the evidence, and it is worth having regardless.
+
+**Verification:** 624 tests (20 files, +23), `tsc --noEmit` clean, `vite build`
+clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r65"`.

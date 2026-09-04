@@ -46,6 +46,7 @@ dropped once it has stayed fixed for a few rounds.
 
 | Round | Item |
 |---|---|
+| r65 | Split the contract templates in two. **Standard Contract Hack** is the short route: a server, one admin account, exploit port 22, take a copy, mail it back. **The Ledger Contract** keeps the long route and is now marked Advanced. Both machines gained the `logs` root folder every reference-mod device has, and the Ledger's target moved to a realistic `192.168.1.24`. |
 | r64 | The contract template's objectives now match the route the player actually walks: added **map the network** (`net_tree.py`) and **become Ritter** (`show users` → `/etc/passwd` → `john` → `users <n>`), and no hint or tool output hands over the internal address any more. |
 | r63 | The slow install was **never our dependencies** — `origin/main` is equally slow. It is npm's `audit` lookup stalling on one network call: 7 minutes with it on, 3 seconds with it off. `Launch.bat` now passes `--no-audit --no-fund`. |
 | r62 | Reverted r60/r61's jsdom upgrades: chasing a cosmetic deprecation warning added ~3.7 MB of transitives and turned a sub-10-second first run into minutes. jsdom stays on 26. `Launch.bat` now skips the install when the folder is already set up and uses `npm ci` when it is not (28s against 7min for the same result). |

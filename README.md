@@ -46,6 +46,7 @@ dropped once it has stayed fixed for a few rounds.
 
 | Round | Item |
 |---|---|
+| r63 | The slow install was **never our dependencies** — `origin/main` is equally slow. It is npm's `audit` lookup stalling on one network call: 7 minutes with it on, 3 seconds with it off. `Launch.bat` now passes `--no-audit --no-fund`. |
 | r62 | Reverted r60/r61's jsdom upgrades: chasing a cosmetic deprecation warning added ~3.7 MB of transitives and turned a sub-10-second first run into minutes. jsdom stays on 26. `Launch.bat` now skips the install when the folder is already set up and uses `npm ci` when it is not (28s against 7min for the same result). |
 | r60 | Debug probes now re-name themselves when moved to a different wire (a name the author typed is still never touched). `jsdom` upgraded to 30, which removes the deprecated `whatwg-encoding` warning on install. |
 | r59 | The briefing arrived blank (`subject=""`), so `Mail.Read` could never match. Cause: r56's "wait for the destroy" path cost the quest its permissions mid-build, `Mail.send` was refused, and the fallback delivered the engine's empty copy. The destroy is no longer awaited, and the fallback refuses to send a mail the engine has no usable copy of. |

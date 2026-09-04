@@ -62,6 +62,21 @@ function admitsOurFloor(range: string): boolean {
 }
 
 describe("the toolchain installs without warnings", () => {
+    it("uses npm ci with audit and fund switched off in the launcher", () => {
+        /* The whole reason a first run went from seconds to minutes. npm's
+           audit lookup is one network call that stalled for seven minutes in
+           testing; the same install takes three seconds without it. Measured
+           against origin/main too, which is equally slow with audit on — so
+           this was never something the project's own dependencies caused. */
+        const bat = readFileSync(resolve(root, "Launch.bat"), "utf8");
+        expect(bat).toMatch(/npm ci .*--no-audit/);
+        expect(bat).toMatch(/npm ci .*--no-fund/);
+        // and the fallback must not reintroduce the stall
+        expect(bat).toMatch(/npm install .*--no-audit/);
+        // an already-installed folder should not reinstall at all
+        expect(bat).toContain("node_modules\\.package-lock.json");
+    });
+
     it("declares the Node version it needs", () => {
         expect(pkg.engines?.node, "package.json needs an engines.node floor").toBeTruthy();
     });

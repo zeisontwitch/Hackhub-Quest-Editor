@@ -2944,3 +2944,63 @@ person into repeating r60.
 
 **Verification:** 593 tests (20 files), `tsc --noEmit` clean. Export stamp:
 `EDITOR_BUILD = "2026-09-04.r62"`.
+
+## Round 63 — it was never our dependencies
+
+QA asked the right question: compare the launcher and the install against
+`origin/main`, because if there is no meaningful difference then the slowness is
+not ours. That is exactly how it turned out, and it is worth writing down how
+the measurement went, because two rounds were spent fixing the wrong thing.
+
+### The comparison
+
+Dependency difference between `main` and this branch: **one package** — the
+`@hotbunny/hackhub-content-sdk` devDependency added in r48, which has no
+dependencies of its own. 273 packages against 274.
+
+Then the timings, same machine, same command:
+
+```
+main, cold cache      npm ci   7m 04s
+main, warm cache      npm ci      15s
+ours, warm cache      npm ci   7m 00s
+just the SDK, alone   npm i    7m 00s   (a 32 KB package)
+same tarball by curl                0.26s
+```
+
+A 32 KB file that curl fetches in a quarter of a second, taking npm seven
+minutes — and `main` doing the same thing — rules out package weight, the
+lockfile and anything either branch changed.
+
+```
+npm i @hotbunny/hackhub-content-sdk --no-audit --no-fund      0.4s
+npm ci  (our whole tree)          --no-audit --no-fund        3.4s
+```
+
+**It is npm's audit call.** One request to the registry's advisory endpoint,
+made after the install finishes, which stalls here for minutes and blocks npm
+from exiting. Nothing to do with what is being installed.
+
+### The fix
+
+`Launch.bat` runs `npm ci --no-audit --no-fund`, with the same flags on the
+`npm install` fallback. `npm audit` is a report about the *dev toolchain* — it
+says nothing about an exported mod, and an author does not need it on every
+start. Anyone who wants it can run `npm audit` directly.
+
+Combined with r62's two changes, a launcher start is now: instant when
+`node_modules` already exists, and a few seconds when it does not.
+
+### What I should have done
+
+r60 and r61 both changed dependencies to chase this, and r62 reverted them. The
+comparison against `main` costs one command and would have ruled our changes out
+before the first upgrade. When a symptom appears after a change, that is
+evidence, not proof — and "does the unchanged branch do it too?" is the cheapest
+way to tell the difference.
+
+The jsdom revert in r62 still stands on its own merits: 3.7 MB of transitives to
+silence a cosmetic warning was a bad trade regardless of what caused the stall.
+
+**Verification:** 594 tests (20 files, +1), `tsc --noEmit` clean, `vite build`
+clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r63"`.

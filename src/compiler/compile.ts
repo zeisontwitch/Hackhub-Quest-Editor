@@ -22,7 +22,7 @@ import { RUNTIME_SOURCE } from "./runtimeSource";
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-04.r62";
+export const EDITOR_BUILD = "2026-09-04.r63";
 
 export interface CompiledFile {
     path: string;

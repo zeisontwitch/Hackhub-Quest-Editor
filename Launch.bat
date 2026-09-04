@@ -28,14 +28,24 @@ if exist "node_modules\.package-lock.json" (
     echo         already installed, skipping.
     goto :installed
 )
-rem "npm ci" installs exactly what package-lock.json pins. "npm install"
-rem re-resolves the whole tree against the registry first, which took SEVEN
-rem MINUTES here against 28 seconds for the same result.
-call npm ci
+rem Three things keep this quick, and the third is the one that matters:
+rem
+rem   "npm ci" installs exactly what package-lock.json pins, instead of
+rem   re-resolving the whole tree against the registry the way "npm install"
+rem   does.
+rem
+rem   --no-audit skips npm's vulnerability lookup. That single network call is
+rem   what made this look like a hang: measured here, the same install took
+rem   SEVEN MINUTES with audit on and 3 SECONDS with it off. It is a report
+rem   about the dev toolchain, not something an author needs on every start;
+rem   run "npm audit" yourself whenever you want it.
+rem
+rem   --no-fund drops the donation footer nobody reads.
+call npm ci --no-audit --no-fund
 if errorlevel 1 (
     echo.
     echo   Falling back to npm install...
-    call npm install
+    call npm install --no-audit --no-fund
 )
 if errorlevel 1 (
     echo.

@@ -374,6 +374,13 @@ export const useEditor = create<EditorStore>()((set, get) => {
                 for (const [path, value] of Object.entries(patch)) {
                     setPath(node.data as unknown as Record<string, unknown>, path, value);
                 }
+                /* Typing a name into a debug probe makes it the author's, and
+                   re-wiring must never overwrite it again. Clearing the field
+                   hands it back to us, so the next wire names it afresh. */
+                if (node.type === "flow.debug" && "label" in patch) {
+                    (node.data as { labelAuto: boolean }).labelAuto =
+                        String(patch.label ?? "").trim().length === 0;
+                }
                 // Nodes whose sockets come from their own data (Sequence) can
                 // lose a socket on edit. A wire hanging off a socket that no
                 // longer exists would be invisible but still compiled, so it
@@ -480,8 +487,20 @@ export const useEditor = create<EditorStore>()((set, get) => {
                    overwritten, here or on a later rewire. */
                 const probe = q.graph.nodes.find((n) => n.id === target);
                 if (probe && probe.type === "flow.debug") {
-                    const data = probe.data as { label: string };
-                    if (!data.label.trim()) data.label = debugProbeName(sourceNode, sourceHandle);
+                    const data = probe.data as { label: string; labelAuto?: boolean };
+                    /* Re-name on every rewire, so a probe plugged into the
+                       wrong socket and then moved stops describing the wire it
+                       used to be on. Only a name we generated is replaced:
+                       `labelAuto` records that, because "is it blank?" stops
+                       being a usable test the moment we fill it in.
+
+                       A probe can take more than one wire, so the newest
+                       connection wins — that is the one the author just made,
+                       and the one they are thinking about. */
+                    if (!data.label.trim() || data.labelAuto) {
+                        data.label = debugProbeName(sourceNode, sourceHandle);
+                        data.labelAuto = true;
+                    }
                 }
             });
             return true;

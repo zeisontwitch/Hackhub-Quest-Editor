@@ -563,21 +563,65 @@ describe("a debug probe names itself after what it is watching", () => {
         expect(name).not.toMatch(/--|^-|-$/);
     });
 
-    it("names a probe on connect, and never overwrites what the author typed", () => {
-        const store = useEditor.getState();
-        const objId = store.addNode("objective", { x: 0, y: 0 })!;
+    it("names a probe on connect", () => {
+        const objId = useEditor.getState().addNode("objective", { x: 0, y: 0 })!;
         useEditor.getState().updateNodeData(objId, { name: "get-a-shell" });
         const probeId = useEditor.getState().addNode("flow.debug", { x: 300, y: 0 })!;
 
         useEditor.getState().connect({ source: objId, sourceHandle: "done", target: probeId, targetHandle: "in" });
         const named = quest().graph.nodes.find((n) => n.id === probeId)!;
         expect((named.data as { label: string }).label).toBe("OnComplete-Objective-GetAShell");
+    });
 
-        // The author renames it; a later rewire must leave that alone.
+    it("re-names itself when it is moved to a different wire", () => {
+        /* QA: plug a probe into the wrong socket, notice, move it — and the
+           name went on describing the wire it used to be on. */
+        const objId = useEditor.getState().addNode("objective", { x: 0, y: 0 })!;
+        useEditor.getState().updateNodeData(objId, { name: "delete-ledger" });
+        const probeId = useEditor.getState().addNode("flow.debug", { x: 300, y: 0 })!;
+
+        useEditor.getState().connect({ source: objId, sourceHandle: "done", target: probeId, targetHandle: "in" });
+        expect((quest().graph.nodes.find((n) => n.id === probeId)!.data as { label: string }).label)
+            .toBe("OnComplete-Objective-DeleteLedger");
+
+        // Moved to a different node. Unplug the old wire the way a user would
+        // before plugging in the new one.
+        const wrong = quest().graph.edges.find((e) => e.target === probeId)!;
+        useEditor.getState().removeEdges([wrong.id]);
+        const netId = useEditor.getState().addNode("world.network", { x: 0, y: 200 })!;
+        useEditor.getState().updateNodeData(netId, { "device.name": "meridian-edge" });
+        useEditor.getState().connect({ source: netId, sourceHandle: "out", target: probeId, targetHandle: "in" });
+        expect((quest().graph.nodes.find((n) => n.id === probeId)!.data as { label: string }).label)
+            .toBe("Out-CreateNetwork-MeridianEdge");
+    });
+
+    it("never overwrites a name the author typed, however often it is rewired", () => {
+        const objId = useEditor.getState().addNode("objective", { x: 0, y: 0 })!;
+        useEditor.getState().updateNodeData(objId, { name: "get-a-shell" });
+        const probeId = useEditor.getState().addNode("flow.debug", { x: 300, y: 0 })!;
+        useEditor.getState().connect({ source: objId, sourceHandle: "done", target: probeId, targetHandle: "in" });
+
         useEditor.getState().updateNodeData(probeId, { label: "my own name" });
         const other = useEditor.getState().addNode("objective", { x: 0, y: 200 })!;
         useEditor.getState().connect({ source: other, sourceHandle: "done", target: probeId, targetHandle: "in" });
-        const after = quest().graph.nodes.find((n) => n.id === probeId)!;
-        expect((after.data as { label: string }).label).toBe("my own name");
+        expect((quest().graph.nodes.find((n) => n.id === probeId)!.data as { label: string }).label)
+            .toBe("my own name");
+    });
+
+    it("hands naming back when the author clears the field again", () => {
+        const objId = useEditor.getState().addNode("objective", { x: 0, y: 0 })!;
+        useEditor.getState().updateNodeData(objId, { name: "read-brief" });
+        const probeId = useEditor.getState().addNode("flow.debug", { x: 300, y: 0 })!;
+        useEditor.getState().connect({ source: objId, sourceHandle: "done", target: probeId, targetHandle: "in" });
+
+        useEditor.getState().updateNodeData(probeId, { label: "mine" });
+        useEditor.getState().updateNodeData(probeId, { label: "  " }); // cleared
+        const old = quest().graph.edges.find((e) => e.target === probeId)!;
+        useEditor.getState().removeEdges([old.id]);
+        const other = useEditor.getState().addNode("objective", { x: 0, y: 200 })!;
+        useEditor.getState().updateNodeData(other, { name: "find-server" });
+        useEditor.getState().connect({ source: other, sourceHandle: "done", target: probeId, targetHandle: "in" });
+        expect((quest().graph.nodes.find((n) => n.id === probeId)!.data as { label: string }).label)
+            .toBe("OnComplete-Objective-FindServer");
     });
 });

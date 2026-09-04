@@ -483,6 +483,16 @@ export const SequenceNodeDataSchema = z.object({
 export const DebugNodeDataSchema = z.object({
     /** Shown in the log line, so several probes can be told apart. */
     label: z.string().default(""),
+    /**
+     * True while the label is one we generated from the wire.
+     *
+     * Without this, "has the author named it?" has to be guessed from whether
+     * the label is blank — which stops being true the moment we fill it in, so
+     * re-wiring a probe to a different socket left it describing the wire it
+     * used to be on. An author who types their own name clears this flag and
+     * keeps their text for good.
+     */
+    labelAuto: z.boolean().default(false),
     /** Also show it on screen, for testing without reading a log file. */
     toast: z.boolean().default(false),
     /** Print the quest's saved Data alongside the label. */

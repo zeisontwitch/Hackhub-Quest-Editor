@@ -2791,3 +2791,55 @@ objective "read-brief" completed by Mail.Read
 
 **Verification:** 586 tests (19 files, +4), `tsc --noEmit` clean, `vite build`
 clean. Export stamp: `EDITOR_BUILD = "2026-09-03.r59"`.
+
+## Round 60 — two small ones
+
+### The deprecation warning on install
+
+```
+npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead
+```
+
+It came from `jsdom`, which is a **dev** dependency — the DOM the tests run in.
+Nothing shipped in a mod was ever affected, and nothing an author runs touches
+it. Still worth clearing: an install that prints warnings trains people to
+ignore warnings.
+
+`jsdom` 30 replaced `html-encoding-sniffer@4` (which pulled `whatwg-encoding`)
+with version 6 (which uses `@exodus/bytes`), so the upgrade removes the package
+entirely rather than silencing the message. vitest declares `jsdom: '*'`, so
+there was no version conflict to negotiate. `npm ls whatwg-encoding` now returns
+empty and a fresh install prints no deprecation warnings at all. All 586 tests
+pass unchanged under the new DOM.
+
+### A probe kept the name of a wire it was no longer on
+
+Reported by QA: plug a probe into the wrong socket, notice, move it — and the
+label still described the old wire.
+
+r54 only filled a *blank* label, which was the wrong test for "has the author
+named this?". It is true exactly once: the moment we generate a name, the field
+stops being blank, so no later rewire could ever change it.
+
+The data now records whose name it is. `labelAuto` is set when we generate one
+and cleared the moment an author types their own, so:
+
+- **wiring a fresh probe** names it;
+- **moving it** re-names it, every time;
+- **a name the author typed** is never overwritten, however often it is
+  rewired;
+- **clearing the field** hands naming back to us, and the next wire names it
+  afresh.
+
+A probe can take more than one incoming wire, so the newest connection wins —
+that is the one the author just made.
+
+Writing the tests turned up a detail worth recording: an objective's second
+socket is `unlock` (not `unlocks`), and it carries an **unlock** wire, which
+cannot feed a flow input. The first draft of the test tried it and failed for
+that reason rather than the one under test. The product code was right; the test
+was wrong.
+
+**Verification:** 589 tests (19 files, +3), `tsc --noEmit` clean, `vite build`
+clean. Reverting the `labelAuto` check makes the rewire test fail, so the
+coverage is real. Export stamp: `EDITOR_BUILD = "2026-09-03.r60"`.

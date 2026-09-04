@@ -46,6 +46,7 @@ dropped once it has stayed fixed for a few rounds.
 
 | Round | Item |
 |---|---|
+| r60 | Debug probes now re-name themselves when moved to a different wire (a name the author typed is still never touched). `jsdom` upgraded to 30, which removes the deprecated `whatwg-encoding` warning on install. |
 | r59 | The briefing arrived blank (`subject=""`), so `Mail.Read` could never match. Cause: r56's "wait for the destroy" path cost the quest its permissions mid-build, `Mail.send` was refused, and the fallback delivered the engine's empty copy. The destroy is no longer awaited, and the fallback refuses to send a mail the engine has no usable copy of. |
 | r58 | The Ledger network now has the shape every reference-mod network has: the router serves the website only (port 80, locked), and the exploitable SSH sits on the workstation behind it. `locked` was in the schema and inspector but never reached the engine — now it does. |
 | r57 | The exploit succeeded but logged in as `guest` and opened a plain shell, not meterpreter. r53 had put a guest account on *every* machine; the reference mod puts one on its 26 Devices and none of its 7 Routers. Routers now keep only the accounts the author wrote. |

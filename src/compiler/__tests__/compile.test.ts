@@ -4924,3 +4924,144 @@ describe("the Harbour template ships the single-account server its story describ
         expect(device.extraAccounts).toBe(false);
     });
 });
+
+/**
+ * QA, round 79. The quest ran end to end for the first time - and the game
+ * froze at the very last step, sending the final mail.
+ *
+ * Two things in the log say what happened. First, the last three nodes printed
+ * their saved data as `undefined` where every earlier node had printed real
+ * values:
+ *
+ *     reached "Out-PayThePlayer"       | ... | saved: undefined
+ *     reached "Out-Dialogue-Received"  | ... | saved: undefined
+ *
+ * The engine had begun retiring the completed quest while our flow was still
+ * walking the wires behind it, so `questRef.Data` was gone. Any {{data.x}} in
+ * those nodes fills with "" - a payment description or mail body silently
+ * losing its values.
+ *
+ * Second, and this is the freeze: completing the quest calls OnComplete, which
+ * runs the cleanup, which calls `Network.destroyNetwork`. That is the ONLY
+ * cleanup call in the SDK returning a `Promise`, and `runQuestCleanup` invoked
+ * it bare inside a try/catch. A try/catch does not catch an async rejection,
+ * so a rejected destroy escapes as an unhandled rejection in the renderer.
+ * r75 added exactly this guard to the copy in `reclaimDomain` and this one was
+ * missed.
+ *
+ * It had never fired before because r78 was the first build in which the quest
+ * could actually be completed, so OnComplete had never run.
+ */
+describe("finishing a quest never takes the game down with it", () => {
+    function build(opts: { destroyResult?: () => unknown } = {}) {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const net = node("world.network", {
+            ipMode: "random",
+            device: {
+                id: "d1", ip: "x", type: "DEVICE", name: "fileserver", extraAccounts: false,
+                users: [{ id: "u1", username: "admin", password: "pw" }],
+                ports: [{ id: "p1", external: 22, internal: 22, active: true, service: "ssh" }],
+                children: [],
+            },
+        });
+        p.quests[0].graph.nodes = [entry, net];
+        p.quests[0].graph.edges = [edge(entry.id, net.id, "flow")];
+
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        sdk.Network.destroyNetwork = (ip: string) => {
+            calls.push(`destroy:${ip}`);
+            return opts.destroyResult ? opts.destroyResult() : Promise.resolve();
+        };
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        quest.OnStart();
+        return { quest, calls };
+    }
+
+    it("does not let a rejected destroyNetwork escape when the quest completes", async () => {
+        const unhandled: unknown[] = [];
+        const onUnhandled = (e: PromiseRejectionEvent | unknown) => unhandled.push(e);
+        process.on("unhandledRejection", onUnhandled);
+        try {
+            const { quest } = build({ destroyResult: () => Promise.reject(new Error("no such network")) });
+            expect(() => quest.OnComplete()).not.toThrow();
+            // Give the microtask queue a chance to surface an unhandled rejection.
+            await new Promise((r) => setTimeout(r, 10));
+        } finally {
+            process.off("unhandledRejection", onUnhandled);
+        }
+        expect(unhandled, "a rejected destroy escaped to the renderer").toHaveLength(0);
+    });
+
+    it("survives a destroyNetwork that throws outright", () => {
+        const { quest } = build({ destroyResult: () => { throw new Error("boom"); } });
+        expect(() => quest.OnComplete()).not.toThrow();
+    });
+
+    it("still tears the network down on the happy path", () => {
+        const { quest, calls } = build();
+        quest.OnComplete();
+        expect(calls.some((c) => c.startsWith("destroy:"))).toBe(true);
+    });
+
+    it("does not tear the same world down twice", () => {
+        // AutoComplete plus an already-completed objective can bring OnComplete
+        // round again; destroying an absent network is the call that hung the
+        // loader in r72.
+        const { quest, calls } = build();
+        quest.OnComplete();
+        const first = calls.filter((c) => c.startsWith("destroy:")).length;
+        quest.OnComplete();
+        quest.OnAbandon();
+        const total = calls.filter((c) => c.startsWith("destroy:")).length;
+        expect(first).toBe(1);
+        expect(total).toBe(1);
+    });
+});
+
+describe("the tail of a finished quest can still read its data", () => {
+    function build() {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const obj = node("objective", { name: "send-manifest", description: "Send it" });
+        const trig = node("trigger.event", { event: "Mail.Sent", conditions: [] });
+        const pay = node("fx.pay", {
+            amountMode: "fixed", amount: 2500,
+            description: "Manifest delivered from {{data.targetIp}}", fromName: "D. Okonkwo",
+        });
+        p.quests[0].graph.nodes = [obj, trig, pay];
+        p.quests[0].graph.edges = [
+            edge(trig.id, obj.id, "condition"),
+            { ...edge(obj.id, pay.id, "flow"), sourceHandle: "done" },
+        ];
+
+        const calls: string[] = [];
+        const listeners: [string, (d: unknown) => void][] = [];
+        const sdk = stubSdk(calls, listeners) as any;
+        sdk.Bank = { transaction: (t: { description: string }) => calls.push(`pay:${t.description}`) };
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = { targetIp: "157.47.8.56" };
+        quest.OnObjectivesStart();
+        return { quest, calls, listeners };
+    }
+
+    it("fills tokens from the last known data after the engine retires the quest", () => {
+        const { quest, calls, listeners } = build();
+        // The engine begins retiring the completed quest: its Data goes away
+        // while our flow is still walking the wires behind it.
+        quest.Data = undefined;
+        for (const [e, h] of listeners) if (e === "Mail.Sent") h({ to: "d.okonkwo@nullpost.io" });
+        expect(calls).toContain("pay:Manifest delivered from 157.47.8.56");
+    });
+
+    it("still works normally while the quest data is live", () => {
+        const { calls, listeners } = build();
+        for (const [e, h] of listeners) if (e === "Mail.Sent") h({ to: "d.okonkwo@nullpost.io" });
+        expect(calls).toContain("pay:Manifest delivered from 157.47.8.56");
+    });
+});

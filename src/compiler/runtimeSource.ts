@@ -414,11 +414,35 @@ function __qeRegisterProject(sdk, PROJECT) {
            nothing), drained in OnComplete/OnAbandon. */
         var questCleanup = [];
 
+        /* Has the quest already been torn down once?
+
+           OnComplete can be called more than once - the engine may re-run it,
+           and AutoComplete plus a "completed (in-memory)" objective can bring
+           it round again on a save that has finished the quest before. Tearing
+           the same world down twice means destroying a network that is already
+           gone, which is exactly the call the loader once hung on (r72). */
+        var cleanedUp = false;
+
+        /* The last non-empty quest Data we saw. See dataScope(). */
+        var lastKnownData = null;
+
         function runQuestCleanup() {
+            if (cleanedUp) {
+                __QE.log("cleanup already ran for this quest; skipping");
+                return;
+            }
+            cleanedUp = true;
             while (questCleanup.length) {
                 var item = questCleanup.pop();
                 try {
-                    if (item.kind === "network" && sdk.Network.destroyNetwork) sdk.Network.destroyNetwork(item.ip);
+                    if (item.kind === "network" && sdk.Network.destroyNetwork) {
+                        /* destroyNetwork is the ONLY cleanup call that returns
+                           a promise, and an unhandled rejection from it takes
+                           the renderer with it. r75 guarded the copy in
+                           reclaimDomain and missed this one (r79). */
+                        var dp = sdk.Network.destroyNetwork(item.ip);
+                        if (dp && typeof dp.then === "function") dp.then(function () {}, function () {});
+                    }
                     if (item.kind === "domain" && sdk.Network.removeDomain) sdk.Network.removeDomain(item.domain);
                     if (item.kind === "commandData" && sdk.Shell && sdk.Shell.removeCommandData) sdk.Shell.removeCommandData(item.command, item.input);
                     if (item.kind === "firewall" && sdk.Network.removeFirewallRule) sdk.Network.removeFirewallRule(item.ip, item.port);
@@ -506,7 +530,22 @@ function __qeRegisterProject(sdk, PROJECT) {
            fresh each call so repeated use of e.g. {{random.password}}
            yields independent values. */
         function dataScope(extra) {
-            var d = questRef ? questRef.Data : {};
+            /* questRef.Data can go UNDEFINED while the story is still running.
+               QA r79 saw it on the last three nodes of a finished quest:
+
+                   reached "Out-PayThePlayer"   | saved: undefined
+                   reached "Out-Dialogue-Received" | saved: undefined
+
+               ...where every earlier node had printed the real values. The
+               engine had already begun retiring the completed quest, so its
+               Data was gone while our flow was still walking the wires behind
+               it. Any {{data.x}} in those nodes would have filled with "" -
+               a payment description or a mail body quietly losing its values.
+
+               Remember the last Data we saw and fall back to it, so the tail
+               of a quest reads the same as the rest of it. */
+            if (questRef && questRef.Data) lastKnownData = questRef.Data;
+            var d = (questRef && questRef.Data) || lastKnownData || {};
             /* Every player/random field is a GETTER, computed only if a token
                actually asks for it, and never allowed to throw. Reading them
                eagerly cost a mod its whole quest once: a project with no
@@ -1143,7 +1182,15 @@ function __qeRegisterProject(sdk, PROJECT) {
                         dbgParts.push("event: " + (hasPayload ? __QE.describe(pay) : "(none - not reached from a trigger)"));
                     }
                     if (d.includeData !== false) {
-                        dbgParts.push("saved: " + __QE.describe(questRef ? questRef.Data : null));
+                        /* Report what a {{token}} here would ACTUALLY resolve
+                           against, which after the engine retires a completed
+                           quest is the remembered copy rather than the live
+                           one. Printing "undefined" while tokens still filled
+                           correctly would send the next reader down the wrong
+                           path. */
+                        var live = questRef && questRef.Data;
+                        dbgParts.push("saved: " + __QE.describe(live || lastKnownData || null) +
+                            (live ? "" : " (quest data already retired; using the last known values)"));
                     }
                     __QE.log(dbgParts.join(" | "));
                     if (d.toast && sdk.UI && sdk.UI.toast) {

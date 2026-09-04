@@ -605,11 +605,17 @@ function CanvasInner() {
                 onSelectionEnd={() => {
                     boxSelecting.current = false;
                 }}
-                // Ctrl+click raises `contextmenu` on Windows and Linux before
-                // any pointerup reaches the pane, so React Flow never clears
-                // its selection rectangle and a translucent box stayed on the
-                // canvas until the next click. Swallowing the context menu on
-                // the pane lets the normal pointerup run.
+                /*
+                 * Ctrl+click raises `contextmenu` on Windows and Linux before
+                 * any pointerup reaches the pane, so React Flow never cleared
+                 * its selection rectangle and a translucent box was left on the
+                 * canvas until the next click.
+                 *
+                 * Handling onPaneContextMenu does NOT fix it: React Flow's own
+                 * pane handler returns early — and never calls ours — whenever
+                 * panOnDrag includes button 2. Preventing the default here is
+                 * what actually lets the pointerup through.
+                 */
                 onPaneContextMenu={(event) => event.preventDefault()}
                 onPaneClick={() => select({ nodeIds: [], edgeIds: [] })}
                 onEdgeDoubleClick={(_event, edge) => insertReroute(edge.id)}
@@ -621,7 +627,10 @@ function CanvasInner() {
                 }
                 deleteKeyCode={["Backspace", "Delete"]}
                 selectionKeyCode={null}
-                panOnDrag={[1, 2]}
+                // Middle-mouse pans. Right-drag used to pan as well, but that
+                // is what made React Flow swallow the context-menu event and
+                // strand its selection rectangle on a ctrl+click (see above).
+                panOnDrag={[1]}
                 selectionOnDrag
                 selectionMode={SelectionMode.Partial}
                 multiSelectionKeyCode={["Meta", "Shift", "Control"]}

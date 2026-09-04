@@ -79,9 +79,18 @@ export function resolveSelection(
     // was pointing at nodes, so those edge changes are ignored outright.
     if (kind === "edges" && boxSelecting) return null;
     const tidyUp = onlyDeselects(changes);
-    // Adding to a selection: keep what was there and ignore the wholesale
-    // clear React Flow sends at the start of the drag.
-    if (additive && tidyUp) return null;
+    /*
+     * Adding to a selection: ignore the wholesale clear React Flow sends at the
+     * start of a box drag (resetSelectedElements(), which does not check for a
+     * modifier).
+     *
+     * Only while a BOX is actually open. An earlier version dropped every
+     * clear-only batch whenever a modifier was held, which also swallowed
+     * ctrl+click-to-deselect — that is a clear-only batch too, and the one the
+     * user most wants honoured. The two are indistinguishable by their changes
+     * alone; the box is what tells them apart.
+     */
+    if (additive && tidyUp && boxSelecting) return null;
     if (kind === "nodes") {
         return {
             nodeIds: nextSelection(current.nodeIds, changes),

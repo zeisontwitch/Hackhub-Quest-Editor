@@ -147,10 +147,15 @@ describe("resolveSelection with a modifier held", () => {
     });
 
     it("removes a single node from the selection on ctrl+click", () => {
+        // No box is open, so this clear-only batch is the user deselecting one
+        // node - it must be applied, not swallowed as drag tidy-up.
         expect(resolveSelection("nodes", sel(["a", "b", "c"], []), drop("b"), false, true))
+            .toEqual(sel(["a", "c"], []));
+    });
+
+    it("still ignores the drag-start clear when a box IS open", () => {
+        expect(resolveSelection("nodes", sel(["a", "b"], []), clearAll("a", "b"), true, true))
             .toBeNull();
-        // The deselect is the whole batch, so the node list is left to the
-        // click handler; what matters is that it does not wipe everything.
     });
 
     it("does not clear a wire selection while adding nodes", () => {

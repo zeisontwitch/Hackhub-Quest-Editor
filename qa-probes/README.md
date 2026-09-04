@@ -1,48 +1,42 @@
-# r87 — can we at least clear the objectives?
+# r88 — the shipping default
 
-## Where we are
+## M worked
 
-- **J froze** → HackHub 1.1.2 cannot complete a mod quest. Nine hypotheses
-  eliminated; full write-up in `docs/04-engine-bug-quest-completion.md`.
-- **K survived** → a quest that never completes does not crash. The workaround
-  is sound at toy scale.
+Full Harbour quest, no freeze, and the objective rows **disappeared** — so the
+engine does re-read the objectives array after the panel is built. The only
+blemish was the header reading **`0/0 completed`**, because the counter counts
+visible rows and we had hidden every one.
 
-## Zeis's question: can the objectives be removed from the panel?
+## The fix
 
-**There is no API for it.** Grepping the entire 2,898-line SDK for "objective"
-returns only: the definition shape, `completeObjective()`, and
-`OnObjectivesStart`. No remove, no hide, no clear. Same for the quest itself —
-no `removeQuest`, `retire` or `unregisterQuest`; `Quest.claim()` starts a quest
-and has no counterpart.
+Keep the **last** row visible and rewrite it into a closing line. The panel
+then reads `1/1 completed` with a single ticked item saying the contract is
+closed, instead of an empty `0/0`.
 
-**But there is one thing worth trying.** `QuestObjectiveDefinition` has a
-`hidden?: boolean` flag, and we already know the engine re-reads the objectives
-array we hand it *after* the panel exists: `refillObjectives()` rewrites
-descriptions and terminal commands at `OnStart`, and r73 confirmed in-game that
-the panel picked those edits up (it fixed raw `{{data.targetIp}}` showing).
+This is now the default for every quest the editor generates:
 
-So the open question is narrow: **does flipping `hidden` to true after the
-first render actually remove the row?** The engine may only read `hidden` once,
-when it builds the list. I cannot answer that from here — only a real run can.
-
-| Build | What it does |
+| Setting | Default |
 |---|---|
-| `M_hide_objectives_at_end` | full Harbour, never completes, and flips every objective to `hidden: true` the moment the last one ticks |
+| Complete automatically | **off** (crashes the game) |
+| Manual complete button | **off** (crashes the game) |
+| Tidy the objective list when the story ends | **on** |
+| Closing line | written per template |
 
-## What to look for
+Both toggles now carry hints explaining *why* they are off, so nobody turns
+them back on and hits the freeze. The old hint actively recommended
+`autoComplete`, which was bad advice.
 
-Play M to the end as normal. When you send the final mail, watch the quest
-panel:
+## One confirmation run
 
-- **Rows vanish, panel empties** → we have a clean ending despite the engine
-  bug. I will make this the default.
-- **Rows stay, all ticked** → `hidden` is read once at build time only. Then
-  7/7-and-lingering is genuinely the best available, and the copy nudge
-  ("contract closed — you can clear this from your quest list") is the answer.
+| Build | What it is |
+|---|---|
+| `N_shipping_default` | the stock Harbour template with **nothing overridden** — exactly what an author gets today |
 
-Either result is useful. The new log line `all objectives done; asked the panel
-to hide them (7 row(s))` confirms our side ran regardless of what the UI does.
+Play it through. Expected: no freeze, and when you send the final mail the
+panel collapses to one ticked line reading *"Contract closed. The manifest is
+with the client."*
 
-Note L is now redundant — M *is* L plus the hide attempt, so it tests the
-full-quest workaround at the same time. If M freezes, that is a surprise and
-worth telling me immediately, since K says it should not.
+If that is what you see, the engine bug is worked around end to end and we can
+get back to features. The remaining permanent cost is that the quest entry
+itself stays in the list — no API exists to remove it, and that is now question
+5 in `docs/04-engine-bug-quest-completion.md` for the devs.

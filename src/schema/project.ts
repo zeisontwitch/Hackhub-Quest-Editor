@@ -120,7 +120,13 @@ export const QuestSchema = z.object({
     }),
     employer: EmployerSchema.default({}),
     autoStart: z.boolean().default(false),
-    autoComplete: z.boolean().default(true),
+    /**
+     * Defaults to false. HackHub 1.1.2 freezes the renderer whenever it
+     * finishes a mod-defined quest - both automatically and via the complete
+     * button - so generated quests end their story without formally
+     * completing. See docs/04-engine-bug-quest-completion.md.
+     */
+    autoComplete: z.boolean().default(false),
     questsToComplete: z.array(z.string()).default([]),
     maxClaim: z.number().optional(),
     maxClaimPerDay: z.number().optional(),
@@ -132,7 +138,13 @@ export const QuestSchema = z.object({
      * docs/04-engine-bug-quest-completion.md: a mod quest cannot be completed
      * without freezing the game, so its entry lingers in the quest list.
      */
-    hideObjectivesWhenDone: z.boolean().default(false),
+    hideObjectivesWhenDone: z.boolean().default(true),
+    /**
+     * Text for the single row left behind when the objectives are hidden.
+     * Without it the quest header reads "0/0 completed"; with it the panel
+     * shows one ticked line saying the story is over.
+     */
+    closingObjectiveText: z.string().default(""),
     hackhubPost: HackhubPostSchema.optional(),
     /** Phone-call dialog trees, referenced by name from `comms.call` nodes. */
     dialog: z.array(DialogBranchSchema).default([]),

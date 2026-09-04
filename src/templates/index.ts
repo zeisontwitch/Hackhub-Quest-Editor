@@ -134,6 +134,7 @@ function buildHelloHack(): ProjectDocument {
     const quest = createQuest({
         id: "q-hello-hack",
         name: "HelloHack",
+        closingObjectiveText: "Target scanned. That is the whole job.",
         title: "Hello Hack",
         /* A template has to be playable the moment it is exported: without
            this (or a Hackhub feed post) nothing can ever claim the quest. */
@@ -195,6 +196,7 @@ function buildWifiHack(): ProjectDocument {
     const quest = createQuest({
         id: "q-wifi-hack",
         name: "NeighbourWifi",
+        closingObjectiveText: "You are on the network. Nobody noticed.",
         title: "The Neighbour's Wi-Fi",
         /* A template has to be playable the moment it is exported: without
            this (or a Hackhub feed post) nothing can ever claim the quest. */
@@ -321,6 +323,7 @@ function buildInvestigation(): ProjectDocument {
     const quest = createQuest({
         id: "q-investigation",
         name: "LedgerJob",
+        closingObjectiveText: "Ledger recovered and the client has it.",
         title: "The Ledger Job",
         description:
             "A whistleblower wants a set of books out of Meridian Capital's internal network. Two ways in, and only one of them is quiet.",
@@ -695,6 +698,7 @@ function buildContractHack(): ProjectDocument {
     const quest = createQuest({
         id: "q-contract-hack",
         name: "TheLedgerContract",
+        closingObjectiveText: "Contract closed. Ritter Holdings is none the wiser.",
         title: "Contract: The Q3 Ledger",
         /* A template has to be playable the moment it is exported: without
            this (or a Hackhub feed post) nothing can ever claim the quest. */
@@ -1163,6 +1167,7 @@ function buildDataGrab(): ProjectDocument {
     const quest = createQuest({
         id: "q-data-grab",
         name: "TheHarbourManifest",
+        closingObjectiveText: "Contract closed. The manifest is with the client.",
         title: "Contract: The Harbour Manifest",
         autoStart: true,
         description:
@@ -1501,6 +1506,7 @@ function buildDirhunter(): ProjectDocument {
     const quest = createQuest({
         id: "q-dirhunter",
         name: "TheHelpDeskLeak",
+        closingObjectiveText: "Report delivered. The help desk never saw you.",
         title: "The Help Desk Leak",
         /* A template has to be playable the moment it is exported: without
            this (or a Hackhub feed post) nothing can ever claim the quest. */
@@ -1930,6 +1936,7 @@ function buildReference(): ProjectDocument {
     const quest = createQuest({
         id: "q-reference",
         name: "NodeReference",
+        closingObjectiveText: "Reference tour finished.",
         title: "Node Reference",
         description: "Every node type, filled with example input. Not a playable quest.",
         rewards: { money: 0, xp: 0 },

@@ -126,6 +126,29 @@ So the workaround's cost is unavoidable and permanent: a finished story leaves
 a permanent entry in the player's quest list. Our version is at least better
 than Nemesis's — every objective ticks, so the entry reads 7/7 rather than 0/1.
 
+## Resolution in the editor (r87/r88)
+
+Confirmed in-game across three runs:
+
+- **K** — a quest that never completes does not crash.
+- **M** — the full Harbour quest, never completing, played start to finish with
+  no freeze, and flipping `hidden` on the objectives **did** empty the panel.
+  So the engine re-reads the objectives array after the panel is built.
+- One blemish: hiding every row left the header reading **"0/0 completed"**,
+  because the counter counts visible rows.
+
+Generated quests therefore now default to:
+
+| Setting | Default | Why |
+|---|---|---|
+| `autoComplete` | `false` | completing crashes the game |
+| `hasCompleteButton` | `false` | pressing it crashes the game |
+| `hideObjectivesWhenDone` | `true` | clears the finished steps |
+| `closingObjectiveText` | per template | one ticked row, so the header reads 1/1 rather than 0/0 |
+
+The quest entry still cannot be removed from the list — there is no API for it
+— but it now reads as a finished contract rather than an abandoned one.
+
 ## Impact on this editor
 
 Every quest the editor generates is finite and meant to end. Until this is

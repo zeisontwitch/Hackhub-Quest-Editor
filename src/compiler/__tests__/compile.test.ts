@@ -5234,15 +5234,16 @@ describe("r87: emptying the quest panel when the story is over", () => {
        set it on every row once the last objective ticks. Whether the GAME
        redraws the panel is an in-game question probe M answers - this only
        pins the data we hand it. */
-    function build(hide: boolean) {
+    function build(hide: boolean, closing = "", lastExtra: Record<string, unknown> = {}) {
         const p = createProject();
         p.quests[0].autoStart = true;
         p.quests[0].autoComplete = false;
         p.quests[0].hasCompleteButton = false;
         p.quests[0].hideObjectivesWhenDone = hide;
+        p.quests[0].closingObjectiveText = closing;
         const o1 = node("objective", { name: "first", description: "One" });
         const t1 = node("trigger.event", { event: "Mail.Read", conditions: [] });
-        const o2 = node("objective", { name: "second", description: "Two" });
+        const o2 = node("objective", { name: "second", description: "Two", ...lastExtra });
         const t2 = node("trigger.event", { event: "Mail.Sent", conditions: [] });
         p.quests[0].graph.nodes = [o1, t1, o2, t2];
         p.quests[0].graph.edges = [
@@ -5276,10 +5277,93 @@ describe("r87: emptying the quest panel when the story is over", () => {
         expect(quest.Objectives.every((o: { hidden?: boolean }) => o.hidden === true)).toBe(true);
     });
 
+    it("leaves a closing line instead of an empty panel when given text", () => {
+        // Hiding every row makes the header read "0/0 completed" (QA saw it).
+        // One visible, ticked row reads as finished instead.
+        const { quest, fire } = build(true, "Contract closed. Harbourline never knew.");
+        fire("Mail.Read");
+        fire("Mail.Sent");
+        const visible = quest.Objectives.filter((o: { hidden?: boolean }) => !o.hidden);
+        expect(visible).toHaveLength(1);
+        expect(visible[0].description).toBe("Contract closed. Harbourline never knew.");
+    });
+
+    it("drops the stale hint and command from the closing line", () => {
+        const { quest, fire } = build(true, "All done.", {
+            hint: "Send it to the client", terminalCommand: "mail send",
+        });
+        fire("Mail.Read");
+        fire("Mail.Sent");
+        const visible = quest.Objectives.filter((o: { hidden?: boolean }) => !o.hidden)[0];
+        expect(visible.hint).toBeUndefined();
+        expect(visible.terminalCommand).toBeUndefined();
+    });
+
     it("leaves them alone when the author did not ask for it", () => {
         const { quest, fire } = build(false);
         fire("Mail.Read");
         fire("Mail.Sent");
         expect(quest.Objectives.some((o: { hidden?: boolean }) => o.hidden)).toBe(false);
+    });
+});
+
+const CLIENT_EMAIL = "d.okonkwo@nullpost.io";
+
+describe("r88: generated quests ship the shape that does not crash", () => {
+    it("no template asks the engine to complete a quest", () => {
+        for (const t of TEMPLATES) {
+            const p = t.build();
+            for (const q of p.quests) {
+                expect(q.autoComplete, `${t.id} autoComplete`).toBe(false);
+                expect(q.hasCompleteButton, `${t.id} hasCompleteButton`).toBe(false);
+            }
+        }
+    });
+
+    it("every story template tidies up and leaves a closing line", () => {
+        for (const t of TEMPLATES) {
+            const p = t.build();
+            for (const q of p.quests) {
+                if (!q.graph.nodes.some((n) => n.type === "objective")) continue;
+                expect(q.hideObjectivesWhenDone, `${t.id} hideObjectivesWhenDone`).toBe(true);
+                expect(q.closingObjectiveText.length, `${t.id} closingObjectiveText`).toBeGreaterThan(0);
+            }
+        }
+    });
+
+    it("the Harbour quest ends with one ticked closing line", () => {
+        const p = getTemplate("data-grab")!.build();
+        const calls: string[] = [];
+        const listeners: [string, (d: unknown) => void][] = [];
+        const sdk = stubSdk(calls, listeners) as any;
+        sdk.Bank = { transaction: () => {} };
+        sdk.Network.destroyNetwork = () => Promise.resolve();
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        quest.OnStart();
+        if (quest.OnObjectivesStart) quest.OnObjectivesStart();
+        /* Each objective matches on a different field, so feed each event the
+           payload its own condition wants. */
+        const ip = quest.Data.targetIp as string;
+        const payloads: Record<string, unknown> = {
+            "Mail.Read": { subject: "One file, quietly", content: "x" },
+            "Terminal.Lynx.Search": "Yusuf Demir",
+            "Terminal.Whois": { domain: "harbourline-logistics.com", whois: {} },
+            "Terminal.NmapScan": { ip, versionScan: true },
+            "RemoteConnection.Established": { ip, targetIp: ip, targetPort: "22" },
+            "Terminal.SSH.FileDownload": { name: "manifest_q4", extension: "csv" },
+            "Mail.Sent": { to: CLIENT_EMAIL, subject: "Files", content: "attached" },
+        };
+        for (const [ev, h] of [...listeners]) {
+            if (!(ev in payloads)) continue;
+            h(payloads[ev]);
+        }
+        expect(calls.filter((c) => c.startsWith("complete:")).length,
+            "all seven objectives should have ticked").toBe(7);
+        const visible = quest.Objectives.filter((o: { hidden?: boolean }) => !o.hidden);
+        expect(visible).toHaveLength(1);
+        expect(visible[0].description).toBe("Contract closed. The manifest is with the client.");
+        expect(visible[0].terminalCommand).toBeUndefined();
     });
 });

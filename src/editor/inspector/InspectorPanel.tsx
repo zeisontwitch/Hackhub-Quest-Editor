@@ -211,7 +211,7 @@ function QuestInspector() {
             />
             <Toggle
                 label="Complete automatically"
-                hint="Finish as soon as every objective is done. Turn off to require a manual complete button."
+                hint="Best left off. HackHub 1.1.2 freezes whenever it finishes a quest that came from a mod, whether that happens automatically or through a complete button, so quests are built to end their story without formally completing."
                 checked={quest.autoComplete}
                 onChange={(autoComplete) => write({ autoComplete })}
             />
@@ -222,9 +222,26 @@ function QuestInspector() {
             />
             <Toggle
                 label="Show a manual complete button"
+                hint="Also best left off, for the same reason: pressing it freezes the game."
                 checked={quest.hasCompleteButton}
                 onChange={(hasCompleteButton) => write({ hasCompleteButton })}
             />
+            <Toggle
+                label="Tidy the objective list when the story ends"
+                hint="Once every objective is done, hide them so the panel is not left full of finished steps."
+                checked={quest.hideObjectivesWhenDone}
+                onChange={(hideObjectivesWhenDone) => write({ hideObjectivesWhenDone })}
+            />
+            <FieldShell
+                label="Closing line"
+                hint="Shown as a single ticked item once the story is over. Worth filling in: without it the panel reads 0/0 completed."
+            >
+                <TextInput
+                    ariaLabel="Closing objective line"
+                    value={quest.closingObjectiveText}
+                    onChange={(closingObjectiveText) => write({ closingObjectiveText })}
+                />
+            </FieldShell>
 
             <Section>Employer</Section>
             <FieldShell label="First name" hint="Left blank, the game generates an employer for you.">

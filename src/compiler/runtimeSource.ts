@@ -570,12 +570,36 @@ function __qeRegisterProject(sdk, PROJECT) {
         var objectivesDone = 0;
         function hideAllObjectives() {
             if (!questRef || !questRef.Objectives) return;
-            questRef.Objectives.forEach(function (o) { o.hidden = true; });
+            var rows = questRef.Objectives;
+            /* Hiding EVERY row works - QA confirmed the list empties - but the
+               header then reads "0/0 completed", because the counter counts
+               visible rows and there are none. Leaving the last row visible
+               and rewriting it into a closing line reads as finished instead:
+               "1/1 completed", one ticked item saying the contract is closed.
+
+               The author supplies the text; if they leave it empty we hide
+               everything and accept 0/0. */
+            var closing = qd.closingObjectiveText;
+            rows.forEach(function (o, i) {
+                if (closing && i === rows.length - 1) {
+                    o.hidden = false;
+                    o.description = __QE.fill(closing, dataScope());
+                    /* The hint and the terminal command belonged to the step
+                       the player just finished; leaving them would show stale
+                       instructions under a line that says the job is done. */
+                    delete o.hint;
+                    delete o.info;
+                    delete o.terminalCommand;
+                } else {
+                    o.hidden = true;
+                }
+            });
             /* Nudge the engine to re-read. Assigning the array back is the
                same shape as the Dialog rewrite that does work in-game. */
-            try { questRef.Objectives = questRef.Objectives.slice(); } catch (e) { /* frozen? leave it */ }
-            __QE.log("all objectives done; asked the panel to hide them " +
-                "(" + questRef.Objectives.length + " row(s))");
+            try { questRef.Objectives = rows.slice(); } catch (e) { /* frozen? leave it */ }
+            __QE.log(closing
+                ? "all objectives done; left a closing line and hid " + (rows.length - 1) + " row(s)"
+                : "all objectives done; asked the panel to hide them (" + rows.length + " row(s))");
         }
 
         /* Fill the objectives' {{tokens}} again now that the quest has its

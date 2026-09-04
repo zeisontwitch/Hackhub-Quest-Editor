@@ -38,36 +38,22 @@ function nameIt(p, suffix) {
 }
 
 const probes = {
-    /* Round 5 (r87). K survived: a quest that never completes does not crash.
+    /* Round 6 (r88). M worked: full quest, no freeze, and the objective rows
+       disappeared. The one blemish QA saw was the header reading
+       "0/0 completed", because the counter counts visible rows and we had
+       hidden all of them.
 
-       Zeis's question: can we at least clear the OBJECTIVES from the panel,
-       even if the quest entry itself is stuck?
+       Fix: keep the LAST row visible and rewrite it into a closing line, so
+       the panel reads "1/1 completed" with a single ticked item. This is now
+       the default for every generated quest (autoComplete false,
+       hasCompleteButton false, hideObjectivesWhenDone true, plus a closing
+       line per template).
 
-       The SDK has no removeObjective/hideObjective call - grepping the whole
-       2,898-line d.ts for "objective" returns only the definition shape,
-       completeObjective(), and OnObjectivesStart. But
-       QuestObjectiveDefinition has `hidden?: boolean`, and we already mutate
-       the live Objectives array the engine holds: refillObjectives() rewrites
-       description/hint/terminalCommand at OnStart, and r73 confirmed in-game
-       that the panel picks those edits up (it fixed raw {{data.targetIp}}
-       showing in the quest panel).
-
-       So the open question is narrow and empirical: does flipping `hidden` to
-       true AFTER the panel has rendered actually remove the row? The engine
-       may only read `hidden` once when it builds the list. Only a real run
-       can tell us. */
-
-    /* M: full Harbour, never completing, and every objective flips to
-       hidden:true once the last one is done. If the panel empties, we can
-       give authors a clean ending despite the engine bug. */
-    M_hide_objectives_at_end: (p) => {
-        const q = p.quests[0];
-        q.autoComplete = false;
-        q.hasCompleteButton = false;
-        q.hideObjectivesWhenDone = true;   // consumed by the runtime (r87)
-        return p;
-    },
+       N is the confirmation run: the stock Harbour template, straight from
+       the editor's own defaults, with nothing overridden. */
+    N_shipping_default: (p) => p,
 };
+
 
 
 

@@ -61,7 +61,7 @@ export function MailScript({ value, onChange }: { value: MailNodeData; onChange:
                 </FieldShell>
                 <Toggle
                     label="The player can reply"
-                    hint="Not honoured by the current game build — no Reply button appears. For a written answer, use a hackertyper reply page or a typed-answer command."
+                    hint="Adds a Reply button. Untested against the live game — if it does not appear, a hackertyper reply page is the proven way to take a written answer."
                     checked={value.replyable}
                     onChange={(replyable) => onChange({ replyable })}
                 />

@@ -1522,14 +1522,14 @@ describe("other calls that never matched the SDK", () => {
  * a build that has no Mail.send.
  */
 describe("a briefing mail that actually arrives", () => {
-    function mailProject() {
+    function mailProject(replyable = false) {
         const p = createProject();
         const q = p.quests[0];
         q.autoStart = true;
         const entry = node("entry.start");
         const mail = node("comms.dialogue", {
             kind: "mail",
-            mail: { from: "i.faber@ghostmail.io", subject: "One file", content: "<p>Get it done.</p>", replyable: true },
+            mail: { from: "i.faber@ghostmail.io", subject: "One file", content: "<p>Get it done.</p>", replyable },
         });
         q.graph.nodes = [entry, mail];
         q.graph.edges = [edge(entry.id, mail.id, "flow")];
@@ -1550,15 +1550,48 @@ describe("a briefing mail that actually arrives", () => {
         return { sdk, inbox };
     }
 
-    function modJs() {
-        return compileProject(mailProject()).files.find((f) => f.path === "dist/mod.js")!.content;
+    function modJs(replyable = false) {
+        return compileProject(mailProject(replyable)).files.find((f) => f.path === "dist/mod.js")!.content;
     }
 
     it("keeps the mail's reply flag, which the engine needs to allow a reply", () => {
         const sdk = stubSdk([], []) as any;
-        runMod(modJs(), sdk);
+        runMod(modJs(true), sdk);
         const q = new (registered0(sdk).quests[0])();
         expect(q.Mails[0]).toMatchObject({ title: "One file", replyable: true });
+    });
+
+    it("sends a replyable mail the only way that can carry a reply flag", async () => {
+        /* MailDefinition (Mail.send) has no replyable field at all;
+           QuestMailDefinition (Quest.sendMail) is the only shape that does. A
+           mail the author marked replyable therefore has to take that path,
+           even though Mail.send is the default for everything else. */
+        const calls: string[] = [];
+        const { sdk } = engineWithMailSend(calls);
+        runMod(modJs(true), sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.sendMail = (i: number) => calls.push(`sendMail:${i}`);
+        q.OnStart();
+        await settle();
+        expect(calls).toContain("sendMail:0");
+        expect(calls.filter((c) => c.startsWith("Mail.send:"))).toEqual([]);
+    });
+
+    it("falls back to Mail.send when the engine has no copy to reply to", async () => {
+        // Better a mail without its Reply button than no mail at all.
+        const calls: string[] = [];
+        const { sdk } = engineWithMailSend(calls);
+        const said: string[] = [];
+        const spy = vi.spyOn(console, "log").mockImplementation((m: unknown) => void said.push(String(m)));
+        runMod(modJs(true), sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Mails = []; // the engine never took ours
+        q.sendMail = (i: number) => calls.push(`sendMail:${i}`);
+        q.OnStart();
+        await settle();
+        spy.mockRestore();
+        expect(calls.some((c) => c.startsWith("Mail.send:"))).toBe(true);
+        expect(said.join("\n")).toContain("no Reply button will appear");
     });
 
     it("sends through Mail.send, addressed from the sender to the player", async () => {

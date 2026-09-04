@@ -579,8 +579,41 @@ function __qeRegisterProject(sdk, PROJECT) {
                 questRef.Mails[mi] = filledMail;
             }
 
+            /* Which path can express what this mail needs?
+
+               Mail.send takes a MailDefinition: subject, content, from, to,
+               metadata, attachments — and NO replyable. Quest.sendMail sends
+               Quest.Mails[i], a QuestMailDefinition, which is the only shape
+               that carries a reply flag.
+
+               Mail.send stays the default because r37 measured it as the
+               reliable path. But a mail the author marked replyable cannot say
+               so through it, so that one mail goes the other way - provided the
+               engine has actually taken our Mails array, which is the same
+               check the fallback below makes. If it has not, send through
+               Mail.send anyway and say why: a mail that arrives without its
+               Reply button beats a mail that never arrives. */
+            var engineHasMail = !!(questRef && questRef.Mails && questRef.Mails[mi] &&
+                String(questRef.Mails[mi].title || "").length > 0);
+            var wantsReply = !!baseMail.replyable;
             var how = "";
-            if (sdk.Mail && sdk.Mail.send) {
+
+            if (wantsReply && engineHasMail && questRef.sendMail) {
+                try {
+                    questRef.sendMail(mi, from || undefined);
+                    how = "Quest.sendMail(" + mi + ") [replyable]";
+                } catch (eR) {
+                    __QE.log("Quest.sendMail(" + mi + ") threw while sending a replyable mail: " +
+                        (eR && eR.message ? eR.message : eR));
+                }
+            }
+            if (!how && wantsReply) {
+                __QE.log("mail \"" + subject + "\" is marked replyable, but the engine has no usable copy " +
+                    "to send that way - going out through Mail.send instead, which has no reply flag, " +
+                    "so no Reply button will appear.");
+            }
+
+            if (!how && sdk.Mail && sdk.Mail.send) {
                 var direct = { subject: subject, content: content };
                 if (from) direct.from = from;
                 var to = __QE.safe(function () { return sdk.Mail.getPlayerEmail ? sdk.Mail.getPlayerEmail() : ""; });
@@ -597,11 +630,6 @@ function __qeRegisterProject(sdk, PROJECT) {
                    the engine ignores on this build (r37). So a mail sent this
                    way never gets a Reply button, whatever the author ticked.
                    Say so once rather than leaving them looking for it. */
-                if (baseMail.replyable) {
-                    __QE.log("mail \"" + subject + "\" is marked replyable, but Mail.send has no reply flag " +
-                        "on this build — the player will not see a Reply button. Use a hackertyper reply " +
-                        "surface or a typed-answer command for the player's response.");
-                }
                 try {
                     sdk.Mail.send(direct);
                     how = "Mail.send";

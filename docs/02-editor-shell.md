@@ -3233,3 +3233,58 @@ decoration.
 
 **Verification:** 644 tests (21 files, +14), `tsc --noEmit` clean, `vite build`
 clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r67"`.
+
+## Round 68 — correcting r66
+
+QA asked a fair question: if "The player can reply" cannot work, why is it in
+the editor at all? The answer is that it should not have been described that
+way. **My r66 claim was wrong, and it was wrong in the way the standing rule
+exists to prevent — I asserted something as settled that had never been tested.**
+
+The chain of reasoning, checked rather than remembered:
+
+- **r37** concluded that `Quest.Mails` + `sendMail` "does not put mail in the
+  player's inbox in build 1.1.2".
+- **r38**, the very next round, found that the mod *had not been loading at all*
+  during those sessions. The log named every other installed mod's banner and
+  never ours. So r37's conclusion was drawn from code that never ran.
+- **r41** is the counter-evidence: `Mail.send` was refused for want of
+  permissions, the `Quest.sendMail` fallback fired, and the briefing **arrived**.
+  That path demonstrably delivers mail in this build.
+
+So `replyable` was never proven dead. It was untested, and r66 turned that into
+"cannot work and never could" — then wrote the claim into a warning, a hint and
+a test, which is how a guess becomes furniture.
+
+### What the code does now
+
+`MailDefinition` — what `Mail.send` takes — genuinely has no reply flag; only
+`QuestMailDefinition` has one. That is a fact about the SDK, and it decides the
+routing:
+
+- a **plain** mail goes through `Mail.send`, which r37 measured as reliable;
+- a **replyable** mail goes through `Quest.sendMail`, the only shape that can
+  carry the flag — but only when the engine has actually taken our `Mails`
+  array, which is the same check the fallback already made;
+- if it has not, the mail still goes out through `Mail.send` and the log says
+  plainly that no Reply button will appear. A mail that arrives without its
+  button beats a mail that never arrives.
+
+The toggle's hint now says what it does and admits it is untested against the
+live game, pointing at the hackertyper reply page as the proven alternative.
+Export warns which path a replyable mail took and what to do if the button does
+not show. Templates still leave it off — a template should ship the proven
+route — but that is now a choice rather than a prohibition.
+
+### The general lesson
+
+The dangerous failure is not being wrong; it is recording a guess as a finding.
+r66 put an untested claim into three places at once, and QA had to notice the
+inconsistency to get it re-examined. Two things follow: evidence for a claim
+about the game belongs in the comment next to it, and "we have not tested this"
+is a legitimate thing for a hint to say.
+
+**Verification:** 646 tests (21 files, +2), `tsc --noEmit` clean, `vite build`
+clean. Routing verified end to end: plain → `Mail.send`; replyable with the
+engine holding our copy → `Quest.sendMail(0)`; replyable without → `Mail.send`
+plus the warning. Export stamp: `EDITOR_BUILD = "2026-09-04.r68"`.

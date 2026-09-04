@@ -677,13 +677,25 @@ describe("every template that hides a machine behind a router teaches the way in
 });
 
 /**
- * Round 66. "The player can reply" was ticked on the brief and no Reply button
- * appeared. The SDK's `MailDefinition` — what `Mail.send` takes — has no
- * replyable field at all; only `QuestMailDefinition` does, and that is the path
- * this build ignores. The toggle promises something the game cannot deliver.
+ * Round 68. r66 declared "The player can reply" dead and warned authors off it.
+ * That was wrong, and the correction matters more than the feature:
+ *
+ *   r37 concluded Quest.sendMail does not deliver — but r38 found, the very
+ *   next round, that the mod had not been LOADING during that test. The
+ *   conclusion was drawn from a mod that never ran.
+ *
+ *   r41 then showed the opposite: Mail.send was refused for want of
+ *   permissions, the Quest.sendMail fallback fired, and the briefing arrived.
+ *
+ * So the path that carries `replyable` demonstrably delivers mail. Whether the
+ * Reply button itself appears is untested — which is a reason to say so, not a
+ * reason to remove the feature or to assert it cannot work.
+ *
+ * Templates still leave it off, because a hackertyper reply page is the proven
+ * route and a template should ship the proven one.
  */
-describe("no template promises a reply button the game will not draw", () => {
-    it("leaves replyable off everywhere", () => {
+describe("replyable mail is offered honestly", () => {
+    it("is off in every template, which uses the proven reply route instead", () => {
         const on: string[] = [];
         for (const t of TEMPLATES) {
             for (const q of t.build().quests) {
@@ -697,13 +709,16 @@ describe("no template promises a reply button the game will not draw", () => {
         expect(on).toEqual([]);
     });
 
-    it("warns an author who turns it on anyway", () => {
+    it("tells an author what the setting does and how to check it", () => {
         const p = getTemplate("data-grab")!.build();
         const mail = p.quests[0].graph.nodes.find(
             (n) => n.type === "comms.dialogue" && (n.data as { kind: string }).kind === "mail",
         )!;
         (mail.data as { mail: { replyable: boolean } }).mail.replyable = true;
         const w = computeWarnings(p).join("\n");
-        expect(w).toContain("no Reply button will appear");
+        // names the path taken, and the fallback if it does not work
+        expect(w).toContain("Quest.sendMail");
+        expect(w).toContain("hackertyper");
     });
 });
+

@@ -22,7 +22,7 @@ import { RUNTIME_SOURCE } from "./runtimeSource";
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-04.r67";
+export const EDITOR_BUILD = "2026-09-04.r68";
 
 export interface CompiledFile {
     path: string;
@@ -273,16 +273,15 @@ export function computeWarnings(project: ProjectDocument): string[] {
                     break;
                 case "comms.dialogue": {
                     const d = n.data as { kind: string; phone?: { branch?: string }; kisscord?: { messages?: { playerAction?: string; input?: { expected?: string } }[] }; weechat?: { messages?: { playerAction?: string } } };
-                    /* "The player can reply" cannot work on this build. The
-                       SDK's MailDefinition — what Mail.send takes — has no
-                       replyable field; only QuestMailDefinition has one, and
-                       that is the path the engine ignores (r37). QA ticked the
-                       box and went looking for a Reply button that was never
-                       going to appear. */
+                    /* A replyable mail has to go out through Quest.sendMail:
+                       MailDefinition, which Mail.send takes, has no reply flag
+                       at all, and QuestMailDefinition is the only shape that
+                       does. That path is less proven than Mail.send, so say so
+                       rather than letting an author discover it in game. */
                     const mail = (n.data as { mail?: { replyable?: boolean; subject?: string } }).mail;
                     if (d.kind === "mail" && mail?.replyable) {
                         warnings.push(
-                            `${q.name}: “${mail.subject || "a mail"}” is set so the player can reply, but this build has no reply flag on the mail it actually sends — no Reply button will appear. Give the player a hackertyper reply page or a typed-answer command instead.`,
+                            `${q.name}: “${mail.subject || "a mail"}” lets the player reply, so it is sent through Quest.sendMail — the only path that carries a reply flag. If the Reply button does not appear in game, turn the setting off and give the player a hackertyper reply page instead, which is the route the other templates use.`,
                         );
                     }
                     if (d.kind === "phone" && q.dialog.some((b) => b.lines.some((l) => l.input))) {

@@ -4774,3 +4774,153 @@ describe("a lone machine is given the router the engine needs", () => {
         expect(def.children).toHaveLength(1);
     });
 });
+
+/**
+ * QA, round 78. The first end-to-end completion of a generated quest - and two
+ * faults visible in the same run.
+ *
+ * 1. "Get into the file server" never ticked. It listened for
+ *    Metasploit.Meterpreter.Connected; the exploit opened a COMMAND SHELL
+ *    ("Command shell session opened (31.76.97.180:22)") and no
+ *    Meterpreter.Connected was ever raised. The log proves the event never
+ *    arrived rather than arriving and failing its conditions: a non-matching
+ *    event prints "fired but did not match", and there is no such line.
+ *
+ *    Because every objective in the template is chained with unlocksAfter,
+ *    that one miss locked the whole tail of the quest:
+ *
+ *        [CompleteObjective] Objective "take-manifest" locked by unlocksAfter;
+ *        queued as pending
+ *        [CompleteObjective] Objective "send-manifest" locked by unlocksAfter;
+ *        queued as pending
+ *
+ *    ...even though the player did both. So "got into the machine" now listens
+ *    for its sibling access events too.
+ *
+ * 2. The server had root, guest and admin on it, and the exploit dropped the
+ *    player into guest - forcing them to crack a password this template
+ *    deliberately does not teach. The runtime called createDefaultUserSchema
+ *    with { guest: true } on every Device unconditionally.
+ */
+describe("breaking into a machine completes the objective however the session opens", () => {
+    function build(triggerEvent: string) {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const obj = node("objective", { name: "get-in", description: "Get into the file server" });
+        const trig = node("trigger.event", { event: triggerEvent, conditions: [] });
+        p.quests[0].graph.nodes = [obj, trig];
+        p.quests[0].graph.edges = [edge(trig.id, obj.id, "condition")];
+
+        const calls: string[] = [];
+        const listeners: [string, (d: unknown) => void][] = [];
+        const sdk = stubSdk(calls, listeners) as any;
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        quest.OnObjectivesStart();
+        return { calls, listeners };
+    }
+
+    function fire(listeners: [string, (d: unknown) => void][], name: string, payload: unknown) {
+        const hits = listeners.filter(([e]) => e === name);
+        for (const [, h] of hits) h(payload);
+        return hits.length;
+    }
+
+    it("completes on a plain command shell, which is what the SSH exploit opens", () => {
+        const { calls, listeners } = build("Metasploit.Meterpreter.Connected");
+        // No meterpreter event at all - only the connection the game raised.
+        const heard = fire(listeners, "RemoteConnection.Established", { ip: "31.76.97.180", service: "ssh" });
+        expect(heard, "no listener was attached for the sibling event").toBeGreaterThan(0);
+        expect(calls).toContain("complete:get-in");
+    });
+
+    it("still completes on the meterpreter event it was authored against", () => {
+        const { calls, listeners } = build("Metasploit.Meterpreter.Connected");
+        fire(listeners, "Metasploit.Meterpreter.Connected", { ip: "1.2.3.4", session: {} });
+        expect(calls).toContain("complete:get-in");
+    });
+
+    it("completes on an SSH connection too", () => {
+        const { calls, listeners } = build("Metasploit.Meterpreter.Connected");
+        fire(listeners, "Terminal.SSH.Connected", "31.76.97.180");
+        expect(calls).toContain("complete:get-in");
+    });
+
+    it("ticks only once when several access events arrive together", () => {
+        const { calls, listeners } = build("Metasploit.Meterpreter.Connected");
+        fire(listeners, "RemoteConnection.Established", { ip: "1.2.3.4" });
+        fire(listeners, "Metasploit.Meterpreter.Connected", { ip: "1.2.3.4", session: {} });
+        fire(listeners, "Terminal.SSH.Connected", "1.2.3.4");
+        expect(calls.filter((c) => c === "complete:get-in")).toHaveLength(1);
+    });
+
+    it("works the same way when the author picked the SSH event instead", () => {
+        const { calls, listeners } = build("Terminal.SSH.Connected");
+        fire(listeners, "Metasploit.Meterpreter.Connected", { ip: "1.2.3.4", session: {} });
+        expect(calls).toContain("complete:get-in");
+    });
+
+    it("does not widen an unrelated objective to other events", () => {
+        const { listeners } = build("Terminal.Whois");
+        expect(listeners.map(([e]) => e)).toEqual(["Terminal.Whois"]);
+    });
+});
+
+describe("a device only gets the engine's stock accounts when the author wants them", () => {
+    function usersOf(extraAccounts?: boolean) {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const dev: Record<string, unknown> = {
+            id: "d1", ip: "10.0.0.5", type: "DEVICE", name: "fileserver",
+            users: [{ id: "u1", username: "admin", password: "pw", acceptReverseTCP: true }],
+            ports: [{ id: "p1", external: 22, internal: 22, active: true, service: "ssh", version: "OpenSSH 6.4.0" }],
+            children: [],
+        };
+        if (extraAccounts !== undefined) dev.extraAccounts = extraAccounts;
+        const net = node("world.network", { ipMode: "fixed", device: dev });
+        p.quests[0].graph.nodes = [entry, net];
+        p.quests[0].graph.edges = [edge(entry.id, net.id, "flow")];
+
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        const defs: any[] = [];
+        sdk.Network.createSubnetNetwork = (d: any) => { defs.push(d); calls.push(`net:${d.ip}`); };
+        // Faithful to the SDK helper: it ADDS root/guest to what it is given.
+        sdk.Network.createDefaultUserSchema = (users: any[], o: { guest?: boolean }) =>
+            [{ username: "root" }].concat(o?.guest ? [{ username: "guest" }] : []).concat(users);
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        quest.OnStart();
+        // r77 wraps a lone device in a router; the machine is the child.
+        const box = defs[0].children ? defs[0].children[0] : defs[0];
+        return box.users.map((u: { username: string }) => u.username);
+    }
+
+    it("gives the machine only the authored account when they are turned off", () => {
+        expect(usersOf(false)).toEqual(["admin"]);
+    });
+
+    it("adds root and guest when they are turned on", () => {
+        expect(usersOf(true)).toEqual(["root", "guest", "admin"]);
+    });
+
+    it("defaults to adding them, so older projects are unchanged", () => {
+        expect(usersOf(undefined)).toEqual(["root", "guest", "admin"]);
+    });
+});
+
+describe("the Harbour template ships the single-account server its story describes", () => {
+    it("turns the stock accounts off on the file server", () => {
+        // "Standard Contract Hack" is the Harbour template.
+        const t = getTemplate("data-grab");
+        expect(t, "Harbour template not found").toBeTruthy();
+        const proj = t!.build();
+        const net = proj.quests[0].graph.nodes.find((n) => n.type === "world.network")!;
+        const device = (net.data as { device: { extraAccounts?: boolean; users: unknown[] } }).device;
+        expect(device.users).toHaveLength(1);
+        expect(device.extraAccounts).toBe(false);
+    });
+});

@@ -1535,6 +1535,19 @@ function __qeRegisterProject(sdk, PROJECT) {
                splitters and firewalls keep exactly the accounts the author
                wrote. */
             if (kind !== "DEVICE") return made;
+            /* ...but only when the author wants them.
+
+               QA, r78: a quest whose story has exactly ONE account on the
+               server ("It is a server, so the account you land in already owns
+               the files") showed root, guest and admin in meterpreter, and the
+               exploit dropped the player into guest - so they had to crack a
+               password the quest never intended them to touch. That is the
+               advanced template's job, not this one's.
+
+               The schema default is on, so nothing that relied on the old
+               behaviour changes; an author who wants the single-account server
+               the story describes now turns it off. */
+            if (dev.extraAccounts === false) return made;
             if (sdk.Network.createDefaultUserSchema) {
                 return sdk.Network.createDefaultUserSchema(made, { guest: true });
             }
@@ -1725,8 +1738,34 @@ function __qeRegisterProject(sdk, PROJECT) {
                            "the listener was never attached" from "it was
                            attached and the event never arrived". Round 40 cost
                            a full round for want of this line. */
-                        __QE.log("objective \"" + n.data.name + "\" is listening for " + trig.data.event);
-                        self.Events.on(trig.data.event, function (data) {
+                        /* Some things the player does raise one of SEVERAL
+                           events depending on how they did it, and an author
+                           picking one from a list cannot be expected to know
+                           which. Breaking into a machine is the case QA hit
+                           (r78): the objective listened for
+                           Metasploit.Meterpreter.Connected, the exploit opened
+                           a COMMAND SHELL instead ("Command shell session
+                           opened"), no Meterpreter.Connected was ever raised,
+                           and the objective never ticked - which, because the
+                           whole chain is wired with unlocksAfter, left every
+                           later objective "locked by unlocksAfter; queued as
+                           pending" even though the player finished the quest.
+
+                           Note the log is the proof it never arrived: an event
+                           that fires but fails its conditions prints "fired but
+                           did not match", and there is no such line.
+
+                           So an access event listens for its siblings too. The
+                           objective still completes once (fired guards it), and
+                           a quest that names any of them behaves the same. */
+                        var ACCESS_SIBLINGS = {
+                            "Metasploit.Meterpreter.Connected": ["RemoteConnection.Established", "Terminal.SSH.Connected"],
+                            "RemoteConnection.Established": ["Metasploit.Meterpreter.Connected", "Terminal.SSH.Connected"],
+                            "Terminal.SSH.Connected": ["RemoteConnection.Established", "Metasploit.Meterpreter.Connected"],
+                        };
+                        var listenFor = [trig.data.event].concat(ACCESS_SIBLINGS[trig.data.event] || []);
+                        __QE.log("objective \"" + n.data.name + "\" is listening for " + listenFor.join(", "));
+                        var onEvent = function (data, evName) {
                             if (fired) return;
                             if (!__QE.matchAll(trig.data.conditions, data, dataScope())) {
                                 /* The event arrived but the author's conditions
@@ -1736,7 +1775,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                                    and the log stays silent either way. Print
                                    what actually turned up so the author can see
                                    which field to match on. */
-                                __QE.log("objective \"" + n.data.name + "\": " + trig.data.event +
+                                __QE.log("objective \"" + n.data.name + "\": " + (evName || trig.data.event) +
                                     " fired but did not match. Event carried: " + __QE.describe(data));
                                 return;
                             }
@@ -1744,7 +1783,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                             if (n.data.name) {
                                 try {
                                     self.completeObjective(n.data.name);
-                                    __QE.log("objective \"" + n.data.name + "\" completed by " + trig.data.event);
+                                    __QE.log("objective \"" + n.data.name + "\" completed by " + (evName || trig.data.event));
                                 } catch (e) {
                                     __QE.log("could not complete objective \"" + n.data.name + "\": " +
                                         (e && e.message ? e.message : e));
@@ -1753,6 +1792,9 @@ function __qeRegisterProject(sdk, PROJECT) {
                             doneEdges.forEach(function (e) {
                                 runFlow(e.target, { payload: data, vars: {} }, 0);
                             });
+                        };
+                        listenFor.forEach(function (evName) {
+                            self.Events.on(evName, function (data) { onEvent(data, evName); });
                         });
                     });
                     g.nodes

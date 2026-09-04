@@ -1199,7 +1199,13 @@ function buildDataGrab(): ProjectDocument {
                whole story: the exploit lands the player in the account that
                owns the files, so there is nobody to switch to and no password
                to crack. That is exactly the difference between this template
-               and the Ledger. */
+               and the Ledger.
+
+               extraAccounts: false is what actually delivers that. Without it
+               the engine's stock root and guest are added alongside, the
+               exploit lands in guest, and QA had to crack a password this
+               template deliberately does not teach (r78). */
+            extraAccounts: false,
             users: [
                 {
                     id: "u-admin",

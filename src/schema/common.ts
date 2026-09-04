@@ -199,6 +199,14 @@ export const NetworkDeviceSchema: z.ZodType<NetworkDevice> = z.lazy(() =>
         rootFiles: z.array(FileEntrySchema).default([]),
         /** Hidden from `nmap` unless the player already knows the IP. */
         isIpHidden: z.boolean().optional(),
+        /**
+         * Device only. Adds the engine's stock `root` and `guest` accounts
+         * alongside the ones written here. A guest account is what the SSH
+         * exploit lands in when it finds one, so leaving it off gives the
+         * player the authored account instead. Defaults to on, which is what
+         * every build before r78 did unconditionally.
+         */
+        extraAccounts: z.boolean().optional(),
         location: z
             .object({
                 latitude: z.string(),
@@ -226,6 +234,7 @@ export type NetworkDevice = {
     rules: FirewallRule[];
     rootFiles: FileEntry[];
     isIpHidden?: boolean;
+    extraAccounts?: boolean;
     location?: { latitude: string; longitude: string; city?: string; country?: string };
     children: NetworkDevice[];
 };

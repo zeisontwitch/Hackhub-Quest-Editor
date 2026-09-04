@@ -155,6 +155,24 @@ export function DeviceEditor({
                     onChange={(isIpHidden) => write({ isIpHidden })}
                 />
 
+                {device.type === "DEVICE" && (
+                    <>
+                        <Toggle
+                            label="Add stock root and guest accounts"
+                            checked={device.extraAccounts !== false}
+                            onChange={(extraAccounts) => write({ extraAccounts })}
+                        />
+                        {device.extraAccounts !== false && (
+                            <p className="mx-3 mb-2 text-[11px] leading-snug text-dim">
+                                The SSH exploit lands in a guest account when it finds one, so the
+                                player may need to switch user or crack a password to reach the
+                                accounts you wrote. Turn this off for a machine that should have
+                                only the accounts listed here.
+                            </p>
+                        )}
+                    </>
+                )}
+
                 <Collapsible title={`Ports (${device.ports.length})`}>
                     <ListEditor
                         nodeId={nodeId}

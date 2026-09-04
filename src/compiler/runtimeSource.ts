@@ -1713,7 +1713,12 @@ function __qeRegisterProject(sdk, PROJECT) {
                     this.Title = qd.title;
                     this.Description = qd.description;
                     this.Group = qd.group;
-                    this.Rewards = qd.rewards;
+                    /* Only assign when the author actually set rewards.
+                       Assigning undefined still defines the property, and
+                       Nemesis - the known-working mod - never assigns it at
+                       all. Keep the emitted shape identical to a mod that
+                       simply omits rewards (r84). */
+                    if (qd.rewards) this.Rewards = qd.rewards;
                     if (qd.employer && Object.keys(qd.employer).length) this.Employer = qd.employer;
                     if (qd.icon) this.Icon = qd.icon;
                     /* Behaviour toggles from the quest settings. AutoStart is

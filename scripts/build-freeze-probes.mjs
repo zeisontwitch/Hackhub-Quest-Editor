@@ -38,40 +38,42 @@ function nameIt(p, suffix) {
 }
 
 const probes = {
-    /* A: baseline. Same as v14, renamed. Confirms the probe harness itself
-       reproduces the freeze - without this, a "pass" below proves nothing. */
-    A_baseline: (p) => p,
+    /* Round 2 (r84). D isolated it: with autoComplete off the whole quest ran
+       clean and only froze when the player pressed Complete. So the freeze is
+       in the engine's own quest-completion path, not in our payload - B and C
+       both still froze, clearing the payment node and the closing mail.
 
-    /* B: no payment. Bank.transaction is the one call that moves real player
-       state at completion, and it runs microseconds before the freeze. */
-    B_no_payment: (p) => {
-        const q = p.quests[0];
-        const pay = q.graph.nodes.find((n) => n.type === "fx.pay");
-        q.graph.nodes = q.graph.nodes.filter((n) => n !== pay);
-        q.graph.edges = q.graph.edges.filter((e) => e.source !== pay.id && e.target !== pay.id);
+       What Nemesis, the known-working mod, does differently at that exact
+       point: it declares NO Rewards at all and sets MaxClaim = 1. Our quests
+       always set this.Rewards = { money, xp }. Paying the reward is the one
+       thing the engine itself does when a quest completes.
+
+       Note probe B removed our fx.pay NODE but left the quest-level Rewards
+       untouched, so it never tested this. These do. */
+
+    /* E: no quest-level rewards. If this survives, the engine's reward payout
+       is the freeze and the fix is ours to make. */
+    E_no_rewards: (p) => {
+        p.quests[0].rewards = undefined;
         return p;
     },
 
-    /* C: no closing mail. Sending mail from inside the engine's own Mail.Sent
-       dispatch is the reentrancy r82 only half-addressed: the ordering is
-       fixed, but the send still happens inside that dispatch. */
-    C_no_closing_mail: (p) => {
-        const q = p.quests[0];
-        const last = q.graph.nodes.filter((n) => n.type === "comms.dialogue").pop();
-        q.graph.nodes = q.graph.nodes.filter((n) => n !== last);
-        q.graph.edges = q.graph.edges.filter((e) => e.source !== last.id && e.target !== last.id);
+    /* F: no rewards AND MaxClaim 1 - Nemesis's exact shape. Distinguishes
+       "rewards are the problem" from "an unclaimable quest is the problem". */
+    F_nemesis_shape: (p) => {
+        p.quests[0].rewards = undefined;
+        p.quests[0].maxClaim = 1;
         return p;
     },
 
-    /* D: autoComplete off. Then the engine finishes the quest on its own
-       schedule rather than synchronously inside our handler. If only this one
-       survives, the fault is the engine's completion path, not our payload. */
-    D_no_autocomplete: (p) => {
-        p.quests[0].autoComplete = false;
-        p.quests[0].hasCompleteButton = true;
+    /* G: rewards kept, MaxClaim 1 only. The control for F: if G freezes and F
+       does not, rewards are confirmed as the cause rather than maxClaim. */
+    G_maxclaim_only: (p) => {
+        p.quests[0].maxClaim = 1;
         return p;
     },
 };
+
 
 for (const [name, mutate] of Object.entries(probes)) {
     const project = nameIt(mutate(fresh()), name.replace(/_/g, ""));

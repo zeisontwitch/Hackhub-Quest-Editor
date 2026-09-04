@@ -38,38 +38,99 @@ function nameIt(p, suffix) {
 }
 
 const probes = {
-    /* Round 2 (r84). D isolated it: with autoComplete off the whole quest ran
-       clean and only froze when the player pressed Complete. So the freeze is
-       in the engine's own quest-completion path, not in our payload - B and C
-       both still froze, clearing the payment node and the closing mail.
+    /* Round 3 (r85).
 
-       What Nemesis, the known-working mod, does differently at that exact
-       point: it declares NO Rewards at all and sets MaxClaim = 1. Our quests
-       always set this.Rewards = { money, xp }. Paying the reward is the one
-       thing the engine itself does when a quest completes.
+       Eliminated so far, all by in-game test:
+         B  fx.pay node removed             -> froze
+         C  closing mail removed            -> froze  (but see H)
+         D  autoComplete off                -> ran clean, froze on Complete CLICK
+         E  no quest Rewards                -> froze
+         F  Nemesis shape (no rewards, mc1) -> froze
+         G  maxClaim only                   -> froze
 
-       Note probe B removed our fx.pay NODE but left the quest-level Rewards
-       untouched, so it never tested this. These do. */
+       Correction to my own earlier reasoning: I cited Nemesis as proof that
+       quest completion works. It is not. Nemesis sets AutoComplete=false AND
+       HasCompleteButton=false and never ticks its single objective, so it
+       never completes at all. There is therefore NO known-working example of
+       a mod quest completing, and "the engine cannot complete a mod quest"
+       remains a live hypothesis - that is what J tests.
 
-    /* E: no quest-level rewards. If this survives, the engine's reward payout
-       is the freeze and the fix is ours to make. */
-    E_no_rewards: (p) => {
-        p.quests[0].rewards = undefined;
+       The one constant across every freeze: the final objective is triggered
+       by Mail.Sent, and the quest completes inside that dispatch. Probe C
+       removed our closing mail, but the objective was still completed from
+       inside the Mail.Sent handler, so C never tested the dispatch itself. */
+
+    /* H: finish on something OTHER than Mail.Sent. The last objective and its
+       Mail.Sent trigger are dropped, so the quest ends on the file download.
+       If this survives, completing inside a Mail.Sent dispatch is the bug. */
+    H_no_mail_trigger: (p) => {
+        const q = p.quests[0];
+        const objs = q.graph.nodes.filter((n) => n.type === "objective");
+        const last = objs[objs.length - 1];
+        const prev = objs[objs.length - 2];
+        const trig = q.graph.edges
+            .filter((e) => e.kind === "condition" && e.target === last.id)
+            .map((e) => q.graph.nodes.find((n) => n.id === e.source))[0];
+        const doomed = new Set([last.id, trig && trig.id].filter(Boolean));
+        for (const e of q.graph.edges) {
+            if (e.source === last.id && e.kind === "flow") e.source = prev.id;
+        }
+        q.graph.nodes = q.graph.nodes.filter((n) => !doomed.has(n.id));
+        q.graph.edges = q.graph.edges.filter(
+            (e) => !doomed.has(e.source) && !doomed.has(e.target));
         return p;
     },
 
-    /* F: no rewards AND MaxClaim 1 - Nemesis's exact shape. Distinguishes
-       "rewards are the problem" from "an unclaimable quest is the problem". */
-    F_nemesis_shape: (p) => {
-        p.quests[0].rewards = undefined;
-        p.quests[0].maxClaim = 1;
+    /* I: keep the Mail.Sent objective but strip every story node hanging off
+       it - no closing mail, no payment. The quest simply completes there.
+       Separates "completing inside Mail.Sent" from "doing work inside it". */
+    I_bare_mail_finish: (p) => {
+        const q = p.quests[0];
+        const objs = q.graph.nodes.filter((n) => n.type === "objective");
+        const last = objs[objs.length - 1];
+        const doomed = new Set();
+        const walk = (id) => {
+            for (const e of q.graph.edges) {
+                if (e.source === id && e.kind === "flow" && !doomed.has(e.target)) {
+                    doomed.add(e.target);
+                    walk(e.target);
+                }
+            }
+        };
+        walk(last.id);
+        q.graph.nodes = q.graph.nodes.filter((n) => !doomed.has(n.id));
+        q.graph.edges = q.graph.edges.filter(
+            (e) => !doomed.has(e.source) && !doomed.has(e.target));
         return p;
     },
 
-    /* G: rewards kept, MaxClaim 1 only. The control for F: if G freezes and F
-       does not, rewards are confirmed as the cause rather than maxClaim. */
-    G_maxclaim_only: (p) => {
-        p.quests[0].maxClaim = 1;
+    /* J: the smallest mod quest that can complete - one objective, no
+       network, no mail, no reward. Read the contract, quest ends. If THIS
+       freezes, the engine cannot complete a mod quest at all, and this file
+       is the upstream bug report. */
+    J_minimal: (p) => {
+        const q = p.quests[0];
+        q.rewards = undefined;
+        const obj = q.graph.nodes.filter((n) => n.type === "objective")[0];
+        const trig = q.graph.edges
+            .filter((e) => e.kind === "condition" && e.target === obj.id)
+            .map((e) => q.graph.nodes.find((n) => n.id === e.source))[0];
+        /* Keep the entry point and the mail that the objective waits on -
+           without them the trigger can never fire and the probe is
+           unplayable rather than informative. */
+        const entry = q.graph.nodes.find((n) => n.type === "entry.start");
+        const mail = q.graph.nodes.filter((n) => n.type === "comms.dialogue")[0];
+        const keep = new Set([obj.id, trig.id, entry.id, mail.id]);
+        q.graph.nodes = q.graph.nodes.filter((n) => keep.has(n.id));
+        q.graph.edges = q.graph.edges.filter(
+            (e) => keep.has(e.source) && keep.has(e.target));
+        /* Wire entry -> mail directly, replacing the chain we removed. */
+        q.graph.edges = q.graph.edges.filter(
+            (e) => !(e.source === entry.id && e.kind === "flow"));
+        q.graph.edges.push({
+            id: "edge-j-entry-mail", source: entry.id, sourceHandle: "out",
+            target: mail.id, targetHandle: "in", kind: "flow",
+        });
         return p;
     },
 };

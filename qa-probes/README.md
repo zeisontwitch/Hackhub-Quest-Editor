@@ -1,43 +1,46 @@
-# r84 freeze probes — round 2
+# r85 freeze probes — round 3
 
-## What round 1 settled
+## Eliminated so far (all by in-game test)
 
-| Build | Result | Meaning |
+| Build | Change | Result |
 |---|---|---|
-| A_baseline | froze | harness reproduces the bug — results below are trustworthy |
-| B_no_payment | froze | our `fx.pay` node is **not** the cause |
-| C_no_closing_mail | froze | our closing mail is **not** the cause |
-| D_no_autocomplete | ran clean, froze **only on the Complete click** | the freeze is the **engine's quest-completion path** |
+| A | baseline | froze |
+| B | no `fx.pay` node | froze |
+| C | no closing mail | froze |
+| D | `autoComplete` off | **ran clean, froze on the Complete click** |
+| E | no quest `Rewards` | froze |
+| F | Nemesis shape (no rewards, maxClaim 1) | froze |
+| G | `maxClaim` only | froze |
 
-D is the decisive one. With `autoComplete` off, the entire quest played through
-with every objective ticked and `OnComplete` finishing normally — then the game
-froze the moment the engine actually completed the quest. Nothing of ours is
-running at that point.
+So: not the payment, not the closing mail, not the rewards, not maxClaim.
+D proves the freeze is in the engine's **quest-completion** path.
 
-## The new suspect
+## A correction I owe you
 
-Nemesis, the known-working reference mod, declares **no `Rewards` at all** and
-sets `MaxClaim = 1`. Our quests always set `this.Rewards = { money, xp }`.
-Paying the reward is the main thing the engine itself does on completion.
+I cited Nemesis as proof that quest completion works. **It is not.** Nemesis
+sets `AutoComplete = false` *and* `HasCompleteButton = false`, and never ticks
+its single objective — it never completes at all. So we have **no** known
+example of any mod quest completing successfully. "The engine cannot complete
+a mod quest" is still a live hypothesis, and J tests it directly.
 
-Round 1 never tested this: probe B removed our `fx.pay` *node*, but the
-quest-level `Rewards` stayed. These three separate the variables.
+## The remaining constant
 
-| Build | Rewards | MaxClaim | If this one does NOT freeze |
-|---|---|---|---|
-| `E_no_rewards` | none | default | the engine's reward payout is the freeze |
-| `F_nemesis_shape` | none | 1 | Nemesis's exact shape works |
-| `G_maxclaim_only` | kept | 1 | rules out `maxClaim` as the cause |
+Every freeze so far has the same shape: the last objective is triggered by
+`Mail.Sent`, and the quest completes *inside that dispatch*. Probe C removed
+our closing mail, but the objective was still completed from inside the
+`Mail.Sent` handler — so C never tested the dispatch itself.
 
-Test order: **E first** (most informative), then G, then F.
+| Build | What it is | If it does NOT freeze |
+|---|---|---|
+| `H_no_mail_trigger` | quest ends on the file download; the `Mail.Sent` objective is gone | completing inside a `Mail.Sent` dispatch is the bug |
+| `I_bare_mail_finish` | `Mail.Sent` objective kept, but nothing hangs off it — no mail, no payment | the dispatch itself is fine; doing *work* inside it is the bug |
+| `J_minimal` | one objective, no network, no mail, no reward: start → contract mail → read it → done | a mod quest *can* complete, so something in the bigger quest matters |
 
-- **E survives** → rewards are the cause. G tells us whether `maxClaim` matters too.
-- **E freezes** → rewards are cleared, and the fault is deeper in the engine's
-  completion path. Worth reporting upstream, with D as the reproduction.
+Test order: **J first** — it is 30 seconds and the most informative.
 
-Fresh save each time, and please keep the meterpreter session open as before so
-the conditions match.
+- **J freezes** → the engine cannot complete a mod quest at all. Stop testing;
+  J is a minimal reproduction to send upstream and we design around it.
+- **J survives** → completion works in principle. Then H and I narrow it down.
 
-Note: the runtime now omits `this.Rewards` entirely when an author sets no
-rewards, instead of assigning `undefined` — assigning undefined still defines
-the property, so E would not otherwise have matched Nemesis's shape.
+Fresh save each run, as before. For J you do not need the meterpreter session —
+just read the contract mail.

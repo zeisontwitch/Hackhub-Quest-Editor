@@ -3456,3 +3456,58 @@ retired it.
 
 **Verification:** 656 tests (21 files), `tsc --noEmit` clean, `vite build`
 clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r71"`.
+
+## Round 72 — the right hook for clearing the save
+
+r71 was wrong, and QA said so from memory of why the destroy existed: **the
+engine writes networks into the save file, and they outlive the mod**. A
+re-exported build is answered by whatever an older version left at that
+address. That is r52/r55's finding and it still holds — removing the destroy
+just restored the original bug.
+
+My r71 reasoning failed on a detail. The reference mod never calls
+`destroyNetwork`, which is true, but it is claim-once (`MaxClaim: 1`) and its
+addresses are generated per playthrough — it never creates at an address it has
+used before. We do, on every re-export during development, which is exactly the
+case it never exercises. "The working mod doesn't do X" only carries weight when
+the working mod is in the same situation.
+
+### Where the destroy belongs
+
+The constraint that killed three attempts: `destroyNetwork` returns a promise,
+and the engine grants a mod its permissions only while it is inside a call the
+engine made (r45). Inside a quest's `OnStart` those cannot both be satisfied —
+await and lose permissions (r56), or don't await and lose the race (r55, r59).
+
+`OnModPackageLoaded` has neither problem. The SDK declares it
+`void | Promise<void>`, so it is allowed to await, and it runs **once when the
+mod loads, before any quest starts**. Clearing there gives the destroy a whole
+hook to settle in, and leaves the quest's own build a single synchronous call
+inside its own window.
+
+Only **fixed** addresses are cleared. A random one is allocated fresh per
+playthrough, cannot collide with a save entry, and destroying it might hit a
+machine belonging to something else.
+
+Verified against the emitted Harbour mod, with an older build's ROUTER seeded at
+the address and permissions revoked the moment `OnStart` returns:
+
+```
+save before load: { "203.0.113.47": ROUTER, ports [80] }
+  cleared any earlier network at 203.0.113.47
+  destroy 203.0.113.47 -> create 203.0.113.47
+save after      : { "203.0.113.47": DEVICE, ports [22] }
+```
+
+### An approach tried and rejected
+
+Deferring the create to `OnObjectivesStart` also satisfies the ordering — two
+separate engine calls, two permission windows. It was written and thrown away:
+it makes the world's existence depend on a second hook firing, so a build that
+skipped or reordered that hook would produce a quest with no world at all. A
+worse failure than the one being fixed, and silent. Clearing on load keeps
+everything a quest needs inside the quest.
+
+**Verification:** 661 tests (21 files, +5), `tsc --noEmit` clean, `vite build`
+clean. Removing the clearing step makes the ordering test fail. Export stamp:
+`EDITOR_BUILD = "2026-09-04.r72"`.

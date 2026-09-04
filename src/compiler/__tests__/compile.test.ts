@@ -3614,3 +3614,109 @@ describe("a typed answer resumes the story down the socket it declares", () => {
         expect(calls.join(",")).not.toContain("toast:believed");
     });
 });
+
+/**
+ * QA, round 72. The engine writes networks into the SAVE, and one already
+ * there wins over a new one created at the same address (r52/r55) — so a
+ * re-exported mod is answered by whatever an older version left behind unless
+ * the address is cleared first.
+ *
+ * Clearing it is the hard part, because `destroyNetwork` returns a promise and
+ * the engine only grants a mod its permissions while it is inside a call the
+ * engine made (r45):
+ *
+ *   r55  destroy then create      → the destroy resolved after the create
+ *   r56  await the destroy        → the create lost its permissions
+ *   r71  don't destroy at all     → the stale network wins (what QA hit)
+ *
+ * `OnModPackageLoaded` settles it: the SDK declares it `void | Promise<void>`,
+ * so it may await, and it runs once on load — before any quest starts.
+ */
+describe("a re-exported mod replaces the networks an older build left behind", () => {
+    function harness() {
+        const p = getTemplate("data-grab")!.build();
+        const js = compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content;
+        const order: string[] = [];
+        /* The save already holds an older build's machine at this address. */
+        const saved: Record<string, { type: string }> = { "203.0.113.47": { type: "ROUTER" } };
+        let insideEngineCall = false;
+
+        const sdk = stubSdk([], []) as any;
+        sdk.Network.destroyNetwork = (ip: string) =>
+            new Promise<void>((res) => setTimeout(() => { delete saved[ip]; order.push(`destroy:${ip}`); res(); }, 1));
+        sdk.Network.createSubnetNetwork = (d: { ip: string; type: string }) => {
+            if (!insideEngineCall) throw new Error('Mod "null" tried to use Network.createSubnetNetwork');
+            saved[d.ip] = { type: d.type };
+            order.push(`create:${d.ip}`);
+            return d.ip;
+        };
+        let ModCls: (new () => { OnModPackageLoaded: () => void | Promise<void> }) | null = null;
+        sdk.RegisterModPackage = (c: new () => { OnModPackageLoaded: () => void | Promise<void> }) => (ModCls = c);
+        runMod(js, sdk);
+        return {
+            order, saved,
+            load: () => new ModCls!().OnModPackageLoaded(),
+            start: () => {
+                const q = new (registered0(sdk).quests[0])();
+                q.Data = {};
+                insideEngineCall = true;
+                q.OnStart();
+                insideEngineCall = false;
+            },
+        };
+    }
+
+    it("clears the address on load, then builds inside the quest's own window", async () => {
+        const h = harness();
+        await h.load();
+        h.start();
+        expect(h.order).toEqual(["destroy:203.0.113.47", "create:203.0.113.47"]);
+    });
+
+    it("leaves the save holding this build's machine, not the old one", async () => {
+        const h = harness();
+        await h.load();
+        h.start();
+        // the fixture seeded a ROUTER; the template builds a DEVICE
+        expect(h.saved["203.0.113.47"].type).toBe("DEVICE");
+    });
+
+    it("keeps the quest's permissions: nothing is awaited while building", async () => {
+        // The r56 failure. If the create were behind an await it would throw.
+        const h = harness();
+        await h.load();
+        expect(() => h.start()).not.toThrow();
+    });
+
+    it("only clears addresses the mod actually pins", async () => {
+        /* A "random" address is allocated fresh per playthrough and cannot
+           collide with a save entry, so there is nothing to clear — and
+           destroying a random address could hit somebody else's machine. */
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        p.quests[0].graph.nodes = [
+            node("world.network", {
+                ipMode: "random",
+                device: { id: "r1", ip: "10.0.0.1", type: "DEVICE", users: [], ports: [] },
+            }),
+        ];
+        const cleared: string[] = [];
+        const sdk = stubSdk([], []) as any;
+        sdk.Network.destroyNetwork = (ip: string) => { cleared.push(ip); return Promise.resolve(); };
+        let ModCls: (new () => { OnModPackageLoaded: () => void | Promise<void> }) | null = null;
+        sdk.RegisterModPackage = (c: new () => { OnModPackageLoaded: () => void | Promise<void> }) => (ModCls = c);
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        await new ModCls!().OnModPackageLoaded();
+        expect(cleared).toEqual([]);
+    });
+
+    it("survives a build with no destroyNetwork at all", async () => {
+        const p = getTemplate("data-grab")!.build();
+        const sdk = stubSdk([], []) as any;
+        delete sdk.Network.destroyNetwork;
+        let ModCls: (new () => { OnModPackageLoaded: () => void | Promise<void> }) | null = null;
+        sdk.RegisterModPackage = (c: new () => { OnModPackageLoaded: () => void | Promise<void> }) => (ModCls = c);
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        await expect(Promise.resolve(new ModCls!().OnModPackageLoaded())).resolves.not.toThrow();
+    });
+});

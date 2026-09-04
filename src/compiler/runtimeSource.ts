@@ -1252,29 +1252,25 @@ function __qeRegisterProject(sdk, PROJECT) {
            the editor ever offered to make. */
         /* Create a network at an address.
 
-           Three rounds were spent trying to clear a stale network out of the
-           save first, and every version of that was wrong:
+           The engine writes networks into the SAVE, and one already there WINS
+           over a new one created at the same address (r52/r55) - so a
+           re-exported mod cannot replace its own machines unless the old one
+           is destroyed first. But destroyNetwork returns a PROMISE, and the
+           engine only grants a mod its permissions while it is inside a call
+           the engine made (r45). Three rounds died between those two facts:
 
-             r55  destroy then create, not awaited  -> the destroy is a promise
-                  and resolved AFTER the create, deleting the new network.
-                  "Host is down ... No ports found."
-             r56  await the destroy                 -> the create then happens
-                  past an await, outside the window where the engine grants the
-                  mod its permissions, so everything after it is refused as
-                  Mod "null" (r45).
-             r59  fire and forget the destroy       -> same race as r55, which
-                  is what QA hit again on r70.
+             r55  destroy, create next line   -> destroy resolved AFTER the
+                  create and deleted the new network
+             r56  await the destroy           -> the create then ran past an
+                  await, outside the permission window: Mod "null"
+             r71  do not destroy at all       -> the stale network wins, which
+                  is what QA hit
 
-           The reference mod settles it: across seven networks it never calls
-           destroyNetwork and never calls getSubnet. It calls
-           createSubnetNetwork and nothing else, on every quest start, and it
-           works. So the engine handles an address that already has a network -
-           and the whole clear-first idea was solving a problem that came from
-           r52's teardown, not from the engine.
-
-           Teardown on quest complete/abandon stays (that is what
-           destroyOnComplete asks for). Creating is now a single synchronous
-           call, which also keeps the quest inside its permission window. */
+           The addresses are cleared in OnModPackageLoaded instead. The SDK
+           declares it "void | Promise<void>", so it may await, and it runs
+           once when the mod loads - before any quest starts. By the time a
+           quest's OnStart runs, the destroys have settled, and the create is a
+           single synchronous call inside its own permission window. */
         function buildNetwork(ip, definition, next) {
             void ip;
             sdk.Network.createSubnetNetwork(definition);
@@ -1697,6 +1693,43 @@ function __qeRegisterProject(sdk, PROJECT) {
         OnModPackageLoaded() {
             __QE.log(PROJECT.mod.name + " v" + PROJECT.mod.version +
                 " loaded (editor build " + __QE_BUILD + ").");
+
+            /* Clear any network this mod is about to build that the save
+               already holds.
+
+               The engine keeps networks in the save file, and one that is
+               already there wins over a new one created at the same address -
+               so without this, a re-exported mod is answered by whatever an
+               older version left behind. QA lost several rounds to a port that
+               would not close and an account that would not appear, both
+               because an earlier build's machine was still standing.
+
+               This is the right hook for it. OnModPackageLoaded is declared
+               "void | Promise<void>" in the SDK, so it is allowed to await,
+               and it runs once when the mod loads - before any quest starts.
+               Doing it inside a quest's OnStart is what broke rounds 55, 56
+               and 71: destroyNetwork is async, and awaiting it there costs the
+               quest the permissions it needs to build anything.
+
+               Fixed addresses only. A "random" address is allocated fresh per
+               playthrough and cannot collide with an older save entry. */
+            var addresses = [];
+            (PROJECT.quests || []).forEach(function (q) {
+                ((q.graph && q.graph.nodes) || []).forEach(function (n) {
+                    if (n.type !== "world.network" && n.type !== "world.wifi") return;
+                    if (n.data.ipMode !== "fixed") return;
+                    var ip = n.type === "world.wifi" ? n.data.ip : (n.data.device && n.data.device.ip);
+                    if (ip && addresses.indexOf(ip) < 0) addresses.push(ip);
+                });
+            });
+            if (!addresses.length || !sdk.Network || !sdk.Network.destroyNetwork) return;
+
+            return Promise.all(addresses.map(function (ip) {
+                return Promise.resolve()
+                    .then(function () { return sdk.Network.destroyNetwork(ip); })
+                    .then(function () { __QE.log("cleared any earlier network at " + ip); },
+                          function () { /* nothing there: the normal case */ });
+            })).then(function () {});
         }
     };
     sdk.RegisterModPackage(Mod);

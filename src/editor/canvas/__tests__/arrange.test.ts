@@ -35,6 +35,51 @@ describe("snapPositions", () => {
     });
 });
 
+describe("alignPositions with measured cards", () => {
+    /*
+     * The r97 report: three cards of different heights looked "barely moved"
+     * after Align in a row, because matching their top edges leaves their
+     * middles staggered. Authors mean the centres.
+     */
+    const sized = (id: string, x: number, y: number, w: number, h: number) => ({
+        id, position: { x, y }, size: { width: w, height: h },
+    });
+
+    it("centres cards of different heights, so their tops differ", () => {
+        // Centres start at 30 and 150; the mean is 90.
+        const a = sized("a", 0, 0, 200, 60);
+        const b = sized("b", 300, 100, 200, 100);
+        const moved = alignPositions([a, b], "row");
+        expect(moved.a.y).toBe(60); // 90 - 30
+        expect(moved.b.y).toBe(40); // 90 - 50
+        // Different tops, same centre - which is the whole point.
+        expect(moved.a.y).not.toBe(moved.b.y);
+        expect(moved.a.y + 30).toBe(moved.b.y + 50);
+    });
+
+    it("the screenshot case ends up on one centre line", () => {
+        const nodes = [
+            sized("shell1", 40, 130, 175, 62),
+            sized("shell2", 265, 85, 175, 62),
+            sized("dialogue", 480, 38, 200, 78),
+        ];
+        const moved = alignPositions(nodes, "row");
+        const centres = nodes.map((n) => (moved[n.id]?.y ?? n.position.y) + n.size.height / 2);
+        expect(new Set(centres.map((c) => Math.round(c))).size).toBe(1);
+    });
+
+    it("falls back to corner alignment when a size is unknown", () => {
+        const moved = alignPositions([{ id: "a", position: { x: 0, y: 0 } }, { id: "b", position: { x: 10, y: 100 } }], "row");
+        expect(moved.a.y).toBe(50);
+        expect(moved.b.y).toBe(50);
+    });
+
+    it("centres columns on width too", () => {
+        const moved = alignPositions([sized("a", 0, 0, 100, 50), sized("b", 200, 80, 300, 50)], "column");
+        expect(moved.a.x + 50).toBe(moved.b.x + 150);
+    });
+});
+
 describe("alignPositions", () => {
     it("puts nodes in a row on their average y, keeping x", () => {
         const moved = alignPositions([n("a", 0, 0), n("b", 100, 100)], "row");

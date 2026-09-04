@@ -549,7 +549,11 @@ function CanvasInner() {
         (what: "row" | "column" | "spread-row" | "spread-column") => {
             const q = activeQuest();
             if (!q) return;
-            const chosen = q.graph.nodes.filter((n) => selection.nodeIds.includes(n.id));
+            const chosen = q.graph.nodes
+                .filter((n) => selection.nodeIds.includes(n.id))
+                // Measured sizes let alignment centre the cards rather than
+                // line up their top-left corners (r97).
+                .map((n) => ({ ...n, size: measured[n.id] }));
             if (chosen.length < 2) return;
             const moved =
                 what === "row" || what === "column"
@@ -563,7 +567,7 @@ function CanvasInner() {
             const merged = { ...moved, ...final };
             arrangeNodes(merged);
         },
-        [activeQuest, arrangeNodes, selection.nodeIds],
+        [activeQuest, arrangeNodes, measured, selection.nodeIds],
     );
 
     const onNodesChange = useCallback(
@@ -829,40 +833,44 @@ function CanvasInner() {
                         className="btn-ghost rounded-none rounded-l-md"
                         onClick={() => arrange("row")}
                         disabled={selection.nodeIds.length < 2}
-                        title="Line the selected nodes up in a row, on their average height"
+                        title="Line the selected nodes up side by side, centred on the same height"
                         aria-label="Align in a row"
                     >
                         <Icon name="rows" size={13} />
+                        Row
                     </button>
                     <button
                         type="button"
                         className="btn-ghost rounded-none"
                         onClick={() => arrange("column")}
                         disabled={selection.nodeIds.length < 2}
-                        title="Stack the selected nodes in a column, on their average left edge"
+                        title="Stack the selected nodes one above another, centred on the same vertical line"
                         aria-label="Align in a column"
                     >
                         <Icon name="columns" size={13} />
+                        Column
                     </button>
                     <button
                         type="button"
                         className="btn-ghost rounded-none"
                         onClick={() => arrange("spread-row")}
                         disabled={selection.nodeIds.length < 3}
-                        title="Even out the horizontal gaps, leaving the outermost nodes where they are"
+                        title="Even out the left-to-right gaps, leaving the outermost nodes where they are"
                         aria-label="Space out across"
                     >
                         <Icon name="spread-h" size={13} />
+                        Even across
                     </button>
                     <button
                         type="button"
                         className="btn-ghost rounded-none rounded-r-md"
                         onClick={() => arrange("spread-column")}
                         disabled={selection.nodeIds.length < 3}
-                        title="Even out the vertical gaps, leaving the outermost nodes where they are"
+                        title="Even out the top-to-bottom gaps, leaving the outermost nodes where they are"
                         aria-label="Space out down"
                     >
                         <Icon name="spread-v" size={13} />
+                        Even down
                     </button>
                 </div>
                 <button
@@ -886,12 +894,12 @@ function CanvasInner() {
                     onClick={() => setWireMotion(!motion)}
                     title={
                         motion
-                            ? "Wires show which way the story runs by drifting dots along themselves. Click to hold them still."
-                            : "Wire dots are held still. Click to let them drift again, showing which way the story runs."
+                            ? "Editor only: wires show which way the story runs by drifting dots along themselves. Click to hold them still."
+                            : "Editor only: wire dots are held still. Click to let them drift again, showing which way the story runs."
                     }
                 >
                     <Icon name={motion ? "play" : "pause"} size={13} />
-                    {motion ? "Wires moving" : "Wires still"}
+                    {motion ? "Animated wires" : "Static wires"}
                 </button>
                 <span
                     className={

@@ -48,15 +48,31 @@ export type AlignAxis = "row" | "column";
  * nothing writes nothing.
  */
 export function alignPositions(
-    nodes: { id: string; position: XY }[],
+    nodes: { id: string; position: XY; size?: { width: number; height: number } }[],
     axis: AlignAxis,
 ): Record<string, XY> {
     if (nodes.length < 2) return {};
     const key = axis === "row" ? "y" : "x";
-    const mean = nodes.reduce((sum, n) => sum + n.position[key], 0) / nodes.length;
-    const target = Math.round(mean);
+    const extent = axis === "row" ? "height" : "width";
+    /*
+     * Align CENTRES, not top-left corners.
+     *
+     * A node's position is its top-left. Giving a short "Tool response" card
+     * and a tall "Dialogue" card the same y lines up their top edges and
+     * leaves their middles — and the wires between them — visibly off, which
+     * reads as "the button barely did anything". Centring is what an author
+     * means by a straight line.
+     *
+     * Sizes come from React Flow's measurements and can be missing for a node
+     * that has not been rendered yet; those fall back to corner alignment,
+     * which is the old behaviour rather than a crash.
+     */
+    const centre = (n: { position: XY; size?: { width: number; height: number } }) =>
+        n.position[key] + (n.size?.[extent] ?? 0) / 2;
+    const mean = nodes.reduce((sum, n) => sum + centre(n), 0) / nodes.length;
     const moved: Record<string, XY> = {};
     for (const n of nodes) {
+        const target = Math.round(mean - (n.size?.[extent] ?? 0) / 2);
         if (n.position[key] === target) continue;
         moved[n.id] = { ...n.position, [key]: target };
     }

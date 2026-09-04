@@ -3502,3 +3502,124 @@ describe("fields the editor collects actually reach the engine", () => {
         expect(calls.some((c) => c.startsWith("setData:coin="))).toBe(true);
     });
 });
+
+/**
+ * QA, round 69 — the typed-reply mechanic, checked against the SDK.
+ *
+ * QA explained what the game actually does: when the player answers a mail, a
+ * WeeChat line or a Kisscord message, the text is PRE-DEFINED and appears as
+ * they mash keys. The question was whether the SDK exposes that, and whether
+ * our "Hackertyper" node is the right way to reach it.
+ *
+ * It does expose it, and the node is not it:
+ *
+ *   KisscordMessageDefinition.isMine — "True if the player sends this message"
+ *   WeeChatMessageDefinition.isMine  — same, with the player's username
+ *                                      auto-filled
+ *
+ * A scripted player line is a message in the chat with `isMine: true`. There is
+ * no hackertyper API anywhere in the SDK; our node builds a bespoke HTML page
+ * that imitates one. That is a legitimate trick for a website terminal, but it
+ * is not the game's own mechanic, and the dialogue editor already offers the
+ * real thing.
+ */
+describe("a scripted player line is marked as the player's", () => {
+    function chatsFor(kind: "kisscord" | "weechat", messages: unknown[]) {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        p.quests[0].graph.nodes = [
+            node("comms.dialogue", {
+                kind,
+                [kind]: kind === "kisscord"
+                    ? { contactId: "c-1", messages }
+                    : { host: "irc.example.net", password: "", registerServer: true, messages },
+            }),
+        ];
+        const sdk = stubSdk([], []) as any;
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = {};
+        return kind === "kisscord" ? q.KisscordChats?.[0]?.messages : q.WeeChatChats?.[0]?.messages;
+    }
+
+    it("marks a Kisscord line the player types out as theirs", () => {
+        const msgs = chatsFor("kisscord", [
+            { id: "m1", content: "", playerAction: "send", playerText: "it is done", delayMs: 0 },
+        ]);
+        expect(msgs[0]).toMatchObject({ content: "it is done", isMine: true });
+    });
+
+    it("marks a WeeChat line the player types out as theirs", () => {
+        /* This one was wrong: we sent `username: "you"` and never set isMine,
+           so the engine read it as an NPC who happens to be called "you". The
+           SDK is explicit — "Player username auto-filled if isMine". */
+        const msgs = chatsFor("weechat", [
+            { id: "m1", content: "", username: "you", playerAction: "send", playerText: "on my way", delayMs: 0 },
+        ]);
+        expect(msgs[0]).toMatchObject({ content: "on my way", isMine: true });
+        expect(msgs[0]).not.toHaveProperty("username");
+    });
+
+    it("marks a WeeChat file upload as the player's too", () => {
+        const msgs = chatsFor("weechat", [
+            { id: "m1", content: "", playerAction: "upload", upload: { name: "manifest", extension: "csv" }, delayMs: 0 },
+        ]);
+        expect(msgs[0].isMine).toBe(true);
+        expect(msgs[0].content).toContain("manifest.csv");
+    });
+
+    it("leaves an NPC line with its username and no player flag", () => {
+        const msgs = chatsFor("weechat", [
+            { id: "m1", content: "you there?", username: "informant", playerAction: "none", delayMs: 0 },
+        ]);
+        expect(msgs[0]).toMatchObject({ content: "you there?", username: "informant" });
+        expect(msgs[0].isMine).toBeUndefined();
+    });
+
+    it("honours an author who marks a plain message as the player's", () => {
+        const msgs = chatsFor("weechat", [
+            { id: "m1", content: "already inside", isMine: true, playerAction: "none", delayMs: 0 },
+        ]);
+        expect(msgs[0]).toMatchObject({ content: "already inside", isMine: true });
+    });
+});
+
+/**
+ * QA, round 69. The typed-reply page offers three surfaces and builds one. The
+ * other two compiled to nothing — the node vanished from the export without a
+ * word, which is the failure mode the r67 audit exists to stop.
+ */
+describe("the typed-reply page says where it can actually live", () => {
+    function warnFor(surface: string) {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        p.quests[0].graph.nodes = [
+            node("reply.hackertyper", {
+                surface,
+                targetRef: "example.net",
+                heading: "Secure reply",
+                text: "> done",
+                charsPerKeypress: 4,
+            }),
+        ];
+        return computeWarnings(p).join("\n");
+    }
+
+    it("warns that a desktop app surface is not built", () => {
+        expect(warnFor("app")).toContain("not built yet");
+    });
+
+    it("warns that a phone app surface is not built", () => {
+        expect(warnFor("phoneApp")).toContain("not built yet");
+    });
+
+    it("says nothing about the surface that works", () => {
+        expect(warnFor("website")).not.toContain("not built yet");
+    });
+
+    it("no shipped template picks a surface that does nothing", () => {
+        for (const t of TEMPLATES) {
+            expect(computeWarnings(t.build()).join("\n"), t.id).not.toContain("not built yet");
+        }
+    });
+});

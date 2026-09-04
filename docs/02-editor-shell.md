@@ -3288,3 +3288,56 @@ is a legitimate thing for a hint to say.
 clean. Routing verified end to end: plain → `Mail.send`; replyable with the
 engine holding our copy → `Quest.sendMail(0)`; replyable without → `Mail.send`
 plus the warning. Export stamp: `EDITOR_BUILD = "2026-09-04.r68"`.
+
+## Round 69 — what the scripted reply actually is
+
+QA described the mechanic the node was built for: when the player answers a
+mail, a WeeChat line or a Kisscord message, the words are **pre-defined** and
+appear as they mash keys. The question was whether the SDK exposes that, and
+whether our Hackertyper node is how to reach it.
+
+Checked, not assumed. The SDK has no hackertyper API — nothing named
+hackertyper, typewriter, prefill or autotype anywhere in the declarations. What
+it does have is the mechanic itself, on the message:
+
+```ts
+KisscordMessageDefinition.isMine  // "True if the player sends this message"
+WeeChatMessageDefinition.isMine   // same; player username auto-filled
+QuestDialogSpeech.options         // player response options, on a phone call
+```
+
+So a scripted player line **is** a message in the chat marked `isMine: true` —
+and the dialogue editor has offered exactly that for some time, as "Player
+message (appears instantly)" and "Player types it out".
+
+The Hackertyper node is something else: it builds a bespoke HTML page with a
+keydown handler and hosts it as an extra page on one of the mod's websites. That
+is a legitimate trick — a fake terminal on a drop site is a good scene — but it
+is not the game's own mechanic, and calling it "Hackertyper" implied it hooked
+into one. It is now **Typed reply page**, "a fake terminal on a website", which
+is what it is. Not removed: it works, it is used by a template, and a web
+terminal is a real thing to want.
+
+### Two bugs found on the way
+
+**WeeChat player lines were not the player's.** We sent
+`{ content, username: "you" }` and never set `isMine`. The SDK is explicit —
+*"Player username auto-filled if isMine"* — so the engine read those as an NPC
+who happens to be called "you". Fixed for typed lines and file uploads, with the
+username omitted so the engine fills in the real one. Kisscord was already
+correct, which is why this survived: the two paths were written separately and
+only one of them was right.
+
+**Two of the node's three surfaces built nothing.** "A desktop app" and "A phone
+app" were offered in the dropdown, and the compiler only ever handled
+`website` — pick either and the node vanished from the export in silence. The
+SDK does have `RegisterApp` and `RegisterPhoneApp`, so they are buildable later;
+until then export warns and the field hint says which one works.
+
+That is the r67 audit's failure mode in a place the audit could not see: the
+field *was* read, but only one of its values did anything. Worth remembering
+that "the compiler mentions this key" is a weaker guarantee than it looks.
+
+**Verification:** 655 tests (21 files, +9), `tsc --noEmit` clean, `vite build`
+clean. Reverting the WeeChat fix fails its test. Export stamp:
+`EDITOR_BUILD = "2026-09-04.r69"`.

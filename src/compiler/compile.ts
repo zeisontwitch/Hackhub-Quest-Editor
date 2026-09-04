@@ -22,7 +22,7 @@ import { RUNTIME_SOURCE } from "./runtimeSource";
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-04.r68";
+export const EDITOR_BUILD = "2026-09-04.r69";
 
 export interface CompiledFile {
     path: string;
@@ -260,6 +260,20 @@ export function computeWarnings(project: ProjectDocument): string[] {
                                 `and this build of the SDK cannot create one. Remove the handle, or point the player at something that exists — a website, an e-mail address, an IP.`,
                             );
                         }
+                    }
+                    break;
+                }
+                case "reply.hackertyper": {
+                    /* Only the website surface is built. "A desktop app" and
+                       "A phone app" were offered and compiled to nothing at
+                       all — the node simply vanished from the export (audit,
+                       r69). The SDK does have RegisterApp/RegisterPhoneApp, so
+                       these are buildable later; until then, say so. */
+                    const h = n.data as { surface?: string; heading?: string };
+                    if (h.surface && h.surface !== "website") {
+                        warnings.push(
+                            `${q.name}: “${h.heading || "a typed-reply widget"}” is set to live in ${h.surface === "phoneApp" ? "a phone app" : "a desktop app"}, which is not built yet — the widget will not appear anywhere. Host it on a website page instead.`,
+                        );
                     }
                     break;
                 }

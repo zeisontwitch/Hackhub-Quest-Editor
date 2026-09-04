@@ -646,8 +646,8 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
     "reply.hackertyper": {
         type: "reply.hackertyper",
         category: "reply",
-        label: "Hackertyper",
-        blurb: "Mash keys to reveal a string",
+        label: "Typed reply page",
+        blurb: "A fake terminal on a website",
         icon: "keyboard",
         ...io,
         hook: "onObjectivesStart",
@@ -660,7 +660,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
             { kind: "note", tone: "info", text: "HackHub has no engine primitive for this, so the editor emits a small HTML surface that runs the effect and emits a custom event when the string is revealed." },
             {
                 kind: "select",
-                key: "surface", hint: "Where the widget lives: a page on a website, a desktop app, or a phone app.",
+                key: "surface", hint: "Only “a website page” is built. The app surfaces are not compiled yet and the widget will not appear — export warns if you pick one.",
                 label: "Rendered as",
                 options: [
                     { value: "website", label: "A website page" },

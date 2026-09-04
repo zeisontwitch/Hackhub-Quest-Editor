@@ -342,9 +342,25 @@ function __qeRegisterProject(sdk, PROJECT) {
                 return {
                     host: n.data.weechat.host,
                     messages: (n.data.weechat.messages || []).map(function (m) {
-                        var out = m.playerAction === "send"
-                            ? { content: m.playerText, username: "you" }
-                            : { content: m.content, username: m.username };
+                        /* isMine is what marks a line as the PLAYER's. The SDK
+                           says of username: "Player username auto-filled if
+                           isMine" — so a player line needs the flag and no
+                           username, not a hardcoded one. We were sending
+                           username:"you" with no flag, which the engine reads
+                           as an NPC who happens to be called "you" (audit,
+                           r69). */
+                        var out;
+                        if (m.playerAction === "send" || m.playerAction === "upload") {
+                            out = { content: m.playerAction === "upload"
+                                ? "[uploaded file: " + ((m.upload && m.upload.name) || "file") + "." + ((m.upload && m.upload.extension) || "txt") + "]"
+                                : m.playerText, isMine: true };
+                        } else if (m.playerAction === "input") {
+                            out = { content: m.content || "(waiting for your answer)", username: m.username };
+                        } else if (m.isMine) {
+                            out = { content: m.content, isMine: true };
+                        } else {
+                            out = { content: m.content, username: m.username };
+                        }
                         if (m.delayMs) out.delayMs = m.delayMs;
                         return out;
                     }),

@@ -866,23 +866,39 @@ function buildContractHack(): ProjectDocument {
     });
     const oScan = makeNode("objective", { x: 1580, y: 200 }, {
         name: "scan-server",
-        description: "See what is behind the company's edge router",
-        hint: `nmap with -sV reports versions as well as open ports. Start at ${IP}; the machines behind it are on 10.0.0.x.`,
+        description: "Scan the address the domain resolves to",
+        hint: "nmap with -sV reports versions as well as open ports.",
+        info: "The edge router only serves the website — but a company keeps its real machines behind it, and the router is the way through.",
         terminalCommand: `nmap ${IP} -sV`,
     });
-    const oAccess = makeNode("objective", { x: 1900, y: 200 }, {
+    const oMap = makeNode("objective", { x: 1900, y: 200 }, {
+        name: "map-network",
+        description: "Map what is behind the router",
+        hint: `net_tree.py ${IP} draws the network out. Look for the machine with somebody's name on it.`,
+        info: "The router answers on 80 and nothing else. Everything worth having is on the machines it fronts.",
+        terminalCommand: `net_tree.py ${IP}`,
+    });
+    const oAccess = makeNode("objective", { x: 2220, y: 200 }, {
         name: "get-a-shell",
         description: "Get onto Ritter's workstation",
-        hint: `The edge router only serves the website. ${HOST_IP} behind it is answering on port 22 with an old SSH — metasploit has a module for that.`,
+        hint: "His machine is answering on port 22 with an old OpenSSH. metasploit has a module for that — the version the scan reported is the one to set.",
+        info: "The exploit drops you in as guest, which is enough to look around but not enough to touch his files.",
         terminalCommand: "msfconsole",
     });
-    const oDelete = makeNode("objective", { x: 2220, y: 200 }, {
+    const oCrack = makeNode("objective", { x: 2540, y: 200 }, {
+        name: "become-ritter",
+        description: "Get into Ritter's own account",
+        hint: "show users lists who is on the box. /etc/passwd holds their hashes — feed his to john in another terminal, then users <number> to switch.",
+        info: "Guest cannot read another user's home directory. You need to be him, not near him.",
+        terminalCommand: "show users",
+    });
+    const oDelete = makeNode("objective", { x: 2860, y: 200 }, {
         name: "delete-ledger",
         description: `Delete ${FILE}.xlsx from his home directory`,
-        hint: "It is in /home/aritter.",
+        hint: `Once you are Ritter, the file is in his home folder. rm ${FILE}.xlsx, or delete it from explorer.`,
         terminalCommand: `rm ${FILE}.xlsx`,
     });
-    const oReply = makeNode("objective", { x: 2540, y: 200 }, {
+    const oReply = makeNode("objective", { x: 3180, y: 200 }, {
         name: "report-back",
         description: "Tell the client the job is done",
         hint: "She left a reply terminal on the drop site. Mash the keys — the words are already written.",
@@ -904,21 +920,39 @@ function buildContractHack(): ProjectDocument {
         ],
         { x: 1580, y: 360 },
     );
+    /* net_tree.py is how the player finds the machines the router fronts.
+       Terminal.Command carries what was typed, so match the tool by name and
+       let any argument through — the player may map the domain or the ip. */
+    const t5 = triggerFor(
+        oMap,
+        "Terminal.Command",
+        [{ field: "command", op: "contains", value: "net_tree" }],
+        { x: 1900, y: 360 },
+    );
     /* No condition on purpose: whether the session reports the router's public
        address or the workstation's differs by route in, and a template should
        not fail for taking the other one. */
-    const t5 = triggerFor(oAccess, "Metasploit.Meterpreter.Connected", [], { x: 1900, y: 360 });
-    const t6 = triggerFor(oDelete, "Files.Deleted", [{ field: "name", op: "contains", value: FILE }], { x: 2220, y: 360 });
-    const t7 = triggerFor(oReply, "QE.reply.sent", [], { x: 2540, y: 360 });
+    const t6 = triggerFor(oAccess, "Metasploit.Meterpreter.Connected", [], { x: 2220, y: 360 });
+    /* Switching user inside the session is what "become Ritter" means. The
+       meterpreter command is `users <n>`; match the verb, not the number,
+       since the index depends on how the engine ordered the accounts. */
+    const t7 = triggerFor(
+        oCrack,
+        "Terminal.Command",
+        [{ field: "command", op: "contains", value: "users" }],
+        { x: 2540, y: 360 },
+    );
+    const t8 = triggerFor(oDelete, "Files.Deleted", [{ field: "name", op: "contains", value: FILE }], { x: 2860, y: 360 });
+    const t9 = triggerFor(oReply, "QE.reply.sent", [], { x: 3180, y: 360 });
 
     /* ── the honesty check ──────────────────────────────────────────────── */
 
     /* The deletion is what the client actually pays for, so it is written down
        the moment it happens. "On complete" on an objective follows this wire
        when the player finishes it by playing. */
-    const remember = makeNode("fx.setData", { x: 2220, y: 520 }, { key: "ledger", value: "deleted" });
+    const remember = makeNode("fx.setData", { x: 2860, y: 520 }, { key: "ledger", value: "deleted" });
 
-    const reply = makeNode("reply.hackertyper", { x: 2540, y: 520 }, {
+    const reply = makeNode("reply.hackertyper", { x: 3180, y: 520 }, {
         surface: "website",
         targetRef: DOMAIN,
         heading: "Secure reply",
@@ -979,8 +1013,9 @@ function buildContractHack(): ProjectDocument {
         nodes: [
             claim, load, complete,
             network, osint, whois, brief, wrapUp,
-            oRead, oFind, oServer, oScan, oAccess, oDelete, oReply,
-            t1.trigger, t2.trigger, t3.trigger, t4.trigger, t5.trigger, t6.trigger, t7.trigger,
+            oRead, oFind, oServer, oScan, oMap, oAccess, oCrack, oDelete, oReply,
+            t1.trigger, t2.trigger, t3.trigger, t4.trigger, t5.trigger,
+            t6.trigger, t7.trigger, t8.trigger, t9.trigger,
             remember, reply, honest, paid, pay, joking, note,
         ],
         edges: [
@@ -993,11 +1028,13 @@ function buildContractHack(): ProjectDocument {
             makeEdge(oRead, "unlock", oFind, "unlocked-by"),
             makeEdge(oFind, "unlock", oServer, "unlocked-by"),
             makeEdge(oServer, "unlock", oScan, "unlocked-by"),
-            makeEdge(oScan, "unlock", oAccess, "unlocked-by"),
-            makeEdge(oAccess, "unlock", oDelete, "unlocked-by"),
+            makeEdge(oScan, "unlock", oMap, "unlocked-by"),
+            makeEdge(oMap, "unlock", oAccess, "unlocked-by"),
+            makeEdge(oAccess, "unlock", oCrack, "unlocked-by"),
+            makeEdge(oCrack, "unlock", oDelete, "unlocked-by"),
             makeEdge(oDelete, "unlock", oReply, "unlocked-by"),
             // their triggers
-            t1.edge, t2.edge, t3.edge, t4.edge, t5.edge, t6.edge, t7.edge,
+            t1.edge, t2.edge, t3.edge, t4.edge, t5.edge, t6.edge, t7.edge, t8.edge, t9.edge,
             // remember the deletion, then judge the reply
             makeEdge(oDelete, "done", remember, "in"),
             makeEdge(load, "out", reply, "in"),
@@ -1624,7 +1661,7 @@ export const TEMPLATES: Template[] = [
         description:
             "The job the game hands out constantly: a name in an e-mail, an OSINT lookup, whois, a scan, an exploit, and one file that has to stop existing — with a client who checks before she pays.",
         difficulty: "Intermediate",
-        nodeCount: 29,
+        nodeCount: 33,
         build: buildContractHack,
     },
     {

@@ -3004,3 +3004,66 @@ silence a cosmetic warning was a bad trade regardless of what caused the stall.
 
 **Verification:** 594 tests (20 files, +1), `tsc --noEmit` clean, `vite build`
 clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r63"`.
+
+## Round 64 — the walkthrough catches up with the network
+
+QA played the contract to the end. Meterpreter now opens, which is the payoff
+for r52 through r58. What the run exposed is that the *objectives* still
+described the old, flat network: moving SSH behind the router in r58 made the
+route two steps longer, and neither step had an objective.
+
+The real sequence, as played:
+
+```
+nmap the edge router
+  → net_tree.py to see the machines behind it
+    → metasploit the workstation's SSH
+      → land as guest
+        → show users, read /etc/passwd, john the hash
+          → users <n> to become Ritter
+            → delete the file
+```
+
+Two new objectives, **map-network** and **become-ritter**, cover the steps that
+were missing. Both are triggered off `Terminal.Command` matched on the tool name
+rather than the full line, because the argument varies — the player may map the
+domain or the address, and the user index depends on how the engine ordered the
+accounts.
+
+The `get-a-shell` hint also said too much. It named `10.0.0.12`, which is
+precisely the thing `net_tree.py` exists to reveal: handing it over in a hint
+makes the mapping step pointless. It is gone, and a test now asserts that
+address appears in **no** hint, description, info line or scripted tool output.
+The public address stays in the whois result, because that is the way in.
+
+Each objective gained an `info` line as well — the "why", separate from the
+"how", which is what the field is for: *the exploit drops you in as guest, which
+is enough to look around but not enough to touch his files.*
+
+### The file that will not delete
+
+Unsolved, and worth being precise about what has been ruled out. The game says
+*"This file cannot be deleted."* once the player is Ritter and looking straight
+at `ledger_q3.xlsx` in his home folder.
+
+What we send is clean:
+
+```json
+{ "name": "ledger_q3", "extension": "xlsx", "data": "Q3 consolidated ledger …" }
+```
+
+No `readonly`, no `locked`, no `hidden`. `NetworkFileMap` carries all three and
+we set none of them — and the working reference mod uses `readonly: true`
+exactly twice, on files it deliberately protects, which confirms the flag means
+what it looks like it means. So the refusal is not coming from the file
+definition.
+
+That leaves the engine's own rule for what a meterpreter session may delete, and
+that is not something the SDK declarations describe. The one suggestive line in
+the log is `Sys log file not found for 10.0.0.12` — the reference mod gives its
+devices a `logs` root folder and ours has no `rootFiles` at all, which is worth
+testing before theorising further. Recorded on the roadmap rather than guessed
+at, on the r41/r43 principle: a fix for an unconfirmed theory costs a round.
+
+**Verification:** 601 tests (20 files, +7), `tsc --noEmit` clean, `vite build`
+clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r64"`.

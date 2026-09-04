@@ -425,3 +425,82 @@ describe("the contract template is shaped the way the game plays", () => {
         expect(open).toHaveLength(1);
     });
 });
+
+/**
+ * Round 64. QA played the contract end to end and the route turned out to be
+ * longer than the objectives described. With SSH moved behind the router (r58),
+ * the real sequence is:
+ *
+ *   nmap the edge → net_tree.py to find the machines behind it → metasploit
+ *   the workstation's SSH → land as guest → show users → read /etc/passwd →
+ *   john the hash → users <n> to become Ritter → delete the file
+ *
+ * Two of those steps had no objective at all, and one hint handed the player
+ * an address the network is supposed to teach them to find.
+ */
+describe("the contract template's hints match the route the player walks", () => {
+    const quest = () => getTemplate("contract-hack")!.build().quests[0];
+    const objectives = () =>
+        quest().graph.nodes
+            .filter((n) => n.type === "objective")
+            .map((n) => n.data as { name: string; description: string; hint?: string; info?: string });
+
+    it("has an objective for mapping the network behind the router", () => {
+        const o = objectives().find((x) => x.name === "map-network");
+        expect(o, "the player cannot find the workstation without this step").toBeDefined();
+        expect(o!.hint).toContain("net_tree.py");
+    });
+
+    it("has an objective for becoming Ritter, not just for getting a shell", () => {
+        // The exploit lands the player as guest, which cannot read his home.
+        const o = objectives().find((x) => x.name === "become-ritter");
+        expect(o).toBeDefined();
+        expect(o!.hint).toContain("show users");
+        expect(o!.hint).toContain("passwd");
+        expect(o!.hint).toContain("john");
+    });
+
+    it("never hands the player the workstation's address in a hint", () => {
+        /* 10.0.0.12 is the thing net_tree.py is there to reveal. Printing it in
+           a hint skips the step and makes the map objective pointless. */
+        for (const o of objectives()) {
+            const text = `${o.description} ${o.hint ?? ""} ${o.info ?? ""}`;
+            expect(text, o.name).not.toContain("10.0.0.12");
+        }
+    });
+
+    it("keeps the internal address out of the scripted tool output too", () => {
+        const tools = quest().graph.nodes.filter((n) => n.type === "world.toolResponse");
+        for (const t of tools) {
+            const d = t.data as { command: string; dataText: string };
+            expect(d.dataText, `${d.command} leaks the internal address`).not.toContain("10.0.0.12");
+        }
+    });
+
+    it("still tells the player the public address, which is the way in", () => {
+        const whois = quest().graph.nodes.find(
+            (n) => n.type === "world.toolResponse" && (n.data as { command: string }).command === "whois",
+        )!;
+        expect((whois.data as { dataText: string }).dataText).toContain("45.33.32.156");
+    });
+
+    it("orders the objectives so each unlocks the next", () => {
+        const g = quest().graph;
+        const names = g.nodes.filter((n) => n.type === "objective").map((n) => (n.data as { name: string }).name);
+        expect(names).toEqual([
+            "read-brief", "identify-target", "find-server", "scan-server",
+            "map-network", "get-a-shell", "become-ritter", "delete-ledger", "report-back",
+        ]);
+        // every objective but the last hands on to exactly one successor
+        const unlocks = g.edges.filter((e) => e.sourceHandle === "unlock");
+        expect(unlocks).toHaveLength(names.length - 1);
+    });
+
+    it("gives every objective a trigger that can complete it", () => {
+        const g = quest().graph;
+        for (const o of g.nodes.filter((n) => n.type === "objective")) {
+            const wired = g.edges.some((e) => e.kind === "condition" && e.target === o.id);
+            expect(wired, `${(o.data as { name: string }).name} has no trigger`).toBe(true);
+        }
+    });
+});

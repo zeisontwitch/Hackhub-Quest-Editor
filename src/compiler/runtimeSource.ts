@@ -838,6 +838,10 @@ function __qeRegisterProject(sdk, PROJECT) {
                        network answering. Destroying first makes every run
                        start from the network the mod actually describes. */
                     if (d.destroyOnComplete !== false) questCleanup.push({ kind: "network", ip: netIp });
+                    /* Take back any domain this device tree claims before
+                       creating it, or an older build's server keeps answering
+                       for the name (r75). */
+                    domainsOf(d.device).forEach(function (dom) { reclaimDomain(dom, netIp); });
                     return buildNetwork(netIp, mapDevice(Object.assign({}, d.device, { ip: netIp })), next);
                     /* Tear the network down again when the quest ends. The
                        editor has always offered this toggle; the compiler
@@ -886,6 +890,10 @@ function __qeRegisterProject(sdk, PROJECT) {
                     /* A domain the player can whois / nslookup their way to. */
                     var domIp = __QE.fill(d.ip || "", scope) || ((questRef && questRef.Data && questRef.Data.targetIp) || "");
                     if (sdk.Network && sdk.Network.registerDomain && d.domain && domIp) {
+                        /* Same reclaim as world.network: a domain the save
+                           still points at an old address would otherwise win
+                           (r75). */
+                        reclaimDomain(d.domain, domIp);
                         sdk.Network.registerDomain(d.domain, domIp, d.vulnerabilities || []);
                         if (d.removeOnComplete !== false) questCleanup.push({ kind: "domain", domain: d.domain });
                     }
@@ -1310,6 +1318,69 @@ function __qeRegisterProject(sdk, PROJECT) {
             void ip;
             sdk.Network.createSubnetNetwork(definition);
             return next();
+        }
+
+        /* Every domain name anywhere in a device tree. A quest's server is
+           usually the only one that carries a domain, but a router with
+           children may carry several, and each one has to be reclaimed. */
+        function domainsOf(dev, into) {
+            var acc = into || [];
+            if (!dev) return acc;
+            if (dev.domainName) acc.push(dev.domainName);
+            (dev.children || []).forEach(function (c) { domainsOf(c, acc); });
+            return acc;
+        }
+
+        /* Take a domain back from whatever is currently answering for it.
+
+           This is the r75 fault, and it is NOT the same bug as the
+           same-address collision above. The addresses are allocated by the
+           game per playthrough now (r73), so this mod can never collide with
+           its own old IP - but the DOMAIN is still written by the author, so
+           it is identical in every build. QA's save still held the network an
+           older Harbour created at its hardcoded 203.0.113.47, still owning
+           harbourline-logistics.com, and the game resolved whois against that
+           subnet rather than the freshly created one. The log proved the new
+           network and the new scripted whois answer were both registered
+           correctly - they were simply not the ones being asked.
+
+           The engine's own PruneOrphanQuests drops the stale QUEST record (QA
+           saw it drop "TheHarbourManifest5") but leaves the network standing,
+           so nothing else will ever clear it.
+
+           Safety, and why this is not r55 again: r55 destroyed the address it
+           was about to create at, and the promise resolved after the create
+           and deleted the new network. Here we only ever destroy an address
+           that is DIFFERENT from the one this run uses - if the domain already
+           points at our own new ip there is nothing to do - so the destroy
+           cannot race the create no matter when it settles. It is deliberately
+           not awaited, for the same reason: an await would push the create
+           outside the permission window (r56), and a promise the game has to
+           await may never settle (r72). */
+        function reclaimDomain(domain, keepIp) {
+            if (!domain || !sdk.Network) return;
+            var found = __QE.safe(function () {
+                if (sdk.Network.getSubnetByDomain) return sdk.Network.getSubnetByDomain(domain);
+                if (sdk.Network.resolveDomain) return sdk.Network.resolveDomain(domain);
+                return "";
+            });
+            var oldIp = found && typeof found === "object" ? (found.ip || "") : "";
+            if (!oldIp || oldIp === keepIp) return;
+            __QE.log("domain \"" + domain + "\" was still pointing at " + oldIp +
+                " (left behind by an earlier build or playthrough); reclaiming it for " +
+                (keepIp || "this quest"));
+            __QE.safe(function () {
+                if (sdk.Network.removeDomain) sdk.Network.removeDomain(domain);
+            });
+            __QE.safe(function () {
+                if (sdk.Network.destroyNetwork) {
+                    var p = sdk.Network.destroyNetwork(oldIp);
+                    /* Never hand this promise on, and never let a rejection
+                       escape as an unhandled one. */
+                    if (p && typeof p.then === "function") p.then(function () {}, function () {});
+                }
+                return "";
+            });
         }
 
         function mapUsers(dev) {

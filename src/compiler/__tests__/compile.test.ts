@@ -4309,3 +4309,184 @@ describe("objectives show the address, not the token", () => {
         }
     });
 });
+
+/**
+ * QA, round 75. Zeis, on a save that had played earlier builds of the Harbour
+ * template:
+ *
+ *     whois still returns the old hardcoded IP and I cannot progress
+ *
+ * The game log proved the new machinery all worked. CreateData allocated a
+ * fresh random targetIp, the world.network node built the subnet there, the
+ * whois tool answer was re-registered with the new address, and the nmap
+ * objective matched against it:
+ *
+ *     reached "Out-CreateNetwork-HarbourFileserver" | saved: { targetIp="158.97.133.56" }
+ *     reached "Out-ToolResponse-Whois"              | saved: { targetIp="158.97.133.56" }
+ *     objective "scan-server" completed by Terminal.NmapScan
+ *       event: { ip="158.97.133.56", versionScan="true" }
+ *
+ * So nothing was missing - something ELSE was answering. Harbour v2 hardcoded
+ * 203.0.113.47 and put harbourline-logistics.com on that device;
+ * createSubnetNetwork writes the subnet AND its domain into the save, and
+ * PruneOrphanQuests only drops the stale quest record. The old subnet was
+ * still standing and still owned the domain, so the game resolved whois
+ * against it.
+ *
+ * Moving to game-allocated addresses (r73) fixed collisions on the IP, but the
+ * DOMAIN is authored text and is identical in every build - so it is the one
+ * thing a new playthrough could still inherit.
+ */
+describe("a domain is reclaimed from a network an older build left behind", () => {
+    const DOMAIN = "harbourline-logistics.com";
+    const OLD_IP = "203.0.113.47";
+
+    function build(opts: { staleIp?: string | null; api?: "byDomain" | "resolve" | "none" } = {}) {
+        const { staleIp = OLD_IP, api = "byDomain" } = opts;
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const net = node("world.network", {
+            ipMode: "random",
+            device: {
+                id: "d1", ip: "{{data.targetIp}}", name: "harbour-fileserver", type: "DEVICE",
+                domainName: DOMAIN, users: [], ports: [], children: [],
+            },
+        });
+        p.quests[0].graph.nodes = [entry, net];
+        p.quests[0].graph.edges = [edge(entry.id, net.id, "flow")];
+
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        // The save still holds the old subnet, and it owns the domain.
+        let owner: string | null = staleIp;
+        if (api === "byDomain") {
+            sdk.Network.getSubnetByDomain = (d: string) => {
+                calls.push(`lookup:${d}`);
+                return d === DOMAIN && owner ? { ip: owner, type: "DEVICE" } : null;
+            };
+        } else if (api === "resolve") {
+            sdk.Network.resolveDomain = (d: string) => {
+                calls.push(`lookup:${d}`);
+                return d === DOMAIN && owner ? { ip: owner } : null;
+            };
+        }
+        sdk.Network.removeDomain = (d: string) => { calls.push(`rmDomain:${d}`); owner = null; };
+        sdk.Network.destroyNetwork = (ip: string) => { calls.push(`destroy:${ip}`); return Promise.resolve(); };
+
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        return { quest, calls };
+    }
+
+    it("destroys the stale network that was holding the domain", () => {
+        const { quest, calls } = build();
+        quest.OnStart();
+        expect(calls).toContain(`destroy:${OLD_IP}`);
+    });
+
+    it("releases the domain registration before creating the new server", () => {
+        const { quest, calls } = build();
+        quest.OnStart();
+        const released = calls.indexOf(`rmDomain:${DOMAIN}`);
+        const created = calls.indexOf("net:10.9.9.9");
+        expect(released).toBeGreaterThanOrEqual(0);
+        expect(created).toBeGreaterThanOrEqual(0);
+        expect(released).toBeLessThan(created);
+    });
+
+    it("still creates the new network, at the address the game allocated", () => {
+        const { quest, calls } = build();
+        quest.OnStart();
+        // stubSdk's randomIp returns 10.9.9.9
+        expect(calls).toContain("net:10.9.9.9");
+        expect(calls).not.toContain(`net:${OLD_IP}`);
+    });
+
+    it("never destroys the address it is about to create at (the r55 race)", () => {
+        // The domain already points at OUR new ip: nothing stale, nothing to do.
+        const { quest, calls } = build({ staleIp: "10.9.9.9" });
+        quest.OnStart();
+        expect(calls).not.toContain("destroy:10.9.9.9");
+        expect(calls).not.toContain(`rmDomain:${DOMAIN}`);
+        expect(calls).toContain("net:10.9.9.9");
+    });
+
+    it("does nothing on a clean save, where no one owns the domain", () => {
+        const { quest, calls } = build({ staleIp: null });
+        quest.OnStart();
+        expect(calls.join(",")).not.toContain("destroy:");
+        expect(calls.join(",")).not.toContain("rmDomain:");
+        expect(calls).toContain("net:10.9.9.9");
+    });
+
+    it("works through resolveDomain when getSubnetByDomain is absent", () => {
+        const { quest, calls } = build({ api: "resolve" });
+        quest.OnStart();
+        expect(calls).toContain(`destroy:${OLD_IP}`);
+    });
+
+    it("survives a build that offers no domain lookup at all", () => {
+        const { quest, calls } = build({ api: "none" });
+        expect(() => quest.OnStart()).not.toThrow();
+        expect(calls).toContain("net:10.9.9.9");
+    });
+
+    it("creates the network synchronously, inside the permission window", () => {
+        // destroyNetwork returns a promise; the create must not wait on it, or
+        // it lands outside the window where the mod still has permissions (r56).
+        const { quest, calls } = build();
+        quest.OnStart();
+        // No await anywhere: by the time OnStart returns, the create has happened.
+        expect(calls).toContain("net:10.9.9.9");
+    });
+
+    it("does not let a rejected destroy escape or stop the quest", async () => {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const net = node("world.network", {
+            ipMode: "random",
+            device: { id: "d1", ip: "x", type: "DEVICE", domainName: DOMAIN, users: [], ports: [], children: [] },
+        });
+        p.quests[0].graph.nodes = [entry, net];
+        p.quests[0].graph.edges = [edge(entry.id, net.id, "flow")];
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        sdk.Network.getSubnetByDomain = () => ({ ip: OLD_IP });
+        sdk.Network.removeDomain = () => {};
+        sdk.Network.destroyNetwork = () => Promise.reject(new Error("nope"));
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        expect(() => quest.OnStart()).not.toThrow();
+        expect(calls).toContain("net:10.9.9.9");
+        await Promise.resolve();
+    });
+
+    it("reclaims a domain carried by a child device behind a router", () => {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const net = node("world.network", {
+            ipMode: "random",
+            device: {
+                id: "r1", ip: "x", type: "ROUTER", users: [], ports: [],
+                children: [{ id: "c1", ip: "10.0.0.5", type: "DEVICE", domainName: DOMAIN, users: [], ports: [], children: [] }],
+            },
+        });
+        p.quests[0].graph.nodes = [entry, net];
+        p.quests[0].graph.edges = [edge(entry.id, net.id, "flow")];
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        sdk.Network.getSubnetByDomain = (d: string) => (d === DOMAIN ? { ip: OLD_IP } : null);
+        sdk.Network.removeDomain = (d: string) => calls.push(`rmDomain:${d}`);
+        sdk.Network.destroyNetwork = (ip: string) => { calls.push(`destroy:${ip}`); return Promise.resolve(); };
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        quest.OnStart();
+        expect(calls).toContain(`destroy:${OLD_IP}`);
+    });
+});

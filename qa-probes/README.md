@@ -1,46 +1,38 @@
-# r85 freeze probes — round 3
+# r86 probes — testing the workaround
 
-## Eliminated so far (all by in-game test)
+## J froze. That is the answer.
 
-| Build | Change | Result |
+`J_minimal` was one objective, no network, no rewards, and nothing running in
+the handler: start → contract mail → read it → done. Our `OnComplete` ran to
+the end and the renderer still died.
+
+**HackHub 1.1.2 cannot complete a mod-defined quest.** Both paths kill it:
+`autoComplete` (freezes on the last tick) and the manual Complete button
+(probe D — played through fine, froze on the click).
+
+Nine hypotheses eliminated, written up in
+`docs/04-engine-bug-quest-completion.md` with J as the minimal reproduction.
+That document is ready to send upstream.
+
+## The only workaround available to us
+
+A quest that never formally completes — exactly what Nemesis does
+(`AutoComplete = false`, `HasCompleteButton = false`, objective never ticked).
+Objectives still tick, the story still ends, but the engine is never asked to
+retire the quest.
+
+| Build | What it is | Read the result as |
 |---|---|---|
-| A | baseline | froze |
-| B | no `fx.pay` node | froze |
-| C | no closing mail | froze |
-| D | `autoComplete` off | **ran clean, froze on the Complete click** |
-| E | no quest `Rewards` | froze |
-| F | Nemesis shape (no rewards, maxClaim 1) | froze |
-| G | `maxClaim` only | froze |
+| `K_never_completes` | J's tiny quest, never completing | if it survives, the workaround is sound |
+| `L_harbour_never_completes` | the **full** Harbour quest, never completing | if it survives, the workaround holds for a real quest — network, exploit, closing mail, payment |
 
-So: not the payment, not the closing mail, not the rewards, not maxClaim.
-D proves the freeze is in the engine's **quest-completion** path.
+Test **K** first (30 seconds), then **L** (the full playthrough).
 
-## A correction I owe you
+**What "survives" means here:** you play to the end, the closing mail arrives,
+the money lands, and the game keeps running. The quest entry stays in your
+quest list showing 7/7 instead of disappearing. That is the cost of the
+workaround, and I want you to see it before I make it the default.
 
-I cited Nemesis as proof that quest completion works. **It is not.** Nemesis
-sets `AutoComplete = false` *and* `HasCompleteButton = false`, and never ticks
-its single objective — it never completes at all. So we have **no** known
-example of any mod quest completing successfully. "The engine cannot complete
-a mod quest" is still a live hypothesis, and J tests it directly.
-
-## The remaining constant
-
-Every freeze so far has the same shape: the last objective is triggered by
-`Mail.Sent`, and the quest completes *inside that dispatch*. Probe C removed
-our closing mail, but the objective was still completed from inside the
-`Mail.Sent` handler — so C never tested the dispatch itself.
-
-| Build | What it is | If it does NOT freeze |
-|---|---|---|
-| `H_no_mail_trigger` | quest ends on the file download; the `Mail.Sent` objective is gone | completing inside a `Mail.Sent` dispatch is the bug |
-| `I_bare_mail_finish` | `Mail.Sent` objective kept, but nothing hangs off it — no mail, no payment | the dispatch itself is fine; doing *work* inside it is the bug |
-| `J_minimal` | one objective, no network, no mail, no reward: start → contract mail → read it → done | a mod quest *can* complete, so something in the bigger quest matters |
-
-Test order: **J first** — it is 30 seconds and the most informative.
-
-- **J freezes** → the engine cannot complete a mod quest at all. Stop testing;
-  J is a minimal reproduction to send upstream and we design around it.
-- **J survives** → completion works in principle. Then H and I narrow it down.
-
-Fresh save each run, as before. For J you do not need the meterpreter session —
-just read the contract mail.
+One change since r85: we now assign `HasCompleteButton` explicitly instead of
+leaving it unset when false. Unset inherits the engine's default; Nemesis sets
+it to `false` outright, and matching that shape exactly is the point of K.

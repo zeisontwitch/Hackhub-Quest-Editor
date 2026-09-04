@@ -1727,7 +1727,11 @@ function __qeRegisterProject(sdk, PROJECT) {
                     if (qd.autoStart) this.AutoStart = true;
                     if (qd.autoComplete != null) this.AutoComplete = !!qd.autoComplete;
                     if (qd.abandonable != null) this.Abandonable = !!qd.abandonable;
-                    if (qd.hasCompleteButton) this.HasCompleteButton = true;
+                    /* Assign explicitly either way. Leaving it unset inherits
+                       the engine's default, and Nemesis - the only mod known
+                       not to hit the completion crash - sets it to false
+                       outright. Matching that shape exactly matters (r86). */
+                    this.HasCompleteButton = !!qd.hasCompleteButton;
                     if (qd.questsToComplete && qd.questsToComplete.length) this.QuestsToComplete = qd.questsToComplete;
                     if (qd.maxClaim != null) this.MaxClaim = qd.maxClaim;
                     if (qd.maxClaimPerDay != null) this.MaxClaimPerDay = qd.maxClaimPerDay;

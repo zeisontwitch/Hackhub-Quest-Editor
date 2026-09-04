@@ -11,6 +11,7 @@ import userEvent from "@testing-library/user-event";
 import App from "@/App";
 import { createProject } from "@/schema/project";
 import { useEditor } from "@/store/editor";
+import { boxSelectionResult } from "@/editor/canvas/applyChanges";
 
 const sel = () => useEditor.getState().selection.nodeIds;
 
@@ -27,6 +28,31 @@ async function twoNodes() {
     await waitFor(() => expect(document.querySelectorAll(".react-flow__node").length).toBe(2));
     const cards = document.querySelectorAll(".react-flow__node");
     return { a, b, cards, user: userEvent.setup() };
+}
+
+/** Drive a box drag over the pane, with modifiers, and return when it ends. */
+function boxDrag(
+    from: [number, number],
+    to: [number, number],
+    keys: { shift?: boolean; ctrl?: boolean } = {},
+) {
+    const pane = document.querySelector(".react-flow__pane") as HTMLElement;
+    pane.getBoundingClientRect = () =>
+        ({ x:0, y:0, width:1000, height:800, top:0, left:0, right:1000, bottom:800, toJSON(){} }) as DOMRect;
+    const ev = (type: string, x: number, y: number) => {
+        const e = new MouseEvent(type, {
+            bubbles: true, clientX: x, clientY: y, button: 0,
+            shiftKey: !!keys.shift, ctrlKey: !!keys.ctrl,
+        }) as MouseEvent & { pointerId: number; isPrimary: boolean; pointerType: string };
+        e.pointerId = 1; e.isPrimary = true; e.pointerType = "mouse";
+        return e;
+    };
+    // window first: the real modifier source (see the mods ref in QuestCanvas).
+    act(() => { window.dispatchEvent(ev("pointerdown", from[0], from[1])); });
+    act(() => { pane.dispatchEvent(ev("pointerdown", from[0], from[1])); });
+    act(() => { window.dispatchEvent(ev("pointermove", to[0], to[1])); });
+    act(() => { pane.dispatchEvent(ev("pointermove", to[0], to[1])); });
+    act(() => { pane.dispatchEvent(ev("pointerup", to[0], to[1])); });
 }
 
 describe("selection gestures", () => {
@@ -52,6 +78,38 @@ describe("selection gestures", () => {
         await user.click(cards[0] as HTMLElement);
         await user.keyboard("{/Control}");
         expect(sel()).toEqual([b]);
+    });
+
+    it("shift+drag ADDS the boxed nodes, keeping the earlier selection", async () => {
+        // The box covers only node b, so node a can only survive if the
+        // drag-start reset was suppressed.
+        const { a, b } = await twoNodes();
+        act(() => useEditor.getState().select({ nodeIds: [a], edgeIds: [] }));
+        boxDrag([350, 10], [900, 700], { shift: true });
+        expect(sel().slice().sort()).toEqual([a, b].slice().sort());
+    });
+
+    /*
+     * The two gestures below cannot be driven end-to-end in jsdom: nodes report
+     * a zero-size bounding rect there, so React Flow's getNodesInside never
+     * finds anything in the box and no "selected" change is ever emitted. The
+     * arithmetic they rely on is therefore covered directly, against the same
+     * code path the canvas uses (boxSelectionResult), and the gestures
+     * themselves are checked by hand in the browser.
+     */
+    it("ctrl+drag arithmetic removes the boxed nodes", () => {
+        expect(boxSelectionResult(["a", "b", "c"], new Set(["b"]), { ctrl: true }))
+            .toEqual(["a", "c"]);
+    });
+
+    it("shift+drag arithmetic adds without dropping the earlier selection", () => {
+        expect(boxSelectionResult(["a"], new Set(["b", "c"]), { shift: true }))
+            .toEqual(["a", "b", "c"]);
+    });
+
+    it("ctrl+drag over nothing leaves the selection alone", () => {
+        expect(boxSelectionResult(["a", "b"], new Set(), { ctrl: true }))
+            .toEqual(["a", "b"]);
     });
 
     it("does not leave a nodes-selection overlay able to swallow clicks", async () => {

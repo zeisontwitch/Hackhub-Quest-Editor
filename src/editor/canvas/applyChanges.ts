@@ -103,3 +103,21 @@ export function resolveSelection(
         edgeIds: nextSelection(current.edgeIds, changes),
     };
 }
+
+/**
+ * The selection a box drag should produce.
+ *
+ * `start` is what was selected when the drag began, `inside` the ids the box
+ * currently covers. React Flow only ever reports the ids inside the box as
+ * selected and has no notion of a box that *removes* nodes, so both the add
+ * and the subtract are computed here.
+ */
+export function boxSelectionResult(
+    start: string[],
+    inside: Set<string>,
+    keys: { shift?: boolean; ctrl?: boolean },
+): string[] {
+    if (keys.ctrl) return start.filter((id) => !inside.has(id));
+    if (keys.shift) return [...new Set([...start, ...inside])];
+    return [...inside];
+}

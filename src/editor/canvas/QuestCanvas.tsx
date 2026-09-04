@@ -27,9 +27,9 @@ import {
     type NodeTypes,
     type EdgeTypes,
 } from "@xyflow/react";
-import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { GraphNode, type GraphRFNode } from "./GraphNode";
-import { resolveSelection } from "./applyChanges";
+import { boxSelectionResult, onlyDeselects, resolveSelection } from "./applyChanges";
 import { TypedEdge, toRFEdge, type TypedRFEdge } from "./TypedEdge";
 import { setWireMotion, subscribeWireMotion, wireMotionEnabled } from "./wireMotion";
 import {
@@ -176,19 +176,55 @@ function CanvasInner() {
         commitTransient();
     };
 
-    const modifierHeld = useRef(false);
     /**
-     * Keep `modifierHeld` in step with the real input events. Capture phase on
-     * the wrapper so it is set before React Flow's own handlers run, and
-     * pointerdown covers the press-Ctrl-then-click order that its key
-     * listeners miss.
+     * Which modifier is being held, tracked from the raw events on `window`.
+     *
+     * It has to be window, in the capture phase. React Flow calls
+     * `setPointerCapture` on pointerdown, which retargets every later pointer
+     * event to the captured element — a listener on our own wrapper sees the
+     * pointerdown and then nothing, so the value goes stale mid-drag. (jsdom
+     * implements neither PointerEvent nor setPointerCapture, which is why this
+     * looked fine in tests while the editor was broken.)
      */
-    const onPointerDownCapture = useCallback((e: React.PointerEvent) => {
-        modifierHeld.current = e.ctrlKey || e.metaKey || e.shiftKey;
+    const mods = useRef({ shift: false, ctrl: false });
+    useEffect(() => {
+        const read = (e: PointerEvent | MouseEvent | KeyboardEvent) => {
+            mods.current = { shift: e.shiftKey, ctrl: e.ctrlKey || e.metaKey };
+            if (e.type === "pointerdown") pointerDown.current = true;
+            if (e.type === "pointerup") pointerDown.current = false;
+        };
+        const opts = { capture: true } as const;
+        window.addEventListener("pointerdown", read, opts);
+        window.addEventListener("pointermove", read, opts);
+        window.addEventListener("pointerup", read, opts);
+        window.addEventListener("keydown", read, opts);
+        window.addEventListener("keyup", read, opts);
+        return () => {
+            window.removeEventListener("pointerdown", read, opts);
+            window.removeEventListener("pointermove", read, opts);
+            window.removeEventListener("pointerup", read, opts);
+            window.removeEventListener("keydown", read, opts);
+            window.removeEventListener("keyup", read, opts);
+        };
     }, []);
-    const onKeyCapture = useCallback((e: React.KeyboardEvent) => {
-        modifierHeld.current = e.ctrlKey || e.metaKey || e.shiftKey;
-    }, []);
+
+    /**
+     * The selection as it stood when a box drag began, plus which modifier was
+     * held. While the box is open we compute the result from this ourselves:
+     * React Flow only ever reports the nodes *inside* the box as selected, so
+     * "add to selection" and especially "remove from selection" cannot come
+     * from it — the subtract gesture does not exist upstream at all.
+     */
+    const boxStart = useRef<{ nodeIds: string[]; shift: boolean; ctrl: boolean } | null>(null);
+    /** Node ids the open box currently covers, accumulated from its deltas. */
+    const inBox = useRef<Set<string>>(new Set());
+    /**
+     * The selection captured from the drag-start reset, which arrives before
+     * onSelectionStart. Handed to boxStart when the drag is confirmed.
+     */
+    const pendingBoxStart = useRef<string[] | null>(null);
+    /** Whether a primary button is currently down, so we know a drag is live. */
+    const pointerDown = useRef(false);
 
     // React Flow reports a node's measured size as a "dimensions" change. The
     // MiniMap only draws nodes whose user-node carries dimensions, so fold the
@@ -487,7 +523,7 @@ function CanvasInner() {
      * when React Flow did see the key.
      */
     const additive = useCallback(
-        () => modifierHeld.current || rfStore.getState().multiSelectionActive,
+        () => mods.current.shift || mods.current.ctrl || rfStore.getState().multiSelectionActive,
         [rfStore],
     );
 
@@ -510,6 +546,41 @@ function CanvasInner() {
             if (Object.keys(positions).length > 0) setNodePositions(positions);
             if (removed.length > 0) removeNodes(removed);
             if (Object.keys(dims).length > 0) setMeasured((prev) => ({ ...prev, ...dims }));
+            /*
+             * The drag-start reset arrives BEFORE onSelectionStart runs
+             * (Pane.onPointerMove calls resetSelectedElements() one line above
+             * onSelectionStart?.()), so boxStart is still null for it. With a
+             * modifier held that clear is never what the user asked for:
+             * remember the selection it is trying to wipe, so the box branch
+             * below can build on it.
+             */
+            if (!boxStart.current && onlyDeselects(changes) &&
+                (mods.current.shift || mods.current.ctrl) && pointerDown.current) {
+                pendingBoxStart.current = selection.nodeIds;
+                return;
+            }
+
+            /*
+             * While a box is open with a modifier held, the selection is ours
+             * to compute: React Flow reports only what is inside the box, and
+             * has no notion of a box that removes nodes.
+             */
+            const box = boxStart.current;
+            if (box && (box.shift || box.ctrl)) {
+                /*
+                 * React Flow sends the boxed set as deltas, not a full list, so
+                 * keep our own running set of what the box currently covers.
+                 * It grows and shrinks as the pointer moves.
+                 */
+                for (const c of changes) {
+                    if (c.type !== "select" || !c.id) continue;
+                    if (c.selected) inBox.current.add(c.id);
+                    else inBox.current.delete(c.id);
+                }
+                const next = boxSelectionResult(box.nodeIds, inBox.current, box);
+                select({ nodeIds: next, edgeIds: selection.edgeIds });
+                return;
+            }
             // Fold the whole batch onto the running selection — see applyChanges.
             const next = resolveSelection("nodes", selection, changes, boxSelecting.current, additive());
             if (next) select(next);
@@ -597,9 +668,6 @@ function CanvasInner() {
 
     return (
         <div ref={wrapperRef} className="relative h-full w-full"
-            onPointerDownCapture={onPointerDownCapture}
-            onKeyDownCapture={onKeyCapture}
-            onKeyUpCapture={onKeyCapture}
         >
             <ReactFlow
                 nodes={nodes}
@@ -629,9 +697,19 @@ function CanvasInner() {
                 }}
                 onSelectionStart={() => {
                     boxSelecting.current = true;
+                    inBox.current = new Set();
+                    boxStart.current = {
+                        // React Flow has already cleared its own selection by
+                        // now, so take ours from the store.
+                        nodeIds: pendingBoxStart.current ?? useEditor.getState().selection.nodeIds,
+                        shift: mods.current.shift,
+                        ctrl: mods.current.ctrl,
+                    };
                 }}
                 onSelectionEnd={() => {
                     boxSelecting.current = false;
+                    boxStart.current = null;
+                    pendingBoxStart.current = null;
                 }}
                 /*
                  * Ctrl+click raises `contextmenu` on Windows and Linux before

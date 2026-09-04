@@ -66,21 +66,31 @@ export function resolveSelection(
     current: { nodeIds: string[]; edgeIds: string[] },
     changes: SelectionDelta[],
     boxSelecting: boolean,
+    /**
+     * True while a multi-select modifier is held. React Flow calls
+     * `resetSelectedElements()` when a box drag starts, with no modifier check,
+     * so Shift+drag arrives as "deselect everything" followed by the new box's
+     * picks. Holding the modifier means the user is adding to what they had.
+     */
+    additive = false,
 ): { nodeIds: string[]; edgeIds: string[] } | null {
     if (!altersSelection(changes)) return null;
     // React Flow sweeps up every wire touching a box-selected node. The user
     // was pointing at nodes, so those edge changes are ignored outright.
     if (kind === "edges" && boxSelecting) return null;
     const tidyUp = onlyDeselects(changes);
+    // Adding to a selection: keep what was there and ignore the wholesale
+    // clear React Flow sends at the start of the drag.
+    if (additive && tidyUp) return null;
     if (kind === "nodes") {
         return {
             nodeIds: nextSelection(current.nodeIds, changes),
             // Only wipe the other kind when the user actually picked something.
-            edgeIds: tidyUp ? current.edgeIds : [],
+            edgeIds: tidyUp || additive ? current.edgeIds : [],
         };
     }
     return {
-        nodeIds: tidyUp ? current.nodeIds : [],
+        nodeIds: tidyUp || additive ? current.nodeIds : [],
         edgeIds: nextSelection(current.edgeIds, changes),
     };
 }

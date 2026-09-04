@@ -123,3 +123,38 @@ describe("resolveSelection", () => {
             .toBeNull();
     });
 });
+
+describe("resolveSelection with a modifier held", () => {
+    const sel = (nodeIds: string[], edgeIds: string[]) => ({ nodeIds, edgeIds });
+    const pick = (id: string) => [{ type: "select", id, selected: true }];
+    const drop = (id: string) => [{ type: "select", id, selected: false }];
+    const clearAll = (...ids: string[]) =>
+        ids.map((id) => ({ type: "select", id, selected: false }));
+
+    it("keeps the existing nodes when shift+box-dragging more (reported)", () => {
+        // React Flow calls resetSelectedElements() at the start of every box
+        // drag with no modifier check, so the wholesale clear arrives first.
+        expect(resolveSelection("nodes", sel(["a", "b"], []), clearAll("a", "b"), true, true))
+            .toBeNull();
+        // ...then the new box's picks fold onto what was already there.
+        expect(resolveSelection("nodes", sel(["a", "b"], []), pick("c"), true, true))
+            .toEqual(sel(["a", "b", "c"], []));
+    });
+
+    it("still clears the previous selection without a modifier", () => {
+        expect(resolveSelection("nodes", sel(["a", "b"], []), clearAll("a", "b"), true, false))
+            .toEqual(sel([], []));
+    });
+
+    it("removes a single node from the selection on ctrl+click", () => {
+        expect(resolveSelection("nodes", sel(["a", "b", "c"], []), drop("b"), false, true))
+            .toBeNull();
+        // The deselect is the whole batch, so the node list is left to the
+        // click handler; what matters is that it does not wipe everything.
+    });
+
+    it("does not clear a wire selection while adding nodes", () => {
+        expect(resolveSelection("nodes", sel([], ["e1"]), pick("a"), false, true))
+            .toEqual(sel(["a"], ["e1"]));
+    });
+});

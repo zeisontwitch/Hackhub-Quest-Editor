@@ -19,6 +19,7 @@ import {
     ReactFlow,
     getBezierPath,
     useReactFlow,
+    useStoreApi,
     type Connection,
     type NodeChange,
     type EdgeChange,
@@ -453,6 +454,19 @@ function CanvasInner() {
      */
     const boxSelecting = useRef(false);
 
+    /**
+     * React Flow's own store, used to read `multiSelectionActive` — whether a
+     * multi-select modifier is being held right now. There is no prop or
+     * callback argument carrying it, and the value must be read at the moment a
+     * change arrives rather than tracked with our own key listeners, which
+     * would drift whenever the window loses focus mid-drag.
+     */
+    const rfStore = useStoreApi();
+    const additive = useCallback(
+        () => rfStore.getState().multiSelectionActive,
+        [rfStore],
+    );
+
     const onNodesChange = useCallback(
         (changes: NodeChange<GraphRFNode>[]) => {
             const positions: Record<string, { x: number; y: number }> = {};
@@ -473,10 +487,10 @@ function CanvasInner() {
             if (removed.length > 0) removeNodes(removed);
             if (Object.keys(dims).length > 0) setMeasured((prev) => ({ ...prev, ...dims }));
             // Fold the whole batch onto the running selection — see applyChanges.
-            const next = resolveSelection("nodes", selection, changes, boxSelecting.current);
+            const next = resolveSelection("nodes", selection, changes, boxSelecting.current, additive());
             if (next) select(next);
         },
-        [removeNodes, select, selection, setNodePositions],
+        [additive, removeNodes, select, selection, setNodePositions],
     );
 
     const onEdgesChange = useCallback(
@@ -486,10 +500,10 @@ function CanvasInner() {
                 if (change.type === "remove") removed.push(change.id);
             }
             if (removed.length > 0) removeEdges(removed);
-            const next = resolveSelection("edges", selection, changes, boxSelecting.current);
+            const next = resolveSelection("edges", selection, changes, boxSelecting.current, additive());
             if (next) select(next);
         },
-        [removeEdges, select, selection],
+        [additive, removeEdges, select, selection],
     );
 
     /**
@@ -591,6 +605,12 @@ function CanvasInner() {
                 onSelectionEnd={() => {
                     boxSelecting.current = false;
                 }}
+                // Ctrl+click raises `contextmenu` on Windows and Linux before
+                // any pointerup reaches the pane, so React Flow never clears
+                // its selection rectangle and a translucent box stayed on the
+                // canvas until the next click. Swallowing the context menu on
+                // the pane lets the normal pointerup run.
+                onPaneContextMenu={(event) => event.preventDefault()}
                 onPaneClick={() => select({ nodeIds: [], edgeIds: [] })}
                 onEdgeDoubleClick={(_event, edge) => insertReroute(edge.id)}
                 onMoveEnd={(_, viewport) => setViewport(quest.id, viewport)}

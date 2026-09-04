@@ -242,6 +242,23 @@
     --xy-selection-border: 1px dashed var(--color-accent);
 }
 
+/*
+ * React Flow draws a `nodesselection` overlay across the bounding box of a
+ * multi-node selection, so the group can be dragged as one. It is a plain div
+ * sitting ON TOP of those nodes, which means every click lands on the overlay
+ * instead of the node underneath — ctrl+click could never reach a node to
+ * deselect it, and the box stayed visible until something cleared it.
+ *
+ * We already move groups ourselves (onGroupAwareDrag), so the overlay only
+ * costs us clicks. Hiding it is not enough: `display: none` would still leave
+ * it in the hit-testing tree in some browsers, so the pointer events go too.
+ */
+.react-flow__nodesselection,
+.react-flow__nodesselection-rect {
+    display: none !important;
+    pointer-events: none !important;
+}
+
 .react-flow__attribution {
     display: none;
 }

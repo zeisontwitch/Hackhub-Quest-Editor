@@ -176,6 +176,20 @@ function CanvasInner() {
         commitTransient();
     };
 
+    const modifierHeld = useRef(false);
+    /**
+     * Keep `modifierHeld` in step with the real input events. Capture phase on
+     * the wrapper so it is set before React Flow's own handlers run, and
+     * pointerdown covers the press-Ctrl-then-click order that its key
+     * listeners miss.
+     */
+    const onPointerDownCapture = useCallback((e: React.PointerEvent) => {
+        modifierHeld.current = e.ctrlKey || e.metaKey || e.shiftKey;
+    }, []);
+    const onKeyCapture = useCallback((e: React.KeyboardEvent) => {
+        modifierHeld.current = e.ctrlKey || e.metaKey || e.shiftKey;
+    }, []);
+
     // React Flow reports a node's measured size as a "dimensions" change. The
     // MiniMap only draws nodes whose user-node carries dimensions, so fold the
     // measurements back into the nodes we hand React Flow. Transient UI state —
@@ -462,8 +476,18 @@ function CanvasInner() {
      * would drift whenever the window loses focus mid-drag.
      */
     const rfStore = useStoreApi();
+    /**
+     * Whether the user is adding to / toggling the existing selection.
+     *
+     * Read from the live pointer or keyboard event rather than React Flow's
+     * `multiSelectionActive`: that flag is driven by its own key listeners,
+     * which miss the modifier when the key goes down before the canvas has
+     * focus — the exact case here, since you press Ctrl and then click.
+     * `multiSelectionActive` is still consulted as a fallback so the two agree
+     * when React Flow did see the key.
+     */
     const additive = useCallback(
-        () => rfStore.getState().multiSelectionActive,
+        () => modifierHeld.current || rfStore.getState().multiSelectionActive,
         [rfStore],
     );
 
@@ -572,7 +596,11 @@ function CanvasInner() {
     }
 
     return (
-        <div ref={wrapperRef} className="relative h-full w-full">
+        <div ref={wrapperRef} className="relative h-full w-full"
+            onPointerDownCapture={onPointerDownCapture}
+            onKeyDownCapture={onKeyCapture}
+            onKeyUpCapture={onKeyCapture}
+        >
             <ReactFlow
                 nodes={nodes}
                 edges={selectedEdges}

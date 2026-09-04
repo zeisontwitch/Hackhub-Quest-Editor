@@ -99,9 +99,36 @@ player's reply raise — is there something a quest can trigger on?
 `KisscordMessageDefinition.isMine` and `WeeChatMessageDefinition.isMine`
 ("True if the player sends this message"), which we assume is that mechanic.
 
-**What we would like to know.** Is `isMine` the scripted-reply feature, or is
-there a separate API? Is there any way for a mod to script a reply to a
-**mail** specifically, as opposed to a chat?
+**What we tried, and what happened (r78).** QA played a full quest whose final
+beat is mailing a contact. Composing that mail, the header and body stayed
+blank - no pre-written text revealed itself as they typed. The quest still
+completed (`Mail.Sent` fired, the attachment arrived, the scripted reply came
+back), so nothing is broken; the storytelling beat simply never appeared.
+
+We have the scripted-reply mechanic in our editor for **chats**, where `isMine`
+is honoured. For **mail** we can find no equivalent. The whole `Mail` namespace
+is `send`, `sendBounce`, `registerTemplate`, `unregisterTemplate`, `getInbox`,
+`markAsRead`, `getPlayerEmail`. `registerTemplate` is the closest thing, but it
+is a **template the player picks from GoMail's compose dropdown** - it cannot
+fire because the player addressed a mail to a particular contact, and its
+`fields` are editable inputs rather than hackertyper-revealed prose.
+`QuestMailDefinition.replyable` (question 3) would put a Reply button on an
+incoming mail, but we have never seen that button appear, and it says nothing
+about pre-writing the player's outgoing text.
+
+**What we would like to know.**
+- Is the hackertyper-style pre-written reply available to mods for **mail** at
+  all, or is it reserved for base-game content?
+- If it exists: what triggers it? Is it tied to `replyable` and the Reply
+  button - i.e. only reachable by replying to an existing mail, never by
+  composing a fresh one to a known address?
+- If it does not exist for mail, is `registerTemplate` the nearest supported
+  substitute, and is it meant for narrative pre-writing or only for
+  phishing-style templates the player chooses deliberately?
+
+This is the single feature we would most like to support: a scripted outgoing
+mail is a major storytelling tool, and today an author can script every inbound
+mail and every chat line but nothing the player writes.
 
 ---
 
@@ -142,9 +169,28 @@ account or an online user (otherwise "No guest account or online user found").
 `Network.createDefaultUserSchema(users, { guest: true })` supplies that, and the
 reference mod uses it on all 26 of its devices and none of its 7 routers.
 
-**What we would like to know.** Is the default user schema the intended way to
-make a machine exploitable? Is a guest account required, or is an online named
-user enough? And is there a reason routers should not have one?
+**Why this matters to us now (r78).** In the base game's early missions, a
+meterpreter session lands directly in an **admin account on a machine with no
+other users** — no guest, nothing to switch to, no password to crack. That is
+the experience our beginner template is trying to reproduce, and it is the
+difference between our beginner and advanced templates.
+
+Calling `createDefaultUserSchema(users, { guest: true })` unconditionally
+worked against that: QA's server showed `root`, `guest` and `admin`, and the
+exploit dropped the player into `guest`, forcing a password crack the beginner
+template deliberately does not teach. We have made it opt-out per device, so a
+machine can now ship with exactly one account — `admin`, `online: true`,
+`acceptReverseTCP: true`.
+
+**What we would like to know.**
+- Is the default user schema the intended way to make a machine exploitable?
+- Is a guest account **required**, or is a single online named user with
+  `acceptReverseTCP: true` enough? This is the one we most need answered: our
+  single-account server depends entirely on the second path working, and
+  "No guest account or online user found" reads as though either will do.
+- How do the base game's early missions produce an admin-only box? Is that the
+  same API, or something not exposed to mods?
+- Is there a reason routers should not have a default schema?
 
 ---
 

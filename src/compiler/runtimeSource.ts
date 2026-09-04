@@ -426,15 +426,52 @@ function __qeRegisterProject(sdk, PROJECT) {
         /* The last non-empty quest Data we saw. See dataScope(). */
         var lastKnownData = null;
 
-        function runQuestCleanup() {
+        /* reason is "complete" or "abandon".
+
+           Networks are NOT destroyed when a quest completes (r81). Three
+           reasons, in order of how much they cost:
+
+           1. It hangs the game. The engine retires the quest and calls
+              OnComplete while the player may still be sitting in a meterpreter
+              session on the machine we are about to delete. In that state
+              destroyNetwork's promise never settles - not resolved, not
+              rejected - and the renderer freezes. QA saw exactly this: every
+              cleanup trace printed except "network <ip> destroyed" (r80).
+           2. It reads wrong. A company you just hacked should still be there
+              afterwards; having it evaporate the moment the mail is sent is
+              strange.
+           3. Nobody else does it. Nemesis, the known-working reference mod,
+              creates seven networks at random addresses and its OnComplete and
+              OnAbandon are empty.
+
+           Abandoning still tears down, because that means the player walked
+           away and is not connected to anything. An author who really wants
+           the world to vanish on completion can still opt in per network.
+
+           Leftovers are cheap: these are data structures, not disk images, and
+           the addresses are random, so a stale one cannot collide with a fresh
+           run. The r75/r76 ownership ledger reclaims anything we created on a
+           later load, when no session can be live in it. */
+        function runQuestCleanup(reason) {
             if (cleanedUp) {
                 __QE.log("cleanup already ran for this quest; skipping");
                 return;
             }
             cleanedUp = true;
-            __QE.log("cleanup starting: " + questCleanup.length + " item(s) to undo");
-            while (questCleanup.length) {
-                var item = questCleanup.pop();
+            var skipped = 0;
+            var todo = questCleanup.filter(function (item) {
+                /* Keep networks standing when the quest is simply finished. */
+                if (item.kind === "network" && reason === "complete" && !item.onComplete) {
+                    skipped++;
+                    return false;
+                }
+                return true;
+            });
+            questCleanup.length = 0;
+            __QE.log("cleanup starting (" + reason + "): " + todo.length + " item(s) to undo" +
+                (skipped ? ", leaving " + skipped + " network(s) standing" : ""));
+            while (todo.length) {
+                var item = todo.pop();
                 __QE.log("cleanup: " + item.kind + " " + (item.ip || item.domain || item.command || item.id || ""));
                 try {
                     if (item.kind === "network" && sdk.Network.destroyNetwork) {
@@ -947,7 +984,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                     /* Destroying the ROUTER takes the whole subnet with it
                        ("Removes all child subnets and files"), so cleanup has
                        to name the address we actually created at. */
-                    if (d.destroyOnComplete !== false) questCleanup.push({ kind: "network", ip: createIp });
+                    questCleanup.push({ kind: "network", ip: createIp, onComplete: d.destroyOnComplete === true });
                     return buildNetwork(createIp, rootDef, next);
                     /* Tear the network down again when the quest ends. The
                        editor has always offered this toggle; the compiler
@@ -977,7 +1014,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                         });
                     } else {
                         /* Same reason as world.network above. */
-                        if (d.destroyOnComplete !== false) questCleanup.push({ kind: "network", ip: wifiIp });
+                        questCleanup.push({ kind: "network", ip: wifiIp, onComplete: d.destroyOnComplete === true });
                         return buildNetwork(wifiIp, mapDevice({
                             ip: wifiIp,
                             type: "ROUTER",
@@ -989,7 +1026,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                     }
                     /* The createWifiNetwork branch (a future SDK) still needs
                        its teardown registered. */
-                    if (d.destroyOnComplete !== false) questCleanup.push({ kind: "network", ip: wifiIp });
+                    questCleanup.push({ kind: "network", ip: wifiIp, onComplete: d.destroyOnComplete === true });
                     return next();
                 }
                 case "world.domain": {
@@ -1886,7 +1923,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                        evidence: the renderer dies mid-hook and the log simply
                        stops. Whichever line is last tells us the phase (r80). */
                     __QE.log("OnComplete: starting");
-                    runQuestCleanup();
+                    runQuestCleanup("complete");
                     __QE.log("OnComplete: cleanup done, removing weechat servers");
                     weechatServers.forEach(function (s) {
                         if (sdk.WeeChat && sdk.WeeChat.removeServer) sdk.WeeChat.removeServer(s.host, s.password);
@@ -1909,7 +1946,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                        evidence: the renderer dies mid-hook and the log simply
                        stops. Whichever line is last tells us the phase (r80). */
                     __QE.log("OnAbandon: starting");
-                    runQuestCleanup();
+                    runQuestCleanup("abandon");
                     __QE.log("OnAbandon: cleanup done, removing weechat servers");
                     weechatServers.forEach(function (s) {
                         if (sdk.WeeChat && sdk.WeeChat.removeServer) sdk.WeeChat.removeServer(s.host, s.password);

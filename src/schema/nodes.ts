@@ -227,8 +227,12 @@ export const NetworkNodeDataSchema = z.object({
     ipMode: z.enum(["fixed", "random"]).catch("random").default("random")
         .transform(() => "random" as const),
     device: NetworkDeviceSchema,
-    /** Remove the whole network in `OnComplete` / `OnAbandon`. */
-    destroyOnComplete: z.boolean().default(true),
+    /**
+     * Remove the whole network when the quest *completes*. Defaults to false:
+     * destroying a network the player may still be connected to hangs the game
+     * (r81). Abandoning a quest always tears its networks down.
+     */
+    destroyOnComplete: z.boolean().default(false),
 });
 
 export const WifiNodeDataSchema = z.object({
@@ -246,7 +250,7 @@ export const WifiNodeDataSchema = z.object({
     users: z.array(NetworkUserSchema).default([]),
     ports: z.array(NetworkPortSchema).default([]),
     children: z.array(NetworkDeviceSchema).default([]),
-    destroyOnComplete: z.boolean().default(true),
+    destroyOnComplete: z.boolean().default(false),
 });
 
 export const FirewallNodeDataSchema = z.object({

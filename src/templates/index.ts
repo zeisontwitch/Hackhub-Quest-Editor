@@ -344,7 +344,7 @@ function buildInvestigation(): ProjectDocument {
     /* ── world, built once at claim ─────────────────────────────────────── */
     const network = makeNode("world.network", { x: 320, y: 0 }, {
         ipMode: "random",
-        destroyOnComplete: true,
+        destroyOnComplete: false,
         device: {
         id: "router1",
         ip: "10.0.0.1",
@@ -714,7 +714,7 @@ function buildContractHack(): ProjectDocument {
 
     const network = makeNode("world.network", { x: 300, y: 0 }, {
         ipMode: "random",
-        destroyOnComplete: true,
+        destroyOnComplete: false,
         device: {
             id: "dev-router",
             ip: IP,
@@ -1178,7 +1178,7 @@ function buildDataGrab(): ProjectDocument {
 
     const network = makeNode("world.network", { x: 300, y: 0 }, {
         ipMode: "random",
-        destroyOnComplete: true,
+        destroyOnComplete: false,
         /* A single public server, reachable directly. No router in front of it:
            the SDK's SubnetNetworkDefinition allows a Device at the top level,
            and this template's whole job is the short route — scan the address
@@ -1518,7 +1518,7 @@ function buildDirhunter(): ProjectDocument {
 
     const network = makeNode("world.network", { x: 300, y: 0 }, {
         ipMode: "random",
-        destroyOnComplete: true,
+        destroyOnComplete: false,
         device: {
             id: "dev-edge",
             ip: EDGE_IP,
@@ -1770,7 +1770,7 @@ const EXAMPLES: Partial<Record<NodeType, Record<string, unknown>>> = {
     },
     "world.network": {
         ipMode: "random",
-        destroyOnComplete: true,
+        destroyOnComplete: false,
         device: {
         id: "router1",
         ip: "10.0.0.1",

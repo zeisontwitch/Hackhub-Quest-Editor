@@ -385,7 +385,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                game that would not finish loading. A per-playthrough address
                cannot collide, so the problem stops existing. */
             { kind: "deviceTree", key: "device", hint: "The router at the root of the network, plus everything behind it. Routers and splitters carry children; firewalls carry rules.", label: "Devices" },
-            { kind: "toggle", key: "destroyOnComplete", hint: "Remove the whole network when the quest ends, so it does not clutter later playthroughs.", label: "Tear down when the quest ends" },
+            { kind: "toggle", key: "destroyOnComplete", hint: "Off by default: the network stays in the world after the quest, the way a real company would. It is also safer, because deleting a machine the player is still connected to can hang the game. Abandoning the quest removes it either way.", label: "Also remove this network when the quest is completed" },
         ],
         create: () =>
             seed(NetworkNodeDataSchema, {
@@ -436,7 +436,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                 newItem: () => ({ id: nanoid(8), external: 80, internal: 80, active: true, service: "http" }),
             },
             { kind: "deviceTree", key: "children", hint: "Machines reachable through this access point. Add a router here to build a second network hop.", label: "Devices behind the access point" },
-            { kind: "toggle", key: "destroyOnComplete", hint: "Remove the access point when the quest ends.", label: "Tear down when the quest ends" },
+            { kind: "toggle", key: "destroyOnComplete", hint: "Off by default: the access point stays in the world after the quest. Abandoning the quest removes it either way.", label: "Also remove this access point when the quest is completed" },
         ],
         create: () => seed(WifiNodeDataSchema, { ssid: "NEIGHBOUR_5Ghz", password: "letmein123" }),
     },

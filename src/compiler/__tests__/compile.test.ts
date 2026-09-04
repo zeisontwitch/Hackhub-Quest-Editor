@@ -2983,10 +2983,19 @@ describe("networks are torn down when the quest ends", () => {
         return { quest, calls };
     }
 
-    it("destroys the network it created when the quest completes", () => {
+    it("keeps the network it created when the quest completes", () => {
+        // Completing no longer tears the world down (r81): the player may
+        // still be connected to it.
         const { quest, calls } = build();
         quest.OnStart();
         expect(calls.join(",")).toContain("net:45.33.32.156");
+        quest.OnComplete();
+        expect(calls.join(",")).not.toContain("destroy:45.33.32.156");
+    });
+
+    it("destroys the network it created when the author opts in", () => {
+        const { quest, calls } = build({ destroyOnComplete: true });
+        quest.OnStart();
         quest.OnComplete();
         expect(calls.join(",")).toContain("destroy:45.33.32.156");
     });
@@ -3127,6 +3136,7 @@ describe("networks are torn down when the quest ends", () => {
         const entry = node("entry.start");
         const net = node("world.network", {
             ipMode: "random",
+            destroyOnComplete: true,
             device: { id: "r1", ip: "1.1.1.1", type: "ROUTER", users: [], ports: [], children: [] },
         });
         p.quests[0].graph.nodes = [entry, net];
@@ -4751,8 +4761,9 @@ describe("a lone machine is given the router the engine needs", () => {
     });
 
     it("tears down the router, which removes the whole subnet with it", () => {
+        // Abandon, because completing now leaves the network standing (r81).
         const { quest, calls } = build("DEVICE");
-        quest.OnComplete();
+        quest.OnAbandon();
         // destroyNetwork(routerIp) "Removes all child subnets and files".
         const created = calls.find((c) => c.startsWith("net:"))!.slice(4);
         expect(calls).toContain(`destroy:${created}`);
@@ -4953,12 +4964,13 @@ describe("the Harbour template ships the single-account server its story describ
  * could actually be completed, so OnComplete had never run.
  */
 describe("finishing a quest never takes the game down with it", () => {
-    function build(opts: { destroyResult?: () => unknown } = {}) {
+    function build(opts: { destroyResult?: () => unknown; destroyOnComplete?: boolean } = {}) {
         const p = createProject();
         p.quests[0].autoStart = true;
         const entry = node("entry.start");
         const net = node("world.network", {
             ipMode: "random",
+            destroyOnComplete: opts.destroyOnComplete ?? false,
             device: {
                 id: "d1", ip: "x", type: "DEVICE", name: "fileserver", extraAccounts: false,
                 users: [{ id: "u1", username: "admin", password: "pw" }],
@@ -4987,7 +4999,7 @@ describe("finishing a quest never takes the game down with it", () => {
         const onUnhandled = (e: PromiseRejectionEvent | unknown) => unhandled.push(e);
         process.on("unhandledRejection", onUnhandled);
         try {
-            const { quest } = build({ destroyResult: () => Promise.reject(new Error("no such network")) });
+            const { quest } = build({ destroyOnComplete: true, destroyResult: () => Promise.reject(new Error("no such network")) });
             expect(() => quest.OnComplete()).not.toThrow();
             // Give the microtask queue a chance to surface an unhandled rejection.
             await new Promise((r) => setTimeout(r, 10));
@@ -4998,12 +5010,12 @@ describe("finishing a quest never takes the game down with it", () => {
     });
 
     it("survives a destroyNetwork that throws outright", () => {
-        const { quest } = build({ destroyResult: () => { throw new Error("boom"); } });
+        const { quest } = build({ destroyOnComplete: true, destroyResult: () => { throw new Error("boom"); } });
         expect(() => quest.OnComplete()).not.toThrow();
     });
 
-    it("still tears the network down on the happy path", () => {
-        const { quest, calls } = build();
+    it("still tears the network down on complete when the author opts in", () => {
+        const { quest, calls } = build({ destroyOnComplete: true });
         quest.OnComplete();
         expect(calls.some((c) => c.startsWith("destroy:"))).toBe(true);
     });
@@ -5022,8 +5034,8 @@ describe("finishing a quest never takes the game down with it", () => {
         }
         const line = (frag: string) => seen.some((l) => l.includes(frag));
         expect(line("OnComplete: starting")).toBe(true);
-        expect(line("cleanup starting: 1 item(s) to undo")).toBe(true);
-        expect(line("cleanup: network")).toBe(true);
+        expect(line("cleanup starting (complete)")).toBe(true);
+        expect(line("cleanup: network")).toBe(false);
         expect(line("cleanup finished")).toBe(true);
         expect(line("OnComplete: cleanup done")).toBe(true);
         expect(line("OnComplete: running end-of-quest nodes")).toBe(true);
@@ -5034,7 +5046,7 @@ describe("finishing a quest never takes the game down with it", () => {
         const seen: string[] = [];
         const spy = vi.spyOn(console, "log").mockImplementation((m: unknown) => { seen.push(String(m)); });
         try {
-            const { quest } = build({ destroyResult: () => Promise.reject(new Error("no such network")) });
+            const { quest } = build({ destroyOnComplete: true, destroyResult: () => Promise.reject(new Error("no such network")) });
             quest.OnComplete();
             await settle();
         } finally {
@@ -5045,11 +5057,50 @@ describe("finishing a quest never takes the game down with it", () => {
         expect(seen.some((l) => l.includes("OnComplete: finished"))).toBe(true);
     });
 
+    it("leaves the network standing when the quest is completed", () => {
+        // QA froze here: the engine retires the quest and calls OnComplete
+        // while the player is still in a meterpreter session on that machine,
+        // and destroyNetwork's promise then never settles at all (r81).
+        const { quest, calls } = build();
+        quest.OnComplete();
+        expect(calls.filter((c) => c.startsWith("destroy:"))).toEqual([]);
+    });
+
+    it("still tears the network down when the quest is abandoned", () => {
+        // Abandoning means the player walked away, so nothing is connected.
+        const { quest, calls } = build();
+        quest.OnAbandon();
+        expect(calls.some((c) => c.startsWith("destroy:"))).toBe(true);
+    });
+
+    it("undoes the non-network changes even on a completed quest", () => {
+        // Only networks get the reprieve; scripted command output and the rest
+        // must still be cleaned up or they leak into later playthroughs.
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const tool = node("world.toolResponse", {
+            command: "whois", input: "example.com", output: "nothing to see",
+        });
+        p.quests[0].graph.nodes = [entry, tool];
+        p.quests[0].graph.edges = [edge(entry.id, tool.id, "flow")];
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        const removed: string[] = [];
+        sdk.Shell.removeCommandData = (c: string) => removed.push(c);
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        quest.OnStart();
+        quest.OnComplete();
+        expect(removed).toContain("whois");
+    });
+
     it("does not tear the same world down twice", () => {
         // AutoComplete plus an already-completed objective can bring OnComplete
         // round again; destroying an absent network is the call that hung the
         // loader in r72.
-        const { quest, calls } = build();
+        const { quest, calls } = build({ destroyOnComplete: true });
         quest.OnComplete();
         const first = calls.filter((c) => c.startsWith("destroy:")).length;
         quest.OnComplete();
@@ -5100,5 +5151,21 @@ describe("the tail of a finished quest can still read its data", () => {
         const { calls, listeners } = build();
         for (const [e, h] of listeners) if (e === "Mail.Sent") h({ to: "d.okonkwo@nullpost.io" });
         expect(calls).toContain("pay:Manifest delivered from 157.47.8.56");
+    });
+});
+
+describe("r81: the Harbour template leaves its server behind", () => {
+    it("does not destroy the fileserver when the quest completes", () => {
+        const p = getTemplate("data-grab")!.build();
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        sdk.Network.destroyNetwork = (ip: string) => { calls.push(`destroy:${ip}`); return Promise.resolve(); };
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        quest.OnStart();
+        expect(calls.some((c) => c.startsWith("net:"))).toBe(true);
+        quest.OnComplete();
+        expect(calls.filter((c) => c.startsWith("destroy:"))).toEqual([]);
     });
 });

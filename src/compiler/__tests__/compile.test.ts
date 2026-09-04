@@ -5227,3 +5227,59 @@ describe("r82: finishing the last objective does not re-enter the engine mid-flo
         expect(calls).toContain("pay:Manifest from 203.0.113.7");
     });
 });
+
+describe("r87: emptying the quest panel when the story is over", () => {
+    /* The engine cannot complete a mod quest without freezing (r86), so the
+       entry lingers. QuestObjectiveDefinition has a hidden flag; this checks we
+       set it on every row once the last objective ticks. Whether the GAME
+       redraws the panel is an in-game question probe M answers - this only
+       pins the data we hand it. */
+    function build(hide: boolean) {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        p.quests[0].autoComplete = false;
+        p.quests[0].hasCompleteButton = false;
+        p.quests[0].hideObjectivesWhenDone = hide;
+        const o1 = node("objective", { name: "first", description: "One" });
+        const t1 = node("trigger.event", { event: "Mail.Read", conditions: [] });
+        const o2 = node("objective", { name: "second", description: "Two" });
+        const t2 = node("trigger.event", { event: "Mail.Sent", conditions: [] });
+        p.quests[0].graph.nodes = [o1, t1, o2, t2];
+        p.quests[0].graph.edges = [
+            edge(t1.id, o1.id, "condition"),
+            edge(t2.id, o2.id, "condition"),
+        ];
+        const calls: string[] = [];
+        const listeners: [string, (d: unknown) => void][] = [];
+        const sdk = stubSdk(calls, listeners) as any;
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        quest.OnStart();
+        if (quest.OnObjectivesStart) quest.OnObjectivesStart();
+        const fire = (ev: string) => {
+            for (const [name, h] of listeners) if (name === ev) h({ subject: "x" });
+        };
+        return { quest, fire };
+    }
+
+    it("leaves objectives visible until the last one is done", () => {
+        const { quest, fire } = build(true);
+        fire("Mail.Read");
+        expect(quest.Objectives.some((o: { hidden?: boolean }) => o.hidden)).toBe(false);
+    });
+
+    it("hides every objective once they have all been completed", () => {
+        const { quest, fire } = build(true);
+        fire("Mail.Read");
+        fire("Mail.Sent");
+        expect(quest.Objectives.every((o: { hidden?: boolean }) => o.hidden === true)).toBe(true);
+    });
+
+    it("leaves them alone when the author did not ask for it", () => {
+        const { quest, fire } = build(false);
+        fire("Mail.Read");
+        fire("Mail.Sent");
+        expect(quest.Objectives.some((o: { hidden?: boolean }) => o.hidden)).toBe(false);
+    });
+});

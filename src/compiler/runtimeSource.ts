@@ -555,6 +555,29 @@ function __qeRegisterProject(sdk, PROJECT) {
             return o;
         });
 
+        /* How many objectives have ticked, and whether the author asked for
+           the panel to be emptied once they all have.
+
+           The engine cannot complete a mod quest without freezing (r86), so a
+           finished story leaves its entry in the quest list forever. There is
+           no removeObjective in the SDK, but QuestObjectiveDefinition has a
+           "hidden" flag, and refillObjectives already proves the engine re-reads
+           the array we hand it (r73 fixed visible {{tokens}} that way). So
+           when the last objective ticks we flip every row to hidden and ask
+           the panel to redraw. Whether the engine honours "hidden" after the
+           first render is exactly what probe M tests - it may only be read
+           when the list is first built. */
+        var objectivesDone = 0;
+        function hideAllObjectives() {
+            if (!questRef || !questRef.Objectives) return;
+            questRef.Objectives.forEach(function (o) { o.hidden = true; });
+            /* Nudge the engine to re-read. Assigning the array back is the
+               same shape as the Dialog rewrite that does work in-game. */
+            try { questRef.Objectives = questRef.Objectives.slice(); } catch (e) { /* frozen? leave it */ }
+            __QE.log("all objectives done; asked the panel to hide them " +
+                "(" + questRef.Objectives.length + " row(s))");
+        }
+
         /* Fill the objectives' {{tokens}} again now that the quest has its
            Data. Called at the top of OnStart, which is the first moment
            CreateData() has run and {{data.targetIp}} resolves to a real
@@ -1922,6 +1945,10 @@ function __qeRegisterProject(sdk, PROJECT) {
                                     __QE.log("could not complete objective \"" + n.data.name + "\": " +
                                         (e && e.message ? e.message : e));
                                 }
+                            }
+                            objectivesDone++;
+                            if (qd.hideObjectivesWhenDone && objectivesDone >= objectiveNodes.length) {
+                                hideAllObjectives();
                             }
                         };
                         listenFor.forEach(function (evName) {

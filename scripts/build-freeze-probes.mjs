@@ -38,58 +38,37 @@ function nameIt(p, suffix) {
 }
 
 const probes = {
-    /* Round 4 (r86). J FROZE.
+    /* Round 5 (r87). K survived: a quest that never completes does not crash.
 
-       J was one objective, no network, no rewards, nothing in the handler:
-       start -> contract mail -> read it -> quest completes. Our OnComplete ran
-       to the end ("finished, handing back to the game") and the renderer still
-       died. Combined with D (autoComplete off, froze only on the Complete
-       click), both completion paths - automatic and manual - kill the game.
+       Zeis's question: can we at least clear the OBJECTIVES from the panel,
+       even if the quest entry itself is stuck?
 
-       Conclusion: HackHub 1.1.2 cannot complete a mod-defined quest. J is the
-       minimal reproduction. Nemesis, the only known-good mod, never completes
-       (AutoComplete=false, HasCompleteButton=false, its one objective never
-       ticks) - which is consistent with the authors having hit this too.
+       The SDK has no removeObjective/hideObjective call - grepping the whole
+       2,898-line d.ts for "objective" returns only the definition shape,
+       completeObjective(), and OnObjectivesStart. But
+       QuestObjectiveDefinition has `hidden?: boolean`, and we already mutate
+       the live Objectives array the engine holds: refillObjectives() rewrites
+       description/hint/terminalCommand at OnStart, and r73 confirmed in-game
+       that the panel picks those edits up (it fixed raw {{data.targetIp}}
+       showing in the quest panel).
 
-       K tests the only workaround available to us: a quest that never formally
-       completes. Objectives still tick, the story still ends, but the engine
-       is never asked to finish the quest. */
+       So the open question is narrow and empirical: does flipping `hidden` to
+       true AFTER the panel has rendered actually remove the row? The engine
+       may only read `hidden` once when it builds the list. Only a real run
+       can tell us. */
 
-    /* K: J plus Nemesis's exact never-complete shape. If this survives, we
-       ship it as the default for every generated quest. */
-    K_never_completes: (p) => {
+    /* M: full Harbour, never completing, and every objective flips to
+       hidden:true once the last one is done. If the panel empties, we can
+       give authors a clean ending despite the engine bug. */
+    M_hide_objectives_at_end: (p) => {
         const q = p.quests[0];
-        q.rewards = undefined;
         q.autoComplete = false;
         q.hasCompleteButton = false;
-        const obj = q.graph.nodes.filter((n) => n.type === "objective")[0];
-        const trig = q.graph.edges
-            .filter((e) => e.kind === "condition" && e.target === obj.id)
-            .map((e) => q.graph.nodes.find((n) => n.id === e.source))[0];
-        const entry = q.graph.nodes.find((n) => n.type === "entry.start");
-        const mail = q.graph.nodes.filter((n) => n.type === "comms.dialogue")[0];
-        const keep = new Set([obj.id, trig.id, entry.id, mail.id]);
-        q.graph.nodes = q.graph.nodes.filter((n) => keep.has(n.id));
-        q.graph.edges = q.graph.edges.filter(
-            (e) => keep.has(e.source) && keep.has(e.target));
-        q.graph.edges = q.graph.edges.filter(
-            (e) => !(e.source === entry.id && e.kind === "flow"));
-        q.graph.edges.push({
-            id: "edge-k-entry-mail", source: entry.id, sourceHandle: "out",
-            target: mail.id, targetHandle: "in", kind: "flow",
-        });
-        return p;
-    },
-
-    /* L: the full Harbour quest, never completing. Confirms the workaround
-       holds for a real quest with a network, an exploit and a closing mail -
-       not just the toy case. */
-    L_harbour_never_completes: (p) => {
-        p.quests[0].autoComplete = false;
-        p.quests[0].hasCompleteButton = false;
+        q.hideObjectivesWhenDone = true;   // consumed by the runtime (r87)
         return p;
     },
 };
+
 
 
 

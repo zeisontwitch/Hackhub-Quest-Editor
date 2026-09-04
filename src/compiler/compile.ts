@@ -358,6 +358,7 @@ export function compileProject(project: ProjectDocument): CompileResult {
             autoComplete: q.autoComplete,
             abandonable: q.abandonable,
             hasCompleteButton: q.hasCompleteButton,
+            hideObjectivesWhenDone: q.hideObjectivesWhenDone,
             questsToComplete: q.questsToComplete,
             maxClaim: q.maxClaim ?? null,
             maxClaimPerDay: q.maxClaimPerDay ?? null,

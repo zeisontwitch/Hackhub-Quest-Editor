@@ -126,6 +126,13 @@ export const QuestSchema = z.object({
     maxClaimPerDay: z.number().optional(),
     abandonable: z.boolean().default(true),
     hasCompleteButton: z.boolean().default(false),
+    /**
+     * Hide every objective from the quest panel once they have all been
+     * completed. A workaround for the engine bug in
+     * docs/04-engine-bug-quest-completion.md: a mod quest cannot be completed
+     * without freezing the game, so its entry lingers in the quest list.
+     */
+    hideObjectivesWhenDone: z.boolean().default(false),
     hackhubPost: HackhubPostSchema.optional(),
     /** Phone-call dialog trees, referenced by name from `comms.call` nodes. */
     dialog: z.array(DialogBranchSchema).default([]),

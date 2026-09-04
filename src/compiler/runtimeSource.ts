@@ -437,6 +437,12 @@ function __qeRegisterProject(sdk, PROJECT) {
         var needsTargetIp = g.nodes.some(function (n) {
             return (n.type === "world.network" || n.type === "world.wifi") && n.data.ipMode === "random";
         });
+        /* Any network whose top-level machine is not a router will be wrapped
+           in one (r77), and that router needs its own allocated address. */
+        var needsGateway = g.nodes.some(function (n) {
+            return n.type === "world.network" &&
+                String((n.data.device && n.data.device.type) || "").toUpperCase() !== "ROUTER";
+        });
 
         var Objectives = objectiveNodes.map(function (n) {
             var unlocks = g.edges
@@ -837,12 +843,60 @@ function __qeRegisterProject(sdk, PROJECT) {
                        had been added two builds earlier. Both were the old
                        network answering. Destroying first makes every run
                        start from the network the mod actually describes. */
-                    if (d.destroyOnComplete !== false) questCleanup.push({ kind: "network", ip: netIp });
                     /* Take back any domain this device tree claims before
                        creating it, or an older build's server keeps answering
                        for the name (r75). */
                     domainsOf(d.device).forEach(function (dom) { reclaimDomain(dom, netIp); });
-                    return buildNetwork(netIp, mapDevice(Object.assign({}, d.device, { ip: netIp })), next);
+
+                    var rootDef = mapDevice(Object.assign({}, d.device, { ip: netIp }));
+
+                    /* A subnet must be ROOTED IN A ROUTER.
+
+                       QA, r77: a single DEVICE with port 22 open, handed
+                       straight to createSubnetNetwork as the top-level node.
+                       The machine existed - ping answered, "Host is up
+                       (0.234s latency)" - but nmap reported "No ports found",
+                       so metasploit had nothing to attack and the quest died
+                       at the same step it has died at for several rounds.
+
+                       The reference mod is unanimous on this: all SEVEN of its
+                       createSubnetNetwork calls pass a Router at the top with
+                       everything else in children, and not one passes a bare
+                       Device. Its scannable machines - the ones a player
+                       actually nmaps and exploits, like MAREK - are always
+                       CHILDREN of that router. SubnetNetworkDefinition does
+                       type-check a bare Device, which is why this was never
+                       caught, but the engine evidently only builds the port
+                       tables for machines sitting behind a router.
+
+                       So when an author's network is a lone machine (which is
+                       the common case, and exactly what the Harbour template
+                       is), give it the router it needs. The router takes its
+                       own address and the author's machine KEEPS netIp, so
+                       every {{data.targetIp}} reference - whois, the nmap
+                       objective, the scp command, the conditions - still
+                       points at the box the player is meant to break into. */
+                    var createIp = netIp;
+                    if (String(rootDef.type || "").toUpperCase() !== "ROUTER") {
+                        var gatewayIp = (questRef && questRef.Data && questRef.Data.gatewayIp) ||
+                            (sdk.Network.randomIp ? sdk.Network.randomIp() : "10.0.0.254");
+                        createIp = gatewayIp;
+                        rootDef = {
+                            ip: gatewayIp,
+                            type: "ROUTER",
+                            name: "ROUTER",
+                            accessable: true,
+                            users: [],
+                            ports: [],
+                            children: [rootDef],
+                        };
+                    }
+
+                    /* Destroying the ROUTER takes the whole subnet with it
+                       ("Removes all child subnets and files"), so cleanup has
+                       to name the address we actually created at. */
+                    if (d.destroyOnComplete !== false) questCleanup.push({ kind: "network", ip: createIp });
+                    return buildNetwork(createIp, rootDef, next);
                     /* Tear the network down again when the quest ends. The
                        editor has always offered this toggle; the compiler
                        ignored it, so nothing was ever destroyed. A network the
@@ -1589,8 +1643,14 @@ function __qeRegisterProject(sdk, PROJECT) {
                        gets ONE ip allocated here, once, so it's stable
                        across reloads and shared by both the live device and
                        every {{data.targetIp}} reference. */
-                    if (needsTargetIp) return { targetIp: sdk.Network.randomIp ? sdk.Network.randomIp() : "10.0.0.1" };
-                    return {};
+                    var seed = {};
+                    if (needsTargetIp) seed.targetIp = sdk.Network.randomIp ? sdk.Network.randomIp() : "10.0.0.1";
+                    /* The router a lone machine gets wrapped in (r77) needs an
+                       address of its own, allocated once here so it survives a
+                       reload - otherwise cleanup would look for a subnet at an
+                       address nothing was ever created at. */
+                    if (needsGateway) seed.gatewayIp = sdk.Network.randomIp ? sdk.Network.randomIp() : "10.0.0.254";
+                    return seed;
                 }
                 OnStart() {
                     /* The engine may build this class more than once (metadata

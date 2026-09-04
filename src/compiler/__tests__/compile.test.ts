@@ -4654,3 +4654,123 @@ describe("reclaiming never touches a network this mod did not create", () => {
         expect(calls).toContain("net:10.9.9.9");
     });
 });
+
+/**
+ * QA, round 77. On a CLEAN save, with the r76 domain fix working (whois
+ * returned the correct freshly-allocated address), the quest still died one
+ * step later:
+ *
+ *     $ nmap 151.191.252.92 -sV
+ *     Host is up (0.23406s latency).
+ *     PORT  STATE  SERVICE  VERSION  DESTINATION
+ *     No ports found
+ *
+ * The machine EXISTED - ping answered - but had no ports, so metasploit had
+ * nothing to attack. The project defines exactly one port (22, ssh, active,
+ * OpenSSH 6.4.0) and it is correct in the exported PROJECT blob, so nothing
+ * was lost in the editor or the compiler. The engine simply did not build a
+ * port table for that machine.
+ *
+ * The difference from the working reference mod is structural. All SEVEN of
+ * Nemesis's createSubnetNetwork calls pass a ROUTER as the top-level node with
+ * the real machines in children; not one passes a bare Device. Its scannable,
+ * exploitable machines are always children behind that router. Harbour handed
+ * createSubnetNetwork a lone DEVICE - which SubnetNetworkDefinition does
+ * type-check, which is why this survived so many rounds unnoticed.
+ *
+ * So a network whose top-level machine is not a router now gets one, and the
+ * author's machine keeps the target address so every {{data.targetIp}}
+ * reference still points at the box the player must break into.
+ */
+describe("a lone machine is given the router the engine needs", () => {
+    function build(deviceType: string, extra: Record<string, unknown> = {}) {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const net = node("world.network", {
+            ipMode: "random",
+            device: {
+                id: "dev-server", ip: "{{data.targetIp}}", name: "harbour-fileserver",
+                type: deviceType, domainName: "harbourline-logistics.com",
+                users: [{ id: "u1", username: "admin", password: "pw", acceptReverseTCP: true }],
+                ports: [{ id: "p-ssh", external: 22, internal: 22, active: true, locked: false, service: "ssh", version: "OpenSSH 6.4.0" }],
+                children: [],
+                ...extra,
+            },
+        });
+        p.quests[0].graph.nodes = [entry, net];
+        p.quests[0].graph.edges = [edge(entry.id, net.id, "flow")];
+
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        const defs: any[] = [];
+        sdk.Network.createSubnetNetwork = (d: any) => { defs.push(d); calls.push(`net:${d.ip}`); };
+        sdk.Network.destroyNetwork = (ip: string) => { calls.push(`destroy:${ip}`); return Promise.resolve(); };
+        // Two distinct addresses, so target and gateway can be told apart.
+        let n = 0;
+        sdk.Network.randomIp = () => (n++ === 0 ? "151.191.252.92" : "10.0.0.254");
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = quest.CreateData();
+        quest.OnStart();
+        return { quest, calls, def: defs[0], defs };
+    }
+
+    it("hands the engine a ROUTER at the top, the way the reference mod does", () => {
+        const { def } = build("DEVICE");
+        expect(String(def.type).toUpperCase()).toBe("ROUTER");
+    });
+
+    it("puts the author's machine in children, where nmap can see its ports", () => {
+        const { def } = build("DEVICE");
+        expect(def.children).toHaveLength(1);
+        const box = def.children[0];
+        expect(String(box.type).toUpperCase()).toBe("DEVICE");
+        expect(box.ports).toHaveLength(1);
+        expect(box.ports[0]).toMatchObject({ external: 22, active: true, service: "ssh", version: "OpenSSH 6.4.0" });
+    });
+
+    it("keeps the target address on the machine, not the router", () => {
+        // Everything the player is told to type - nmap, scp, the whois answer -
+        // resolves {{data.targetIp}}, so it must land on the exploitable box.
+        const { quest, def } = build("DEVICE");
+        expect(def.children[0].ip).toBe(quest.Data.targetIp);
+        expect(def.ip).not.toBe(quest.Data.targetIp);
+    });
+
+    it("keeps the domain on the machine, so whois points at the right host", () => {
+        const { def } = build("DEVICE");
+        expect(def.children[0].domain).toEqual({ name: "harbourline-logistics.com" });
+        expect(def.domain).toBeUndefined();
+    });
+
+    it("keeps the author's users on the machine and none on the router", () => {
+        const { def } = build("DEVICE");
+        expect(def.users).toEqual([]);
+        expect(def.children[0].users.length).toBeGreaterThan(0);
+    });
+
+    it("tears down the router, which removes the whole subnet with it", () => {
+        const { quest, calls } = build("DEVICE");
+        quest.OnComplete();
+        // destroyNetwork(routerIp) "Removes all child subnets and files".
+        const created = calls.find((c) => c.startsWith("net:"))!.slice(4);
+        expect(calls).toContain(`destroy:${created}`);
+    });
+
+    it("allocates the router address once, so it survives a reload", () => {
+        const { quest } = build("DEVICE");
+        expect(quest.Data.gatewayIp).toBeTruthy();
+        expect(quest.Data.gatewayIp).not.toBe(quest.Data.targetIp);
+    });
+
+    it("leaves a network the author already rooted in a router alone", () => {
+        const { def } = build("ROUTER", {
+            children: [{ id: "c1", ip: "10.0.0.5", type: "DEVICE", users: [], ports: [], children: [] }],
+        });
+        expect(String(def.type).toUpperCase()).toBe("ROUTER");
+        // Not double-wrapped: the author's own router is still the top node.
+        expect(def.name).toBe("harbour-fileserver");
+        expect(def.children).toHaveLength(1);
+    });
+});

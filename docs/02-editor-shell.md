@@ -3401,3 +3401,58 @@ step, is the only safe way to edit that file.
 
 **Verification:** 656 tests (21 files), `tsc --noEmit` clean, `vite build`
 clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r70"`.
+
+## Round 71 — stop trying to clear the address
+
+QA re-exported Harbour onto the same save and `nmap` reported:
+
+```
+network 203.0.113.47 already exists in this save; replacing it     (our log)
+Host is down (0.30114s latency).  No ports found.                  (in game)
+```
+
+Which is r55's bug, returned. Worth laying the three attempts side by side,
+because each fixed the previous one and reintroduced the one before:
+
+| | what it did | what broke |
+|---|---|---|
+| r55 | destroy, then create on the next line | `destroyNetwork` is a **promise**; it resolved after the create and deleted the new network |
+| r56 | await the destroy, then create | the create now happens past an `await`, outside the window where the engine grants the mod its permissions — everything after is refused as `Mod "null"` (r45) |
+| r59 | fire the destroy, don't await, create immediately | the same race as r55 — which is what QA hit here |
+
+Three rounds solving the wrong problem. The question nobody asked was whether
+the address needs clearing at all.
+
+**It does not.** The reference mod, across seven networks, calls
+`destroyNetwork` **zero** times and `getSubnet` **zero** times. It calls
+`createSubnetNetwork` on every quest start and nothing else, and it works. The
+engine copes with an address that already has a network; the stale networks that
+started this whole line of work in r52 came from *our* missing teardown, which
+r52 itself fixed.
+
+So `buildNetwork` is now one synchronous call. No lookup, no destroy, no
+promise — which also means the quest never leaves its permission window while
+building the world. Teardown on complete/abandon stays, because that is what the
+`destroyOnComplete` toggle actually promises.
+
+Verified against the emitted Harbour mod with permissions revoked the instant
+`OnStart` returns:
+
+```
+order: create -> shell -> shell -> mail
+destroy called? false
+```
+
+The test that pinned the old behaviour was replaced rather than adjusted: it
+asserted a destroy happens, which was the bug.
+
+### The pattern worth naming
+
+Three consecutive rounds each fixed the last one's symptom and restored the one
+before it. That oscillation is itself a signal — when a fix keeps swapping which
+of two failures you get, the shared premise is usually wrong. Here the premise
+was "we must clear the address first", and one grep of the reference mod
+retired it.
+
+**Verification:** 656 tests (21 files), `tsc --noEmit` clean, `vite build`
+clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r71"`.

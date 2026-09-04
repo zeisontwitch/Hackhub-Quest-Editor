@@ -3003,18 +3003,15 @@ describe("networks are torn down when the quest ends", () => {
         expect(calls.join(",")).not.toContain("destroy:45.33.32.156");
     });
 
-    it("replaces a network the save already holds without pausing the quest", async () => {
-        /* The trade r56 got wrong. Waiting for destroyNetwork hands control
-           back to the engine, and everything after it loses the mod's
-           permissions (r45) — QA's log showed the tool responses skipped and
-           Mail.send refused, with the mail then delivered EMPTY through the
-           fallback. The destroy is fired and left to settle; the create is
-           synchronous, so the quest keeps its rights. */
+    it("creates the network with one synchronous call, the way the reference mod does", async () => {
+        /* Three rounds went into clearing a stale network first, and every
+           version raced or cost the quest its permissions (r55/r56/r59). The
+           reference mod never calls destroyNetwork or getSubnet at all — it
+           calls createSubnetNetwork on every quest start and works. So do we. */
         const calls: string[] = [];
         const sdk = stubSdk(calls, []) as any;
-        sdk.Network.getSubnet = (ip: string) => ({ ip });
-        sdk.Network.destroyNetwork = (ip: string) =>
-            new Promise<void>((res) => setTimeout(() => { calls.push(`destroy:${ip}`); res(); }, 0));
+        sdk.Network.getSubnet = () => { calls.push("getSubnet"); return { ip: "45.33.32.156" }; };
+        sdk.Network.destroyNetwork = () => { calls.push("destroy"); return Promise.resolve(); };
 
         const p = createProject();
         p.quests[0].autoStart = true;
@@ -3035,12 +3032,13 @@ describe("networks are torn down when the quest ends", () => {
         quest.Data = {};
         quest.OnStart();
 
-        /* Everything must already have happened, with no await in between:
-           the network built AND the node after it run. */
+        // Built, and the node after it ran, with no await in between.
         expect(calls.join(",")).toContain("net:45.33.32.156");
         expect(calls.join(",")).toContain("toast:after");
+        // Nothing is destroyed on the way in: that is what raced.
+        expect(calls).not.toContain("destroy");
         await settle();
-        expect(calls.join(",")).toContain("destroy:45.33.32.156");
+        expect(calls).not.toContain("destroy");
     });
 
     it("keeps its permissions through a replacement, so the mail still goes out", async () => {

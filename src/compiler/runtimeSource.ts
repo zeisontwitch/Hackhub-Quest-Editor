@@ -1250,46 +1250,33 @@ function __qeRegisterProject(sdk, PROJECT) {
            deliberately said otherwise - a machine nobody is logged into cannot
            be broken into through a login service, which is not a distinction
            the editor ever offered to make. */
-        /* Create a network at an address, clearing whatever is already there.
+        /* Create a network at an address.
 
-           Three constraints meet here, and getting any one of them wrong has
-           cost a round:
+           Three rounds were spent trying to clear a stale network out of the
+           save first, and every version of that was wrong:
 
-           1. A network the save already holds WINS over a new one at the same
-              ip, so a stale one has to go (r55).
-           2. destroyNetwork returns a PROMISE. Firing it and building on the
-              next line means the destroy lands after the create and deletes
-              the new network - "Host is down ... No ports found" (r56).
-           3. The engine only grants a mod its permissions while it is inside a
-              call the engine made. ANY await hands control back, and every SDK
-              call after it is refused as Mod "null" (r45).
+             r55  destroy then create, not awaited  -> the destroy is a promise
+                  and resolved AFTER the create, deleting the new network.
+                  "Host is down ... No ports found."
+             r56  await the destroy                 -> the create then happens
+                  past an await, outside the window where the engine grants the
+                  mod its permissions, so everything after it is refused as
+                  Mod "null" (r45).
+             r59  fire and forget the destroy       -> same race as r55, which
+                  is what QA hit again on r70.
 
-           r56 waited for the destroy and accepted losing permissions for that
-           one run. That was the wrong trade: the rest of the quest then ran
-           without rights, so the tool responses were skipped and Mail.send was
-           refused, and the mail went out through a fallback that delivered an
-           EMPTY subject and body. A quest that half-builds is worse than one
-           that visibly does nothing, because it looks like it worked.
+           The reference mod settles it: across seven networks it never calls
+           destroyNetwork and never calls getSubnet. It calls
+           createSubnetNetwork and nothing else, on every quest start, and it
+           works. So the engine handles an address that already has a network -
+           and the whole clear-first idea was solving a problem that came from
+           r52's teardown, not from the engine.
 
-           So the create is never awaited. The stale network is destroyed on
-           the way past - the promise is left to settle on its own - and the
-           new one is created immediately and synchronously. Where the engine
-           replaces by address that is all that is needed; where it does not,
-           the destroy still lands and the following run is clean. Either way
-           the quest keeps its permissions and the player gets a working mod. */
+           Teardown on quest complete/abandon stays (that is what
+           destroyOnComplete asks for). Creating is now a single synchronous
+           call, which also keeps the quest inside its permission window. */
         function buildNetwork(ip, definition, next) {
-            var existing = __QE.safe(function () {
-                return sdk.Network.getSubnet ? sdk.Network.getSubnet(ip) : null;
-            });
-            if (existing && sdk.Network.destroyNetwork) {
-                __QE.log("network " + ip + " already exists in this save; replacing it");
-                /* Deliberately NOT awaited: see above. Swallow the rejection so
-                   an unhandled promise cannot surface as an error in the log. */
-                __QE.safe(function () {
-                    var p = sdk.Network.destroyNetwork(ip);
-                    if (p && typeof p.then === "function") p.then(null, function () {});
-                });
-            }
+            void ip;
             sdk.Network.createSubnetNetwork(definition);
             return next();
         }

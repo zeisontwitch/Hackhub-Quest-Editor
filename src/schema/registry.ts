@@ -373,16 +373,17 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            {
-                kind: "select",
-                key: "ipMode",
-                hint: "“Random” hands out a fresh address each time the quest is played. “Fixed” keeps the address you typed — use that when another node refers to it by hand.",
-                label: "Router IP",
-                options: [
-                    { value: "random", label: "Random public IP", hint: "A fresh address each time the quest is played" },
-                    { value: "fixed", label: "Fixed IP" },
-                ],
-            },
+            /* No IP field. The game hands out the address, and the author
+               reads it back with {{data.targetIp}} wherever they need it —
+               a mail, a whois answer, an objective hint.
+
+               Typed addresses were removed in r73. The engine writes networks
+               into the save file and they outlive the mod, so a fixed address
+               meant a re-exported build was answered by whatever an older
+               version had left there. Three rounds went into clearing the
+               address first and each one broke something worse, ending with a
+               game that would not finish loading. A per-playthrough address
+               cannot collide, so the problem stops existing. */
             { kind: "deviceTree", key: "device", hint: "The router at the root of the network, plus everything behind it. Routers and splitters carry children; firewalls carry rules.", label: "Devices" },
             { kind: "toggle", key: "destroyOnComplete", hint: "Remove the whole network when the quest ends, so it does not clutter later playthroughs.", label: "Tear down when the quest ends" },
         ],

@@ -3511,3 +3511,64 @@ everything a quest needs inside the quest.
 **Verification:** 661 tests (21 files, +5), `tsc --noEmit` clean, `vite build`
 clean. Removing the clearing step makes the ordering test fail. Export stamp:
 `EDITOR_BUILD = "2026-09-04.r72"`.
+
+## Round 73 — the fix was to stop needing the fix
+
+r72 hung the game. `OnModPackageLoaded` returned a promise, the loader **awaits**
+that hook, and `destroyNetwork` called on an address with no network apparently
+never settles — so the game sat on "loading mods" and never reached its menu.
+
+That is the worst thing shipped in this project. The bug it was fixing broke one
+quest; this one made the game unusable. **Never hand the game a promise it has
+to await unless we can prove it settles — and we cannot prove that about any SDK
+call.** The hook now returns nothing at all.
+
+### QA's fix, which is the right one
+
+The whole five-round saga — r55, r56, r59, r71, r72 — came from one decision:
+letting an author type a fixed address. Networks live in the save and outlive
+the mod, so a fixed address meant a re-exported build collided with its own
+older self, and every attempt to clear the collision first broke something
+worse.
+
+QA's proposal was to remove the choice. Addresses are now **always** allocated
+by the game (`Network.randomIp()` in `CreateData()`), and an author refers to
+one with `{{data.targetIp}}` — in a whois answer, an objective hint, a mail, a
+trigger condition. A per-playthrough address cannot collide with a save entry,
+so there is nothing to clear and no race to lose.
+
+The `ipMode` field stays in the schema so projects saved before today still
+parse, but anything that says `"fixed"` is coerced to `"random"` on load. The
+inspector no longer offers the choice.
+
+All three networked templates were converted. Verified end to end with a
+`destroyNetwork` that never settles, to prove the hang cannot recur:
+
+```
+OnModPackageLoaded returned: undefined | took 2 ms
+targetIp: 198.51.100.77
+order:   create 198.51.100.77 -> shell:lynx -> shell:whois -> mail
+built:   DEVICE 198.51.100.77 ports: 22/ssh
+```
+
+This is the better shape of fix: not a smarter workaround, but removing the
+thing that made a workaround necessary. Worth remembering next time a fix needs
+three attempts — that is usually a sign the premise is wrong, not the code.
+
+### Questions for the developers
+
+New file: `docs/03-questions-for-the-developers.md`. Eleven things we could not
+settle from the declarations, from the reference mod, or from testing — network
+persistence, whether `QuestObjectiveDefinition.trigger` is honoured, whether
+`replyable` draws a button, the `Terminal.Lynx.Search` payload shape, what
+metasploit accepts as a version, what makes a machine exploitable, why a file
+cannot be deleted, whether Twotter is moddable, mail that outlives its mod, and
+a date warning only our mods provoke.
+
+Each entry records what we observed, what we tried, and what we are doing
+meanwhile, so an answer is quick to give and we can tell immediately whether it
+changes anything. Answered questions move to a section at the bottom rather than
+being deleted, so the same ground is not covered twice.
+
+**Verification:** 686 tests (21 files, +3), `tsc --noEmit` clean, `vite build`
+clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r73"`.

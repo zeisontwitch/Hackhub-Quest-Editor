@@ -1694,42 +1694,23 @@ function __qeRegisterProject(sdk, PROJECT) {
             __QE.log(PROJECT.mod.name + " v" + PROJECT.mod.version +
                 " loaded (editor build " + __QE_BUILD + ").");
 
-            /* Clear any network this mod is about to build that the save
-               already holds.
+            /* Nothing else happens here, and nothing is returned.
 
-               The engine keeps networks in the save file, and one that is
-               already there wins over a new one created at the same address -
-               so without this, a re-exported mod is answered by whatever an
-               older version left behind. QA lost several rounds to a port that
-               would not close and an account that would not appear, both
-               because an earlier build's machine was still standing.
+               r72 cleared stale networks from this hook and returned the
+               promise. The game AWAITS whatever OnModPackageLoaded returns, so
+               when destroyNetwork was called on an address with no network and
+               did not settle, the loader waited forever: the game never
+               reached its main menu. That is far worse than the bug it was
+               fixing - one broken quest against an unusable game.
 
-               This is the right hook for it. OnModPackageLoaded is declared
-               "void | Promise<void>" in the SDK, so it is allowed to await,
-               and it runs once when the mod loads - before any quest starts.
-               Doing it inside a quest's OnStart is what broke rounds 55, 56
-               and 71: destroyNetwork is async, and awaiting it there costs the
-               quest the permissions it needs to build anything.
+               The stale-network problem is gone for a better reason now:
+               addresses are allocated by the game per playthrough (r73), so a
+               mod can no longer collide with one an earlier build of itself
+               left in the save. There is nothing to clear.
 
-               Fixed addresses only. A "random" address is allocated fresh per
-               playthrough and cannot collide with an older save entry. */
-            var addresses = [];
-            (PROJECT.quests || []).forEach(function (q) {
-                ((q.graph && q.graph.nodes) || []).forEach(function (n) {
-                    if (n.type !== "world.network" && n.type !== "world.wifi") return;
-                    if (n.data.ipMode !== "fixed") return;
-                    var ip = n.type === "world.wifi" ? n.data.ip : (n.data.device && n.data.device.ip);
-                    if (ip && addresses.indexOf(ip) < 0) addresses.push(ip);
-                });
-            });
-            if (!addresses.length || !sdk.Network || !sdk.Network.destroyNetwork) return;
-
-            return Promise.all(addresses.map(function (ip) {
-                return Promise.resolve()
-                    .then(function () { return sdk.Network.destroyNetwork(ip); })
-                    .then(function () { __QE.log("cleared any earlier network at " + ip); },
-                          function () { /* nothing there: the normal case */ });
-            })).then(function () {});
+               Standing rule: never hand the game a promise it has to await
+               unless we can prove it settles, and we cannot prove that about
+               any SDK call. */
         }
     };
     sdk.RegisterModPackage(Mod);

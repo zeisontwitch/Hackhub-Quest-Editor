@@ -686,7 +686,8 @@ function buildContractHack(): ProjectDocument {
     resetIds();
     const TARGET = "Anselm Ritter";
     const DOMAIN = "meridian-capital.net";
-    const IP = "45.33.32.156";
+    /* Allocated by the game; {{data.targetIp}} reads it back (r73). */
+    const IP = "{{data.targetIp}}";
     const HOST_IP = "192.168.1.24";
     const FILE = "ledger_q3";
 
@@ -711,7 +712,7 @@ function buildContractHack(): ProjectDocument {
     /* ── the world the player will explore ──────────────────────────────── */
 
     const network = makeNode("world.network", { x: 300, y: 0 }, {
-        ipMode: "fixed",
+        ipMode: "random",
         destroyOnComplete: true,
         device: {
             id: "dev-router",
@@ -1151,7 +1152,10 @@ function buildDataGrab(): ProjectDocument {
     resetIds();
     const CONTACT = "Yusuf Demir";
     const DOMAIN = "harbourline-logistics.com";
-    const IP = "203.0.113.47";
+    /* The game allocates the address; {{data.targetIp}} reads it back. Typed
+       addresses were removed in r73 — networks outlive the mod in the save, so
+       a fixed one made a re-export collide with its own older build. */
+    const IP = "{{data.targetIp}}";
     const FILE = "manifest_q4";
     const CLIENT = "d.okonkwo@nullpost.io";
 
@@ -1172,7 +1176,7 @@ function buildDataGrab(): ProjectDocument {
     /* ── the world ──────────────────────────────────────────────────────── */
 
     const network = makeNode("world.network", { x: 300, y: 0 }, {
-        ipMode: "fixed",
+        ipMode: "random",
         destroyOnComplete: true,
         /* A single public server, reachable directly. No router in front of it:
            the SDK's SubnetNetworkDefinition allows a Device at the top level,
@@ -1480,7 +1484,8 @@ function buildDataGrab(): ProjectDocument {
 function buildDirhunter(): ProjectDocument {
     resetIds();
     const HOST = "naza.gov";
-    const EDGE_IP = "198.51.100.24";
+    /* Allocated by the game; {{data.targetIp}} reads it back (r73). */
+    const EDGE_IP = "{{data.targetIp}}";
     const BOX_IP = "10.10.4.7";
     const USER = "t.reyes";
     const PASSWORD = "treyes3419";
@@ -1505,7 +1510,7 @@ function buildDirhunter(): ProjectDocument {
     const load = makeNode("entry.load", { x: 0, y: 200 });
 
     const network = makeNode("world.network", { x: 300, y: 0 }, {
-        ipMode: "fixed",
+        ipMode: "random",
         destroyOnComplete: true,
         device: {
             id: "dev-edge",

@@ -9,6 +9,7 @@ import { compileProject, computePermissions, computeWarnings, EDITOR_BUILD } fro
 import { mailBodyText } from "@/compiler/mailText";
 import { nodeTypeDef } from "@/schema/registry";
 import { createProject, type ProjectDocument } from "@/schema/project";
+import { NodeSchema } from "@/schema/nodes";
 import { getTemplate, TEMPLATES } from "@/templates";
 import { EVENTS, getEvent, payloadFields } from "@/schema/events";
 import type { NodeDoc } from "@/schema/nodes";
@@ -979,7 +980,10 @@ describe("the contract hack template runs", () => {
 
     it("builds the world the trail leads through", async () => {
         const { calls } = await playTemplate(false);
-        expect(calls.some((c) => c.startsWith("net:45.33.32.156"))).toBe(true);
+        /* The address is allocated by the game now (r73); stubSdk's randomIp
+           returns 10.9.9.9. What matters is that a network was built at the
+           address CreateData handed out, not that it is a particular one. */
+        expect(calls.some((c) => c.startsWith("net:"))).toBe(true);
         // lynx answers for the name in the brief, whois for the domain
         expect(calls.some((c) => c.startsWith("cmd:lynx"))).toBe(true);
         expect(calls.some((c) => c.startsWith("cmd:whois"))).toBe(true);
@@ -3616,107 +3620,597 @@ describe("a typed answer resumes the story down the socket it declares", () => {
 });
 
 /**
- * QA, round 72. The engine writes networks into the SAVE, and one already
- * there wins over a new one created at the same address (r52/r55) — so a
- * re-exported mod is answered by whatever an older version left behind unless
- * the address is cleared first.
+ * QA, round 73. Networks live in the SAVE and outlive the mod, so a mod that
+ * pinned an address was answered by whatever an older build of itself had left
+ * there. Five rounds went into clearing the address first (r55, r56, r59, r71,
+ * r72) and each broke something worse, ending with an `OnModPackageLoaded` that
+ * returned a promise the game awaited and that never settled — the game hung on
+ * "loading mods" and never reached its menu.
  *
- * Clearing it is the hard part, because `destroyNetwork` returns a promise and
- * the engine only grants a mod its permissions while it is inside a call the
- * engine made (r45):
- *
- *   r55  destroy then create      → the destroy resolved after the create
- *   r56  await the destroy        → the create lost its permissions
- *   r71  don't destroy at all     → the stale network wins (what QA hit)
- *
- * `OnModPackageLoaded` settles it: the SDK declares it `void | Promise<void>`,
- * so it may await, and it runs once on load — before any quest starts.
+ * The address is now allocated by the game per playthrough, so there is nothing
+ * to collide with and nothing to clear.
  */
-describe("a re-exported mod replaces the networks an older build left behind", () => {
-    function harness() {
-        const p = getTemplate("data-grab")!.build();
-        const js = compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content;
-        const order: string[] = [];
-        /* The save already holds an older build's machine at this address. */
-        const saved: Record<string, { type: string }> = { "203.0.113.47": { type: "ROUTER" } };
-        let insideEngineCall = false;
-
+describe("the mod never blocks the game's own loading", () => {
+    function loadIt(templateId: string) {
         const sdk = stubSdk([], []) as any;
-        sdk.Network.destroyNetwork = (ip: string) =>
-            new Promise<void>((res) => setTimeout(() => { delete saved[ip]; order.push(`destroy:${ip}`); res(); }, 1));
-        sdk.Network.createSubnetNetwork = (d: { ip: string; type: string }) => {
-            if (!insideEngineCall) throw new Error('Mod "null" tried to use Network.createSubnetNetwork');
-            saved[d.ip] = { type: d.type };
-            order.push(`create:${d.ip}`);
-            return d.ip;
+        const touched: string[] = [];
+        sdk.Network.destroyNetwork = (ip: string) => {
+            touched.push(ip);
+            return new Promise<void>(() => {}); // a promise that never settles
         };
         let ModCls: (new () => { OnModPackageLoaded: () => void | Promise<void> }) | null = null;
         sdk.RegisterModPackage = (c: new () => { OnModPackageLoaded: () => void | Promise<void> }) => (ModCls = c);
-        runMod(js, sdk);
-        return {
-            order, saved,
-            load: () => new ModCls!().OnModPackageLoaded(),
-            start: () => {
-                const q = new (registered0(sdk).quests[0])();
-                q.Data = {};
-                insideEngineCall = true;
-                q.OnStart();
-                insideEngineCall = false;
-            },
-        };
+        const p = getTemplate(templateId)!.build();
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        return { touched, result: new ModCls!().OnModPackageLoaded() };
     }
 
-    it("clears the address on load, then builds inside the quest's own window", async () => {
-        const h = harness();
-        await h.load();
-        h.start();
-        expect(h.order).toEqual(["destroy:203.0.113.47", "create:203.0.113.47"]);
+    it("returns nothing from OnModPackageLoaded, so the loader cannot wait on us", () => {
+        /* The exact shape of the r72 hang: the game awaits this hook. Anything
+           we return that does not settle stops the game booting. */
+        for (const id of ["data-grab", "contract-hack", "dirhunter-leak"]) {
+            expect(loadIt(id).result, id).toBeUndefined();
+        }
     });
 
-    it("leaves the save holding this build's machine, not the old one", async () => {
-        const h = harness();
-        await h.load();
-        h.start();
-        // the fixture seeded a ROUTER; the template builds a DEVICE
-        expect(h.saved["203.0.113.47"].type).toBe("DEVICE");
+    it("does not call destroyNetwork while loading", () => {
+        for (const id of ["data-grab", "contract-hack", "dirhunter-leak"]) {
+            expect(loadIt(id).touched, id).toEqual([]);
+        }
     });
 
-    it("keeps the quest's permissions: nothing is awaited while building", async () => {
-        // The r56 failure. If the create were behind an await it would throw.
-        const h = harness();
-        await h.load();
-        expect(() => h.start()).not.toThrow();
+    it("still announces itself, which is how a silent failure is spotted", () => {
+        const said: string[] = [];
+        const orig = console.log;
+        console.log = (...a: unknown[]) => void said.push(a.map(String).join(" "));
+        try {
+            loadIt("data-grab");
+        } finally {
+            console.log = orig;
+        }
+        expect(said.join("\n")).toContain("loaded (editor build");
+    });
+});
+
+
+/**
+ * QA, round 53. With the stale network finally gone (r52), the exploit ran
+ * against the right machine and failed with a *different* message:
+ *
+ *     [*] Attack failed.
+ *     [*] Backdoor service could not be accessed.
+ *     [*] No guest account or online user found.
+ *
+ * That last line is the specification. The SSH exploit does not log in as
+ * whoever is listed on the device — it wants a **guest account** or a user who
+ * is **online**, and the router had a named `admin` who was neither.
+ *
+ * The working reference mod never hands the engine a bare user array: all 25 of
+ * its machines wrap them in `createDefaultUserSchema(users, { guest: true })`,
+ * which is what adds the accounts the exploit actually attacks. We had never
+ * called that function once.
+ */
+describe("machines carry the accounts the exploit looks for", () => {
+    function usersOf(device: Record<string, unknown>) {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const net = node("world.network", { ipMode: "fixed", device });
+        p.quests[0].graph.nodes = [entry, net];
+        p.quests[0].graph.edges = [edge(entry.id, net.id, "flow")];
+
+        const made: any[] = [];
+        const sdk = stubSdk([], []) as any;
+        sdk.Network.createSubnetNetwork = (d: unknown) => { made.push(d); return (d as any).ip; };
+        sdk.Network.createUser = (u: Record<string, unknown>) => ({ ...u });
+        sdk.Network.createDefaultUserSchema = (users: unknown[], opts?: { guest?: boolean }) => [
+            ...users,
+            ...(opts?.guest ? [{ username: "guest", password: "", online: true }] : []),
+        ];
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = {};
+        q.OnStart();
+        return made[0];
+    }
+
+    const router = (extra: Record<string, unknown> = {}) => ({
+        id: "r1", ip: "45.33.32.156", name: "edge", type: "ROUTER", children: [],
+        users: [{ id: "u1", username: "admin", password: "pw" }],
+        ports: [{ id: "p1", external: 22, internal: 22, active: true, service: "ssh", version: "OpenSSH 7.2.0" }],
+        ...extra,
     });
 
-    it("only clears addresses the mod actually pins", async () => {
-        /* A "random" address is allocated fresh per playthrough and cannot
-           collide with a save entry, so there is nothing to clear — and
-           destroying a random address could hit somebody else's machine. */
+    it("gives a device the guest account the exploit hunts for", () => {
+        const built = usersOf({
+            id: "r1", ip: "1.1.1.1", type: "ROUTER", users: [], ports: [],
+            children: [{
+                id: "d1", ip: "10.0.0.12", name: "ws", type: "DEVICE",
+                users: [{ id: "u2", username: "aritter", password: "pw" }],
+                ports: [{ id: "p1", external: 22, internal: 22, active: true, service: "ssh" }],
+            }],
+        });
+        expect(built.children[0].users.map((u: { username: string }) => u.username)).toContain("guest");
+    });
+
+    it("does NOT put a guest account on a router", () => {
+        /* r53 applied the default schema everywhere. The guest it added to the
+           edge router became the account the SSH exploit logged in as
+           (`uid=0(guest)`), which yields a plain shell instead of reaching the
+           named account behind it. The reference mod calls the schema on its
+           26 Devices and on none of its 7 Routers. */
+        const built = usersOf(router());
+        expect(built.users.map((u: { username: string }) => u.username)).toEqual(["admin"]);
+    });
+
+    it("marks the author's own users online, so they can be attacked", () => {
+        const built = usersOf(router());
+        const admin = built.users.find((u: { username: string }) => u.username === "admin");
+        expect(admin.online).toBe(true);
+    });
+
+    it("still lets an author deliberately mark someone offline", () => {
+        const built = usersOf(router({
+            users: [{ id: "u1", username: "admin", password: "pw", online: false }],
+        }));
+        const admin = built.users.find((u: { username: string }) => u.username === "admin");
+        expect(admin.online).toBe(false);
+    });
+
+    it("does the same for machines behind the router", () => {
+        const built = usersOf({
+            id: "r1", ip: "1.1.1.1", type: "ROUTER", users: [], ports: [],
+            children: [{
+                id: "d1", ip: "10.0.0.12", name: "ws", type: "DEVICE",
+                users: [{ id: "u2", username: "aritter", password: "pw" }],
+                ports: [{ id: "p1", external: 22, internal: 22, active: true, service: "ssh" }],
+            }],
+        });
+        const names = built.children[0].users.map((u: { username: string }) => u.username);
+        expect(names).toContain("aritter");
+        expect(names).toContain("guest");
+    });
+
+    it("leaves plumbing alone — nobody logs into a splitter or a firewall", () => {
+        const built = usersOf({
+            id: "r1", ip: "1.1.1.1", type: "ROUTER", users: [], ports: [],
+            children: [
+                { id: "s1", ip: "1.1.1.2", name: "LAN", type: "SPLITTER", users: [], ports: [], children: [] },
+                { id: "f1", ip: "1.1.1.3", name: "FW", type: "FIREWALL", users: [], ports: [], rules: [] },
+            ],
+        });
+        expect(built.children[0].users).toEqual([]);
+        expect(built.children[1].users).toEqual([]);
+    });
+
+    it("works on a build with no createDefaultUserSchema at all", () => {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const net = node("world.network", { ipMode: "fixed", device: router() });
+        p.quests[0].graph.nodes = [entry, net];
+        p.quests[0].graph.edges = [edge(entry.id, net.id, "flow")];
+        const made: any[] = [];
+        const sdk = stubSdk([], []) as any;
+        sdk.Network.createSubnetNetwork = (d: unknown) => { made.push(d); return (d as any).ip; };
+        delete sdk.Network.createDefaultUserSchema;
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = {};
+        expect(() => q.OnStart()).not.toThrow();
+        expect(made[0].users.map((u: { username: string }) => u.username)).toContain("admin");
+    });
+});
+
+/**
+ * QA, round 59. The briefing arrived with an empty subject and an empty body,
+ * so the Mail.Read trigger could not match it:
+ *
+ *     Mail.Read fired but did not match. Event carried:
+ *     { from="i.faber@ghostmail.io", subject="", content="" }
+ *
+ * `Quest.sendMail(index)` sends whatever the ENGINE holds in `this.Mails` at
+ * that index — not the filled-in text we are holding. When the engine never
+ * took our Mails array, it sends a blank mail and reports success. Better to
+ * say nothing was sent than to deliver an empty one and call it delivered.
+ */
+describe("the mail fallback refuses to send a blank mail", () => {
+    function sendWith(prepare: (quest: any) => void) {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const mail = node("comms.dialogue", {
+            kind: "mail",
+            mail: { from: "i.faber@ghostmail.io", subject: "One file, one man, no trace", content: "His name is Anselm Ritter." },
+        });
+        p.quests[0].graph.nodes = [entry, mail];
+        p.quests[0].graph.edges = [edge(entry.id, mail.id, "flow")];
+
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        delete sdk.Mail; // force the fallback path
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const quest = new (registered0(sdk).quests[0])();
+        quest.Data = {};
+        prepare(quest);
+
+        const said: string[] = [];
+        const orig = console.log;
+        console.log = (...a: unknown[]) => void said.push(a.map(String).join(" "));
+        try {
+            quest.OnStart();
+        } finally {
+            console.log = orig;
+        }
+        return { log: said.join("\n"), calls };
+    }
+
+    it("sends through the fallback when the engine has the mail", () => {
+        const { log, calls } = sendWith(() => {});
+        expect(calls.join(",")).toContain("sendMail:0");
+        expect(log).toContain("sent via Quest.sendMail(0)");
+    });
+
+    it("refuses when the engine's copy is blank, and says why", () => {
+        const { log, calls } = sendWith((q) => {
+            q.Mails = [{ title: "", content: "" }];
+        });
+        expect(calls.join(",")).not.toContain("sendMail:0");
+        expect(log).toContain("would deliver a blank mail");
+        expect(log).toContain("is empty");
+    });
+
+    it("refuses when the engine has no copy at all", () => {
+        const { log, calls } = sendWith((q) => {
+            q.Mails = [];
+        });
+        expect(calls.join(",")).not.toContain("sendMail:0");
+        expect(log).toContain("is missing");
+    });
+
+    it("still reports plainly that the mail never went out", () => {
+        const { log } = sendWith((q) => {
+            q.Mails = [];
+        });
+        expect(log).toContain("could not be sent");
+    });
+});
+
+/**
+ * QA, round 67 — the field audit.
+ *
+ * A mechanical sweep of all 122 fields the inspector renders found four the
+ * compiler never read. Each looked reasonable in the editor and did nothing in
+ * the game, which is the exact failure mode that cost rounds 39, 43, 52, 58 and
+ * 66. These tests prove the four now reach the engine, rather than proving the
+ * source merely mentions them.
+ */
+describe("fields the editor collects actually reach the engine", () => {
+    it("pays from the account the author named", () => {
+        /* BankTransactionOptions.from is { IBAN, name }. Both were collected and
+           dropped, so every payment came from nobody. */
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const pay = node("fx.pay", {
+            amountMode: "fixed",
+            amount: 4000,
+            description: "Contract settled",
+            fromName: "I. Faber",
+            fromIBAN: "DE44 5001 0517 0000 0000 00",
+        });
+        p.quests[0].graph.nodes = [entry, pay];
+        p.quests[0].graph.edges = [edge(entry.id, pay.id, "flow")];
+
+        const sent: Record<string, unknown>[] = [];
+        const sdk = stubSdk([], []) as any;
+        sdk.Bank = { transaction: (o: Record<string, unknown>) => sent.push(o) };
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = {};
+        q.OnStart();
+
+        expect(sent).toHaveLength(1);
+        expect(sent[0].from).toEqual({ IBAN: "DE44 5001 0517 0000 0000 00", name: "I. Faber" });
+    });
+
+    it("omits the sender entirely when the author named nobody", () => {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const pay = node("fx.pay", { amountMode: "fixed", amount: 10, description: "x", fromName: "", fromIBAN: "" });
+        p.quests[0].graph.nodes = [entry, pay];
+        p.quests[0].graph.edges = [edge(entry.id, pay.id, "flow")];
+        const sent: Record<string, unknown>[] = [];
+        const sdk = stubSdk([], []) as any;
+        sdk.Bank = { transaction: (o: Record<string, unknown>) => sent.push(o) };
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = {};
+        q.OnStart();
+        expect(sent[0]).not.toHaveProperty("from");
+    });
+
+    it("registers the command name the author typed", () => {
+        /* A quest that tells the player to run "reply" registered "qe-…"
+           instead, so the instruction on screen did not work. */
         const p = createProject();
         p.quests[0].autoStart = true;
         p.quests[0].graph.nodes = [
-            node("world.network", {
-                ipMode: "random",
-                device: { id: "r1", ip: "10.0.0.1", type: "DEVICE", users: [], ports: [] },
+            node("reply.input", {
+                commandName: "reply",
+                commandDescription: "Answer the client",
+                prompt: "Your answer:",
+                expected: "done",
+                matchMode: "contains",
             }),
         ];
-        const cleared: string[] = [];
         const sdk = stubSdk([], []) as any;
-        sdk.Network.destroyNetwork = (ip: string) => { cleared.push(ip); return Promise.resolve(); };
-        let ModCls: (new () => { OnModPackageLoaded: () => void | Promise<void> }) | null = null;
-        sdk.RegisterModPackage = (c: new () => { OnModPackageLoaded: () => void | Promise<void> }) => (ModCls = c);
+        const named: string[] = [];
+        sdk.RegisterCommand = (c: new () => { CommandName: string }) => named.push(new c().CommandName);
         runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
-        await new ModCls!().OnModPackageLoaded();
-        expect(cleared).toEqual([]);
+        expect(named).toContain("reply");
     });
 
-    it("survives a build with no destroyNetwork at all", async () => {
-        const p = getTemplate("data-grab")!.build();
+    it("still generates a command name when the author left it blank", () => {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        p.quests[0].graph.nodes = [
+            node("reply.input", { commandName: "", prompt: "Your answer:", expected: "done", matchMode: "contains" }),
+        ];
         const sdk = stubSdk([], []) as any;
-        delete sdk.Network.destroyNetwork;
-        let ModCls: (new () => { OnModPackageLoaded: () => void | Promise<void> }) | null = null;
-        sdk.RegisterModPackage = (c: new () => { OnModPackageLoaded: () => void | Promise<void> }) => (ModCls = c);
+        const named: string[] = [];
+        sdk.RegisterCommand = (c: new () => { CommandName: string }) => named.push(new c().CommandName);
         runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
-        await expect(Promise.resolve(new ModCls!().OnModPackageLoaded())).resolves.not.toThrow();
+        expect(named[0]).toMatch(/^qe-/);
+    });
+
+    it("prints the success message the author wrote", async () => {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        p.quests[0].graph.nodes = [
+            node("reply.input", {
+                commandName: "reply",
+                prompt: "Your answer:",
+                expected: "done",
+                matchMode: "contains",
+                successMessage: "She reads it twice, then nothing.",
+            }),
+        ];
+        const sdk = stubSdk([], []) as any;
+        let cls: (new () => { Run: (t: unknown) => Promise<void> }) | null = null;
+        sdk.RegisterCommand = (c: new () => { Run: (t: unknown) => Promise<void> }) => (cls = c);
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+
+        const printed: string[] = [];
+        await new cls!().Run({
+            prompt: () => Promise.resolve("done"),
+            printSuccess: (m: string) => printed.push(m),
+            printError: () => {},
+        });
+        expect(printed).toContain("She reads it twice, then nothing.");
+    });
+
+    it("saves which branch a random pick chose", async () => {
+        /* "Store the result as" promised the pick would be readable through
+           {{data.name}} and nothing ever wrote it. */
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const pick = node("flow.random", { storeAs: "coin" });
+        const only = node("fx.notify", { message: "after", variant: "toast", tone: "info" });
+        p.quests[0].graph.nodes = [entry, pick, only];
+        p.quests[0].graph.edges = [edge(entry.id, pick.id, "flow"), edge(pick.id, only.id, "flow")];
+
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = {};
+        q.OnStart();
+        await settle();
+        expect(calls.some((c) => c.startsWith("setData:coin="))).toBe(true);
+    });
+});
+
+/**
+ * QA, round 69 — the typed-reply mechanic, checked against the SDK.
+ *
+ * QA explained what the game actually does: when the player answers a mail, a
+ * WeeChat line or a Kisscord message, the text is PRE-DEFINED and appears as
+ * they mash keys. The question was whether the SDK exposes that, and whether
+ * our "Hackertyper" node is the right way to reach it.
+ *
+ * It does expose it, and the node is not it:
+ *
+ *   KisscordMessageDefinition.isMine — "True if the player sends this message"
+ *   WeeChatMessageDefinition.isMine  — same, with the player's username
+ *                                      auto-filled
+ *
+ * A scripted player line is a message in the chat with `isMine: true`. There is
+ * no hackertyper API anywhere in the SDK; our node builds a bespoke HTML page
+ * that imitates one. That is a legitimate trick for a website terminal, but it
+ * is not the game's own mechanic, and the dialogue editor already offers the
+ * real thing.
+ */
+describe("a scripted player line is marked as the player's", () => {
+    function chatsFor(kind: "kisscord" | "weechat", messages: unknown[]) {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        p.quests[0].graph.nodes = [
+            node("comms.dialogue", {
+                kind,
+                [kind]: kind === "kisscord"
+                    ? { contactId: "c-1", messages }
+                    : { host: "irc.example.net", password: "", registerServer: true, messages },
+            }),
+        ];
+        const sdk = stubSdk([], []) as any;
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = {};
+        return kind === "kisscord" ? q.KisscordChats?.[0]?.messages : q.WeeChatChats?.[0]?.messages;
+    }
+
+    it("marks a Kisscord line the player types out as theirs", () => {
+        const msgs = chatsFor("kisscord", [
+            { id: "m1", content: "", playerAction: "send", playerText: "it is done", delayMs: 0 },
+        ]);
+        expect(msgs[0]).toMatchObject({ content: "it is done", isMine: true });
+    });
+
+    it("marks a WeeChat line the player types out as theirs", () => {
+        /* This one was wrong: we sent `username: "you"` and never set isMine,
+           so the engine read it as an NPC who happens to be called "you". The
+           SDK is explicit — "Player username auto-filled if isMine". */
+        const msgs = chatsFor("weechat", [
+            { id: "m1", content: "", username: "you", playerAction: "send", playerText: "on my way", delayMs: 0 },
+        ]);
+        expect(msgs[0]).toMatchObject({ content: "on my way", isMine: true });
+        expect(msgs[0]).not.toHaveProperty("username");
+    });
+
+    it("marks a WeeChat file upload as the player's too", () => {
+        const msgs = chatsFor("weechat", [
+            { id: "m1", content: "", playerAction: "upload", upload: { name: "manifest", extension: "csv" }, delayMs: 0 },
+        ]);
+        expect(msgs[0].isMine).toBe(true);
+        expect(msgs[0].content).toContain("manifest.csv");
+    });
+
+    it("leaves an NPC line with its username and no player flag", () => {
+        const msgs = chatsFor("weechat", [
+            { id: "m1", content: "you there?", username: "informant", playerAction: "none", delayMs: 0 },
+        ]);
+        expect(msgs[0]).toMatchObject({ content: "you there?", username: "informant" });
+        expect(msgs[0].isMine).toBeUndefined();
+    });
+
+    it("honours an author who marks a plain message as the player's", () => {
+        const msgs = chatsFor("weechat", [
+            { id: "m1", content: "already inside", isMine: true, playerAction: "none", delayMs: 0 },
+        ]);
+        expect(msgs[0]).toMatchObject({ content: "already inside", isMine: true });
+    });
+});
+
+
+
+/**
+ * QA, round 70. A typed-answer node declares two output sockets, "Correct" and
+ * "Wrong" (registry: successOut / failureOut). The runtime resumed the flow
+ * down a socket called "out", which that node does not have — so everything an
+ * author wired to Correct was dead, silently. Found by moving the Ledger's
+ * reply from the removed hackertyper node onto this one.
+ */
+describe("a typed answer resumes the story down the socket it declares", () => {
+    function play(answer: string) {
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const input = node("reply.input", {
+            commandName: "report",
+            prompt: "Well? >",
+            expected: "done",
+            matchMode: "contains",
+        });
+        const ok = node("fx.notify", { message: "believed", variant: "toast", tone: "success" });
+        const no = node("fx.notify", { message: "not believed", variant: "toast", tone: "error" });
+        p.quests[0].graph.nodes = [input, ok, no];
+        p.quests[0].graph.edges = [
+            edge(input.id, ok.id, "flow", "success"),
+            edge(input.id, no.id, "flow", "failure"),
+        ];
+
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        let cls: (new () => { Run: (t: unknown) => Promise<void> }) | null = null;
+        sdk.RegisterCommand = (c: new () => { Run: (t: unknown) => Promise<void> }) => (cls = c);
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = {};
+        q.OnObjectivesStart();
+        return { calls, run: () => new cls!().Run({
+            prompt: () => Promise.resolve(answer),
+            printSuccess: () => {},
+            printError: () => {},
+        }) };
+    }
+
+    it("follows Correct when the answer is right", async () => {
+        const { calls, run } = play("done");
+        await run();
+        await settle();
+        expect(calls.join(",")).toContain("toast:believed");
+        expect(calls.join(",")).not.toContain("toast:not believed");
+    });
+
+    it("follows Wrong when it is not", async () => {
+        const { calls, run } = play("no idea");
+        await run();
+        await settle();
+        expect(calls.join(",")).toContain("toast:not believed");
+        expect(calls.join(",")).not.toContain("toast:believed");
+    });
+});
+
+
+
+/**
+ * QA, round 73. Addresses are allocated by the game, never typed by the author.
+ * Five rounds went into making a typed address survive a re-export and each
+ * broke something worse; the last one hung the game on "loading mods". A
+ * per-playthrough address cannot collide with a save entry, so the whole class
+ * of bug stops existing.
+ */
+describe("network addresses come from the game, not from the author", () => {
+    it("no template pins an address", () => {
+        for (const t of TEMPLATES) {
+            for (const q of t.build().quests) {
+                for (const n of q.graph.nodes) {
+                    if (n.type !== "world.network" && n.type !== "world.wifi") continue;
+                    expect((n.data as { ipMode: string }).ipMode, `${t.id}`).toBe("random");
+                }
+            }
+        }
+    });
+
+    it("coerces an old project's fixed address to a game-allocated one", () => {
+        /* Projects saved before r73 still parse — the field is kept in the
+           schema for exactly that reason — but they stop pinning. */
+        const parsed = NodeSchema.parse({
+            id: "n1",
+            type: "world.network",
+            position: { x: 0, y: 0 },
+            data: {
+                ipMode: "fixed",
+                device: { id: "d1", ip: "45.33.32.156", type: "ROUTER", users: [], ports: [], children: [] },
+                destroyOnComplete: true,
+            },
+        });
+        expect((parsed.data as { ipMode: string }).ipMode).toBe("random");
+    });
+
+    it("hands the same address to the network and to every {{data.targetIp}}", async () => {
+        /* The token is how an author refers to an address they no longer type:
+           in a whois answer, an objective hint, a mail. It has to be the same
+           one the machine was built at. */
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        const built: { ip: string }[] = [];
+        sdk.Network.createSubnetNetwork = (d: { ip: string }) => { built.push(d); return d.ip; };
+        const toolData: Record<string, unknown> = {};
+        sdk.Shell = { ...sdk.Shell, addCommandData: (c: string, _i: unknown, d: unknown) => { toolData[c] = d; } };
+
+        const p = getTemplate("data-grab")!.build();
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = q.CreateData();
+        q.OnStart();
+        await settle();
+
+        expect(q.Data.targetIp).toBeTruthy();
+        expect(built[0].ip).toBe(q.Data.targetIp);
+        // and the scripted whois answer carries it too
+        expect(JSON.stringify(toolData.whois)).toContain(q.Data.targetIp);
     });
 });

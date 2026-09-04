@@ -490,10 +490,13 @@ describe("the contract template's hints match the route the player walks", () =>
     });
 
     it("still tells the player the public address, which is the way in", () => {
+        /* The address is allocated per playthrough now (r73), so the whois
+           answer carries the token rather than a literal — the engine fills it
+           in when the quest starts. */
         const whois = quest().graph.nodes.find(
             (n) => n.type === "world.toolResponse" && (n.data as { command: string }).command === "whois",
         )!;
-        expect((whois.data as { dataText: string }).dataText).toContain("45.33.32.156");
+        expect((whois.data as { dataText: string }).dataText).toContain("{{data.targetIp}}");
     });
 
     it("orders the objectives so each unlocks the next", () => {

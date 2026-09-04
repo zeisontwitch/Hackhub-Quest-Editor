@@ -213,8 +213,19 @@ export const TriggerEventDataSchema = z.object({
 });
 
 export const NetworkNodeDataSchema = z.object({
-    /** `random` allocates via `Network.randomIp()` in `CreateData()`. */
-    ipMode: z.enum(["fixed", "random"]).default("random"),
+    /**
+     * Always `random`: the game allocates the address in `CreateData()` and the
+     * author reads it back with `{{data.targetIp}}`.
+     *
+     * Typed addresses were removed in r73. Networks live in the SAVE and
+     * outlive the mod, so a fixed address meant a re-exported build was
+     * answered by whatever an older version had left there — and every attempt
+     * to clear it first broke something worse (r55, r56, r59, r71, r72).
+     * The enum is kept so old projects still parse; anything that says "fixed"
+     * is coerced to "random" on load.
+     */
+    ipMode: z.enum(["fixed", "random"]).catch("random").default("random")
+        .transform(() => "random" as const),
     device: NetworkDeviceSchema,
     /** Remove the whole network in `OnComplete` / `OnAbandon`. */
     destroyOnComplete: z.boolean().default(true),
@@ -226,8 +237,9 @@ export const WifiNodeDataSchema = z.object({
     signal: z.number().default(2),
     bssid: z.string().optional(),
     channel: z.string().optional(),
-    /** Router IP. `random` lets the engine allocate one. */
-    ipMode: z.enum(["fixed", "random"]).default("random"),
+    /** Always `random` — see NetworkNodeDataSchema.ipMode (r73). */
+    ipMode: z.enum(["fixed", "random"]).catch("random").default("random")
+        .transform(() => "random" as const),
     ip: z.string().optional(),
     /** Router model — enables the in-game `fern` recovery route. */
     model: z.string().optional(),

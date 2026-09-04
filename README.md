@@ -36,9 +36,14 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 
 | # | Item | Notes |
 |---|---|---|
-| 5 | Wire/noodle physics | Pulling a wire makes it hang and bounce; past a distance it pulls straight; releasing snaps it back before it disappears. Sag derived from slack, ~200ms non-interactive ghost on delete, physics only on the held wire, must honour the wire-motion toggle. **Must write inside the canvas, never the document root** (see r42). |
-| 6 | "Contact-driven story" template | Phone brief → Kisscord drip gated on objectives → WeeChat timed to a beat. |
-| 7 | "Branching consequence" template | A choice that changes which ending the player gets. |
+| 5 | Snap-to-Grid toggle button for the canvas | 
+| 6 | Align horizontally/vertically button (around where the Tidy up button is), that aligns the selected nodes horizontally or vertically |
+| 7 | Fix: When attempting to select multiple nodes, often the wires get selected instead of the nodes. Multiple wires should never be selected by a drag selection |
+| 8 | Right-Click node search on canvas with auto-complete suggestion |
+| 9 | Properly styled color-wheel with preset colors and RGB/HSL sliders; used when colouring groups (rather than the OS-specific color wheel) or anything else that might be coloured in the future |
+| 10 | Wire/noodle physics | Pulling a wire makes it hang and bounce; past a distance it pulls straight; releasing snaps it back before it disappears. Sag derived from slack, ~200ms non-interactive ghost on delete, physics only on the held wire, must honour the wire-motion toggle. Ensure this doesn't tank the render performance or cause lags. **Must write inside the canvas, never the document root** (see r42). |
+| 11 | "Contact-driven story" template | Phone brief → Kisscord drip gated on objectives → WeeChat timed to a beat. |
+| 12 | "Branching consequence" template | A choice that changes which ending the player gets. |
 
 ### Known limitations (not bugs)
 

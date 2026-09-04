@@ -554,9 +554,13 @@ describe("the two contract templates teach different routes", () => {
     });
 
     it("has no password-cracking or user-switching step in the standard route", () => {
+        /* Mapping the network IS in both: a router that answers only on 80
+           tells the player nothing about the machine behind it, so without
+           net_tree.py the quest is unfinishable (QA hit that on the first
+           run). What the standard route drops is the second half — becoming
+           another user by cracking a hash. */
         const objectives = names("data-grab");
         expect(objectives).not.toContain("become-ritter");
-        expect(objectives).not.toContain("map-network");
         const text = getTemplate("data-grab")!.build().quests[0].graph.nodes
             .filter((n) => n.type === "objective")
             .map((n) => JSON.stringify(n.data))
@@ -566,9 +570,14 @@ describe("the two contract templates teach different routes", () => {
     });
 
     it("keeps the long route in the Ledger, where it belongs", () => {
-        const objectives = names("contract-hack");
-        expect(objectives).toContain("map-network");
-        expect(objectives).toContain("become-ritter");
+        expect(names("contract-hack")).toContain("become-ritter");
+    });
+
+    it("still teaches both templates to look behind the router", () => {
+        // The edge serves the website only, in both — so both need the map.
+        for (const id of ["data-grab", "contract-hack"]) {
+            expect(names(id), id).toContain("map-network");
+        }
     });
 
     it("takes a copy rather than destroying anything", () => {
@@ -626,4 +635,68 @@ describe("machines carry the root folders the game expects", () => {
             expect(target.rootFiles?.map((f) => f.name)).toContain("logs");
         });
     }
+});
+
+/**
+ * Round 66. QA's first run of the standard template dead-ended: nmap on the
+ * edge router reported port 80 and nothing else, which is correct — and left
+ * no way to learn the file server existed. A router that fronts a machine has
+ * to be mapped before the machine can be attacked.
+ */
+describe("every template that hides a machine behind a router teaches the way in", () => {
+    const questOf = (id: string) => getTemplate(id)!.build().quests[0];
+
+    for (const id of ["data-grab", "contract-hack"]) {
+        it(`${id}: if the router serves no exploitable port, the player is told to map it`, () => {
+            const net = questOf(id).graph.nodes.find((n) => n.type === "world.network")!;
+            const device = (net.data as {
+                device: {
+                    ports: { service?: string; active?: boolean }[];
+                    children: { ports: { service?: string }[] }[];
+                };
+            }).device;
+
+            const edgeHasSsh = device.ports.some((p) => p.service === "ssh" && p.active !== false);
+            const childHasSsh = device.children.some((c) => c.ports.some((p) => p.service === "ssh"));
+            if (edgeHasSsh || !childHasSsh) return; // nothing hidden, nothing to teach
+
+            const objectives = questOf(id).graph.nodes
+                .filter((n) => n.type === "objective")
+                .map((n) => n.data as { name: string; hint?: string });
+            const mapper = objectives.find((o) => (o.hint ?? "").includes("net_tree"));
+            expect(mapper, "the machine behind the router is undiscoverable without this").toBeDefined();
+        });
+    }
+});
+
+/**
+ * Round 66. "The player can reply" was ticked on the brief and no Reply button
+ * appeared. The SDK's `MailDefinition` — what `Mail.send` takes — has no
+ * replyable field at all; only `QuestMailDefinition` does, and that is the path
+ * this build ignores. The toggle promises something the game cannot deliver.
+ */
+describe("no template promises a reply button the game will not draw", () => {
+    it("leaves replyable off everywhere", () => {
+        const on: string[] = [];
+        for (const t of TEMPLATES) {
+            for (const q of t.build().quests) {
+                for (const n of q.graph.nodes) {
+                    if (n.type !== "comms.dialogue") continue;
+                    const d = n.data as { kind: string; mail?: { replyable?: boolean; subject?: string } };
+                    if (d.kind === "mail" && d.mail?.replyable) on.push(`${t.id}: ${d.mail.subject}`);
+                }
+            }
+        }
+        expect(on).toEqual([]);
+    });
+
+    it("warns an author who turns it on anyway", () => {
+        const p = getTemplate("data-grab")!.build();
+        const mail = p.quests[0].graph.nodes.find(
+            (n) => n.type === "comms.dialogue" && (n.data as { kind: string }).kind === "mail",
+        )!;
+        (mail.data as { mail: { replyable: boolean } }).mail.replyable = true;
+        const w = computeWarnings(p).join("\n");
+        expect(w).toContain("no Reply button will appear");
+    });
 });

@@ -3123,3 +3123,51 @@ candidate on the evidence, and it is worth having regardless.
 
 **Verification:** 624 tests (20 files, +23), `tsc --noEmit` clean, `vite build`
 clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r65"`.
+
+## Round 66 — three things the first playthrough found
+
+### The standard template could not be finished
+
+`nmap 203.0.113.47 -sV` reported port 80 and nothing else. That is *correct* —
+the edge router serves the website only, which is the shape r58 established and
+the reference mod uses everywhere. The mistake was mine: I gave the standard
+template that topology and then wrote the objectives as though the player could
+attack the address they had just scanned. Nothing anywhere told them a file
+server existed behind it.
+
+The Ledger template has a `net_tree.py` step for exactly this reason, added in
+r64. The standard one needed it too. A test now derives the rule rather than
+restating it: **if a template's router has no exploitable port of its own and
+hides a machine that does, some objective must mention `net_tree`.** That holds
+for both templates and will hold for the next one.
+
+### "The player can reply" cannot work
+
+QA ticked it and went looking for a Reply button. There was never going to be
+one: `MailDefinition` — the shape `Mail.send` takes — has **no** replyable
+field. Only `QuestMailDefinition` has one, and that is the array this build
+ignores (r37). The flag has been dead since we switched to `Mail.send`.
+
+Nothing can be done about that from here, so the editor stops promising it: the
+toggle's hint says it is not honoured and points at the two things that do work
+(a hackertyper reply page, or a typed-answer command), export warns if it is
+turned on, the runtime logs it if it is somehow still set, and no template
+leaves it on. A test asserts all of that.
+
+### The attachment box read the wrong way round
+
+Also a fair reading of the UI: QA expected the file the player has to steal to
+go in the mail node's Attachment field. It is the opposite — an attachment is a
+file that arrives *with* the mail, and a file to be stolen belongs on the target
+machine, under a user on a network node. The panel now says so above the fields
+rather than leaving "Attachment" to be interpreted.
+
+### Objective hints are clipped by the game
+
+The `info` line on an objective is truncated in the quest panel — the `?` hint
+holds noticeably more. Not something we control, but worth knowing when writing
+templates: put the essential sentence in the hint and keep `info` to one short
+line. Recorded here rather than fixed.
+
+**Verification:** 629 tests (20 files, +4), `tsc --noEmit` clean, `vite build`
+clean. Export stamp: `EDITOR_BUILD = "2026-09-04.r66"`.

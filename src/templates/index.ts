@@ -409,7 +409,11 @@ function buildInvestigation(): ProjectDocument {
             content:
                 "I work in compliance at Meridian Capital. There is a set of books on the intranet that my employers would prefer stayed private.\n\n" +
                 "The intranet is at intranet.meridian-capital.net. Find your own way in — I cannot be seen helping.",
-            replyable: true,
+            /* Off deliberately: this build has no reply flag on the mail it
+               actually sends, so the box promises a Reply button that never
+               appears. Where a quest needs the player to write back, it uses a
+               hackertyper reply page instead. */
+            replyable: false,
             attachment: { name: "shift-roster", extension: "txt", content: "Night shift: 02:00-06:00. Badge logs disabled during maintenance windows." },
         },
     });
@@ -871,7 +875,11 @@ function buildContractHack(): ProjectDocument {
                 `On his machine there is a spreadsheet called ${FILE}.xlsx. I want it gone. Not copied, not read to me — gone.`,
                 `When it is done, tell me through the drop page: ${DOMAIN}/terminal/secure-reply. Do not reply to this address.`,
             ].join("\n\n"),
-            replyable: true,
+            /* Off deliberately: this build has no reply flag on the mail it
+               actually sends, so the box promises a Reply button that never
+               appears. Where a quest needs the player to write back, it uses a
+               hackertyper reply page instead. */
+            replyable: false,
         },
     });
 
@@ -1280,7 +1288,11 @@ function buildDataGrab(): ProjectDocument {
                 `Everything they do sits on one file server. I want their quarterly manifest — ${FILE}.csv — and I want a copy, not a hole where it used to be. If it goes missing they will know somebody was there.`,
                 `Mail it to me at ${CLIENT} when you have it.`,
             ].join("\n\n"),
-            replyable: true,
+            /* Off deliberately: this build has no reply flag on the mail it
+               actually sends, so the box promises a Reply button that never
+               appears. Where a quest needs the player to write back, it uses a
+               hackertyper reply page instead. */
+            replyable: false,
         },
     });
 
@@ -1305,25 +1317,36 @@ function buildDataGrab(): ProjectDocument {
     });
     const oScan = makeNode("objective", { x: 1580, y: 200 }, {
         name: "scan-server",
-        description: "See which services are running",
-        hint: "nmap with -sV reports versions as well as open ports. The version is what picks the exploit.",
+        description: "Scan the address the domain resolves to",
+        hint: "nmap with -sV reports versions as well as open ports.",
+        info: "That address is the company's edge router. It serves the website and nothing else — what you want is on a machine behind it.",
         terminalCommand: `nmap ${IP} -sV`,
     });
-    const oAccess = makeNode("objective", { x: 1900, y: 200 }, {
+    /* The router answers on 80 and nothing else, so the scan alone is a dead
+       end: nothing tells the player the file server exists. net_tree.py is how
+       the game reveals what a router fronts, and without this step the quest
+       cannot be finished (QA hit exactly that). */
+    const oMap = makeNode("objective", { x: 1900, y: 200 }, {
+        name: "map-network",
+        description: "Map what is behind the router",
+        hint: `net_tree.py ${IP} draws the network out. The file server is the machine behind the edge.`,
+        terminalCommand: `net_tree.py ${IP}`,
+    });
+    const oAccess = makeNode("objective", { x: 2220, y: 200 }, {
         name: "get-in",
         description: "Get into the file server",
-        hint: "Port 22 is answering with an old OpenSSH. metasploit has a module for it — set the version the scan reported.",
-        info: "It is a server, so the account you land in is the one that owns the files. Nothing else to unlock.",
+        hint: "The server is answering on port 22 with an old OpenSSH. metasploit has a module for it — set the version the scan reported.",
+        info: "It is a server, so the account you land in already owns the files.",
         terminalCommand: "msfconsole",
     });
-    const oTake = makeNode("objective", { x: 2220, y: 200 }, {
+    const oTake = makeNode("objective", { x: 2540, y: 200 }, {
         name: "take-manifest",
         description: `Copy ${FILE}.csv off the server`,
         hint: `Download it — leave the original where it is. scp admin@${SERVER_IP}:${FILE}.csv .`,
         info: "The client asked for a copy on purpose. A missing file tells them somebody was here.",
         terminalCommand: `scp admin@${SERVER_IP}:${FILE}.csv .`,
     });
-    const oSend = makeNode("objective", { x: 2540, y: 200 }, {
+    const oSend = makeNode("objective", { x: 2860, y: 200 }, {
         name: "send-manifest",
         description: "Send the manifest to the client",
         hint: `Attach it to a mail to ${CLIENT}.`,
@@ -1343,25 +1366,33 @@ function buildDataGrab(): ProjectDocument {
         ],
         { x: 1580, y: 360 },
     );
-    const t5 = triggerFor(oAccess, "Metasploit.Meterpreter.Connected", [], { x: 1900, y: 360 });
+    /* Match the tool by name and let the argument through: the player may map
+       the domain or the address. */
+    const t5 = triggerFor(
+        oMap,
+        "Terminal.Command",
+        [{ field: "command", op: "contains", value: "net_tree" }],
+        { x: 1900, y: 360 },
+    );
+    const t6 = triggerFor(oAccess, "Metasploit.Meterpreter.Connected", [], { x: 2220, y: 360 });
     /* Terminal.SSH.FileDownload is what scp raises — NOT "Files.Downloaded",
        which is not an event this engine has (r40). */
-    const t6 = triggerFor(
+    const t7 = triggerFor(
         oTake,
         "Terminal.SSH.FileDownload",
         [{ field: "name", op: "contains", value: FILE }],
-        { x: 2220, y: 360 },
+        { x: 2540, y: 360 },
     );
-    const t7 = triggerFor(
+    const t8 = triggerFor(
         oSend,
         "Mail.Sent",
         [{ field: "to", op: "contains", value: CLIENT }],
-        { x: 2540, y: 360 },
+        { x: 2860, y: 360 },
     );
 
     /* ── the payoff ─────────────────────────────────────────────────────── */
 
-    const thanks = makeNode("comms.dialogue", { x: 2860, y: 520 }, {
+    const thanks = makeNode("comms.dialogue", { x: 3180, y: 520 }, {
         kind: "mail",
         mail: {
             from: CLIENT,
@@ -1374,7 +1405,7 @@ function buildDataGrab(): ProjectDocument {
         },
     });
 
-    const pay = makeNode("fx.pay", { x: 3180, y: 520 }, {
+    const pay = makeNode("fx.pay", { x: 3500, y: 520 }, {
         amountMode: "fixed",
         amount: 2500,
         description: "Manifest delivered",
@@ -1398,8 +1429,9 @@ function buildDataGrab(): ProjectDocument {
         nodes: [
             claim, load,
             network, osint, whois, brief,
-            oRead, oFind, oServer, oScan, oAccess, oTake, oSend,
-            t1.trigger, t2.trigger, t3.trigger, t4.trigger, t5.trigger, t6.trigger, t7.trigger,
+            oRead, oFind, oServer, oScan, oMap, oAccess, oTake, oSend,
+            t1.trigger, t2.trigger, t3.trigger, t4.trigger,
+            t5.trigger, t6.trigger, t7.trigger, t8.trigger,
             thanks, pay, note,
         ],
         edges: [
@@ -1412,11 +1444,12 @@ function buildDataGrab(): ProjectDocument {
             makeEdge(oRead, "unlock", oFind, "unlocked-by"),
             makeEdge(oFind, "unlock", oServer, "unlocked-by"),
             makeEdge(oServer, "unlock", oScan, "unlocked-by"),
-            makeEdge(oScan, "unlock", oAccess, "unlocked-by"),
+            makeEdge(oScan, "unlock", oMap, "unlocked-by"),
+            makeEdge(oMap, "unlock", oAccess, "unlocked-by"),
             makeEdge(oAccess, "unlock", oTake, "unlocked-by"),
             makeEdge(oTake, "unlock", oSend, "unlocked-by"),
             // their triggers
-            t1.edge, t2.edge, t3.edge, t4.edge, t5.edge, t6.edge, t7.edge,
+            t1.edge, t2.edge, t3.edge, t4.edge, t5.edge, t6.edge, t7.edge, t8.edge,
             // sending it is the end of the job
             makeEdge(oSend, "done", thanks, "in"),
             makeEdge(thanks, "out", pay, "in"),
@@ -2035,7 +2068,7 @@ export const TEMPLATES: Template[] = [
         description:
             "The job the game hands out constantly: a name in an e-mail, an OSINT lookup, whois, a scan, one exploit on port 22, and a file the client wants a copy of. One admin account on the server, so no password cracking — the short route, start to finish.",
         difficulty: "Beginner",
-        nodeCount: 23,
+        nodeCount: 25,
         build: buildDataGrab,
     },
     {

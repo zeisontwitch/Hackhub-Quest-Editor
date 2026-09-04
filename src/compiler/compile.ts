@@ -22,7 +22,7 @@ import { RUNTIME_SOURCE } from "./runtimeSource";
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-04.r65";
+export const EDITOR_BUILD = "2026-09-04.r66";
 
 export interface CompiledFile {
     path: string;
@@ -273,6 +273,18 @@ export function computeWarnings(project: ProjectDocument): string[] {
                     break;
                 case "comms.dialogue": {
                     const d = n.data as { kind: string; phone?: { branch?: string }; kisscord?: { messages?: { playerAction?: string; input?: { expected?: string } }[] }; weechat?: { messages?: { playerAction?: string } } };
+                    /* "The player can reply" cannot work on this build. The
+                       SDK's MailDefinition — what Mail.send takes — has no
+                       replyable field; only QuestMailDefinition has one, and
+                       that is the path the engine ignores (r37). QA ticked the
+                       box and went looking for a Reply button that was never
+                       going to appear. */
+                    const mail = (n.data as { mail?: { replyable?: boolean; subject?: string } }).mail;
+                    if (d.kind === "mail" && mail?.replyable) {
+                        warnings.push(
+                            `${q.name}: “${mail.subject || "a mail"}” is set so the player can reply, but this build has no reply flag on the mail it actually sends — no Reply button will appear. Give the player a hackertyper reply page or a typed-answer command instead.`,
+                        );
+                    }
                     if (d.kind === "phone" && q.dialog.some((b) => b.lines.some((l) => l.input))) {
                         warnings.push(
                             `${q.name}: phone lines with typed answers also register a terminal command (qe-…) the player uses to answer.`,

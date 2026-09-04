@@ -61,12 +61,23 @@ export function MailScript({ value, onChange }: { value: MailNodeData; onChange:
                 </FieldShell>
                 <Toggle
                     label="The player can reply"
-                    hint="Let the player answer. Their reply arrives as an event you can trigger on."
+                    hint="Not honoured by the current game build — no Reply button appears. For a written answer, use a hackertyper reply page or a typed-answer command."
                     checked={value.replyable}
                     onChange={(replyable) => onChange({ replyable })}
                 />
                 <div className="rounded-md border border-line/70 bg-surface p-2">
                     <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-ink-3 uppercase">Attachment</p>
+                    {/* Worth being explicit: an attachment is a file this mail
+                        ARRIVES with, not the file the player is sent to fetch.
+                        A quest file lives on the target machine, put there by a
+                        user's "Files" list on a network node. QA read it the
+                        other way round, which is a fair reading of a box
+                        labelled only "Attachment". */}
+                    <p className="mb-2 text-[10.5px] leading-snug text-ink-4">
+                        A file that arrives <em>with</em> this mail — a dossier, a photo, a list. Not
+                        the file the player has to go and steal: that one belongs on the target
+                        machine, under a user on a network node.
+                    </p>
                     <div className="grid grid-cols-2 gap-2">
                         <FieldShell label="File name" hint="The attachment's filename, without the extension.">
                             <TextInput

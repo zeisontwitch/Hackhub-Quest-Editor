@@ -46,6 +46,7 @@ dropped once it has stayed fixed for a few rounds.
 
 | Round | Item |
 |---|---|
+| r66 | The Standard Contract Hack was unfinishable: the edge router answers on port 80 only, and nothing told the player the file server behind it existed — it now has a `net_tree.py` step. "The player can reply" does nothing on this build (`MailDefinition` has no reply flag), so it is off in every template, warned about on export, and the toggle says so. The mail attachment field now explains it is a file that arrives *with* the mail, not the file to steal. |
 | r65 | Split the contract templates in two. **Standard Contract Hack** is the short route: a server, one admin account, exploit port 22, take a copy, mail it back. **The Ledger Contract** keeps the long route and is now marked Advanced. Both machines gained the `logs` root folder every reference-mod device has, and the Ledger's target moved to a realistic `192.168.1.24`. |
 | r64 | The contract template's objectives now match the route the player actually walks: added **map the network** (`net_tree.py`) and **become Ritter** (`show users` → `/etc/passwd` → `john` → `users <n>`), and no hint or tool output hands over the internal address any more. |
 | r63 | The slow install was **never our dependencies** — `origin/main` is equally slow. It is npm's `audit` lookup stalling on one network call: 7 minutes with it on, 3 seconds with it off. `Launch.bat` now passes `--no-audit --no-fund`. |

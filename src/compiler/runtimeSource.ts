@@ -592,6 +592,16 @@ function __qeRegisterProject(sdk, PROJECT) {
                         data: baseMail.attachment.content || "",
                     }];
                 }
+                /* MailDefinition — what Mail.send takes — has no "replyable"
+                   field. Only QuestMailDefinition does, and that is the array
+                   the engine ignores on this build (r37). So a mail sent this
+                   way never gets a Reply button, whatever the author ticked.
+                   Say so once rather than leaving them looking for it. */
+                if (baseMail.replyable) {
+                    __QE.log("mail \"" + subject + "\" is marked replyable, but Mail.send has no reply flag " +
+                        "on this build — the player will not see a Reply button. Use a hackertyper reply " +
+                        "surface or a typed-answer command for the player's response.");
+                }
                 try {
                     sdk.Mail.send(direct);
                     how = "Mail.send";

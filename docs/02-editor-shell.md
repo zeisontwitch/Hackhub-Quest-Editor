@@ -2843,3 +2843,45 @@ was wrong.
 **Verification:** 589 tests (19 files, +3), `tsc --noEmit` clean, `vite build`
 clean. Reverting the `labelAuto` check makes the rewire test fail, so the
 coverage is real. Export stamp: `EDITOR_BUILD = "2026-09-03.r60"`.
+
+## Round 61 — a quiet install, properly this time
+
+r60 fixed the `whatwg-encoding` deprecation by taking the newest jsdom. That
+introduced a worse warning:
+
+```
+npm warn EBADENGINE package: 'jsdom@30.0.1',
+npm warn EBADENGINE required: { node: '^22.22.2 || ^24.15.0 || >=26.0.0' },
+npm warn EBADENGINE current:  { node: 'v24.14.1' }
+```
+
+jsdom 30 wants Node 24.15.0; QA has 24.14.1. Latest is not the same as correct,
+and I did not check the engine range before upgrading.
+
+**jsdom 28** is the version that clears both problems. It already uses
+`html-encoding-sniffer@6` (so `whatwg-encoding` is gone), and its engine range —
+`^20.19.0 || ^22.12.0 || >=24.0.0` — covers every Node from 20 upward, including
+QA's. A clean install from the committed lockfile now prints nothing at all.
+
+### Made mechanical
+
+`Launch.bat` runs `npm install` in front of a non-coder, so anything npm prints
+there reads as a fault. Both warnings that have reached QA are now caught by a
+test rather than by QA:
+
+- every entry in `package-lock.json` is checked against the `engines.node` floor
+  the project declares, and the test fails naming any package that wants
+  something newer — which is exactly the EBADENGINE npm would print;
+- `whatwg-encoding` is asserted absent by name.
+
+Re-introducing jsdom 30's engine range into the lockfile makes the first test
+fail with `jsdom@…: needs ^22.22.2 || ^24.15.0 || >=26.0.0`, so it catches the
+precise mistake r60 made.
+
+The right general lesson: a dependency bump has to be checked against the Node
+floor the project supports, not just against whether the tests pass on this
+machine. The test now does that.
+
+**Verification:** 592 tests (20 files, +3), `tsc --noEmit` clean, `vite build`
+clean, and a clean `npm install` prints no warnings. Export stamp:
+`EDITOR_BUILD = "2026-09-03.r61"`.

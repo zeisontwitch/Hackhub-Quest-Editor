@@ -37,26 +37,21 @@
  */
 import { wireMotionEnabled } from "./wireMotion";
 import { wirePhysicsEnabled } from "./wirePhysicsPref";
+import { DEFAULT_TUNING, wireTuning } from "./wireTuning";
+import { count, noteFrame, record, resetFrameClock } from "./diagnostics";
 
 /*
- * Tuned against QA (r111). The first pass read as "too floaty" — the wire
- * drifted into place rather than falling into it.
+ * The spring numbers live in `wireTuning`, not here: they are tunable at
+ * runtime from the debug panel, because how a wire *feels* is not something a
+ * test can judge and round-tripping every guess through a rebuild is slow.
  *
- * Floatiness is low natural frequency, not low sag: at k=180 the spring took
- * ~0.44s to settle, which the eye reads as the wire being weightless. Raising
- * stiffness and damping together roughly doubles the fall speed (~0.24s) while
- * holding the damping ratio near 0.75, so it still bounces once or twice
- * instead of arriving dead.
+ * These re-exports keep the old names working for anything that imports them.
  */
+export const STIFFNESS = DEFAULT_TUNING.stiffness;
+export const DAMPING = DEFAULT_TUNING.damping;
+export const MAX_SAG = DEFAULT_TUNING.maxSag;
+export const PULL_TAUT_DISTANCE = DEFAULT_TUNING.tautDistance;
 
-/** Spring constant. Higher is snappier — a heavier-feeling wire. */
-export const STIFFNESS = 520;
-/** Damping. Under critical (zeta ~0.75), so the wire bounces as it lands. */
-export const DAMPING = 34;
-/** Deepest the wire hangs, in flow units. */
-export const MAX_SAG = 115;
-/** Span at which the wire is pulled fully straight. */
-export const PULL_TAUT_DISTANCE = 560;
 /**
  * Longest step the integrator will take, in seconds.
  *
@@ -82,7 +77,11 @@ export interface SagState {
  * slack". The square-root curve is the shape a real rope makes: sag depends on
  * how much length is spare, not linearly on distance.
  */
-export function restSag(span: number, maxSag = MAX_SAG, taut = PULL_TAUT_DISTANCE): number {
+export function restSag(
+    span: number,
+    maxSag = wireTuning().maxSag,
+    taut = wireTuning().tautDistance,
+): number {
     if (span >= taut) return 0;
     const slack = 1 - (span / taut) ** 2;
     return maxSag * Math.sqrt(Math.max(0, slack));
@@ -97,7 +96,8 @@ export function restSag(span: number, maxSag = MAX_SAG, taut = PULL_TAUT_DISTANC
  */
 export function stepSag(state: SagState, target: number, dt: number): SagState {
     const step = Math.min(Math.max(dt, 0), MAX_STEP_S);
-    const accel = STIFFNESS * (target - state.sag) - DAMPING * state.velocity;
+    const { stiffness, damping } = wireTuning();
+    const accel = stiffness * (target - state.sag) - damping * state.velocity;
     state.velocity += accel * step;
     state.sag += state.velocity * step;
     return state;
@@ -195,12 +195,20 @@ export function motionAllowed(): boolean {
     return true;
 }
 
+/** Why the physics is not running, or null when nothing is blocking it. */
+export function refusalReason(): string | null {
+    if (!wirePhysicsEnabled()) return "Springy wires is off";
+    if (!wireMotionEnabled()) return "Animated wires is off";
+    return null;
+}
+
 /** Paint one frame. Exported so tests can drive the loop deterministically. */
 export function tickForTests(ms: number): void {
     if (!active) return;
     const dt = lastMs === 0 ? 1 / 60 : (ms - lastMs) / 1000;
     lastMs = ms;
 
+    noteFrame(ms);
     const ends = active.read();
     const span = Math.hypot(ends.targetX - ends.sourceX, ends.targetY - ends.sourceY);
     const target = restSag(span);
@@ -235,11 +243,14 @@ export function tickForTests(ms: number): void {
  */
 export function startWirePhysics(options: WirePhysicsOptions): () => void {
     stopWirePhysics(true);
+    count("physicsStarts");
     active = options;
     settled = null;
     lastMs = 0;
 
     if (!options.force && !motionAllowed()) {
+        count("physicsRefused");
+        record("physics refused", refusalReason() ?? "unknown");
         /* Motion is off: draw the straight wire once and never loop. Under
            "Static wires" the editor must do no per-frame work at all. */
         const ends = options.read();
@@ -271,6 +282,7 @@ export function startWirePhysics(options: WirePhysicsOptions): () => void {
  * starts from rest rather than inheriting the last one's wobble.
  */
 export function stopWirePhysics(keepState = false): void {
+    if (running) resetFrameClock();
     running = false;
     if (frame) {
         cancelAnimationFrame(frame);

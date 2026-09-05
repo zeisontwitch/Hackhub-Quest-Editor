@@ -32,6 +32,8 @@ import { alignPositions, distributePositions, GRID } from "./arrange";
 import { nodeSize } from "./nodeSize";
 import { NodeSearchPopover } from "./NodeSearchPopover";
 import { entrySocketFor } from "./nodeSearch";
+import { count, record } from "./diagnostics";
+import { DebugPanel } from "./DebugPanel";
 import {
     nudgeWirePhysics,
     sagPath,
@@ -430,6 +432,8 @@ function CanvasInner() {
             params: { nodeId: string | null; handleId: string | null; handleType: string | null },
         ) => {
             detached.current = null;
+            count("dragStarts");
+            record("drag start", `${params.handleType ?? "?"} ${params.handleId ?? "?"}`);
             if (params.handleType !== "target" || !params.nodeId) return;
             const q = activeQuest();
             const held = soleEdgeInto(q?.graph.edges ?? [], params.nodeId, params.handleId ?? "");
@@ -463,11 +467,19 @@ function CanvasInner() {
              */
             const restingSag = wirePhysicsState().sag;
             const releasedAt = { ...heldEnds.current };
+            count("dragEnds");
+            record("drag end", `sag ${restingSag.toFixed(1)}`);
             stopWirePhysics();
             const ghostTheWire = () => {
-                if (Math.abs(restingSag) <= 0.5) return;
+                if (Math.abs(restingSag) <= 0.5) {
+                    record("no ghost", `sag was only ${restingSag.toFixed(2)}`);
+                    return;
+                }
                 const layer = wrapperRef.current?.querySelector(".react-flow__edges");
-                if (!layer) return;
+                if (!layer) {
+                    record("no ghost", "edge layer not found");
+                    return;
+                }
                 spawnWireGhost({
                     layer: layer as SVGElement,
                     from: { x: releasedAt.sourceX, y: releasedAt.sourceY },
@@ -892,6 +904,8 @@ function CanvasInner() {
      * field would land in the undo history (the r96 lesson from the snap
      * toggle).
      */
+    /** The debug panel. Closed by default; costs nothing while closed. */
+    const [debugOpen, setDebugOpen] = useState(false);
     const [searchAt, setSearchAt] = useState<{ x: number; y: number } | null>(null);
     /**
      * Set when the search was opened by dropping a wire on empty canvas, so
@@ -1171,6 +1185,8 @@ function CanvasInner() {
                 />
             </ReactFlow>
 
+            {debugOpen && <DebugPanel onClose={() => setDebugOpen(false)} />}
+
             {searchAt && (
                 <NodeSearchPopover
                     at={searchAt}
@@ -1301,6 +1317,16 @@ function CanvasInner() {
                     />
                     <Icon name={physics ? "shuffle" : "branch"} size={13} />
                     {physics ? "Springy wires: on" : "Springy wires: off"}
+                </button>
+                <button
+                    type="button"
+                    aria-pressed={debugOpen}
+                    className="btn-default pointer-events-auto"
+                    onClick={() => setDebugOpen((v) => !v)}
+                    title="Editor only: build stamp, live wire-physics numbers, counters and a recent-event log. For diagnosing problems."
+                >
+                    <Icon name="bug" size={13} />
+                    Debug
                 </button>
                 <span
                     className={

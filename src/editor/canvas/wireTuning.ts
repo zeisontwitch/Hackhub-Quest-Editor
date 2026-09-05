@@ -1,0 +1,118 @@
+/**
+ * Live-tunable numbers for the wire spring.
+ *
+ * The constants used to be `export const`, which meant every adjustment cost a
+ * round trip: I change a number, Zeis rebuilds, drags a wire, describes how it
+ * felt, I guess again. Feel is not something I can judge from a test, so the
+ * numbers belong in the author's hands.
+ *
+ * Same shape as the other editor preferences (`snapGrid`, `wirePhysicsPref`):
+ * a module-level object, a `useSyncExternalStore` subscription, and a
+ * localStorage write. Not React state and not in the project document — these
+ * are debug settings, not part of anyone's mod.
+ *
+ * The physics loop reads these once per frame through `wireTuning()`. That is
+ * a plain property read on a module-level object, which is exactly as cheap as
+ * reading a `const` was.
+ */
+
+const STORAGE_KEY = "qe.wireTuning";
+
+export interface WireTuning {
+    /** Spring constant. Higher is snappier — a heavier-feeling wire. */
+    stiffness: number;
+    /** Damping. Below ~2·√stiffness the wire bounces as it lands. */
+    damping: number;
+    /** Deepest the wire hangs, in flow units. */
+    maxSag: number;
+    /** Span at which the wire is pulled fully straight. */
+    tautDistance: number;
+    /** How long the release ghost takes to snap back and fade, in ms. */
+    ghostMs: number;
+}
+
+/**
+ * Tuned against QA (r111). Floatiness is natural frequency, not sag depth: at
+ * stiffness 180 the spring took ~0.44s to settle, slow enough that the eye
+ * reads the wire as weightless. 520/34 roughly halves that while holding the
+ * damping ratio near 0.75, so it still bounces once or twice.
+ */
+export const DEFAULT_TUNING: WireTuning = {
+    stiffness: 520,
+    damping: 34,
+    maxSag: 115,
+    tautDistance: 560,
+    ghostMs: 200,
+};
+
+type Listener = () => void;
+const listeners = new Set<Listener>();
+
+function readStored(): WireTuning {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { ...DEFAULT_TUNING };
+        const saved = JSON.parse(raw) as Partial<WireTuning>;
+        // Merge rather than replace: a stored blob from an older build may be
+        // missing keys a newer one needs.
+        return { ...DEFAULT_TUNING, ...saved };
+    } catch {
+        return { ...DEFAULT_TUNING };
+    }
+}
+
+let current: WireTuning = readStored();
+
+/** The live numbers. Read by the physics loop each frame. */
+export function wireTuning(): Readonly<WireTuning> {
+    return current;
+}
+
+/** Change one or more numbers, and remember them. */
+export function setWireTuning(patch: Partial<WireTuning>): void {
+    current = { ...current, ...patch };
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+    } catch {
+        /* not being able to remember it is not a reason to fail */
+    }
+    for (const l of listeners) l();
+}
+
+/** Put every number back to the shipped default. */
+export function resetWireTuning(): void {
+    current = { ...DEFAULT_TUNING };
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+    } catch {
+        /* nothing to clean up */
+    }
+    for (const l of listeners) l();
+}
+
+/** Subscribe to changes (useSyncExternalStore contract). */
+export function subscribeWireTuning(listener: Listener): () => void {
+    listeners.add(listener);
+    return () => {
+        listeners.delete(listener);
+    };
+}
+
+/**
+ * The damping ratio the current numbers produce.
+ *
+ * Shown in the debug panel because it is the number that actually predicts the
+ * feel: below 1 the wire bounces, at 1 it arrives dead, above 1 it crawls in.
+ * Tuning stiffness without it is guesswork.
+ */
+export function dampingRatio(t: Readonly<WireTuning> = current): number {
+    return t.damping / (2 * Math.sqrt(t.stiffness));
+}
+
+/** Roughly how long the spring takes to come to rest, in seconds. */
+export function settleSeconds(t: Readonly<WireTuning> = current): number {
+    const omega = Math.sqrt(t.stiffness);
+    const zeta = dampingRatio(t);
+    if (zeta <= 0 || omega <= 0) return Infinity;
+    return 4 / (zeta * omega);
+}

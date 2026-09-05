@@ -26,6 +26,8 @@
  * meant for the canvas underneath it — the author has already moved on.
  */
 import { sagPath } from "./wirePhysics";
+import { count, record } from "./diagnostics";
+import { wireTuning } from "./wireTuning";
 
 /** How long the ghost takes to snap back and fade. */
 export const GHOST_MS = 200;
@@ -79,7 +81,9 @@ export interface WireGhostOptions {
  * Returns a function that removes it early, for a caller that needs to.
  */
 export function spawnWireGhost(options: WireGhostOptions): () => void {
-    const { layer, from, to, sag = 0, colour, durationMs = GHOST_MS } = options;
+    const { layer, from, to, sag = 0, colour, durationMs = wireTuning().ghostMs } = options;
+    count("ghosts");
+    record("ghost", `sag ${sag.toFixed(1)}, ${durationMs}ms`);
 
     const el = document.createElementNS("http://www.w3.org/2000/svg", "path");
     el.setAttribute("d", sagPath(from.x, from.y, to.x, to.y, sag));

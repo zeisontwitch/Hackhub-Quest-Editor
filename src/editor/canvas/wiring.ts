@@ -134,3 +134,24 @@ export function decideHeldDrop(
         targetHandle,
     };
 }
+
+
+/**
+ * The edges plugged into one socket.
+ *
+ * Used by ctrl+click on a socket, which unplugs whatever is attached. An input
+ * normally holds a single wire and an output can fan out to several, so this
+ * returns every match rather than assuming one.
+ */
+export function edgesAtHandle(
+    edges: EdgeDoc[],
+    nodeId: string,
+    handleId: string,
+    side: "source" | "target",
+): EdgeDoc[] {
+    return edges.filter((e) =>
+        side === "source"
+            ? e.source === nodeId && e.sourceHandle === handleId
+            : e.target === nodeId && e.targetHandle === handleId,
+    );
+}

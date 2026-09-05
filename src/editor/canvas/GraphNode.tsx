@@ -12,6 +12,7 @@ import { selectActiveQuest, useEditor } from "@/store/editor";
 import { HANDLE_STYLE, type EdgeKind } from "@/schema/edges";
 import type { NodeDoc } from "@/schema/nodes";
 import { summarize } from "./summarize";
+import { edgesAtHandle } from "./wiring";
 
 export interface GraphNodeData extends Record<string, unknown> {
     doc: NodeDoc;
@@ -36,6 +37,29 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
     const sources = useMemo(() => sourcesOf(doc), [doc]);
     const category = categoryOf(doc.type);
     const quest = useEditor(selectActiveQuest);
+    const removeEdges = useEditor((st) => st.removeEdges);
+
+    /**
+     * Ctrl+click (or Cmd+click) a socket to unplug it.
+     *
+     * The complement to dragging a wire off: this clears the socket outright,
+     * without having to catch the loose end. An output that fans out to
+     * several nodes loses all of them, which is what "unplug this socket"
+     * means.
+     */
+    const unplug = (
+        event: React.PointerEvent,
+        handleId: string,
+        side: "source" | "target",
+    ) => {
+        if (!(event.ctrlKey || event.metaKey) || event.button !== 0) return;
+        const attached = edgesAtHandle(quest?.graph.edges ?? [], doc.id, handleId, side);
+        if (attached.length === 0) return;
+        // React Flow would otherwise read this as the start of a new wire.
+        event.preventDefault();
+        event.stopPropagation();
+        removeEdges(attached.map((e) => e.id));
+    };
     const updateNodeData = useEditor((s) => s.updateNodeData);
     const lines = useMemo(() => summarize(doc, quest ?? undefined).filter(Boolean), [doc, quest]);
     const [hovered, setHovered] = useState(false);
@@ -247,6 +271,12 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                 </div>
             )}
 
+            {/*
+                Ctrl+click a socket to unplug whatever is attached to it.
+                Capture phase and stopPropagation, because React Flow treats a
+                pointerdown on a handle as the start of a new connection drag —
+                left alone it would begin drawing a wire instead.
+            */}
             {/* Sockets. `data-kind` drives the colour, and each carries the
                 handle's plain-English name as a native tooltip so the author
                 learns what a socket means by hovering it. */}
@@ -258,6 +288,7 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                     position={Position.Left}
                     data-kind={handle.kind}
                     title={handle.label}
+                    onPointerDownCapture={(e) => unplug(e, handle.id, "target")}
                     style={{ top: socketTop(i, def.targets.length) }}
                 />
             ))}
@@ -270,6 +301,7 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                     position={Position.Right}
                     data-kind={handle.kind}
                     title={handle.label}
+                    onPointerDownCapture={(e) => unplug(e, handle.id, "source")}
                     style={{ top: socketTop(i, sources.length) }}
                 />
             ))}

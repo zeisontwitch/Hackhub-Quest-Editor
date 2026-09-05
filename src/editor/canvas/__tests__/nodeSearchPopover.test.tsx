@@ -202,6 +202,50 @@ describe("Shift+A", () => {
     });
 });
 
+describe("clicking away", () => {
+    /**
+     * Reported by QA: pulling a wire loose opens the search, and clicking the
+     * canvas should mean "leave it unplugged" — dismissing the wire and the
+     * search together. Instead the popover stayed up until it was focused and
+     * dismissed with Escape. There was no click-outside handler at all.
+     */
+    it("closes when the canvas is clicked", async () => {
+        await openSearch();
+        await waitFor(() => expect(popover()).toBeTruthy());
+        const pane = document.querySelector(".react-flow__pane") as HTMLElement;
+        act(() => {
+            pane.dispatchEvent(
+                new MouseEvent("pointerdown", { bubbles: true, clientX: 700, clientY: 500, button: 0 }),
+            );
+        });
+        await waitFor(() => expect(popover()).toBeNull());
+    });
+
+    it("adds nothing when clicked away from", async () => {
+        const before = nodeCount();
+        await openSearch();
+        const pane = document.querySelector(".react-flow__pane") as HTMLElement;
+        act(() => {
+            pane.dispatchEvent(
+                new MouseEvent("pointerdown", { bubbles: true, clientX: 700, clientY: 500, button: 0 }),
+            );
+        });
+        await waitFor(() => expect(popover()).toBeNull());
+        expect(nodeCount()).toBe(before);
+    });
+
+    it("stays open when clicked inside", async () => {
+        // Clicking the input or a row must not dismiss it.
+        await openSearch();
+        await waitFor(() => expect(popover()).toBeTruthy());
+        const input = screen.getByLabelText("Search node types");
+        act(() => {
+            input.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true, button: 0 }));
+        });
+        expect(popover()).toBeTruthy();
+    });
+});
+
 describe("searching and adding", () => {
     it("filters as the author types, with no separate search step", async () => {
         const { user } = await openSearch();

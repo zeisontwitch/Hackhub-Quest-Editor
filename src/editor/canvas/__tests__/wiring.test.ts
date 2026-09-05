@@ -1,3 +1,4 @@
+import type { EdgeDoc } from "@/schema/edges";
 /**
  * The two "do the obvious thing" wiring gestures, decided in one place:
  * dropping a wire on a node's body, and dropping it on nothing.
@@ -9,6 +10,7 @@ import {
     soleEdgeInto,
     soleMatchingInput,
     soleMatchingOutput,
+    edgesAtHandle,
 } from "@/editor/canvas/wiring";
 import { createProject } from "@/schema/project";
 import { useEditor } from "@/store/editor";
@@ -207,5 +209,35 @@ describe("carrying a wire to a new node", () => {
         // A sticky note takes no wires at all.
         const note = useEditor.getState().addNode("flow.note", { x: 0, y: 400 })!;
         expect(decideHeldDrop(held, note, null, quest().graph.nodes)).toEqual({ action: "restore" });
+    });
+});
+
+describe("edgesAtHandle", () => {
+    /** Ctrl+click on a socket unplugs whatever is attached to it. */
+    const edge = (id: string, source: string, sourceHandle: string, target: string, targetHandle: string) =>
+        ({ id, source, sourceHandle, target, targetHandle, kind: "flow" }) as EdgeDoc;
+
+    const edges = [
+        edge("e1", "a", "out", "b", "in"),
+        edge("e2", "a", "out", "c", "in"),   // an output fanning out
+        edge("e3", "d", "out", "b", "in"),
+    ];
+
+    it("finds every wire leaving one output", () => {
+        expect(edgesAtHandle(edges, "a", "out", "source").map((e) => e.id)).toEqual(["e1", "e2"]);
+    });
+
+    it("finds the wires arriving at one input", () => {
+        expect(edgesAtHandle(edges, "b", "in", "target").map((e) => e.id)).toEqual(["e1", "e3"]);
+    });
+
+    it("returns nothing for an empty socket", () => {
+        expect(edgesAtHandle(edges, "a", "when", "source")).toEqual([]);
+        expect(edgesAtHandle(edges, "zzz", "in", "target")).toEqual([]);
+    });
+
+    it("does not confuse the two ends of the same wire", () => {
+        // "a/out" is a source; asking for it as a target must find nothing.
+        expect(edgesAtHandle(edges, "a", "out", "target")).toEqual([]);
     });
 });

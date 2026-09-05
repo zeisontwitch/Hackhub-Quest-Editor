@@ -37,6 +37,7 @@ export interface NodeSearchPopoverProps {
 export function NodeSearchPopover({ at, wire, onPick, onClose }: NodeSearchPopoverProps) {
     const [query, setQuery] = useState("");
     const [highlight, setHighlight] = useState(0);
+    const rootRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
     /**
@@ -76,15 +77,30 @@ export function NodeSearchPopover({ at, wire, onPick, onClose }: NodeSearchPopov
         row?.scrollIntoView?.({ block: "nearest" });
     }, [highlight]);
 
-    // Close when the canvas moves under us: the popover promises to drop the
-    // node where it is pointing, and a pan or zoom would make that a lie.
+    /*
+     * Close when the canvas moves under us: the popover promises to drop the
+     * node where it is pointing, and a pan or zoom would make that a lie.
+     *
+     * Also close on a click anywhere outside. Clicking away is how everyone
+     * dismisses a popover, and it matters doubly here: the search can be
+     * opened by dragging a wire loose, where clicking empty canvas means
+     * "leave it unplugged" and must dismiss both at once.
+     */
     useEffect(() => {
         const close = () => onClose();
+        const onPointerDown = (event: PointerEvent) => {
+            if (rootRef.current?.contains(event.target as Node)) return;
+            onClose();
+        };
         window.addEventListener("wheel", close, { passive: true });
         window.addEventListener("resize", close);
+        // Capture phase: the canvas stops propagation on its own pointerdown,
+        // so a bubbling listener would never hear a click on the pane.
+        window.addEventListener("pointerdown", onPointerDown, true);
         return () => {
             window.removeEventListener("wheel", close);
             window.removeEventListener("resize", close);
+            window.removeEventListener("pointerdown", onPointerDown, true);
         };
     }, [onClose]);
 
@@ -129,6 +145,7 @@ export function NodeSearchPopover({ at, wire, onPick, onClose }: NodeSearchPopov
 
     return (
         <div
+            ref={rootRef}
             role="dialog"
             aria-label="Add a node"
             className="fixed z-[80] overflow-hidden rounded-lg border border-line-strong bg-surface shadow-node"

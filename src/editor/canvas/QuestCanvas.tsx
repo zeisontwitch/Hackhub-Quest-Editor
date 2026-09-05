@@ -31,6 +31,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { GraphNode, type GraphRFNode } from "./GraphNode";
 import { boxSelectionResult, onlyDeselects, resolveSelection } from "./applyChanges";
 import { alignPositions, distributePositions, GRID } from "./arrange";
+import { nodeSize } from "./nodeSize";
 import { setSnapEnabled, snapEnabled, subscribeSnap } from "./snapGrid";
 import { TypedEdge, toRFEdge, type TypedRFEdge } from "./TypedEdge";
 import { setWireMotion, subscribeWireMotion, wireMotionEnabled } from "./wireMotion";
@@ -550,31 +551,21 @@ function CanvasInner() {
             const q = activeQuest();
             if (!q) return;
             /*
-             * Sizes come from React Flow's own node lookup, which its
-             * ResizeObserver keeps authoritative for every rendered card.
+             * Sizes are COMPUTED, not measured (r100).
              *
-             * They used to come from our `measured` map, filled from
-             * "dimensions" change events — and a probe showed it handing
-             * alignPositions `size: undefined` for every node. A missing size
-             * counts as zero, so "align centres" quietly became "align
-             * top-left corners", the cards' middles stayed staggered, and the
-             * wires between them still curved. That is the bug in
-             * Align-wrong.png (r99).
+             * Reading them back failed three times: our own `measured` map was
+             * empty at click time, and React Flow's `nodeLookup` only carries
+             * sizes once its ResizeObserver has run. A missing size counts as
+             * zero, which turns "line up the centres" into "line up the
+             * top-left corners" — the bug in every screenshot so far.
+             *
+             * The cards do not need measuring: their width is fixed and their
+             * height follows the same formula the component renders with. See
+             * nodeSize.ts, whose constants are asserted against GraphNode.
              */
-            const lookup = rfStore.getState().nodeLookup;
             const chosen = q.graph.nodes
                 .filter((n) => selection.nodeIds.includes(n.id))
-                .map((n) => {
-                    const live = lookup.get(n.id) as
-                        | { measured?: { width?: number; height?: number } }
-                        | undefined;
-                    const w = live?.measured?.width ?? measured[n.id]?.width;
-                    const h = live?.measured?.height ?? measured[n.id]?.height;
-                    return {
-                        ...n,
-                        size: w != null && h != null ? { width: w, height: h } : undefined,
-                    };
-                });
+                .map((n) => ({ ...n, size: nodeSize(n, q) }));
             if (chosen.length < 2) return;
             /*
              * Snapping is handed to alignPositions so it can snap the shared

@@ -46,11 +46,15 @@ describe("arrange toolbar", () => {
         act(() => useEditor.getState().select({ nodeIds: [a, b, c], edgeIds: [] }));
         await waitFor(() => expect(btn("Align in a row").disabled).toBe(false));
         await user.click(btn("Align in a row"));
-        // The selection spans y 0..90, so the shared line is 45 — Photoshop
-        // aligns to the centre of the selection, not the mean of the centres.
-        expect(posOf(a).y).toBe(45);
-        expect(posOf(b).y).toBe(45);
-        expect(posOf(c).y).toBe(45);
+        /*
+         * The cards are 61 tall, so the selection spans y 0..151 and its
+         * centre is 75.5, rounded to 76; each card sits at 76 - 61/2 = 46.
+         * (Before sizes were computed this read 45, because every card was
+         * treated as having zero height.)
+         */
+        expect(posOf(a).y).toBe(46);
+        expect(posOf(b).y).toBe(46);
+        expect(posOf(c).y).toBe(46);
         // the spread across is untouched
         expect(posOf(a).x).toBe(0);
         expect(posOf(c).x).toBe(400);
@@ -60,7 +64,9 @@ describe("arrange toolbar", () => {
         const { a, b, c, user } = await threeNodes();
         act(() => useEditor.getState().select({ nodeIds: [a, b, c], edgeIds: [] }));
         await user.click(btn("Align in a column"));
-        expect(posOf(a).x).toBe(200); // selection spans x 0..400
+        // Cards are 240 wide, so the selection spans x 0..640, centre 320,
+        // and each card sits at 320 - 120 = 200.
+        expect(posOf(a).x).toBe(200);
         expect(posOf(b).x).toBe(200);
         expect(posOf(c).x).toBe(200);
     });
@@ -84,7 +90,7 @@ describe("arrange toolbar", () => {
         const { a, b, c, user } = await threeNodes();
         act(() => useEditor.getState().select({ nodeIds: [a, b, c], edgeIds: [] }));
         await user.click(btn("Align in a row"));
-        expect(posOf(a).y).toBe(45);
+        expect(posOf(a).y).toBe(46);
         act(() => useEditor.getState().undo());
         // One step puts every node back.
         expect(posOf(a).y).toBe(0);

@@ -7,6 +7,7 @@
  */
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { ColourPicker } from "./ColourPicker";
 import { Icon } from "@/components/Icon";
 import type { FieldDef } from "@/schema/registry";
 import { getPath, useEditor } from "@/store/editor";
@@ -202,35 +203,12 @@ export function Field({
             const current = asString(raw) || GROUP_COLORS[0].value;
             return (
                 <FieldShell label={def.label} hint={def.hint}>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                        {GROUP_COLORS.map((swatch) => (
-                            <button
-                                key={swatch.value}
-                                type="button"
-                                title={swatch.label}
-                                aria-label={swatch.label}
-                                aria-pressed={current.toLowerCase() === swatch.value.toLowerCase()}
-                                onClick={() => write(swatch.value)}
-                                className={cn(
-                                    "size-6 rounded-md border transition",
-                                    current.toLowerCase() === swatch.value.toLowerCase()
-                                        ? "border-ink ring-2 ring-accent/60"
-                                        : "border-line hover:border-line-strong",
-                                )}
-                                style={{ background: swatch.value }}
-                            />
-                        ))}
-                        <label className="ml-1 inline-flex items-center gap-1.5 text-[11px] text-ink-3">
-                            <input
-                                type="color"
-                                aria-label={`${def.label} — pick any colour`}
-                                value={/^#[0-9a-f]{6}$/i.test(current) ? current : "#64748b"}
-                                onChange={(e) => write(e.target.value)}
-                                className="size-6 cursor-pointer rounded-md border border-line bg-surface-2 p-0"
-                            />
-                            Custom
-                        </label>
-                    </div>
+                    <ColourPicker
+                        label={def.label}
+                        value={current}
+                        onChange={write}
+                        presets={GROUP_COLORS}
+                    />
                 </FieldShell>
             );
         }

@@ -32,6 +32,7 @@ import { GraphNode, type GraphRFNode } from "./GraphNode";
 import { boxSelectionResult, onlyDeselects, resolveSelection } from "./applyChanges";
 import { alignPositions, distributePositions, GRID } from "./arrange";
 import { nodeSize } from "./nodeSize";
+import { NodeSearchPopover } from "./NodeSearchPopover";
 import { setSnapEnabled, snapEnabled, subscribeSnap } from "./snapGrid";
 import { TypedEdge, toRFEdge, type TypedRFEdge } from "./TypedEdge";
 import { setWireMotion, subscribeWireMotion, wireMotionEnabled } from "./wireMotion";
@@ -705,6 +706,61 @@ function CanvasInner() {
         [getInternalNode],
     );
 
+    /**
+     * The add-a-node search popover, anchored at the point the author asked
+     * for it. Component state, not the store: it is transient UI, and a store
+     * field would land in the undo history (the r96 lesson from the snap
+     * toggle).
+     */
+    const [searchAt, setSearchAt] = useState<{ x: number; y: number } | null>(null);
+
+    /**
+     * Right-click has to serve two masters: a *drag* pans the canvas, a *click*
+     * opens the search. Distinguish them by distance, not by timing — a slow
+     * deliberate click is still a click, and a timer would make the fast case
+     * feel laggy.
+     */
+    const rightDown = useRef<{ x: number; y: number } | null>(null);
+    /** Farther than this between press and release counts as a pan, not a click. */
+    const RIGHT_CLICK_SLOP = 4;
+
+    const openSearchAt = useCallback((x: number, y: number) => {
+        setSearchAt({ x, y });
+    }, []);
+
+    /** Add the chosen type where the popover was opened, then close it. */
+    const addFromSearch = useCallback(
+        (type: NodeType) => {
+            if (!searchAt) return;
+            const position = screenToFlowPosition(searchAt);
+            // Same nudge as the palette drop, so a searched node and a dragged
+            // node land in the same place relative to the pointer.
+            addNode(type, { x: position.x - 20, y: position.y - 24 });
+            setSearchAt(null);
+        },
+        [addNode, screenToFlowPosition, searchAt],
+    );
+
+    /* Shift+A over the canvas, Blender's shortcut for the same job. */
+    useEffect(() => {
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key !== "A" && event.key !== "a") return;
+            if (!event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
+            const target = event.target as HTMLElement | null;
+            const tag = target?.tagName;
+            // Never steal the key from a field the author is typing in.
+            if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target?.isContentEditable) {
+                return;
+            }
+            if (!wrapperRef.current?.contains(target)) return;
+            event.preventDefault();
+            const rect = wrapperRef.current.getBoundingClientRect();
+            openSearchAt(rect.left + rect.width / 2, rect.top + rect.height / 3);
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [openSearchAt]);
+
     const onDrop = useCallback(
         (event: React.DragEvent) => {
             event.preventDefault();
@@ -726,7 +782,24 @@ function CanvasInner() {
     }
 
     return (
-        <div ref={wrapperRef} className="relative h-full w-full"
+        <div
+            ref={wrapperRef}
+            className="relative h-full w-full"
+            onPointerDown={(e) => {
+                if (e.button === 2) rightDown.current = { x: e.clientX, y: e.clientY };
+            }}
+            onPointerUp={(e) => {
+                if (e.button !== 2) return;
+                const down = rightDown.current;
+                rightDown.current = null;
+                if (!down) return;
+                // Dragged? That was a pan; leave it alone.
+                if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > RIGHT_CLICK_SLOP) return;
+                // A click on the pane itself, not on a node or a wire.
+                const target = e.target as HTMLElement | null;
+                if (!target?.classList.contains("react-flow__pane")) return;
+                openSearchAt(e.clientX, e.clientY);
+            }}
         >
             <ReactFlow
                 nodes={nodes}
@@ -794,10 +867,13 @@ function CanvasInner() {
                 snapGrid={SNAP_GRID}
                 deleteKeyCode={["Backspace", "Delete"]}
                 selectionKeyCode={null}
-                // Middle-mouse pans. Right-drag used to pan as well, but that
-                // is what made React Flow swallow the context-menu event and
-                // strand its selection rectangle on a ctrl+click (see above).
-                panOnDrag={[1]}
+                /*
+                 * Middle-mouse and right-mouse pan. r92 dropped button 2 while
+                 * hunting a stranded selection rectangle, but the actual fix
+                 * was preventing the context menu (below) — so right-drag can
+                 * pan again, and a right *click* opens the node search.
+                 */
+                panOnDrag={[1, 2]}
                 selectionOnDrag
                 selectionMode={SelectionMode.Partial}
                 multiSelectionKeyCode={["Meta", "Shift", "Control"]}
@@ -830,6 +906,14 @@ function CanvasInner() {
                     maskColor="rgba(8, 9, 13, 0.72)"
                 />
             </ReactFlow>
+
+            {searchAt && (
+                <NodeSearchPopover
+                    at={searchAt}
+                    onPick={addFromSearch}
+                    onClose={() => setSearchAt(null)}
+                />
+            )}
 
             {/* Canvas actions */}
             <div className="absolute top-3 left-3 flex items-center gap-1.5">

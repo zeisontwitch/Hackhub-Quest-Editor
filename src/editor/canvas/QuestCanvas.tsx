@@ -36,6 +36,11 @@ import { NodeSearchPopover } from "./NodeSearchPopover";
 import { entrySocketFor } from "./nodeSearch";
 import type { EdgeKind } from "@/schema/edges";
 import { setSnapEnabled, snapEnabled, subscribeSnap } from "./snapGrid";
+import {
+    setWirePhysicsEnabled,
+    subscribeWirePhysics,
+    wirePhysicsEnabled,
+} from "./wirePhysicsPref";
 import { TypedEdge, toRFEdge, type TypedRFEdge } from "./TypedEdge";
 import { setWireMotion, subscribeWireMotion, wireMotionEnabled } from "./wireMotion";
 import {
@@ -121,8 +126,13 @@ function CanvasInner() {
     const setViewport = useEditor((s) => s.setViewport);
     const applyLayout = useEditor((s) => s.applyLayout);
     const { screenToFlowPosition, getInternalNode } = useReactFlow();
-    // Per-author editor preference, kept out of the project document.
+    // Per-author editor preferences, kept out of the project document.
     const snap = useSyncExternalStore(subscribeSnap, snapEnabled, () => false);
+    const physics = useSyncExternalStore(
+        subscribeWirePhysics,
+        wirePhysicsEnabled,
+        () => false, // server/jsdom: nothing is animating anyway
+    );
     // One animation drives every wire's dots; this is only its switch.
     const motion = useSyncExternalStore(
         subscribeWireMotion,
@@ -1118,6 +1128,20 @@ function CanvasInner() {
                 >
                     <Icon name={motion ? "play" : "pause"} size={13} />
                     {motion ? "Animated wires" : "Static wires"}
+                </button>
+                <button
+                    type="button"
+                    aria-pressed={physics}
+                    className="btn-default pointer-events-auto"
+                    onClick={() => setWirePhysicsEnabled(!physics)}
+                    title={
+                        physics
+                            ? "Editor only: a wire you drag hangs and springs as you move it. Click for plain, straight wires — lighter on older machines."
+                            : "Editor only: dragged wires are plain and straight. Click to let them hang and spring as you move them."
+                    }
+                >
+                    <Icon name={physics ? "shuffle" : "branch"} size={13} />
+                    {physics ? "Springy wires" : "Plain wires"}
                 </button>
                 <span
                     className={

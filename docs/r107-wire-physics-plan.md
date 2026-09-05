@@ -176,10 +176,17 @@ So the "snap back" is a separate ~200ms **ghost**: a non-interactive path,
 itself. Same mechanism as the delete ghost the roadmap asks for, so one
 implementation serves both.
 
-**E6 — the motion toggle is off.**
-*Mitigation:* `startWirePhysics` checks `wireMotionEnabled()` and, when off,
-paints the straight path once and never starts a loop. Under "Static wires"
-the editor must do no per-frame work of any kind. Tested.
+**E6 — the author does not want physics.**
+Added at Zeis's request mid-build, and the right call: some machines will not
+enjoy this, and some people simply prefer plain wires.
+*Mitigation:* a **Springy wires / Plain wires** toggle in the canvas toolbar,
+beside the animation one, following the same `snapGrid`/`wireMotion` shape — a
+module-level value in localStorage, never in the project document. Physics is
+gated on three switches, any of which stops it: this toggle, the wire-motion
+master switch, and the OS reduced-motion preference. When any is off,
+`startWirePhysics` paints the straight path once and never starts a loop, so
+the editor does no per-frame work at all. Tested, including that the two
+toggles are independent.
 
 **E7 — reduced-motion preference.**
 Not in the brief, but the toggle exists precisely because motion is not always
@@ -225,6 +232,33 @@ property reaches the document root, and that test stays.
 5. Falsification pass — revert each guard, confirm the matching test fails.
 6. Full suite, typecheck, build, performance guards.
 7. Hand to Zeis for the feel: stiffness, damping, sag limit, taut distance.
+
+## 5a. Review notes (second opinion, evaluated)
+
+Three points came back from a review. Two are already covered by the narrow
+scope; one is a real improvement and is in.
+
+**"Add `pointer-events: none` to the physics wire."** *Already true, and worth
+keeping true.* The held wire is React Flow's `connectionLineComponent`, which
+is not interactive — the author is mid-drag, and the pointer belongs to the
+drag. The delete ghost is the one that genuinely needs the guard, since it
+outlives the gesture; it is created with `pointer-events: none` for exactly the
+reason given. No change to `TypedEdge`, whose 26px interaction band is how a
+resting wire is selected and must stay.
+
+**"Mutate typed arrays rather than allocating point objects per frame."**
+*Does not apply at this scope.* That advice is for a Verlet rope with 10–15
+particles per wire. A damped spring on one scalar has no point array to pool:
+the state is two numbers on a reused object, and `stepSag` mutates it in place
+(there is a test asserting it returns the same object). The one allocation per
+frame is the path string, which `setAttribute` requires and no buffer strategy
+avoids. Adding a `Float32Array` here would be ceremony without a saving.
+
+**"Viewport-cull off-screen wires."** *Trivially satisfied, not ignored.* Only
+the held wire is simulated, so the animated set is at most one and it is by
+definition under the pointer. Culling logic would be dead code. This does
+become essential the moment physics is applied to resting wires — recorded in
+§6 as the first thing to build if that scope ever changes.
 
 ## 6. What I am deliberately not doing
 

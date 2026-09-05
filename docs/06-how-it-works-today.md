@@ -129,6 +129,7 @@ The whole suite runs in about a minute. `npm run build` runs typecheck first.
 
 | Document | What it is |
 |---|---|
+| `HANDOFF.md` | **Current state and what is next.** Start here when picking the project up. |
 | `01-analysis-and-architecture.md` | The original design and its reasoning. Mostly still accurate. |
 | `02-editor-shell.md` | **Archive.** An append-only build log, rounds 1–74. Not current, but the bug histories in it are load-bearing. |
 | `In-Game-Handbook.md` | **The game's own teaching material**, transcribed from in-game. Authoritative for how a player is expected to work — outranks the SDK on that question, and outranks the web entirely. |

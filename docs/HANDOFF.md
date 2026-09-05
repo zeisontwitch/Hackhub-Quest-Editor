@@ -1,15 +1,21 @@
-# Handoff — r120
+# Handoff — r121
 
-Written because the previous session hit a context limit partway through the
-template rebuild. Nothing is half-finished in the repo; the work simply had not
-started.
+The template rebuild is underway and committed. The module architecture is in
+place and the beginner tier ships; two planned templates remain (Cold Storage,
+Bad Attachment), both gated on in-game verification.
 
 ## Where things stand
 
-- **HEAD:** `0ec6590` on `arena/01a06d57-hackhub-quest-editor`, pushed, clean
-  tree, remote in sync.
-- **1,035 tests green**, typecheck clean, build clean.
+- **HEAD:** `723f4ce` on `arena/01a073d6-hackhub-quest-editor`, committed,
+  remote in sync (branch `arena/01a073d6-hackhub-quest-editor`).
+- **1,032 tests green** (fewer than r120's 1,035 because the deleted templates
+  removed their `it.each` cases), typecheck clean, build clean.
 - **Editor build stamp:** `2026-09-05.r120`.
+- Shared graph helpers extracted to `src/templates/kit.ts`; each template is its
+  own module (`blank.ts`, `firstContact.ts`, `byline.ts`, `coldCall.ts`,
+  `harbourManifest.ts`, `helpDeskLeak.ts`, `ledgerContract.ts`, `reference.ts`).
+  `src/templates/index.ts` is a thin registry. `Template.difficulty` is
+  `Beginner | Advanced | Expert | Reference`.
 
 ## Read these first, in this order
 
@@ -35,8 +41,14 @@ r118), delete the rest, and rebuild using what we have learned. Each template
 should cover a different situation, at a stated difficulty, so authors can
 reference them or start a story from one.
 
-**Nothing has been built yet.** All eight original templates are still in
-`src/templates/index.ts` and still pass their tests.
+**Built so far (r121):** `blank`, `first-contact`, `the-byline`, `cold-call`,
+`data-grab` (The Harbour Manifest, Advanced), `the-help-desk-leak` (the former
+`dirhunter-leak` quest, re-registered), `contract-hack` (The Ledger Contract,
+Expert), `reference`. The four legacy templates (`hello-hack`, `wifi-hack`,
+`investigation`, `dirhunter-leak`) are deleted. **Not yet built:** `cold-storage`
+and `bad-attachment` — both are gated on in-game verification per
+`docs/plans/r117-template-rebuild-plan.md` §6 and were deliberately left rather
+than shipped on guesswork.
 
 ### The agreed set
 

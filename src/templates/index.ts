@@ -11,14 +11,14 @@
  * past the write-size limit that appending to a single file kept hitting.
  */
 import type { Template } from "@/templates/kit";
-
 import { buildBlank } from "@/templates/blank";
-import { buildHelloHack, buildWifiHack, buildInvestigation, buildDirhunter } from "@/templates/legacy";
+import { buildFirstContact } from "@/templates/firstContact";
 import { buildDataGrab } from "@/templates/harbourManifest";
+import { buildHelpDeskLeak } from "@/templates/helpDeskLeak";
 import { buildContractHack } from "@/templates/ledgerContract";
 import { buildReference } from "@/templates/reference";
 
-export type { Template } from "@/templates/kit";
+export { type Template } from "@/templates/kit";
 
 export const TEMPLATES: Template[] = [
     {
@@ -30,57 +30,40 @@ export const TEMPLATES: Template[] = [
         build: buildBlank,
     },
     {
-        id: "hello-hack",
-        name: "Hello Hack",
-        description: "One objective completed by a single nmap scan, then a payout.",
-        difficulty: "Beginner",
-        nodeCount: 6,
-        build: buildHelloHack,
-    },
-    {
-        id: "wifi-hack",
-        name: "Simple Linear Wi-Fi Hack",
+        id: "first-contact",
+        name: "First Contact",
         description:
-            "Briefing e-mail, a crackable access point, bettercap recon, fern passphrase recovery and joining the network — all in a straight line.",
+            "The whole spine in miniature: a brief, one objective (a person lookup), a payment and a closing line. No hacking — just the shape of a quest.",
         difficulty: "Beginner",
-        nodeCount: 11,
-        build: buildWifiHack,
-    },
-    {
-        id: "investigation",
-        name: "Complex Branching Investigation",
-        description:
-            "A corporate network behind a firewall, a website with an unlinked page, mail / Kisscord / WeeChat / a phone call, a branch on how the player got in, and a passphrase ending.",
-        difficulty: "Advanced",
-        nodeCount: 29,
-        build: buildInvestigation,
+        nodeCount: 9,
+        build: buildFirstContact,
     },
     {
         id: "data-grab",
-        name: "Standard Contract Hack",
+        name: "The Harbour Manifest",
         description:
             "The job the game hands out constantly: a name in an e-mail, an OSINT lookup, whois, a scan, one exploit on port 22, and a file the client wants a copy of. One admin account on the server, so no password cracking — the short route, start to finish.",
-        difficulty: "Beginner",
+        difficulty: "Advanced",
         nodeCount: 22,
         build: buildDataGrab,
+    },
+    {
+        id: "the-help-desk-leak",
+        name: "The Help Desk Leak",
+        description:
+            "A public agency site, a portal that refuses you, and an unlisted page dirhunter can find. The password is assembled from two pages the agency published itself — the classic web-recon loop, with a real website in the box.",
+        difficulty: "Advanced",
+        nodeCount: 21,
+        build: buildHelpDeskLeak,
     },
     {
         id: "contract-hack",
         name: "The Ledger Contract",
         description:
             "A file on one man's personal PC, and everything between: OSINT, whois, a scan, mapping the network behind the router, an exploit that lands you as guest, cracking his password out of /etc/passwd, and a client who checks before she pays.",
-        difficulty: "Advanced",
+        difficulty: "Expert",
         nodeCount: 33,
         build: buildContractHack,
-    },
-    {
-        id: "dirhunter-leak",
-        name: "The Help Desk Leak",
-        description:
-            "A public agency site, a portal that refuses you, and an unlisted page dirhunter can find. The password is assembled from two pages the agency published itself — the classic web-recon loop, with a real website in the box.",
-        difficulty: "Advanced",
-        nodeCount: 21,
-        build: buildDirhunter,
     },
     {
         id: "reference",

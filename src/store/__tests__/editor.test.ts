@@ -77,7 +77,9 @@ describe("history", () => {
 
     it("collapses a whole drag into one undo step", () => {
         fresh();
-        const nodeId = useEditor.getState().project.quests[0].graph.nodes[0].id;
+        const first = useEditor.getState().project.quests[0].graph.nodes[0];
+        const nodeId = first.id;
+        const original = first.position;
         const before = useEditor.getState().past.length;
 
         useEditor.getState().beginTransient();
@@ -87,10 +89,9 @@ describe("history", () => {
 
         expect(useEditor.getState().past.length).toBe(before + 1);
         useEditor.getState().undo();
-        expect(useEditor.getState().project.quests[0].graph.nodes.find((n) => n.id === nodeId)?.position).toEqual({
-            x: 0,
-            y: 0,
-        });
+        expect(useEditor.getState().project.quests[0].graph.nodes.find((n) => n.id === nodeId)?.position).toEqual(
+            original,
+        );
     });
 
     it("does not write history for viewport pans", () => {
@@ -112,16 +113,16 @@ describe("writing node data", () => {
     it("patches one field without disturbing its neighbours", () => {
         fresh();
         const state = useEditor.getState();
-        const wifi = state.project.quests[0].graph.nodes.find((n) => n.type === "world.wifi")!;
+        const objective = state.project.quests[0].graph.nodes.find((n) => n.type === "objective")!;
 
-        useEditor.getState().updateNodeData(wifi.id, { ssid: "EDITED" });
+        useEditor.getState().updateNodeData(objective.id, { description: "EDITED" });
 
         const after = useEditor
             .getState()
-            .project.quests[0].graph.nodes.find((n) => n.id === wifi.id)!;
-        expect((after.data as { ssid: string }).ssid).toBe("EDITED");
-        expect((after.data as { password: string }).password).toBe(wifi.data.password);
-        expect(after.type).toBe("world.wifi");
+            .project.quests[0].graph.nodes.find((n) => n.id === objective.id)!;
+        expect((after.data as { description: string }).description).toBe("EDITED");
+        expect((after.data as { hint: string }).hint).toBe(objective.data.hint);
+        expect(after.type).toBe("objective");
     });
 
     it("reaches nested paths", () => {
@@ -151,7 +152,7 @@ describe("connecting", () => {
            template: templates no longer ship nodes that are wired to nothing
            (r70), and a test should not depend on one existing. */
         const start = useEditor.getState().addNode("entry.load", { x: 0, y: 0 })!;
-        const briefing = idsOf("world.wifi");
+        const briefing = idsOf("world.network");
         const added = useEditor.getState().connect({
             source: start,
             sourceHandle: "out",
@@ -182,7 +183,7 @@ describe("connecting", () => {
     it("refuses self-loops and duplicate wires", () => {
         fresh();
         const start = useEditor.getState().addNode("entry.load", { x: 0, y: 0 })!;
-        const wifi = idsOf("world.wifi");
+        const wifi = idsOf("world.network");
         const before = useEditor.getState().project.quests[0].graph.edges.length;
 
         expect(

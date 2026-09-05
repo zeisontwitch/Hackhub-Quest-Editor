@@ -118,11 +118,11 @@ describe("editor shell", () => {
         expect(screen.getByRole("button", { name: /export current quest/i })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /import a quest file/i })).toBeInTheDocument();
 
-        await user.click(screen.getByRole("button", { name: /Simple Linear Wi-Fi Hack/i }));
+        await user.click(screen.getByRole("button", { name: /First Contact/i }));
 
         const quest = selectActiveQuest(useEditor.getState())!;
-        expect(quest.name).toBe("NeighbourWifi");
-        expect(quest.graph.nodes).toHaveLength(11);
+        expect(quest.name).toBe("FirstContact");
+        expect(quest.graph.nodes).toHaveLength(9);
     });
 
     it("undoes with the keyboard", async () => {

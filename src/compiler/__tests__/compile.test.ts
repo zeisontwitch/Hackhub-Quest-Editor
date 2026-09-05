@@ -1163,7 +1163,7 @@ describe("the dirhunter template runs", () => {
         };
         sdk.Bank = { transaction: (t: { amount: number }) => calls.push(`pay:${t.amount}`), getBalance: () => 0 };
         sdk.Random = { sleep: () => Promise.resolve() };
-        const project = getTemplate("dirhunter-leak")!.build();
+        const project = getTemplate("the-help-desk-leak")!.build();
         runMod(compileProject(project).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
         const q = new (registered0(sdk).quests[0])();
         q.Data = q.CreateData();
@@ -1192,7 +1192,7 @@ describe("the dirhunter template runs", () => {
         const sdk = stubSdk(calls, listeners) as any;
         sdk.Bank = { transaction: (t: { amount: number }) => calls.push(`pay:${t.amount}`), getBalance: () => 0 };
         sdk.Random = { sleep: () => Promise.resolve() };
-        runMod(compileProject(getTemplate("dirhunter-leak")!.build()).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        runMod(compileProject(getTemplate("the-help-desk-leak")!.build()).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
         const q = new (registered0(sdk).quests[0])();
         q.Data = q.CreateData();
         q.OnObjectivesStart();
@@ -1208,7 +1208,7 @@ describe("the dirhunter template runs", () => {
         const built: any[] = [];
         const sdk = stubSdk([], []) as any;
         sdk.Network = { ...sdk.Network, createSubnetNetwork: (d: unknown) => { built.push(d); return "ip"; } };
-        runMod(compileProject(getTemplate("dirhunter-leak")!.build()).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        runMod(compileProject(getTemplate("the-help-desk-leak")!.build()).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
         const q = new (registered0(sdk).quests[0])();
         q.Data = q.CreateData();
         q.OnStart();
@@ -3703,13 +3703,13 @@ describe("the mod never blocks the game's own loading", () => {
     it("returns nothing from OnModPackageLoaded, so the loader cannot wait on us", () => {
         /* The exact shape of the r72 hang: the game awaits this hook. Anything
            we return that does not settle stops the game booting. */
-        for (const id of ["data-grab", "contract-hack", "dirhunter-leak"]) {
+        for (const id of ["data-grab", "contract-hack", "the-help-desk-leak"]) {
             expect(loadIt(id).result, id).toBeUndefined();
         }
     });
 
     it("does not call destroyNetwork while loading", () => {
-        for (const id of ["data-grab", "contract-hack", "dirhunter-leak"]) {
+        for (const id of ["data-grab", "contract-hack", "the-help-desk-leak"]) {
             expect(loadIt(id).touched, id).toEqual([]);
         }
     });

@@ -18,15 +18,12 @@ describe("template registry", () => {
     it("ships the templates named in the plan", () => {
         expect(TEMPLATES.map((t) => t.id)).toEqual([
             "blank",
-            "hello-hack",
-            "wifi-hack",
-            "investigation",
+            "first-contact",
             "data-grab",
+            "the-help-desk-leak",
             "contract-hack",
-            "dirhunter-leak",
             "reference",
         ]);
-        expect(getTemplate("wifi-hack")?.name).toBe("Simple Linear Wi-Fi Hack");
         expect(getTemplate("reference")?.difficulty).toBe("Reference");
         // Both contract templates ship the website their trail leads to — a
         // quest template with no site would teach half the tool.
@@ -39,7 +36,7 @@ describe("template registry", () => {
         expect(contract.websites[0].pages.some((p) => !p.seo)).toBe(true);
         // The dirhunter template's whole puzzle is the unlisted page: the
         // password rule is printed there and nowhere in the quest text.
-        const leak = getTemplate("dirhunter-leak")!.build();
+        const leak = getTemplate("the-help-desk-leak")!.build();
         const helpdesk = leak.websites[0].pages.find((p) => p.path === "/it/helpdesk");
         expect(helpdesk, "the NAZA site must still ship its help-desk page").toBeDefined();
         expect(helpdesk!.seo, "the help-desk page has to stay out of search").toBe(false);
@@ -252,11 +249,14 @@ describe("node summaries", () => {
         },
     );
 
-    it("renders the Wi-Fi template's access point with its SSID", () => {
-        const wifi = TEMPLATES[2]
+    it("renders a network node with the machine it builds", () => {
+        // The Harbour Manifest ships a single public file server, so its network
+        // node must read as the machine the player will break into.
+        const net = TEMPLATES[2]
             .build()
-            .quests[0].graph.nodes.find((n) => n.type === "world.wifi")!;
-        expect(summarize(wifi).join(" ")).toContain("NEIGHBOUR_5Ghz");
+            .quests[0].graph.nodes.find((n) => n.type === "world.network")!;
+        // The network is allocated a random IP, which is what the card shows.
+        expect(summarize(net).join(" ")).toContain("random IP");
     });
 });
 
@@ -612,8 +612,8 @@ describe("the two contract templates teach different routes", () => {
     });
 
     it("is marked as the easier of the two", () => {
-        expect(getTemplate("data-grab")!.difficulty).toBe("Beginner");
-        expect(getTemplate("contract-hack")!.difficulty).toBe("Advanced");
+        expect(getTemplate("data-grab")!.difficulty).toBe("Advanced");
+        expect(getTemplate("contract-hack")!.difficulty).toBe("Expert");
     });
 });
 

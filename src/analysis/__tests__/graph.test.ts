@@ -206,8 +206,8 @@ describe("layeredLayout", () => {
         expect(layeredLayout([], [])).toEqual({});
     });
 
-    it("leaves the shipped investigation template readable", () => {
-        const quest = getTemplate("investigation")!.build().quests[0];
+    it("leaves the shipped Help Desk Leak template readable", () => {
+        const quest = getTemplate("the-help-desk-leak")!.build().quests[0];
         const positions = layeredLayout(quest.graph.nodes, quest.graph.edges);
 
         expect(Object.keys(positions)).toHaveLength(quest.graph.nodes.length);

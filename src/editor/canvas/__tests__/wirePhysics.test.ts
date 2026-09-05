@@ -26,6 +26,7 @@ import {
 } from "@/editor/canvas/wirePhysics";
 import { setWireMotion } from "@/editor/canvas/wireMotion";
 import { setWirePhysicsEnabled } from "@/editor/canvas/wirePhysicsPref";
+import { nudgeWirePhysics } from "@/editor/canvas/wirePhysics";
 
 afterEach(() => {
     stopWirePhysics();
@@ -244,5 +245,84 @@ describe("hasSettled", () => {
 
     it("is true once it has stopped at the target", () => {
         expect(hasSettled({ sag: 50, velocity: 0 }, 50)).toBe(true);
+    });
+});
+
+
+describe("r108: the wire keeps moving for the whole drag", () => {
+    /*
+     * Two bugs shipped in r107, both invisible to the tests that existed.
+     *
+     * 1. The <path> had a `d` prop, so React rewrote it to the straight bezier
+     *    on every pointer move and wiped the loop's write. React won sixty
+     *    times a second and the wire looked completely static. No test
+     *    simulated a re-render, so nothing caught it.
+     * 2. The loop parks itself once the spring settles — correct, and what
+     *    makes a still wire free — but the element's ref only fires on mount,
+     *    so nothing ever restarted it and the wire froze for the rest of the
+     *    drag.
+     */
+    const path = () => document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+    it("resumes when the cursor moves after the spring has settled", () => {
+        const el = path();
+        let targetX = 120;
+        startWirePhysics({
+            path: el,
+            read: () => ({ sourceX: 0, sourceY: 0, targetX, targetY: 0 }),
+            force: true,
+        });
+        for (let i = 0; i < 400 && wirePhysicsRunning(); i++) tickForTests(i * 16);
+        expect(wirePhysicsRunning()).toBe(false);
+
+        // The author drags further out: the span changes, so the wire must move.
+        targetX = 420;
+        nudgeWirePhysics();
+        expect(wirePhysicsRunning()).toBe(true);
+
+        const before = el.getAttribute("d");
+        tickForTests(10_000);
+        tickForTests(10_016);
+        expect(el.getAttribute("d")).not.toBe(before);
+    });
+
+    it("does not wake a loop that was properly stopped", () => {
+        // A finished drag must stay finished; nudging cannot resurrect it.
+        startWirePhysics({
+            path: path(),
+            read: () => ({ sourceX: 0, sourceY: 0, targetX: 120, targetY: 0 }),
+            force: true,
+        });
+        stopWirePhysics();
+        nudgeWirePhysics();
+        expect(wirePhysicsRunning()).toBe(false);
+    });
+
+    it("is a no-op while the loop is already running", () => {
+        const el = path();
+        startWirePhysics({
+            path: el,
+            read: () => ({ sourceX: 0, sourceY: 0, targetX: 120, targetY: 0 }),
+            force: true,
+        });
+        nudgeWirePhysics();
+        nudgeWirePhysics();
+        expect(wirePhysicsRunning()).toBe(true);
+    });
+
+    it("keeps the sag it wrote when nothing else touches the element", () => {
+        // The regression guard for the `d`-prop clash: after the loop has
+        // written, the attribute must still hold a sagged curve.
+        const el = path();
+        startWirePhysics({
+            path: el,
+            read: () => ({ sourceX: 0, sourceY: 0, targetX: 120, targetY: 0 }),
+            force: true,
+        });
+        tickForTests(0);
+        tickForTests(16);
+        tickForTests(32);
+        const straight = sagPath(0, 0, 120, 0, 0);
+        expect(el.getAttribute("d")).not.toBe(straight);
     });
 });

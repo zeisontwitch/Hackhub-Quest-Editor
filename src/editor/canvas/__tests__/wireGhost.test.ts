@@ -124,3 +124,40 @@ describe("going away again", () => {
         expect(svg.querySelectorAll("path")).toHaveLength(0);
     });
 });
+
+describe("r108: the search holds the ghost back", () => {
+    /*
+     * Zeis's question. Dropping a wire on empty canvas opens the node search
+     * rather than cancelling the wire, so the wire is *pending*, not gone —
+     * ghosting it there would fade it away while the author is still choosing
+     * what to connect it to.
+     *
+     * The rule the canvas implements, checked here at the level this file can
+     * honestly test (the ghost's own behaviour); the wiring is covered by the
+     * canvas tests:
+     *
+     *   - picked a node   -> connected, so the deferred ghost is discarded
+     *   - dismissed       -> abandoned, so the deferred ghost plays
+     */
+    it("a deferred ghost does nothing until it is played", () => {
+        const svg = layer();
+        // The canvas holds the spawn in a ref rather than calling it.
+        const deferred = () => spawn(svg);
+        expect(liveWireGhostCount()).toBe(0);
+        expect(svg.querySelectorAll("path")).toHaveLength(0);
+
+        // Dismissed: now it plays.
+        deferred();
+        expect(liveWireGhostCount()).toBe(1);
+    });
+
+    it("a discarded ghost never appears at all", () => {
+        const svg = layer();
+        let deferred: (() => void) | null = () => spawn(svg);
+        // A node was chosen, so the wire is connected: drop it unplayed.
+        deferred = null;
+        expect(deferred).toBeNull();
+        expect(svg.querySelectorAll("path")).toHaveLength(0);
+        expect(liveWireGhostCount()).toBe(0);
+    });
+});

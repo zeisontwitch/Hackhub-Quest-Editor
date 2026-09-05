@@ -35,6 +35,7 @@ import { nodeSize } from "./nodeSize";
 import { NodeSearchPopover } from "./NodeSearchPopover";
 import { entrySocketFor } from "./nodeSearch";
 import {
+    nudgeWirePhysics,
     startWirePhysics,
     stopWirePhysics,
     wirePhysicsState,
@@ -455,31 +456,36 @@ function CanvasInner() {
              * a frame scheduled for a wire that no longer exists.
              */
             /*
-             * Leave a ghost that snaps straight and fades, so a wire released
-             * mid-stretch reads as cancelled rather than lost. Read the sag
-             * before stopping the loop, so the ghost picks up exactly where
-             * the live wire was.
+             * Remember where the wire was and how far it was hanging, then
+             * stop the loop. Whether that becomes a ghost depends on how the
+             * gesture ended, which the branches below decide: a drop that
+             * opens the node search must NOT ghost, because the wire is still
+             * pending — the author is choosing what to connect it to.
              */
             const restingSag = wirePhysicsState().sag;
+            const releasedAt = { ...heldEnds.current };
             stopWirePhysics();
-            if (Math.abs(restingSag) > 0.5) {
+            const ghostTheWire = () => {
+                if (Math.abs(restingSag) <= 0.5) return;
                 const layer = wrapperRef.current?.querySelector(".react-flow__edges");
-                const ends = heldEnds.current;
-                if (layer) {
-                    spawnWireGhost({
-                        layer: layer as SVGElement,
-                        from: { x: ends.sourceX, y: ends.sourceY },
-                        to: { x: ends.targetX, y: ends.targetY },
-                        sag: restingSag,
-                        colour: detached.current
-                            ? HANDLE_STYLE[detached.current.edge.kind].color
-                            : "var(--color-accent)",
-                    });
-                }
-            }
+                if (!layer) return;
+                spawnWireGhost({
+                    layer: layer as SVGElement,
+                    from: { x: releasedAt.sourceX, y: releasedAt.sourceY },
+                    to: { x: releasedAt.targetX, y: releasedAt.targetY },
+                    sag: restingSag,
+                    colour: detached.current
+                        ? HANDLE_STYLE[detached.current.edge.kind].color
+                        : "var(--color-accent)",
+                });
+            };
             const held = detached.current;
             detached.current = null;
-            if (state.isValid && !held) return; // landed on a socket; onConnect has it
+            if (state.isValid && !held) {
+                // Landed on a socket; onConnect has it. No ghost: the wire
+                // stayed, it did not go anywhere.
+                return;
+            }
 
             const overId = state.toNode?.id ?? nodeIdUnderPointer(event);
 
@@ -487,12 +493,16 @@ function CanvasInner() {
                 // The socket it was dropped on, if the author aimed at one.
                 const onHandle = state.toHandle?.type === "target" ? state.toHandle.id : null;
                 dropHeldWire(held, overId, onHandle);
+                if (!overId) ghostTheWire(); // let go over nothing: it snaps back
                 return;
             }
 
             const from = state.fromHandle;
             const q = activeQuest();
-            if (!from || !from.nodeId || !q) return;
+            if (!from || !from.nodeId || !q) {
+                ghostTheWire();
+                return;
+            }
 
             /*
              * Dropped on empty canvas: offer to create the node the wire was
@@ -501,12 +511,18 @@ function CanvasInner() {
              */
             if (!overId) {
                 const fromDoc = q.graph.nodes.find((n) => n.id === from.nodeId);
-                if (!fromDoc) return;
+                if (!fromDoc) {
+                    ghostTheWire();
+                    return;
+                }
                 const kind =
                     from.type === "source"
                         ? sourcesOf(fromDoc).find((h) => h.id === from.id)?.kind
                         : nodeTypeDef(fromDoc.type).targets.find((h) => h.id === from.id)?.kind;
-                if (!kind) return;
+                if (!kind) {
+                    ghostTheWire();
+                    return;
+                }
                 const point = "changedTouches" in event ? event.changedTouches[0] : event;
                 setPendingWire({
                     nodeId: from.nodeId,
@@ -515,11 +531,22 @@ function CanvasInner() {
                     direction: from.type === "source" ? "source" : "target",
                 });
                 setSearchAt({ x: point.clientX, y: point.clientY });
+                /*
+                 * Deliberately no ghost. The wire is pending, not cancelled:
+                 * the author is choosing what to plug it into. If they pick
+                 * something the node arrives connected and there was never
+                 * anything to snap back; if they dismiss the search, the
+                 * ghost plays then (see `closeSearch`).
+                 */
+                pendingGhost.current = ghostTheWire;
                 return;
             }
             const fromNode = q.graph.nodes.find((n) => n.id === from.nodeId);
             const overNode = q.graph.nodes.find((n) => n.id === overId);
-            if (!fromNode || !overNode) return;
+            if (!fromNode || !overNode) {
+                ghostTheWire();
+                return;
+            }
 
             // A brand-new wire dropped on a node's body takes the one socket on
             // that node it could possibly mean.
@@ -749,6 +776,15 @@ function CanvasInner() {
      */
     const heldEnds = useRef<WireEnds>({ sourceX: 0, sourceY: 0, targetX: 0, targetY: 0 });
     const heldPath = useRef<SVGPathElement | null>(null);
+    /**
+     * A ghost held back while the node search is open.
+     *
+     * Dropping a wire on empty canvas opens the search instead of cancelling
+     * the wire, so the snap-back is deferred: played if the author dismisses
+     * the search, discarded if they pick a node — in which case the wire is
+     * connected and there is nothing to snap back from.
+     */
+    const pendingGhost = useRef<(() => void) | null>(null);
 
     const ConnectionLine = useCallback(
         (p: ConnectionLineComponentProps) => {
@@ -776,6 +812,9 @@ function CanvasInner() {
             heldEnds.current.sourceY = fromY;
             heldEnds.current.targetX = p.toX;
             heldEnds.current.targetY = p.toY;
+            /* The loop parks itself once the spring rests; the wire is still
+               held, so a move has to wake it. No-op while it is running. */
+            nudgeWirePhysics();
 
             const [path] = getBezierPath({
                 sourceX: fromX,
@@ -789,20 +828,29 @@ function CanvasInner() {
             return (
                 <g>
                     {/*
-                        The straight bezier is the initial `d`, so the wire is
-                        correct on the very first frame and stays correct when
-                        physics is switched off. While physics runs, the loop
-                        overwrites this attribute directly — never through
-                        React, and never with a custom property (r42).
+                        No `d` prop.
+
+                        React re-renders this component on every pointer move,
+                        so a `d` prop would rewrite the attribute from the
+                        straight bezier each frame and wipe whatever the
+                        physics loop had just written — React winning the race
+                        sixty times a second, which is precisely why the wire
+                        looked completely static.
+
+                        The attribute is owned by one writer instead: the ref
+                        callback paints the first frame, and from then on the
+                        loop owns it. When physics is switched off,
+                        `startWirePhysics` paints the straight path once and
+                        never starts a loop, so the same single-writer rule
+                        gives exactly today's behaviour.
                     */}
                     <path
                         ref={(el) => {
                             heldPath.current = el;
-                            if (el) {
-                                startWirePhysics({ path: el, read: () => heldEnds.current });
-                            }
+                            if (!el) return;
+                            el.setAttribute("d", path);
+                            startWirePhysics({ path: el, read: () => heldEnds.current });
                         }}
-                        d={path}
                         fill="none"
                         stroke={colour}
                         strokeWidth={2}
@@ -863,6 +911,12 @@ function CanvasInner() {
     }, []);
 
     const closeSearch = useCallback(() => {
+        /*
+         * Dismissed without choosing, so the wire really was abandoned: play
+         * the snap-back that `onConnectEnd` held back.
+         */
+        pendingGhost.current?.();
+        pendingGhost.current = null;
         setSearchAt(null);
         setPendingWire(null);
     }, []);
@@ -902,6 +956,8 @@ function CanvasInner() {
                     );
                 }
             }
+            // Connected (or placed): nothing was cancelled, so no snap-back.
+            pendingGhost.current = null;
             closeSearch();
         },
         [addNode, closeSearch, connect, pendingWire, screenToFlowPosition, searchAt],

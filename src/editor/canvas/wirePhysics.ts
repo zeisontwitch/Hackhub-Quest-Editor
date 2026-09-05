@@ -156,6 +156,12 @@ let running = false;
 const state: SagState = { sag: 0, velocity: 0 };
 let lastMs = 0;
 let active: WirePhysicsOptions | null = null;
+/**
+ * The options of a loop that has settled and parked itself, so a later pointer
+ * move can restart it. Cleared by a real stop, so a finished drag cannot be
+ * resurrected.
+ */
+let settled: WirePhysicsOptions | null = null;
 
 /**
  * Should the wire move at all?
@@ -198,7 +204,11 @@ export function tickForTests(ms: number): void {
     if (hasSettled(state, target)) {
         state.sag = target;
         state.velocity = 0;
+        const parked = active;
         stopWirePhysics(true);
+        // Park rather than forget: the wire is still held, so a further
+        // pointer move has to be able to wake it.
+        settled = parked;
     }
 }
 
@@ -211,6 +221,7 @@ export function tickForTests(ms: number): void {
 export function startWirePhysics(options: WirePhysicsOptions): () => void {
     stopWirePhysics(true);
     active = options;
+    settled = null;
     lastMs = 0;
 
     if (!options.force && !motionAllowed()) {
@@ -251,10 +262,27 @@ export function stopWirePhysics(keepState = false): void {
         frame = 0;
     }
     active = null;
+    settled = null;
     if (!keepState) {
         state.sag = 0;
         state.velocity = 0;
     }
+}
+
+/**
+ * Resume a settled loop, if the wire is still held and the ends have moved.
+ *
+ * The loop stops itself once the spring comes to rest, which is what makes a
+ * held-but-still wire free. But the element's ref callback only fires on
+ * mount, so nothing would ever start it again and the wire would stay frozen
+ * for the rest of the drag. The component calls this on every pointer move; it
+ * is a no-op while the loop is already running.
+ */
+export function nudgeWirePhysics(): void {
+    if (running || !settled) return;
+    const options = settled;
+    settled = null;
+    startWirePhysics(options);
 }
 
 /** Test seam: is a loop currently scheduled? */

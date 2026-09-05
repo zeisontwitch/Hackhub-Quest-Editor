@@ -34,6 +34,13 @@ import { alignPositions, distributePositions, GRID } from "./arrange";
 import { nodeSize } from "./nodeSize";
 import { NodeSearchPopover } from "./NodeSearchPopover";
 import { entrySocketFor } from "./nodeSearch";
+import {
+    startWirePhysics,
+    stopWirePhysics,
+    wirePhysicsState,
+    type WireEnds,
+} from "./wirePhysics";
+import { dismissWireGhosts, spawnWireGhost } from "./wireGhost";
 import type { EdgeKind } from "@/schema/edges";
 import { setSnapEnabled, snapEnabled, subscribeSnap } from "./snapGrid";
 import {
@@ -441,6 +448,35 @@ function CanvasInner() {
      */
     const onConnectEnd = useCallback(
         (event: MouseEvent | TouchEvent, state: FinalConnectionState) => {
+            /*
+             * The gesture is over, so the loop must end here — not in the
+             * component's cleanup. Every branch below can return early, and
+             * one of them opens the node search, which would otherwise leave
+             * a frame scheduled for a wire that no longer exists.
+             */
+            /*
+             * Leave a ghost that snaps straight and fades, so a wire released
+             * mid-stretch reads as cancelled rather than lost. Read the sag
+             * before stopping the loop, so the ghost picks up exactly where
+             * the live wire was.
+             */
+            const restingSag = wirePhysicsState().sag;
+            stopWirePhysics();
+            if (Math.abs(restingSag) > 0.5) {
+                const layer = wrapperRef.current?.querySelector(".react-flow__edges");
+                const ends = heldEnds.current;
+                if (layer) {
+                    spawnWireGhost({
+                        layer: layer as SVGElement,
+                        from: { x: ends.sourceX, y: ends.sourceY },
+                        to: { x: ends.targetX, y: ends.targetY },
+                        sag: restingSag,
+                        colour: detached.current
+                            ? HANDLE_STYLE[detached.current.edge.kind].color
+                            : "var(--color-accent)",
+                    });
+                }
+            }
             const held = detached.current;
             detached.current = null;
             if (state.isValid && !held) return; // landed on a socket; onConnect has it
@@ -703,6 +739,17 @@ function CanvasInner() {
      * graph — not from the input it was just pulled out of, otherwise the
      * picture contradicts what dropping it will do.
      */
+    /**
+     * Where the held wire's two ends are right now, in flow coordinates.
+     *
+     * A ref, not state. React Flow re-renders `ConnectionLine` on every
+     * pointer move during a drag, and the physics loop needs those numbers at
+     * its own frame rate — reading them from here means the loop never touches
+     * React and React never waits on the loop.
+     */
+    const heldEnds = useRef<WireEnds>({ sourceX: 0, sourceY: 0, targetX: 0, targetY: 0 });
+    const heldPath = useRef<SVGPathElement | null>(null);
+
     const ConnectionLine = useCallback(
         (p: ConnectionLineComponentProps) => {
             const held = detached.current;
@@ -723,6 +770,13 @@ function CanvasInner() {
                 }
                 colour = HANDLE_STYLE[held.edge.kind].color;
             }
+
+            /* Feed the loop rather than re-rendering with the new numbers. */
+            heldEnds.current.sourceX = fromX;
+            heldEnds.current.sourceY = fromY;
+            heldEnds.current.targetX = p.toX;
+            heldEnds.current.targetY = p.toY;
+
             const [path] = getBezierPath({
                 sourceX: fromX,
                 sourceY: fromY,
@@ -734,13 +788,46 @@ function CanvasInner() {
             });
             return (
                 <g>
-                    <path d={path} fill="none" stroke={colour} strokeWidth={2} />
+                    {/*
+                        The straight bezier is the initial `d`, so the wire is
+                        correct on the very first frame and stays correct when
+                        physics is switched off. While physics runs, the loop
+                        overwrites this attribute directly — never through
+                        React, and never with a custom property (r42).
+                    */}
+                    <path
+                        ref={(el) => {
+                            heldPath.current = el;
+                            if (el) {
+                                startWirePhysics({ path: el, read: () => heldEnds.current });
+                            }
+                        }}
+                        d={path}
+                        fill="none"
+                        stroke={colour}
+                        strokeWidth={2}
+                    />
                     <circle cx={p.toX} cy={p.toY} r={3.5} fill={colour} />
                 </g>
             );
         },
         [getInternalNode],
     );
+
+    /*
+     * The drag is over: stop the loop. React Flow unmounts the connection line
+     * itself, so this only has to release the frame — and it must run however
+     * the drag ended, including when the author dropped on empty canvas and
+     * the node search opened.
+     */
+    useEffect(() => {
+        return () => {
+            stopWirePhysics();
+            // Ghosts outlive the gesture by design, so they cannot be left to
+            // their own timers when the canvas goes away.
+            dismissWireGhosts();
+        };
+    }, []);
 
     /**
      * The add-a-node search popover, anchored at the point the author asked

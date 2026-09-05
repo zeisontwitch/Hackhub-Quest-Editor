@@ -63,10 +63,27 @@ export const MAX_STEP_S = 0.032;
 /** Below this, the wire has stopped moving and the loop can end. */
 const SETTLE_EPSILON = 0.05;
 
-/** Mutable spring state. Reused, never reallocated per frame. */
+/**
+ * Mutable spring state. Reused, never reallocated per frame.
+ *
+ * Two dimensions, not one. A scalar sag can only bulge the wire straight down,
+ * which reads as a hanging rope: drag sideways and nothing swings. A pendulum
+ * swings *across* its direction of travel, so the midpoint carries an (x, y)
+ * offset that gravity pulls downward and cursor motion kicks sideways (r114).
+ *
+ * `sag` stays as the vertical component so the existing callers and tests keep
+ * working unchanged.
+ */
 export interface SagState {
+    /** Vertical offset of the midpoint: the hang. */
     sag: number;
     velocity: number;
+    /**
+     * Horizontal offset: the swing. Optional so a caller (or an older test)
+     * can hand over a plain `{ sag, velocity }` and get sensible behaviour.
+     */
+    sagX?: number;
+    velocityX?: number;
 }
 
 /**
@@ -97,17 +114,49 @@ export function restSag(
 export function stepSag(state: SagState, target: number, dt: number): SagState {
     const step = Math.min(Math.max(dt, 0), MAX_STEP_S);
     const { stiffness, damping } = wireTuning();
+
+    // Vertical: the hang, pulled towards the resting sag.
     const accel = stiffness * (target - state.sag) - damping * state.velocity;
     state.velocity += accel * step;
     state.sag += state.velocity * step;
+
+    /*
+     * Horizontal: the swing, pulled back towards centre. Same spring, so the
+     * two axes share a feel and one set of dials tunes both.
+     */
+    state.sagX ??= 0;
+    state.velocityX ??= 0;
+    const accelX = stiffness * (0 - state.sagX) - damping * state.velocityX;
+    state.velocityX += accelX * step;
+    state.sagX += state.velocityX * step;
+
     return state;
+}
+
+/**
+ * Kick the wire sideways when the cursor moves.
+ *
+ * This is what turns a hanging rope into a pendulum: the midpoint lags behind
+ * the hand, so a quick drag left throws the belly of the wire right, and the
+ * spring swings it back. Scaled by slack, so it fades to nothing as the wire
+ * pulls taut — exactly the "lessens as it stretches" QA asked for.
+ */
+export function kickSag(state: SagState, dx: number, dy: number, slack: number): void {
+    const { swing } = wireTuning();
+    state.sagX ??= 0;
+    state.velocityX ??= 0;
+    // Opposite the motion: the wire trails the cursor rather than leading it.
+    state.velocityX -= dx * swing * slack;
+    state.velocity -= dy * swing * slack;
 }
 
 /** True once the spring has effectively stopped. */
 export function hasSettled(state: SagState, target: number): boolean {
     return (
         Math.abs(state.sag - target) < SETTLE_EPSILON &&
-        Math.abs(state.velocity) < SETTLE_EPSILON
+        Math.abs(state.velocity) < SETTLE_EPSILON &&
+        Math.abs(state.sagX ?? 0) < SETTLE_EPSILON &&
+        Math.abs(state.velocityX ?? 0) < SETTLE_EPSILON
     );
 }
 
@@ -137,10 +186,11 @@ export function sagPath(
     targetY: number,
     sag: number,
     curvature = 0.28,
+    sagX = 0,
 ): string {
     const offset = controlOffset(targetX - sourceX, curvature);
-    const c1x = sourceX + offset;
-    const c2x = targetX - offset;
+    const c1x = sourceX + offset + sagX;
+    const c2x = targetX - offset + sagX;
     return `M${sourceX},${sourceY} C${c1x},${sourceY + sag} ${c2x},${targetY + sag} ${targetX},${targetY}`;
 }
 
@@ -164,8 +214,11 @@ export interface WirePhysicsOptions {
 /* One loop, one state, for the one wire that can be held at a time. */
 let frame = 0;
 let running = false;
-const state: SagState = { sag: 0, velocity: 0 };
+const state: SagState = { sag: 0, velocity: 0, sagX: 0, velocityX: 0 };
 let lastMs = 0;
+/* Where the cursor was last frame, for measuring the throw. */
+let lastTargetX: number | null = null;
+let lastTargetY: number | null = null;
 let active: WirePhysicsOptions | null = null;
 /**
  * The options of a loop that has settled and parked itself, so a later pointer
@@ -214,7 +267,15 @@ function repaint(): void {
     const ends = active.read();
     active.path.setAttribute(
         "d",
-        sagPath(ends.sourceX, ends.sourceY, ends.targetX, ends.targetY, state.sag),
+        sagPath(
+            ends.sourceX,
+            ends.sourceY,
+            ends.targetX,
+            ends.targetY,
+            state.sag,
+            0.28,
+            state.sagX ?? 0,
+        ),
     );
 }
 
@@ -229,11 +290,21 @@ export function tickForTests(ms: number): void {
     const span = Math.hypot(ends.targetX - ends.sourceX, ends.targetY - ends.sourceY);
     const target = restSag(span);
 
+    /*
+     * How far the cursor moved since the last frame, and how much slack the
+     * wire has left. Together they make the pendulum: a fast drag throws the
+     * belly of the wire, and the throw fades to nothing as the wire straightens.
+     */
+    const { tautDistance } = wireTuning();
+    const slack = Math.max(0, 1 - span / tautDistance);
+    if (lastTargetX !== null && lastTargetY !== null) {
+        kickSag(state, ends.targetX - lastTargetX, ends.targetY - lastTargetY, slack);
+    }
+    lastTargetX = ends.targetX;
+    lastTargetY = ends.targetY;
+
     stepSag(state, target, dt);
-    active.path.setAttribute(
-        "d",
-        sagPath(ends.sourceX, ends.sourceY, ends.targetX, ends.targetY, state.sag),
-    );
+    repaint();
 
     /*
      * Stop once nothing is moving. A held wire the author is not dragging
@@ -281,6 +352,8 @@ export function startWirePhysics(options: WirePhysicsOptions): () => void {
          */
         state.sag = 0;
         state.velocity = 0;
+        state.sagX = 0;
+        state.velocityX = 0;
         repaint();
         return () => stopWirePhysics(false);
     }
@@ -311,9 +384,13 @@ export function stopWirePhysics(keepState = false): void {
     }
     active = null;
     settled = null;
+    lastTargetX = null;
+    lastTargetY = null;
     if (!keepState) {
         state.sag = 0;
         state.velocity = 0;
+        state.sagX = 0;
+        state.velocityX = 0;
     }
 }
 

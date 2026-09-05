@@ -11,6 +11,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getBezierPath } from "@xyflow/react";
 import {
+    kickSag,
     MAX_SAG,
     MAX_STEP_S,
     PULL_TAUT_DISTANCE,
@@ -442,5 +443,93 @@ describe("r113: the wire follows the cursor even with the spring off", () => {
         targetX = 900;
         nudgeWirePhysics();
         expect(el.getAttribute("d")).toBe(afterStop);
+    });
+});
+
+
+describe("r114: the wire swings like a pendulum", () => {
+    /*
+     * QA: "it doesn't have enough of a pendulum feel — near the node, where
+     * there's most sag, I'd expect it to behave like a pendulum, lessening as
+     * it stretches."
+     *
+     * The old model could only bulge straight down, so dragging sideways
+     * produced no swing at all — a hanging rope, never a pendulum. The
+     * midpoint now carries a horizontal offset too: cursor motion throws it,
+     * the same spring pulls it back, and slack scales the throw so it fades as
+     * the wire pulls taut.
+     */
+    const fresh = () => ({ sag: 0, velocity: 0, sagX: 0, velocityX: 0 });
+
+    it("throws the wire sideways when the cursor moves sideways", () => {
+        const st = fresh();
+        kickSag(st, 40, 0, 1);
+        expect(st.velocityX).not.toBe(0);
+    });
+
+    it("throws it opposite the movement, so it trails the hand", () => {
+        const right = fresh();
+        kickSag(right, 40, 0, 1);
+        expect(right.velocityX).toBeLessThan(0);
+
+        const left = fresh();
+        kickSag(left, -40, 0, 1);
+        expect(left.velocityX).toBeGreaterThan(0);
+    });
+
+    it("throws harder the faster the cursor moves", () => {
+        const slow = fresh();
+        const fast = fresh();
+        kickSag(slow, 10, 0, 1);
+        kickSag(fast, 80, 0, 1);
+        expect(Math.abs(fast.velocityX)).toBeGreaterThan(Math.abs(slow.velocityX));
+    });
+
+    it("swings less as the wire pulls taut", () => {
+        // The "lessens as it stretches" half of the request: slack scales it.
+        const loose = fresh();
+        const taut = fresh();
+        kickSag(loose, 40, 0, 1);    // lots of slack
+        kickSag(taut, 40, 0, 0.1);   // nearly straight
+        expect(Math.abs(taut.velocityX)).toBeLessThan(Math.abs(loose.velocityX));
+    });
+
+    it("does not swing at all once the wire is straight", () => {
+        const st = fresh();
+        kickSag(st, 100, 0, 0);
+        expect(st.velocityX).toBe(0);
+    });
+
+    it("builds a visible swing over a sustained drag, then returns to centre", () => {
+        /*
+         * A real drag kicks every frame, not once — that is what accumulates
+         * into a visible pendulum. A single isolated kick moves the wire only
+         * a few pixels, which is why the swing dial has to be large relative
+         * to a stiff spring.
+         */
+        const st = fresh();
+        let peak = 0;
+        for (let i = 0; i < 20; i++) {
+            kickSag(st, 25, 0, 1); // dragging steadily right
+            stepSag(st, 0, 1 / 60);
+            peak = Math.max(peak, Math.abs(st.sagX ?? 0));
+        }
+        // Enough travel to actually see.
+        expect(peak).toBeGreaterThan(15);
+
+        // Let go: it settles back to centre rather than drifting.
+        for (let i = 0; i < 400; i++) stepSag(st, 0, 1 / 60);
+        expect(Math.abs(st.sagX ?? 0)).toBeLessThan(1);
+    });
+
+    it("shows the swing in the rendered path", () => {
+        const straight = sagPath(0, 0, 200, 0, 50, 0.28, 0);
+        const swung = sagPath(0, 0, 200, 0, 50, 0.28, 35);
+        expect(swung).not.toBe(straight);
+    });
+
+    it("counts as settled only when the swing has stopped too", () => {
+        expect(hasSettled({ sag: 50, velocity: 0, sagX: 40, velocityX: 0 }, 50)).toBe(false);
+        expect(hasSettled({ sag: 50, velocity: 0, sagX: 0, velocityX: 0 }, 50)).toBe(true);
     });
 });

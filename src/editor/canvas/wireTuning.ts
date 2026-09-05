@@ -27,6 +27,13 @@ export interface WireTuning {
     maxSag: number;
     /** Span at which the wire is pulled fully straight. */
     tautDistance: number;
+    /**
+     * How hard cursor movement throws the wire sideways — the pendulum.
+     *
+     * 0 is a pure hanging rope with no swing. Higher values make the belly of
+     * the wire trail further behind the hand before the spring pulls it back.
+     */
+    swing: number;
     /** How long the release ghost takes to snap back and fade, in ms. */
     ghostMs: number;
 }
@@ -42,6 +49,12 @@ export const DEFAULT_TUNING: WireTuning = {
     damping: 34,
     maxSag: 115,
     tautDistance: 560,
+    /*
+     * 12, not 1: the kick has to overcome a stiff spring. At stiffness 520 a
+     * swing of 0.9 peaked at 2px of travel — real, and completely invisible.
+     * 12 gives roughly 25px, which reads as a pendulum.
+     */
+    swing: 12,
     ghostMs: 200,
 };
 

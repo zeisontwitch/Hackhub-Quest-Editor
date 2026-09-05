@@ -17,10 +17,16 @@ import {
     spawnWireGhost,
 } from "@/editor/canvas/wireGhost";
 
+/**
+ * Stands in for React Flow's `.react-flow__edges`, which is a plain <div> —
+ * not an <svg>. That distinction is the whole of the r114 bug, so the fake has
+ * to get it right or the tests would not have caught it either.
+ */
 function layer(): SVGElement {
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    document.body.appendChild(svg);
-    return svg;
+    const div = document.createElement("div");
+    div.className = "react-flow__edges";
+    document.body.appendChild(div);
+    return div as unknown as SVGElement;
 }
 
 const spawn = (svg: SVGElement, extra: Partial<Parameters<typeof spawnWireGhost>[0]> = {}) =>
@@ -43,13 +49,13 @@ describe("appearing", () => {
     it("adds a path to the layer it was given", () => {
         const svg = layer();
         spawn(svg);
-        expect(svg.querySelectorAll("path")).toHaveLength(1);
+        expect(svg.querySelectorAll("svg.qe-wire-ghost path")).toHaveLength(1);
     });
 
     it("starts at the sag the live wire had, so it does not jump", () => {
         const svg = layer();
         spawn(svg, { sag: 40 });
-        const d = svg.querySelector("path")!.getAttribute("d")!;
+        const d = svg.querySelector("svg.qe-wire-ghost path")!.getAttribute("d")!;
         expect(d).toContain("40");
     });
 
@@ -57,13 +63,13 @@ describe("appearing", () => {
         // The author has already let go; a fading wire must not swallow input.
         const svg = layer();
         spawn(svg);
-        expect((svg.querySelector("path") as SVGPathElement).style.pointerEvents).toBe("none");
+        expect((svg.querySelector("svg.qe-wire-ghost path") as SVGPathElement).style.pointerEvents).toBe("none");
     });
 
     it("is drawn in the wire's own colour", () => {
         const svg = layer();
         spawn(svg, { colour: "#f472b6" });
-        expect(svg.querySelector("path")!.getAttribute("stroke")).toBe("#f472b6");
+        expect(svg.querySelector("svg.qe-wire-ghost path")!.getAttribute("stroke")).toBe("#f472b6");
     });
 });
 
@@ -75,7 +81,7 @@ describe("going away again", () => {
         expect(liveWireGhostCount()).toBe(1);
         vi.advanceTimersByTime(GHOST_MS + 10);
         expect(liveWireGhostCount()).toBe(0);
-        expect(svg.querySelectorAll("path")).toHaveLength(0);
+        expect(svg.querySelectorAll("svg.qe-wire-ghost path")).toHaveLength(0);
     });
 
     it("can be removed early by its caller", () => {
@@ -83,7 +89,7 @@ describe("going away again", () => {
         const remove = spawn(svg);
         remove();
         expect(liveWireGhostCount()).toBe(0);
-        expect(svg.querySelectorAll("path")).toHaveLength(0);
+        expect(svg.querySelectorAll("svg.qe-wire-ghost path")).toHaveLength(0);
     });
 
     it("survives being removed twice", () => {
@@ -111,7 +117,7 @@ describe("going away again", () => {
         expect(liveWireGhostCount()).toBe(3);
         dismissWireGhosts();
         expect(liveWireGhostCount()).toBe(0);
-        expect(svg.querySelectorAll("path")).toHaveLength(0);
+        expect(svg.querySelectorAll("svg.qe-wire-ghost path")).toHaveLength(0);
     });
 
     it("works where the engine cannot animate", () => {
@@ -119,9 +125,9 @@ describe("going away again", () => {
         vi.useFakeTimers();
         const svg = layer();
         spawn(svg);
-        expect(svg.querySelectorAll("path")).toHaveLength(1);
+        expect(svg.querySelectorAll("svg.qe-wire-ghost path")).toHaveLength(1);
         vi.advanceTimersByTime(GHOST_MS + 10);
-        expect(svg.querySelectorAll("path")).toHaveLength(0);
+        expect(svg.querySelectorAll("svg.qe-wire-ghost path")).toHaveLength(0);
     });
 });
 
@@ -144,7 +150,7 @@ describe("r108: the search holds the ghost back", () => {
         // The canvas holds the spawn in a ref rather than calling it.
         const deferred = () => spawn(svg);
         expect(liveWireGhostCount()).toBe(0);
-        expect(svg.querySelectorAll("path")).toHaveLength(0);
+        expect(svg.querySelectorAll("svg.qe-wire-ghost path")).toHaveLength(0);
 
         // Dismissed: now it plays.
         deferred();
@@ -157,7 +163,51 @@ describe("r108: the search holds the ghost back", () => {
         // A node was chosen, so the wire is connected: drop it unplayed.
         deferred = null;
         expect(deferred).toBeNull();
-        expect(svg.querySelectorAll("path")).toHaveLength(0);
+        expect(svg.querySelectorAll("svg.qe-wire-ghost path")).toHaveLength(0);
         expect(liveWireGhostCount()).toBe(0);
+    });
+});
+
+
+describe("r114: the ghost must be inside its own <svg>", () => {
+    /*
+     * The bug QA saw as "the log says the ghost fired but nothing renders".
+     *
+     * `.react-flow__edges` is a plain <div> — React Flow gives every edge its
+     * own <svg> child. A raw <path> appended to a div is created, sits in the
+     * DOM, and is never painted. The ghost now brings its own wrapper.
+     */
+    it("wraps the path in an svg rather than appending it bare", () => {
+        const host = layer();
+        spawn(host);
+        const wrapper = host.querySelector("svg.qe-wire-ghost");
+        expect(wrapper).toBeTruthy();
+        expect(wrapper!.querySelector("path")).toBeTruthy();
+        // Nothing bare directly under the layer, which would never render.
+        expect([...host.children].every((c) => c.tagName.toLowerCase() === "svg")).toBe(true);
+    });
+
+    it("lets the curve hang outside its own box", () => {
+        // Without overflow:visible the sag would be clipped to a zero-size svg.
+        const host = layer();
+        spawn(host);
+        const wrapper = host.querySelector("svg.qe-wire-ghost") as SVGSVGElement;
+        expect(wrapper.style.overflow).toBe("visible");
+        expect(wrapper.style.position).toBe("absolute");
+    });
+
+    it("removes the wrapper, not just the path", () => {
+        // Leaving empty <svg> shells behind would leak one element per drag.
+        const host = layer();
+        const remove = spawn(host);
+        remove();
+        expect(host.children).toHaveLength(0);
+    });
+
+    it("never lets the ghost swallow a click", () => {
+        const host = layer();
+        spawn(host);
+        const wrapper = host.querySelector("svg.qe-wire-ghost") as SVGSVGElement;
+        expect(wrapper.style.pointerEvents).toBe("none");
     });
 });

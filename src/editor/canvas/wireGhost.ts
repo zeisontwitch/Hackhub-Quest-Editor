@@ -33,6 +33,8 @@ import { wireTuning } from "./wireTuning";
 export const GHOST_MS = 200;
 
 interface LiveGhost {
+    /** The wrapper that is actually in the document. */
+    root: SVGSVGElement;
     el: SVGPathElement;
     timer: ReturnType<typeof setTimeout>;
     animation?: Animation;
@@ -48,7 +50,7 @@ function dismiss(ghost: LiveGhost): void {
     } catch {
         /* already finished */
     }
-    ghost.el.remove();
+    ghost.root.remove();
     live.delete(ghost);
 }
 
@@ -85,6 +87,30 @@ export function spawnWireGhost(options: WireGhostOptions): () => void {
     count("ghosts");
     record("ghost", `sag ${sag.toFixed(1)}, ${durationMs}ms`);
 
+    /*
+     * The ghost needs its own <svg>.
+     *
+     * `.react-flow__edges` looks like the place to put a path, but it is a
+     * plain <div> — React Flow gives every edge its own <svg> child. A raw
+     * <path> appended to a div is created, kept in the DOM and never rendered,
+     * which is exactly what QA saw: the log said the ghost fired, the screen
+     * showed nothing (r114).
+     *
+     * The wrapper is absolutely positioned and overflow-visible so the curve
+     * can hang outside its own box, and it inherits the viewport transform
+     * from the container, so pan and zoom still come free.
+     */
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "qe-wire-ghost");
+    svg.style.position = "absolute";
+    svg.style.top = "0";
+    svg.style.left = "0";
+    svg.style.overflow = "visible";
+    svg.style.pointerEvents = "none";
+    // Above the edges, below the nodes: a wire on its way out should not be
+    // painted over the cards it was reaching between.
+    svg.style.zIndex = "0";
+
     const el = document.createElementNS("http://www.w3.org/2000/svg", "path");
     el.setAttribute("d", sagPath(from.x, from.y, to.x, to.y, sag));
     el.setAttribute("fill", "none");
@@ -93,9 +119,11 @@ export function spawnWireGhost(options: WireGhostOptions): () => void {
     el.setAttribute("stroke-linecap", "round");
     // Never intercept a click: the wire is on its way out.
     el.style.pointerEvents = "none";
-    layer.appendChild(el);
+    svg.appendChild(el);
+    layer.appendChild(svg);
 
     const ghost: LiveGhost = {
+        root: svg,
         el,
         timer: setTimeout(() => dismiss(ghost), durationMs),
     };

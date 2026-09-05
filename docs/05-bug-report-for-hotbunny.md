@@ -337,11 +337,33 @@ all. The version shown by `nmap -sV` is also truncated relative to what we send.
 Is `x.y.z` required? Do particular versions map to particular exploits, or is
 any well-formed version exploitable? Is the `nmap` truncation intentional?
 
-## Q5: is there a logging or suspicion API?
+## Q5: can a mod take part in the logging and Suspicion systems?
 
-We can find no way for a mod to write to `sys.log`, or to raise the player's
-suspicion/trace level. The game clearly has both concepts. Are they exposed to
-mods, or planned to be?
+Sharpened after reading the in-game handbook, which documents both mechanics in
+detail — so the question is no longer *whether* they exist, but whether a mod
+can participate.
+
+The handbook teaches that after getting a shell the player should find the
+access logs and delete the single line recording their shell, leaving the
+others alone, or suspicion rises. It also names real paths —
+`/logs/accounts.log`, `/root/logs/terminal.log`.
+
+For a mod-authored quest we would want to:
+
+- **seed a log file on a target machine**, including the line the player is
+  meant to remove;
+- **know when they removed it** (correctly or otherwise);
+- **raise or lower suspicion** as a consequence of a quest action.
+
+None of these appear in SDK 0.21.0. Are they exposed anywhere we have missed,
+or planned? Without them a mod quest cannot teach or use the mechanic the game
+itself considers core to hacking.
+
+## Q6: two documented tools raise no event
+
+`dnshistory` and `scp` are both taught in the handbook, but neither appears in
+`ModEventMap`, so a quest cannot react to a player using them. Is that
+deliberate? (`Files.Transfer` may cover `scp`; we have not confirmed.)
 
 ---
 

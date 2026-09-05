@@ -131,6 +131,7 @@ The whole suite runs in about a minute. `npm run build` runs typecheck first.
 |---|---|
 | `01-analysis-and-architecture.md` | The original design and its reasoning. Mostly still accurate. |
 | `02-editor-shell.md` | **Archive.** An append-only build log, rounds 1–74. Not current, but the bug histories in it are load-bearing. |
+| `In-Game-Handbook.md` | **The game's own teaching material**, transcribed from in-game. Authoritative for how a player is expected to work — outranks the SDK on that question, and outranks the web entirely. |
 | `03-questions-for-the-developers.md` | Open questions about the game and SDK. |
 | `04-engine-bug-quest-completion.md` | The engine bug that stops a mod quest completing, with a minimal reproduction. |
 | `05-bug-report-for-hotbunny.md` | The consolidated report sent to the game's developer. |

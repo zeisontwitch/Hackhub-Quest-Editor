@@ -1102,9 +1102,41 @@ describe("seeding files", () => {
         ]);
     });
 
-    it("says plainly that a remote device needs its files in the device tree", () => {
-        expect(computeWarnings(filesProject("device")).join("\n")).toContain("device's own tree");
-        expect(computeWarnings(filesProject("player")).join("\n")).not.toContain("device's own tree");
+    it("puts a remote device's files on the device instead of warning about it", () => {
+        /*
+         * This used to assert a warning saying the node "exports as a note".
+         * It no longer does: r120 folds the files into the device's owning
+         * user at build time, which is the one mechanism that actually places
+         * a file on a remote machine.
+         */
+        const project = filesProject("device");
+        const q = project.quests[0];
+        q.graph.nodes.push(
+            node("world.network", {
+                ipMode: "fixed",
+                device: {
+                    id: "dev", ip: "10.0.0.12", name: "host", type: "ROUTER",
+                    vulnerabilities: [],
+                    ports: [{ id: "p", external: 22, internal: 22, active: true, service: "ssh", version: "OpenSSH 6.4.0" }],
+                    users: [{ id: "u", username: "admin", acceptReverseTCP: true }],
+                    children: [],
+                },
+            }),
+        );
+
+        const result = compileProject(project);
+        expect(result.warnings.join("\n")).not.toContain("exports as a note");
+
+        // The files reach the device, nested under the folder that was asked for.
+        const source = result.files.find((f) => f.path === "dist/mod.js")!.content;
+        expect(source).toContain('"work"');
+        expect(source).toContain('"brief"');
+    });
+
+    it("says which seed nodes it could not place, and why", () => {
+        // No network in the quest, so there is no device to put them on.
+        const result = compileProject(filesProject("device"));
+        expect(result.warnings.join("\n")).toContain("does not create a network");
     });
 
     it("does not fall over when the game offers no Files API", async () => {

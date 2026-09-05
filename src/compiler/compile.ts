@@ -12,6 +12,7 @@
  * (runtimeSource.ts) that walks each quest graph at runtime.
  */
 import type { ProjectDocument } from "@/schema/project";
+import { seedRemoteFiles } from "./seedRemoteFiles";
 import type { NodeDoc } from "@/schema/nodes";
 import { RUNTIME_SOURCE } from "./runtimeSource";
 
@@ -22,7 +23,7 @@ import { RUNTIME_SOURCE } from "./runtimeSource";
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-05.r115";
+export const EDITOR_BUILD = "2026-09-05.r120";
 
 export interface CompiledFile {
     path: string;
@@ -128,13 +129,11 @@ export function computeWarnings(project: ProjectDocument): string[] {
         }
         for (const n of q.graph.nodes) {
             switch (n.type) {
-                case "world.files":
-                    if ((n.data as { target?: string }).target !== "player") {
-                        warnings.push(
-                            `${q.name}: files for a remote device are placed in that device's own tree, under the user who owns them — a “Seed files” node pointed at a device exports as a note. Files on the player's own PC work as written.`,
-                        );
-                    }
-                    break;
+                /* "world.files" used to warn here that a device-targeted node
+                   "exports as a note". It no longer does: the files are folded
+                   into the device's owning user at build time (r120), and
+                   compileProject reports anything it could not place with the
+                   specific reason. */
                 case "world.firewall":
                 case "world.port":
                     /* Both act on a machine that must already exist: the engine
@@ -339,10 +338,45 @@ export function computeWarnings(project: ProjectDocument): string[] {
 }
 
 export function compileProject(project: ProjectDocument): CompileResult {
-    const permissions = computePermissions(project);
-    const warnings = computeWarnings(project);
+    /*
+     * Work on a copy. `seedRemoteFiles` moves files onto device definitions,
+     * and compiling must never mutate the author's open project.
+     */
+    const working: ProjectDocument = structuredClone(project);
 
-    const compiledQuests = project.quests.map((q) => ({ q, graph: q.graph }));
+    /*
+     * Fold "Seed files → a remote device" into the device that owns them.
+     * Runtime cannot do it — every `Files.*` call resolves against the current
+     * session — so it happens here, while the device definition is still
+     * reachable. See seedRemoteFiles.ts.
+     */
+    const seeded = working.quests.map((q) => ({ quest: q, result: seedRemoteFiles(q) }));
+    const absorbed = new Set<string>();
+    for (const { result } of seeded) for (const id of result.absorbed) absorbed.add(id);
+
+    const permissions = computePermissions(working);
+    const warnings = computeWarnings(working);
+
+    /* Anything that could not be placed is worth saying plainly. */
+    for (const { quest, result } of seeded) {
+        for (const { reason } of result.unplaced) {
+            warnings.push(
+                `${quest.name}: a “Seed files” node could not be placed — ${reason}. ` +
+                    "Point it at a device this quest creates, or target the player's PC instead.",
+            );
+        }
+    }
+
+    const compiledQuests = working.quests.map((q) => ({
+        q,
+        graph: {
+            ...q.graph,
+            /* An absorbed node's files are already on the device; leaving the
+               node in would make it a no-op step in the flow. */
+            nodes: q.graph.nodes.filter((n) => !absorbed.has(n.id)),
+            edges: q.graph.edges,
+        },
+    }));
 
     const PROJECT = {
         mod: project.mod,

@@ -14,6 +14,7 @@ Not current documentation. For how the editor works today, see
 | r98 | Alignment, first pass | Snapping each corner after centring pushes differently-sized cards back off the shared line. |
 | r99 | Alignment, second pass | The real defect: alignment was being handed `size: undefined` for every node, so centring silently became corner alignment. |
 | r102 | Node search | Blender's model — open at the pointer, type immediately, no separate search mode. Also two collisions found by reading our own code. |
+| r120 | Remote file seeding | The `world.files` node pointed at a device silently did nothing; it now folds into the device tree at build time. |
 | r119 | Handbook gap analysis | What the in-game handbook settles (phishing, Suspicion, port forwarding, log paths), where the editor cannot yet express what it teaches, and three r117 guesses it contradicts. |
 | r117 | Template rebuild plan | Nine entries across three tiers, covering the two website styles, the phishing flow, and a multi-tool expert chain. Also the mechanical exploitability test, which corrected two claims the r116 audit got wrong. |
 | r116 | Template audit | Three templates ask the player to break in and were never given the account setup that allows it; `investigation` also ships two nodes that compile to nothing. Plus a re-read of what each template is *for*. |

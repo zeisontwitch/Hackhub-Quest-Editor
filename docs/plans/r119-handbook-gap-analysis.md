@@ -124,9 +124,12 @@ there, in the way it is described."* Measured against that:
    can seed files, but there is no notion of "the log line that records your
    shell", and no way to react to it being cleaned.
 
-3. **`world.files` cannot put a file on a remote device** — it exports as a
-   note. The handbook's whole exfiltration loop assumes files on target
-   machines. This is already a known gap; the handbook makes it a bigger one.
+3. ~~**`world.files` cannot put a file on a remote device**~~ — **fixed in
+   r120.** The node now folds its files into the device's owning user at build
+   time, which is the one mechanism that actually places a file on a remote
+   machine (`NetworkUser.files`, mounted before anyone connects). A runtime fix
+   was impossible: every `Files.*` call in the SDK resolves against the current
+   session and none takes a target address.
 
 4. **No node models the Metasploit payload/handler setup.** For a phishing
    quest the author needs the player to set `LHOST`/`LPORT`, forward that port,
@@ -147,8 +150,7 @@ there, in the way it is described."* Measured against that:
    template shows it.
 3. **Port-forwarding as a first-class node** (or at minimum a Router preset on
    the network node with the three fields the handbook names).
-4. **Revisit `world.files` on a remote device** — the single biggest mismatch
-   between what the handbook teaches and what the editor can build.
+4. ~~**Revisit `world.files` on a remote device**~~ — done, r120.
 5. **Fold the handbook's workflows into the templates**: the "I have a domain"
    and "I have an IP" chains are exactly the shape a good template should have.
 6. **Update the dev-questions doc** — remove the Suspicion question, which is

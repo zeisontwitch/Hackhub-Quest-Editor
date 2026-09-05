@@ -7,11 +7,15 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { getPath, setPath, useEditor } from "@/store/editor";
 import { createProject } from "@/schema/project";
 import { nodeTypeDef } from "@/schema/registry";
-import { TEMPLATES } from "@/templates";
+import { getTemplate } from "@/templates";
 
 /** Load a fresh document and wipe history so tests are order-independent. */
 function fresh() {
-    const project = TEMPLATES[2].build();
+    // The store tests exercise history/connect/undo against a real quest, and
+    // need both an objective and a world.network node. The Harbour Manifest
+    // ships both, so use it rather than depending on which template is at an
+    // index.
+    const project = getTemplate("data-grab")!.build();
     useEditor.getState().load(project, { clearHistory: true });
     useEditor.setState({ selection: { nodeIds: [], edgeIds: [] } });
     return useEditor.getState();

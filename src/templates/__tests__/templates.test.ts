@@ -19,6 +19,8 @@ describe("template registry", () => {
         expect(TEMPLATES.map((t) => t.id)).toEqual([
             "blank",
             "first-contact",
+            "the-byline",
+            "cold-call",
             "data-grab",
             "the-help-desk-leak",
             "contract-hack",
@@ -252,7 +254,7 @@ describe("node summaries", () => {
     it("renders a network node with the machine it builds", () => {
         // The Harbour Manifest ships a single public file server, so its network
         // node must read as the machine the player will break into.
-        const net = TEMPLATES[2]
+        const net = getTemplate("data-grab")!
             .build()
             .quests[0].graph.nodes.find((n) => n.type === "world.network")!;
         // The network is allocated a random IP, which is what the card shows.

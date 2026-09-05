@@ -13,6 +13,8 @@
 import type { Template } from "@/templates/kit";
 import { buildBlank } from "@/templates/blank";
 import { buildFirstContact } from "@/templates/firstContact";
+import { buildByline } from "@/templates/byline";
+import { buildColdCall } from "@/templates/coldCall";
 import { buildDataGrab } from "@/templates/harbourManifest";
 import { buildHelpDeskLeak } from "@/templates/helpDeskLeak";
 import { buildContractHack } from "@/templates/ledgerContract";
@@ -37,6 +39,24 @@ export const TEMPLATES: Template[] = [
         difficulty: "Beginner",
         nodeCount: 9,
         build: buildFirstContact,
+    },
+    {
+        id: "the-byline",
+        name: "The Byline",
+        description:
+            "A website clue in plain sight: read an article, spot the byline, and look the writer up. No break-in, nothing hidden.",
+        difficulty: "Beginner",
+        nodeCount: 12,
+        build: buildByline,
+    },
+    {
+        id: "cold-call",
+        name: "Cold Call",
+        description:
+            "A story told in conversation: a contact messages you on Kisscord, a hint surfaces on WeeChat, and the quest closes on a typed answer.",
+        difficulty: "Beginner",
+        nodeCount: 10,
+        build: buildColdCall,
     },
     {
         id: "data-grab",

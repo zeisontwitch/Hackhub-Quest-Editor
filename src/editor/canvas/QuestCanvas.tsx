@@ -849,7 +849,7 @@ function CanvasInner() {
                         className="btn-ghost rounded-none rounded-l-md"
                         onClick={() => arrange("row")}
                         disabled={selection.nodeIds.length < 2}
-                        title="Line the selected nodes up side by side, centred on the same height"
+                        title="Align: move the selected nodes onto one horizontal line, centred on the same height"
                         aria-label="Align in a row"
                     >
                         <Icon name="rows" size={13} />
@@ -857,21 +857,28 @@ function CanvasInner() {
                     </button>
                     <button
                         type="button"
-                        className="btn-ghost rounded-none"
+                        className="btn-ghost rounded-none rounded-r-md"
                         onClick={() => arrange("column")}
                         disabled={selection.nodeIds.length < 2}
-                        title="Stack the selected nodes one above another, centred on the same vertical line"
+                        title="Align: move the selected nodes onto one vertical line, centred on the same left-to-right position"
                         aria-label="Align in a column"
                     >
                         <Icon name="columns" size={13} />
                         Column
                     </button>
+                </div>
+                {/* Distributing is a different job from aligning — one moves
+                    everything onto a line, the other only adjusts the gaps
+                    between them. They were one undivided strip of four
+                    lookalike buttons, which made "Even across" easy to press
+                    while meaning "Row". Two groups, and the verbs differ. */}
+                <div className="pointer-events-auto flex items-center gap-px rounded-md border border-line bg-surface/90">
                     <button
                         type="button"
-                        className="btn-ghost rounded-none"
+                        className="btn-ghost rounded-none rounded-l-md"
                         onClick={() => arrange("spread-row")}
                         disabled={selection.nodeIds.length < 3}
-                        title="Even out the left-to-right gaps, leaving the outermost nodes where they are"
+                        title="Space out: equalise the left-to-right gaps only. Does not move anything onto a line — use Row for that. The outermost nodes stay put."
                         aria-label="Space out across"
                     >
                         <Icon name="spread-h" size={13} />
@@ -882,7 +889,7 @@ function CanvasInner() {
                         className="btn-ghost rounded-none rounded-r-md"
                         onClick={() => arrange("spread-column")}
                         disabled={selection.nodeIds.length < 3}
-                        title="Even out the top-to-bottom gaps, leaving the outermost nodes where they are"
+                        title="Space out: equalise the top-to-bottom gaps only. Does not move anything onto a line — use Column for that. The outermost nodes stay put."
                         aria-label="Space out down"
                     >
                         <Icon name="spread-v" size={13} />

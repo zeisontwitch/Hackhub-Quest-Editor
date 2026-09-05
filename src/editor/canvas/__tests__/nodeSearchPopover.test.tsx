@@ -95,6 +95,63 @@ describe("opening and closing", () => {
     });
 });
 
+describe("Shift+A", () => {
+    /**
+     * Untested in r102, and duly shipped broken: the handler required
+     * `wrapperRef.contains(event.target)`, but with nothing focused a keydown
+     * targets <body>, which is an ancestor of the canvas rather than a
+     * descendant — so the guard rejected every press. "Over the canvas" has to
+     * mean the pointer, not the focus.
+     */
+    async function mountAndPoint(x: number, y: number) {
+        render(<App />);
+        await waitFor(() => expect(document.querySelector(".react-flow__pane")).toBeTruthy());
+        const wrapper = document.querySelector(".react-flow")!.parentElement as HTMLElement;
+        wrapper.getBoundingClientRect = () =>
+            ({ x: 0, y: 0, left: 0, top: 0, right: 1000, bottom: 800, width: 1000, height: 800, toJSON() {} }) as DOMRect;
+        act(() => {
+            wrapper.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: x, clientY: y }));
+        });
+        return userEvent.setup();
+    }
+
+    it("opens the search when the pointer is over the canvas", async () => {
+        await mountAndPoint(400, 300);
+        act(() => {
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "A", shiftKey: true, bubbles: true }));
+        });
+        await waitFor(() => expect(popover()).toBeTruthy());
+    });
+
+    it("adds a node, like the right-click route", async () => {
+        const before = nodeCount();
+        const user = await mountAndPoint(400, 300);
+        act(() => {
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "A", shiftKey: true, bubbles: true }));
+        });
+        await waitFor(() => expect(popover()).toBeTruthy());
+        await user.keyboard("dialogue{Enter}");
+        await waitFor(() => expect(nodeCount()).toBe(before + 1));
+    });
+
+    it("stays out of the way when the pointer is off the canvas", async () => {
+        await mountAndPoint(5000, 5000);
+        act(() => {
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "A", shiftKey: true, bubbles: true }));
+        });
+        expect(popover()).toBeNull();
+    });
+
+    it("does not fire for a plain A, or with ctrl held", async () => {
+        await mountAndPoint(400, 300);
+        act(() => {
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "a", bubbles: true }));
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "A", shiftKey: true, ctrlKey: true, bubbles: true }));
+        });
+        expect(popover()).toBeNull();
+    });
+});
+
 describe("searching and adding", () => {
     it("filters as the author types, with no separate search step", async () => {
         const { user } = await openSearch();

@@ -741,6 +741,12 @@ function CanvasInner() {
         [addNode, screenToFlowPosition, searchAt],
     );
 
+    /**
+     * Where the pointer last was, so Shift+A can open the search under it —
+     * the way Blender does, rather than at some fixed point.
+     */
+    const pointer = useRef<{ x: number; y: number } | null>(null);
+
     /* Shift+A over the canvas, Blender's shortcut for the same job. */
     useEffect(() => {
         const onKey = (event: KeyboardEvent) => {
@@ -752,10 +758,22 @@ function CanvasInner() {
             if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target?.isContentEditable) {
                 return;
             }
-            if (!wrapperRef.current?.contains(target)) return;
+            /*
+             * "Over the canvas" has to mean the POINTER, not the focus.
+             * Keying off `wrapperRef.contains(event.target)` looked right and
+             * never fired: with nothing focused the target is <body>, which is
+             * an ancestor of the wrapper, not a descendant — so the guard
+             * rejected every press.
+             */
+            const at = pointer.current;
+            if (!at) return;
+            const rect = wrapperRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            const inside =
+                at.x >= rect.left && at.x <= rect.right && at.y >= rect.top && at.y <= rect.bottom;
+            if (!inside) return;
             event.preventDefault();
-            const rect = wrapperRef.current.getBoundingClientRect();
-            openSearchAt(rect.left + rect.width / 2, rect.top + rect.height / 3);
+            openSearchAt(at.x, at.y);
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
@@ -785,7 +803,13 @@ function CanvasInner() {
         <div
             ref={wrapperRef}
             className="relative h-full w-full"
+            onPointerMove={(e) => {
+                // A ref, not state: this fires constantly and must never
+                // re-render the canvas (see canvasPerformance.test.tsx).
+                pointer.current = { x: e.clientX, y: e.clientY };
+            }}
             onPointerDown={(e) => {
+                pointer.current = { x: e.clientX, y: e.clientY };
                 if (e.button === 2) rightDown.current = { x: e.clientX, y: e.clientY };
             }}
             onPointerUp={(e) => {

@@ -14,4 +14,5 @@ Not current documentation. For how the editor works today, see
 | r98 | Alignment, first pass | Snapping each corner after centring pushes differently-sized cards back off the shared line. |
 | r99 | Alignment, second pass | The real defect: alignment was being handed `size: undefined` for every node, so centring silently became corner alignment. |
 | r102 | Node search | Blender's model — open at the pointer, type immediately, no separate search mode. Also two collisions found by reading our own code. |
+| r116 | Template audit | Three templates ask the player to break in and were never given the account setup that allows it; `investigation` also ships two nodes that compile to nothing. Plus a re-read of what each template is *for*. |
 | r107 | Wire physics | Why a damped spring on one scalar rather than a Verlet rope, and the ten failure modes the design has to survive. |

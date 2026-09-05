@@ -39,7 +39,6 @@
   },
   "devDependencies": {
     "@hotbunny/hackhub-content-sdk": "0.21.0",
-    "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -51,7 +50,6 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.1.1",
     "jsdom": "^26.1.0",
-    "playwright-core": "^1.62.1",
     "prettier": "^3.9.6",
     "tailwindcss": "^4.3.3",
     "typescript": "5.9.3",

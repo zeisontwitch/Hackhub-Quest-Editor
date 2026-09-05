@@ -48,10 +48,24 @@ shell, forcing a password crack the story never mentions.
 **investigation has no SSH port at all.** Its only port is mysql, yet its final
 objective is `Terminal.SSH.FileDownload`. That one cannot work as written.
 
-> **Caveat, stated plainly:** this is reasoning from the rules we learned in
-> r51–r78, not from playing them. I am confident about investigation (no SSH
-> port for an SSH objective) and reasonably confident about the other two. Only
-> a real playthrough settles it.
+> **Correction (r117).** Two claims above were wrong, found when I wrote a
+> mechanical test instead of reading the tree by eye.
+>
+> *"investigation has no SSH port"* — it does. The **router** carries ssh and
+> http; I had only looked at the child device, which is mysql-only. The quest
+> is reachable.
+>
+> *"missing `acceptReverseTCP` breaks them"* — not on its own. Leaving
+> `extraAccounts` unset means the stock schema adds a **guest** account, and
+> r53 established that a guest is a valid way in. So these templates are
+> probably completable.
+>
+> What remains true, and is still worth fixing: with guests enabled the player
+> lands in `guest` rather than an admin shell (r57/r78), which forces a password
+> crack none of these stories mention. That is a design flaw, not a blocker.
+>
+> The lesson for me: I read three device trees by eye and drew a confident
+> conclusion. The test I should have written first disagreed with me.
 
 ## 2. Dead nodes in `investigation`
 

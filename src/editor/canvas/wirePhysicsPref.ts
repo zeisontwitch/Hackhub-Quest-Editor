@@ -23,11 +23,29 @@ const STORAGE_KEY = "qe.wirePhysics";
 type Listener = () => void;
 const listeners = new Set<Listener>();
 
+/**
+ * The default, for an author who has never touched the toggle.
+ *
+ * On, unless the OS asks for reduced motion — a hint, not a veto. Using it to
+ * *block* the feature meant a deliberate click on "Springy wires" did nothing
+ * and said nothing, which is worse for the author than simply defaulting off.
+ */
+function defaultWirePhysics(): boolean {
+    try {
+        return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    } catch {
+        // No matchMedia: assume motion is welcome.
+        return true;
+    }
+}
+
 function readStored(): boolean {
     try {
-        // On unless refused. It is the nicer default, and the toggle exists
-        // for the machines and people it does not suit.
-        return localStorage.getItem(STORAGE_KEY) !== "off";
+        const saved = localStorage.getItem(STORAGE_KEY);
+        // An explicit choice always wins over the OS hint.
+        if (saved === "on") return true;
+        if (saved === "off") return false;
+        return defaultWirePhysics();
     } catch {
         // Private mode, or no storage at all.
         return true;

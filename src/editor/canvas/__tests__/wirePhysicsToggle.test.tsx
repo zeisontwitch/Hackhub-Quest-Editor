@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 /* Both wire buttons match /wires/, so name the one under test. */
-const toggle = () => screen.getByRole("button", { name: "Springy wires", pressed: true });
+const toggle = () => screen.getByRole("button", { name: /Springy wires: on/, pressed: true });
 
 async function mount() {
     render(<App />);
@@ -31,7 +31,20 @@ async function mount() {
 describe("the wire physics toggle", () => {
     it("sits in the canvas toolbar", async () => {
         await mount();
-        expect(screen.getByText("Springy wires")).toBeTruthy();
+        expect(screen.getByText("Springy wires: on")).toBeTruthy();
+    });
+
+    it("says on or off rather than naming the mode ambiguously", async () => {
+        /*
+         * QA spent a round testing with physics switched off, believing it was
+         * on: the label read "Plain wires", which is equally readable as a
+         * button that will *make* them plain. It now states the state
+         * outright.
+         */
+        const user = await mount();
+        expect(screen.getByText("Springy wires: on")).toBeTruthy();
+        await user.click(screen.getByText("Springy wires: on"));
+        await waitFor(() => expect(screen.getByText("Springy wires: off")).toBeTruthy());
     });
 
     it("is on by default — the nicer behaviour, refusable", async () => {
@@ -41,18 +54,18 @@ describe("the wire physics toggle", () => {
 
     it("switches to plain wires and remembers the choice", async () => {
         const user = await mount();
-        await user.click(screen.getByText("Springy wires"));
-        await waitFor(() => expect(screen.getByText("Plain wires")).toBeTruthy());
+        await user.click(screen.getByText("Springy wires: on"));
+        await waitFor(() => expect(screen.getByText("Springy wires: off")).toBeTruthy());
         expect(wirePhysicsEnabled()).toBe(false);
         expect(localStorage.getItem("qe.wirePhysics")).toBe("off");
     });
 
     it("switches back again", async () => {
         const user = await mount();
-        await user.click(screen.getByText("Springy wires"));
-        await waitFor(() => expect(screen.getByText("Plain wires")).toBeTruthy());
-        await user.click(screen.getByText("Plain wires"));
-        await waitFor(() => expect(screen.getByText("Springy wires")).toBeTruthy());
+        await user.click(screen.getByText("Springy wires: on"));
+        await waitFor(() => expect(screen.getByText("Springy wires: off")).toBeTruthy());
+        await user.click(screen.getByText("Springy wires: off"));
+        await waitFor(() => expect(screen.getByText("Springy wires: on")).toBeTruthy());
         expect(wirePhysicsEnabled()).toBe(true);
     });
 
@@ -60,8 +73,8 @@ describe("the wire physics toggle", () => {
         // A view preference must not be exported, or land in the undo history.
         const user = await mount();
         const before = JSON.stringify(useEditor.getState().project);
-        await user.click(screen.getByText("Springy wires"));
-        await waitFor(() => expect(screen.getByText("Plain wires")).toBeTruthy());
+        await user.click(screen.getByText("Springy wires: on"));
+        await waitFor(() => expect(screen.getByText("Springy wires: off")).toBeTruthy());
         expect(JSON.stringify(useEditor.getState().project)).toBe(before);
     });
 
@@ -69,8 +82,8 @@ describe("the wire physics toggle", () => {
         // Different questions: drifting dots on resting wires versus a
         // dragged wire hanging. Refusing one must not refuse the other.
         const user = await mount();
-        await user.click(screen.getByText("Springy wires"));
-        await waitFor(() => expect(screen.getByText("Plain wires")).toBeTruthy());
+        await user.click(screen.getByText("Springy wires: on"));
+        await waitFor(() => expect(screen.getByText("Springy wires: off")).toBeTruthy());
         expect(screen.getByText("Animated wires")).toBeTruthy();
     });
 

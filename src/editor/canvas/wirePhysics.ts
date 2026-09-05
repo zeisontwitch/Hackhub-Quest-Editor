@@ -166,18 +166,22 @@ let settled: WirePhysicsOptions | null = null;
 /**
  * Should the wire move at all?
  *
- * Three gates, any of which stops it: the author's physics toggle, the wire
- * motion master switch, and the OS reduced-motion preference.
+ * Two gates, both of them the author's own choice: the physics toggle and the
+ * wire-motion master switch.
+ *
+ * `prefers-reduced-motion` used to be a third, silently. I added it unprompted
+ * as an accessibility nicety, and it was a mistake: an author with animations
+ * turned off at the OS level got a dead toggle and no explanation, having
+ * never asked for the feature to be disabled. The editor already offers an
+ * explicit switch, which is the honest way to respect the preference — it is
+ * discoverable, it says what it does, and it does not override a deliberate
+ * click. `defaultWirePhysics()` uses the OS hint to pick a *default* instead,
+ * which is the right place for a hint.
  */
 export function motionAllowed(): boolean {
     if (!wirePhysicsEnabled()) return false;
     if (!wireMotionEnabled()) return false;
-    try {
-        return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    } catch {
-        // No matchMedia (old engine, or a test environment without it).
-        return true;
-    }
+    return true;
 }
 
 /** Paint one frame. Exported so tests can drive the loop deterministically. */

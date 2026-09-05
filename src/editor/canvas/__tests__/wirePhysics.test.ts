@@ -217,16 +217,24 @@ describe("the switches that turn it off", () => {
         expect(wirePhysicsRunning()).toBe(false);
     });
 
-    it("respects the reduced-motion preference", () => {
+    it("does NOT let the OS reduced-motion setting veto an explicit choice", () => {
+        /*
+         * r110. Reduced-motion used to be a third silent gate, which I added
+         * unprompted. An author with animations disabled at the OS level got a
+         * toggle that did nothing and said nothing — they had switched physics
+         * ON and the wire stayed dead. The preference now picks the *default*
+         * (see wirePhysicsPref) and never overrides a deliberate click.
+         */
         vi.spyOn(window, "matchMedia").mockReturnValue({
             matches: true, media: "", onchange: null,
             addListener() {}, removeListener() {},
             addEventListener() {}, removeEventListener() {},
             dispatchEvent: () => false,
         } as unknown as MediaQueryList);
+        setWirePhysicsEnabled(true);
         const raf = vi.spyOn(globalThis, "requestAnimationFrame");
         startWirePhysics({ path: path(), read: ends });
-        expect(raf).not.toHaveBeenCalled();
+        expect(raf).toHaveBeenCalled();
     });
 
     it("still animates the release ghost, which is not optional motion", () => {
@@ -324,5 +332,41 @@ describe("r108: the wire keeps moving for the whole drag", () => {
         tickForTests(32);
         const straight = sagPath(0, 0, 120, 0, 0);
         expect(el.getAttribute("d")).not.toBe(straight);
+    });
+});
+
+describe("r109: a restart mid-drag must not lose the spring", () => {
+    /*
+     * The inline ref meant `startWirePhysics` ran on every pointer move. That
+     * turned out NOT to reset the sag — `stopWirePhysics(true)` deliberately
+     * keeps it — which is why this alone did not explain the dead wire. Worth
+     * keeping as a guard anyway: if a future change makes a restart reset the
+     * state, a wire dragged in a browser would go rigid while every other test
+     * still passed.
+     */
+    const path = () => document.createElementNS("http://www.w3.org/2000/svg", "path");
+    const ends = () => ({ sourceX: 0, sourceY: 0, targetX: 120, targetY: 0 });
+
+    it("keeps the sag it had built up", () => {
+        const el = path();
+        startWirePhysics({ path: el, read: ends, force: true });
+        tickForTests(0);
+        tickForTests(16);
+        const built = wirePhysicsState().sag;
+        expect(built).toBeGreaterThan(0);
+
+        startWirePhysics({ path: el, read: ends, force: true });
+        expect(wirePhysicsState().sag).toBeCloseTo(built, 6);
+    });
+
+    it("a single start lets the sag build up over successive frames", () => {
+        const el = path();
+        startWirePhysics({ path: el, read: ends, force: true });
+        tickForTests(0);
+        const first = wirePhysicsState().sag;
+        tickForTests(16);
+        tickForTests(32);
+        tickForTests(48);
+        expect(wirePhysicsState().sag).toBeGreaterThan(first);
     });
 });

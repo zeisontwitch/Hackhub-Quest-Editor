@@ -23,6 +23,12 @@ function heldWireJsx(): string {
     return SOURCE.slice(start, end);
 }
 
+/** The ref callback that owns the held wire's element. */
+function attachFn(): string {
+    const start = SOURCE.indexOf("const attachHeldWire = useCallback");
+    return SOURCE.slice(start, SOURCE.indexOf("}, []);", start));
+}
+
 describe("the held wire has exactly one writer for `d`", () => {
     it("does not pass `d` as a React prop", () => {
         /*
@@ -39,11 +45,27 @@ describe("the held wire has exactly one writer for `d`", () => {
     it("paints the first frame from the ref instead", () => {
         // Without this the wire would be invisible until the loop's first tick,
         // and would never appear at all with physics switched off.
-        expect(heldWireJsx()).toContain('el.setAttribute("d", path)');
+        expect(attachFn()).toContain('el.setAttribute("d"');
     });
 
     it("starts the physics loop on that same element", () => {
-        expect(heldWireJsx()).toContain("startWirePhysics({ path: el");
+        expect(attachFn()).toContain("startWirePhysics({ path: el");
+    });
+
+    it("uses a STABLE ref, not an inline arrow", () => {
+        /*
+         * The r109 bug. React re-runs a ref callback whose identity changed —
+         * detaching with null, then re-attaching. An inline `ref={(el) => …}`
+         * is a new function on every render, and `ConnectionLine` re-renders
+         * on every pointer move, so the loop was restarted sixty times a
+         * second and the spring reset to zero each time. The wire could never
+         * accumulate any sag, which looked identical to the physics being off.
+         */
+        expect(heldWireJsx()).toContain("ref={attachHeldWire}");
+        expect(heldWireJsx()).not.toMatch(/ref=\{\(el\)/);
+        // ...and the callback itself must have no dependencies, or it would
+        // change identity again whenever they did.
+        expect(SOURCE).toContain("const attachHeldWire = useCallback((el: SVGPathElement | null) => {");
     });
 
     it("wakes the loop when the cursor moves", () => {

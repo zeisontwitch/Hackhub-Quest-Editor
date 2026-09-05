@@ -7,7 +7,6 @@
  */
 import {
     Background,
-    Position,
     type ConnectionLineComponentProps,
     type InternalNode,
     type Node as RFNode,
@@ -17,7 +16,6 @@ import {
     Controls,
     MiniMap,
     ReactFlow,
-    getBezierPath,
     useReactFlow,
     useStoreApi,
     type Connection,
@@ -36,6 +34,7 @@ import { NodeSearchPopover } from "./NodeSearchPopover";
 import { entrySocketFor } from "./nodeSearch";
 import {
     nudgeWirePhysics,
+    sagPath,
     startWirePhysics,
     stopWirePhysics,
     wirePhysicsState,
@@ -776,6 +775,30 @@ function CanvasInner() {
      */
     const heldEnds = useRef<WireEnds>({ sourceX: 0, sourceY: 0, targetX: 0, targetY: 0 });
     const heldPath = useRef<SVGPathElement | null>(null);
+
+    /**
+     * Attach the held wire's path to the physics loop.
+     *
+     * Stable on purpose. An inline `ref={(el) => …}` is a new function every
+     * render, and React re-runs a changed ref callback on each one — detaching
+     * with `null` and re-attaching. Since `ConnectionLine` re-renders on every
+     * pointer move, that restarted the loop sixty times a second and reset the
+     * spring to zero each time, so the wire could never build up any sag. It
+     * looked exactly like the physics was not running at all, because
+     * effectively it was not.
+     *
+     * `useCallback` with no dependencies means React attaches once per mount
+     * and leaves it alone.
+     */
+    const attachHeldWire = useCallback((el: SVGPathElement | null) => {
+        heldPath.current = el;
+        if (!el) return;
+        const ends = heldEnds.current;
+        // Paint the first frame before the loop's first tick, so the wire is
+        // never briefly missing — and so it is still drawn when physics is off.
+        el.setAttribute("d", sagPath(ends.sourceX, ends.sourceY, ends.targetX, ends.targetY, 0));
+        startWirePhysics({ path: el, read: () => heldEnds.current });
+    }, []);
     /**
      * A ghost held back while the node search is open.
      *
@@ -791,7 +814,6 @@ function CanvasInner() {
             const held = detached.current;
             let fromX = p.fromX;
             let fromY = p.fromY;
-            let fromPosition = p.fromPosition;
             let colour = "var(--color-accent)";
             if (held) {
                 const anchor = handleAnchor(
@@ -802,7 +824,6 @@ function CanvasInner() {
                 if (anchor) {
                     fromX = anchor.x;
                     fromY = anchor.y;
-                    fromPosition = Position.Right;
                 }
                 colour = HANDLE_STYLE[held.edge.kind].color;
             }
@@ -816,15 +837,9 @@ function CanvasInner() {
                held, so a move has to wake it. No-op while it is running. */
             nudgeWirePhysics();
 
-            const [path] = getBezierPath({
-                sourceX: fromX,
-                sourceY: fromY,
-                sourcePosition: fromPosition,
-                targetX: p.toX,
-                targetY: p.toY,
-                targetPosition: p.toPosition,
-                curvature: 0.28,
-            });
+            /* The path itself is painted by `attachHeldWire` and then owned by
+               the physics loop — never from here, or React would overwrite it
+               on every pointer move. */
             return (
                 <g>
                     {/*
@@ -845,12 +860,7 @@ function CanvasInner() {
                         gives exactly today's behaviour.
                     */}
                     <path
-                        ref={(el) => {
-                            heldPath.current = el;
-                            if (!el) return;
-                            el.setAttribute("d", path);
-                            startWirePhysics({ path: el, read: () => heldEnds.current });
-                        }}
+                        ref={attachHeldWire}
                         fill="none"
                         stroke={colour}
                         strokeWidth={2}
@@ -1283,8 +1293,23 @@ function CanvasInner() {
                             : "Editor only: dragged wires are plain and straight. Click to let them hang and spring as you move them."
                     }
                 >
+                    {/*
+                        The label states the CURRENT mode, matching the two
+                        toggles beside it — but "Plain wires" reads equally
+                        well as a button that will *make* them plain, and QA
+                        spent a round testing with physics switched off
+                        believing it was on. The dot makes the state
+                        unambiguous: lit means the springy behaviour is live.
+                    */}
+                    <span
+                        aria-hidden
+                        className={
+                            "size-1.5 rounded-full " +
+                            (physics ? "bg-accent" : "bg-ink-4/40")
+                        }
+                    />
                     <Icon name={physics ? "shuffle" : "branch"} size={13} />
-                    {physics ? "Springy wires" : "Plain wires"}
+                    {physics ? "Springy wires: on" : "Springy wires: off"}
                 </button>
                 <span
                     className={

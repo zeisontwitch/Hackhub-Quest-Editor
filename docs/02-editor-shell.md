@@ -1,4 +1,27 @@
-# Step 2 — Editor shell: schema, store, canvas, inspector
+# ARCHIVE — build log, rounds 1–74
+
+> **This document is history, not documentation.**
+>
+> It began as the Step 2 write-up and became an append-only diary: seventy
+> sections, each recording what one round changed. Every figure in it — test
+> counts, node-type counts, field counts — was true on the day it was written
+> and is stale now. For the editor as it stands, read
+> [`06-how-it-works-today.md`](06-how-it-works-today.md).
+>
+> It is kept, rather than deleted, because the **bug histories are
+> load-bearing**. Several of the rules the codebase follows only make sense
+> alongside the failure that produced them, and those accounts live here:
+>
+> | Rounds | What they established |
+> |---|---|
+> | 20, 21, 29, 30, 31 | The Twotter search crash: a mod can corrupt a save, and no mod can repair it. |
+> | 38, 41, 43 | Mod identity and permissions — why the bundle must install `module.exports` before registering anything. |
+> | 42, 43, 44 | Why an idle editor spun a GPU, and why nothing inherits an animated custom property any more. |
+> | 55, 56, 71, 72 | The destroy-then-create race, and why permissions do not survive an `await`. |
+>
+> The original preamble follows.
+
+---
 
 This document records what Step 2 built and, more importantly, the **contracts** the
 remaining steps are now written against. Step 3 (website builder + conversation

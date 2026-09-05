@@ -1,149 +1,189 @@
 # Rebuilding the template set — plan
 
 Zeis: keep **Harbour** (the only one proven in-game) and **Ledger** (needs a
-small fix), drop the rest, and rebuild from what we have learned. Each template
-should cover a different situation, at varying difficulty, so an author can
-read one, copy it, or start a story from it.
+small fix), drop the rest, rebuild from what we have learned. Each template
+covers a different situation so an author can read one, copy it, or start a
+story from it.
+
+Revised after Zeis's notes: three difficulty tiers, two website templates using
+websites in *different* ways, make real use of Metasploit's other exploits and
+the phishing/credential-harvester flow, and give the expert tier a genuine
+multi-tool chain rather than one clever trick.
 
 This is a proposal. Nothing built yet.
 
 ---
 
-## 1. What we are working with
+## 1. What I checked before proposing anything
 
-**Node types that no working template demonstrates.** Ten of them appear only
-in the reference gallery, unwired:
+**The toolbox is far larger than our templates use.** Events we can already
+trigger on, verified against `reference/hackhub-events.json` and the SDK:
 
-`world.port` · `world.database` · `fx.withdraw` · `fx.claimQuest` · `fx.shell`
-`flow.delay` · `flow.reroute` · `flow.random` · `flow.debug` · `layout.group`
+| Area | Events |
+|---|---|
+| Metasploit | `Use`, `Search`, `ShowOptions`, `SetOption`, `Event.Try`, `Meterpreter.Connected`, `Rootgrab`, `Msfconsole` |
+| Cracking | `Terminal.Hydra`, `Terminal.Hydra.Try`, `John.DecryptHash`, `Hashcat`, `Fern.FindPassword` |
+| Web / recon | `Terminal.Dirhunter`, `Nuclei.Results`, `Nuclei.Item`, `Subfinder.Try/Results`, `Sqlmap.ListTables`, `Sqlmap.DumpTable` |
+| Wireless | `Bettercap.WifiRecon`, `WifiDeAuth`, `NetProbe`, `NetShow` |
+| Mail | `Mail.Sent`, `Mail.Received`, `Mail.Read`, `Mail.AccountCreated` |
+| Files | `Files.Transfer`, `Files.Deleted`, `Files.Open`, `Terminal.SSH.FileDownload` |
 
-That is a real gap. A node nobody has seen used is a node nobody uses.
+Our current templates use maybe a third of that.
 
-**Things the SDK cannot do**, which templates must not promise:
-- No wireless API — "Create Wi-Fi" exports as a router reachable by IP. The old
-  `wifi-hack` told a story its own export could not deliver.
-- Handbook nodes do not compile.
-- `world.files` aimed at a remote device exports as a note.
-- A mod quest cannot formally complete without freezing the game
-  ([`04-engine-bug`](../04-engine-bug-quest-completion.md)), so every template
-  ends its story without completing.
+**`Metasploit.Event.Try` carries `{ exploit, target, options }`** — so a
+template can require a *specific* exploit rather than "any shell". That is what
+makes Zeis's point about the other exploits actionable.
 
-**The exploitability rules**, learned across r51–r78 and currently applied to
-Harbour alone. (The r116 audit overstated this: the others are probably
-*completable*, because leaving `extraAccounts` unset gives them a guest account
-to land on. What they get wrong is dropping the player into `guest` when the
-story describes walking in as an admin.) Any machine the player must get into
-needs:
-- at least one user, `online: true`, `acceptReverseTCP: true`
-- `extraAccounts: false` unless the story *wants* a guest to crack
-- a login service on a three-part version (`OpenSSH 6.4.0`, not `7.2`)
+**The phishing flow is real and documented.** `Mail.registerTemplate` exists in
+the SDK and its own doc comment says it is "handy for phishing-style quests":
+it puts a template in GoMail's compose dropdown with `{{fieldName}}`
+placeholders. Player reports describe the loop as: pick a credential-harvester
+template in compose → fill in the target's name/handle → attach the harvester
+file → send → credentials arrive back by mail. We can drive objectives off
+`Mail.Sent` (they sent it) and `Mail.Received` (the credentials came back).
 
-## 2. The shape of the set
+> **Unverified, and I will not pretend otherwise.** Whether the *harvester
+> attachment* itself can be created by a mod, or whether it only exists in
+> base-game missions, is not in the SDK. `MailAttachment` is
+> `{ name, extension, data? }` with no notion of a payload. **This needs an
+> in-game test before the phishing template is built** — see §6.
 
-Eight templates. Two kept, six new. Ordered so an author can walk them as a
-course, but each stands alone.
+**Website builder** is a free-form HTML editor with a `seo` / "listed in
+search" flag per page, so unlisted pages that only `dirhunter` finds already
+work — that mechanic is proven by the existing help-desk template.
 
-| # | Template | Difficulty | The situation it teaches | Status |
-|---|---|---|---|---|
-| 1 | **Blank** | — | An empty canvas with the four lifecycle nodes. | keep |
-| 2 | **First Contact** | ⭐ | One objective, one reward. The smallest complete quest. | replaces `hello-hack` |
-| 3 | **The Harbour Manifest** | ⭐⭐ | The standard contract: research → find → break in → take → deliver. | **keep, proven** |
-| 4 | **Cold Call** | ⭐⭐ | A story told through conversation. No break-in at all. | new |
-| 5 | **The Help Desk Leak** | ⭐⭐⭐ | Websites as the puzzle: dirhunter, an unlisted page, credentials in a document. | rebuild |
-| 6 | **The Ledger Contract** | ⭐⭐⭐⭐ | The long route: privilege escalation, destruction, a cover story. | keep + fix |
-| 7 | **Two Ways Out** | ⭐⭐⭐⭐ | One choice, two endings, and the quest remembers. | new |
-| 8 | **Node Reference** | — | Every node type, laid out and annotated. | keep |
+## 2. Difficulty: three tiers
 
-### Why these, specifically
+Per Zeis, simplified to **Beginner / Advanced / Expert**. The tier describes
+how much the *author* has to understand, not how hard the hack is:
 
-**2 · First Contact** — `hello-hack` was one nmap scan. Fine, but it teaches
-nothing about *structure*. The replacement keeps one objective but shows the
-full spine an author will reuse forever: a mail arrives, the player does one
-thing, they get paid, a closing line lands. Five minutes to read, and every
-other template is this shape with more in it.
+- **Beginner** — one straight line, one or two ideas.
+- **Advanced** — several objectives, a real machine or a real website puzzle.
+- **Expert** — multiple hosts or tools, state carried between steps, and flow
+  that branches.
 
-**4 · Cold Call** — the biggest hole in the current set. Kisscord and WeeChat
-are substantial features and *no* template uses them meaningfully; nothing uses
-a phone call at all. Here the payload is information: a contact messages you,
-you look someone up with `lynx`, you report back in chat. No exploit, no
-terminal wizardry. It also proves you can write a HackHub quest that is not a
-burglary — worth demonstrating.
+## 3. The set
 
-**5 · The Help Desk Leak** — the old one had the best *idea* in the set (a
-website as the puzzle) and shipped unexploitable. Rebuilt: dirhunter finds an
-unlisted help-desk page, the page contains a password, the password gets you in.
-Also the natural home for `world.database` — a support ticket table the player
-reads once inside.
+Nine entries. Three kept, one fixed, five new.
 
-**7 · Two Ways Out** — nothing in the set branches to a different *ending*. The
-player finds evidence and chooses: hand it to the client, or sell it to the
-subject. `flow.branch` on stored data, two different closing beats, two
-different payments. This is the template people will copy most, because "make a
-choice matter" is the thing every quest author asks about first.
+| Template | Tier | The situation it teaches | Status |
+|---|---|---|---|
+| **Blank** | — | Empty canvas, four lifecycle nodes. | keep |
+| **First Contact** | Beginner | The whole spine: brief → one objective → payment → closing line. | replaces `hello-hack` |
+| **The Byline** | Beginner | **Website #1:** read an ordinary site, find a name in a blog post, `lynx` it. No hacking. | new |
+| **Cold Call** | Beginner | A story told in conversation. Kisscord/WeeChat, no break-in. | new |
+| **The Harbour Manifest** | Advanced | The standard contract, end to end. | **keep, proven** |
+| **The Help Desk Leak** | Advanced | **Website #2:** `dirhunter` an unlisted page, credentials inside, log in. | rebuild |
+| **Bad Attachment** | Advanced | Phishing: register a mail template, send the lure, credentials come back. | new *(gated on §6)* |
+| **The Ledger Contract** | Expert | The long route: escalation, destruction, cover story. | keep + fix |
+| **Cold Storage** | Expert | Wi-Fi → router login → open a port → get past a firewall → pivot → database. | new |
+| **Node Reference** | — | Every node type, annotated. | keep |
 
-### What each new template demonstrates, by node
+### The two website templates, deliberately different
 
-Chosen so the ten orphaned node types get a real showing:
+Zeis asked for both, and they teach opposite lessons:
 
-| Template | Nodes it introduces |
+**The Byline** (Beginner) — the site is *ordinary*. A small company blog, three
+posts, an about page. One post is signed by a name. The player reads the site
+like a person, spots the byline, and `lynx`-searches that name to find the
+contact who moves the story on. **Nothing is hidden.** The lesson for an author
+is that a website can carry a clue in plain sight, and that a quest can be
+solved by reading.
+
+**The Help Desk Leak** (Advanced) — the site *hides* something. The public
+pages are a dead end; an unlisted page (`seo: false`) is reachable only by
+`dirhunter`, and it holds a password reset thread with a working credential.
+The lesson is the unlisted-page mechanic and the tool that finds it.
+
+### Cold Storage — the expert chain
+
+Zeis's sketch, plus enough around it that it is not one trick:
+
+1. **Bettercap** — recon the company's wireless, find their access point.
+2. **Fern** — recover the passphrase, join the network (`Fern.FindPassword`).
+3. **Router** — log in to the router now that you are inside the perimeter.
+4. **Open a port** — `world.port` on the router, so metasploit has a way in.
+5. **Firewall** — a `world.firewall` rule blocks the obvious route; the player
+   has to notice and work around it.
+6. **Exploit** — a *named* module via `Metasploit.Event.Try`, not "any shell".
+7. **Pivot** — the first machine is not the prize; a second host behind it is.
+8. **Database** — `world.database`, read with `sqlmap` (`Sqlmap.DumpTable`).
+9. **Get out** — deliver, and the quest closes without formally completing.
+
+That uses `world.wifi`, `world.port`, `world.firewall`, `world.database`,
+`fx.setData`, `flow.branch` and `layout.group` — most of the node types that
+currently exist only in the unwired reference gallery.
+
+**Caveat:** step 4 assumes opening a router port makes a machine behind it
+reachable, and step 5 assumes a firewall rule visibly blocks something. Both
+are modelled in our schema; neither is proven in-game by us. Expert is the
+right tier for it, but it is also the template most likely to need a
+playthrough before it is trustworthy.
+
+## 4. What each template introduces
+
+Chosen so the ten node types that appear only in the reference gallery each get
+a real showing:
+
+| Template | Nodes / tools it introduces |
 |---|---|
 | First Contact | the spine: `entry.start`, `comms.dialogue`, `objective`, `trigger.event`, `fx.pay` |
-| Cold Call | Kisscord/WeeChat dialogue, `flow.delay`, `reply.input` |
-| Help Desk Leak | `world.database`, `world.port`, `fx.shell`, `flow.sequence` |
-| Two Ways Out | `flow.branch`, `fx.setData`, `fx.withdraw`, `flow.random` |
-| Ledger | privilege escalation, `flow.branch`, `layout.group` for readability |
+| The Byline | a website with several pages, `Terminal.Lynx.Search`, `flow.note` as author guidance |
+| Cold Call | Kisscord + WeeChat dialogue, `flow.delay`, `reply.input` |
+| Help Desk Leak | unlisted pages, `Terminal.Dirhunter`, `fx.shell`, `flow.sequence` |
+| Bad Attachment | `Mail.registerTemplate`, `Mail.Sent` / `Mail.Received`, `fx.setData` |
+| Cold Storage | `world.wifi`, `world.port`, `world.firewall`, `world.database`, `layout.group` |
+| Ledger (fix) | privilege escalation, `flow.branch`, `fx.withdraw` for a bribe |
 
-`flow.debug` and `flow.reroute` stay in the reference gallery — they are
-editor tools, not story beats. `fx.claimQuest` needs a second quest to claim;
-worth a note in the reference rather than a whole template.
+`flow.debug` and `flow.reroute` stay in the reference gallery — they are editor
+tools, not story beats. `fx.claimQuest` needs a second quest to claim; better
+as a note than a whole template.
 
-## 3. Difficulty, and what it means
+## 5. Rules every rebuilt template follows
 
-Not "how hard is the hack" but **how much the author has to understand**:
+Written down because these are the things that rotted last time:
 
-- ⭐ one objective, one straight line
-- ⭐⭐ several objectives in sequence, one machine or none
-- ⭐⭐⭐ multiple hosts, or a puzzle whose pieces are in different places
-- ⭐⭐⭐⭐ state that persists across steps, and flow that branches on it
-
-Every template states its difficulty and what it teaches in its own sticky
-note, so an author who opens it knows within ten seconds whether it is the one
-they want.
-
-## 4. Rules every rebuilt template follows
-
-Written down because these are exactly the things that rotted last time:
-
-1. **Every machine the player must enter passes the r78 checklist.** A test
-   will assert this mechanically — see §6.
+1. **Every machine the player must enter passes the r78 checklist** — enforced
+   by `exploitable.test.ts`, which now fails the build.
 2. **No node that compiles to nothing.** No handbook nodes, no device-targeted
    file seeding, until those features exist.
-3. **The story matches what the export builds.** No Wi-Fi fiction.
+3. **The story matches what the export builds.** No Wi-Fi fiction in the
+   prose — Cold Storage uses `world.wifi` knowing it exports as a router, and
+   its text says "their network" rather than promising an SSID in a Wi-Fi list.
 4. **Every template ends without formally completing**, per the engine bug, and
    leaves a closing line.
-5. **Domains are distinctive.** Domain names are global; a generic one may be
-   taken by the base game or another mod.
+5. **Distinctive domains** — they are global and a generic one may collide.
 6. **Three-part port versions**, always.
+7. **Every template says its tier and what it teaches** in a sticky note, so an
+   author knows within ten seconds whether it is the one they want.
 
-## 5. Open questions for Zeis
+## 6. What needs testing before it can be built
 
-1. **Eight feels right to me — too many?** The gallery and blank are cheap; the
-   real count is six playable.
-2. **Cold Call has no hacking in it.** I think that is the point, but it is the
-   one choice I would most like a second opinion on.
-3. **Two Ways Out pays differently depending on the ending** — selling out pays
-   more. Is that the right message for a template, or should the honest route
-   pay better?
+**Bad Attachment is gated.** I can register a mail template and watch
+`Mail.Sent`, but I cannot confirm from the SDK that a mod can produce a working
+credential-harvester attachment. Three possibilities:
 
-## 6. Build order
+- a mod can attach one → build the template as described;
+- only the base game can → the template becomes "send a convincing lure and the
+  reply carries the credential", driven purely by `Mail.Sent` / `Mail.Received`,
+  which still teaches the pattern;
+- neither works → drop it and add a note to the dev questions.
 
-1. Fix Ledger (`extraAccounts: false`) — a one-line correction to a template
-   that otherwise works.
-2. Add the mechanical exploitability test, so a broken template fails the build
-   rather than waiting for a playthrough.
-3. Delete `hello-hack`, `wifi-hack`, `investigation`, `dirhunter-leak`.
-4. Build First Contact, then Help Desk Leak, then Cold Call, then Two Ways Out.
-5. Update the template gallery copy and the docs.
+A ten-minute in-game check settles it: does a mod-registered template appear in
+GoMail's compose dropdown, and can anything be attached to it?
 
-Each template gets a compile test and a "does it hang together" test; the
-exploitability test in step 2 covers all of them at once.
+**Cold Storage's router/firewall assumptions** (§3) would benefit from the same
+treatment, but the fallback is milder — worst case the chain loses a step.
+
+## 7. Build order
+
+1. **Fix Ledger** — `extraAccounts: false` so the player lands as `aritter`
+   rather than a guest. One line.
+2. **Delete** `hello-hack`, `wifi-hack`, `investigation`, `dirhunter-leak`.
+3. **First Contact**, **The Byline**, **Cold Call** — the beginner tier.
+4. **Help Desk Leak** — rebuilt.
+5. **Cold Storage** — the expert chain.
+6. **Bad Attachment** — after the §6 test.
+7. Gallery copy, docs, and a test per template.
+
+Steps 1–2 are corrections and can go first. 3–5 are the bulk. 6 waits on Zeis.

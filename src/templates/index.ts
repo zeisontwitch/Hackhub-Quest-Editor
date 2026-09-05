@@ -763,9 +763,15 @@ function buildContractHack(): ProjectDocument {
                         { id: "p-ssh-host", external: 22, internal: 22, active: true, locked: false, service: "ssh", version: "OpenSSH 7.2.0" },
                     ],
                     /* One account, named after the man who owns the machine.
-                       A personal PC does not have a generic "admin" — and the
-                       engine adds root and guest itself through the default
-                       user schema, so those do not belong here either. */
+                       A personal PC does not have a generic "admin".
+
+                       `extraAccounts: false` matters as much as the account
+                       itself. Left on, the engine adds root and guest through
+                       the default user schema, and r57/r78 established that the
+                       exploit then drops the player into `guest` — forcing a
+                       password crack this story never mentions. Off, the player
+                       lands as Ritter, which is what the brief describes. */
+                    extraAccounts: false,
                     users: [
                         {
                             id: "u-ritter",

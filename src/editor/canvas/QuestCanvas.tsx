@@ -531,13 +531,21 @@ function CanvasInner() {
                 });
                 setSearchAt({ x: point.clientX, y: point.clientY });
                 /*
-                 * Deliberately no ghost. The wire is pending, not cancelled:
-                 * the author is choosing what to plug it into. If they pick
-                 * something the node arrives connected and there was never
-                 * anything to snap back; if they dismiss the search, the
-                 * ghost plays then (see `closeSearch`).
+                 * Play the snap-back now rather than holding it.
+                 *
+                 * I originally deferred it, reasoning that the wire was
+                 * "pending" while the search was open. In practice React Flow
+                 * unmounts the connection line the instant the pointer is
+                 * released, so deferring meant the wire simply blinked out of
+                 * existence — QA saw it vanish with no snap and no fade, which
+                 * reads as the editor losing the gesture.
+                 *
+                 * The ghost is only ~200ms, so it plays out while the search
+                 * is still opening: the wire recoils to the socket it came
+                 * from and fades, which is exactly what "your wire is waiting
+                 * at this socket" should look like.
                  */
-                pendingGhost.current = ghostTheWire;
+                ghostTheWire();
                 return;
             }
             const fromNode = q.graph.nodes.find((n) => n.id === from.nodeId);
@@ -799,15 +807,6 @@ function CanvasInner() {
         el.setAttribute("d", sagPath(ends.sourceX, ends.sourceY, ends.targetX, ends.targetY, 0));
         startWirePhysics({ path: el, read: () => heldEnds.current });
     }, []);
-    /**
-     * A ghost held back while the node search is open.
-     *
-     * Dropping a wire on empty canvas opens the search instead of cancelling
-     * the wire, so the snap-back is deferred: played if the author dismisses
-     * the search, discarded if they pick a node — in which case the wire is
-     * connected and there is nothing to snap back from.
-     */
-    const pendingGhost = useRef<(() => void) | null>(null);
 
     const ConnectionLine = useCallback(
         (p: ConnectionLineComponentProps) => {
@@ -921,12 +920,6 @@ function CanvasInner() {
     }, []);
 
     const closeSearch = useCallback(() => {
-        /*
-         * Dismissed without choosing, so the wire really was abandoned: play
-         * the snap-back that `onConnectEnd` held back.
-         */
-        pendingGhost.current?.();
-        pendingGhost.current = null;
         setSearchAt(null);
         setPendingWire(null);
     }, []);
@@ -966,8 +959,6 @@ function CanvasInner() {
                     );
                 }
             }
-            // Connected (or placed): nothing was cancelled, so no snap-back.
-            pendingGhost.current = null;
             closeSearch();
         },
         [addNode, closeSearch, connect, pendingWire, screenToFlowPosition, searchAt],

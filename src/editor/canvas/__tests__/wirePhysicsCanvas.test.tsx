@@ -75,20 +75,25 @@ describe("the held wire has exactly one writer for `d`", () => {
     });
 });
 
-describe("the ghost waits for the node search", () => {
-    it("holds the snap-back back when a drop opens the search", () => {
-        // Zeis: the wire is pending, not cancelled — fading it while the
-        // author is still choosing would be wrong.
-        expect(SOURCE).toContain("pendingGhost.current = ghostTheWire;");
+describe("the ghost plays on every ending", () => {
+    /*
+     * r111 reversed an r108 decision. I had deferred the snap-back while the
+     * node search was open, on the theory that the wire was "pending" rather
+     * than cancelled. But React Flow unmounts the connection line the moment
+     * the pointer is released, so deferring meant the wire simply blinked out
+     * — QA saw it vanish with no snap and no fade. The ghost is ~200ms, short
+     * enough to play while the search is still opening.
+     */
+    it("plays the snap-back when a drop opens the search", () => {
+        const end = SOURCE.slice(SOURCE.indexOf("const onConnectEnd = useCallback"));
+        // Everything between opening the search and returning from the branch.
+        const afterOpen = end.slice(end.indexOf("setSearchAt({ x: point.clientX"));
+        const branch = afterOpen.slice(0, afterOpen.indexOf("return;"));
+        expect(branch).toContain("ghostTheWire();");
     });
 
-    it("plays it if the search is dismissed", () => {
-        const close = SOURCE.slice(SOURCE.indexOf("const closeSearch = useCallback"));
-        expect(close.slice(0, 400)).toContain("pendingGhost.current?.()");
-    });
-
-    it("discards it once a node is chosen", () => {
-        const add = SOURCE.slice(SOURCE.indexOf("const addFromSearch = useCallback"));
-        expect(add.slice(0, 2000)).toContain("pendingGhost.current = null;");
+    it("keeps no deferred-ghost machinery", () => {
+        // Dead state is a place for bugs to hide; the ref is gone entirely.
+        expect(SOURCE).not.toContain("pendingGhost");
     });
 });

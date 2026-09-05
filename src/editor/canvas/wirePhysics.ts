@@ -38,14 +38,25 @@
 import { wireMotionEnabled } from "./wireMotion";
 import { wirePhysicsEnabled } from "./wirePhysicsPref";
 
-/** Spring constant. Higher is snappier. */
-export const STIFFNESS = 180;
-/** Damping. Slightly under critical, so the wire bounces once or twice. */
-export const DAMPING = 18;
+/*
+ * Tuned against QA (r111). The first pass read as "too floaty" — the wire
+ * drifted into place rather than falling into it.
+ *
+ * Floatiness is low natural frequency, not low sag: at k=180 the spring took
+ * ~0.44s to settle, which the eye reads as the wire being weightless. Raising
+ * stiffness and damping together roughly doubles the fall speed (~0.24s) while
+ * holding the damping ratio near 0.75, so it still bounces once or twice
+ * instead of arriving dead.
+ */
+
+/** Spring constant. Higher is snappier — a heavier-feeling wire. */
+export const STIFFNESS = 520;
+/** Damping. Under critical (zeta ~0.75), so the wire bounces as it lands. */
+export const DAMPING = 34;
 /** Deepest the wire hangs, in flow units. */
-export const MAX_SAG = 90;
+export const MAX_SAG = 115;
 /** Span at which the wire is pulled fully straight. */
-export const PULL_TAUT_DISTANCE = 520;
+export const PULL_TAUT_DISTANCE = 560;
 /**
  * Longest step the integrator will take, in seconds.
  *

@@ -370,3 +370,77 @@ describe("r109: a restart mid-drag must not lose the spring", () => {
         expect(wirePhysicsState().sag).toBeGreaterThan(first);
     });
 });
+
+
+describe("r113: the wire follows the cursor even with the spring off", () => {
+    /*
+     * QA, with physics switched off: "the wire didn't appear at all except for
+     * the first couple pixels". Reproduced exactly — the path froze at the
+     * position the drag began.
+     *
+     * Cause: r108 removed the `d` prop so React could not overwrite the
+     * physics loop's writes, which was right. But with physics off there is no
+     * loop, and the off-path painted once and then cleared `active`, so
+     * nothing redrew the wire for the rest of the drag. "No spring" has to
+     * mean a straight wire that still tracks the pointer, not a frozen one.
+     */
+    const path = () => document.createElementNS("http://www.w3.org/2000/svg", "path");
+
+    it("redraws as the pointer moves", () => {
+        setWirePhysicsEnabled(false);
+        const el = path();
+        let targetX = 20;
+        startWirePhysics({
+            path: el,
+            read: () => ({ sourceX: 0, sourceY: 0, targetX, targetY: 0 }),
+        });
+        const atStart = el.getAttribute("d");
+
+        targetX = 600;
+        nudgeWirePhysics();
+        expect(el.getAttribute("d")).not.toBe(atStart);
+        expect(el.getAttribute("d")).toContain("600");
+    });
+
+    it("keeps the wire straight, since the spring is off", () => {
+        setWirePhysicsEnabled(false);
+        const el = path();
+        startWirePhysics({
+            path: el,
+            read: () => ({ sourceX: 0, sourceY: 0, targetX: 300, targetY: 0 }),
+        });
+        nudgeWirePhysics();
+        expect(el.getAttribute("d")).toBe(sagPath(0, 0, 300, 0, 0));
+    });
+
+    it("still schedules no frames", () => {
+        // Tracking the cursor must not smuggle a loop back in: "off" means no
+        // per-frame work at all.
+        setWirePhysicsEnabled(false);
+        const raf = vi.spyOn(globalThis, "requestAnimationFrame");
+        const el = path();
+        startWirePhysics({
+            path: el,
+            read: () => ({ sourceX: 0, sourceY: 0, targetX: 120, targetY: 0 }),
+        });
+        nudgeWirePhysics();
+        nudgeWirePhysics();
+        expect(raf).not.toHaveBeenCalled();
+        expect(wirePhysicsRunning()).toBe(false);
+    });
+
+    it("stops tracking once the drag is over", () => {
+        setWirePhysicsEnabled(false);
+        const el = path();
+        let targetX = 20;
+        startWirePhysics({
+            path: el,
+            read: () => ({ sourceX: 0, sourceY: 0, targetX, targetY: 0 }),
+        });
+        stopWirePhysics();
+        const afterStop = el.getAttribute("d");
+        targetX = 900;
+        nudgeWirePhysics();
+        expect(el.getAttribute("d")).toBe(afterStop);
+    });
+});

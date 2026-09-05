@@ -202,6 +202,22 @@ export function refusalReason(): string | null {
     return null;
 }
 
+/**
+ * Draw the wire where it currently is, with whatever sag it currently has.
+ *
+ * Used by the physics loop each frame, and by `nudgeWirePhysics` when the
+ * spring is switched off — the wire still has to follow the cursor, it just
+ * does not hang.
+ */
+function repaint(): void {
+    if (!active) return;
+    const ends = active.read();
+    active.path.setAttribute(
+        "d",
+        sagPath(ends.sourceX, ends.sourceY, ends.targetX, ends.targetY, state.sag),
+    );
+}
+
 /** Paint one frame. Exported so tests can drive the loop deterministically. */
 export function tickForTests(ms: number): void {
     if (!active) return;
@@ -251,17 +267,22 @@ export function startWirePhysics(options: WirePhysicsOptions): () => void {
     if (!options.force && !motionAllowed()) {
         count("physicsRefused");
         record("physics refused", refusalReason() ?? "unknown");
-        /* Motion is off: draw the straight wire once and never loop. Under
-           "Static wires" the editor must do no per-frame work at all. */
-        const ends = options.read();
+        /*
+         * Motion is off, so there is no spring — but the wire must still
+         * follow the cursor. Staying `active` with zero sag means `repaint()`
+         * keeps redrawing a straight line as the pointer moves, without ever
+         * scheduling a frame.
+         *
+         * r112: this used to paint once and then clear `active`, which left
+         * the wire frozen a few pixels out of its socket for the rest of the
+         * drag. r108 had removed the `d` prop so React could not fight the
+         * loop, and with physics off there was no loop either — so nothing
+         * redrew it at all.
+         */
         state.sag = 0;
         state.velocity = 0;
-        options.path.setAttribute(
-            "d",
-            sagPath(ends.sourceX, ends.sourceY, ends.targetX, ends.targetY, 0),
-        );
-        active = null;
-        return () => {};
+        repaint();
+        return () => stopWirePhysics(false);
     }
 
     running = true;
@@ -306,10 +327,19 @@ export function stopWirePhysics(keepState = false): void {
  * is a no-op while the loop is already running.
  */
 export function nudgeWirePhysics(): void {
-    if (running || !settled) return;
-    const options = settled;
-    settled = null;
-    startWirePhysics(options);
+    if (running) return;
+    if (settled) {
+        const options = settled;
+        settled = null;
+        startWirePhysics(options);
+        return;
+    }
+    /*
+     * No loop, either because the spring is off or because it has parked.
+     * Either way the wire is still held, so redraw it at the new pointer
+     * position — otherwise it hangs in the air where the drag began.
+     */
+    repaint();
 }
 
 /** Test seam: is a loop currently scheduled? */

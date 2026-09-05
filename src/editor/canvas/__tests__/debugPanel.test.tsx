@@ -130,7 +130,7 @@ describe("live tuning", () => {
 
     it("exposes the numbers the sliders drive", async () => {
         await openPanel();
-        for (const label of ["Stiffness", "Damping", "Max sag", "Taut at", "Ghost ms"]) {
+        for (const label of ["Stiffness", "Damping", "Max sag", "Taut at", "Swing", "Fade ms", "Retract ms"]) {
             expect(screen.getByLabelText(label)).toBeTruthy();
         }
     });

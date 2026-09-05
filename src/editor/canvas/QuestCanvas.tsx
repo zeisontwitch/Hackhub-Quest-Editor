@@ -42,7 +42,7 @@ import {
     wirePhysicsState,
     type WireEnds,
 } from "./wirePhysics";
-import { dismissWireGhosts, spawnWireGhost } from "./wireGhost";
+import { dismissWireGhosts, retractWireGhosts, spawnWireGhost } from "./wireGhost";
 import type { EdgeKind } from "@/schema/edges";
 import { setSnapEnabled, snapEnabled, subscribeSnap } from "./snapGrid";
 import {
@@ -470,7 +470,7 @@ function CanvasInner() {
             count("dragEnds");
             record("drag end", `sag ${restingSag.toFixed(1)}`);
             stopWirePhysics();
-            const ghostTheWire = () => {
+            const ghostTheWire = (hold = false) => {
                 if (Math.abs(restingSag) <= 0.5) {
                     record("no ghost", `sag was only ${restingSag.toFixed(2)}`);
                     return;
@@ -485,6 +485,7 @@ function CanvasInner() {
                     from: { x: releasedAt.sourceX, y: releasedAt.sourceY },
                     to: { x: releasedAt.targetX, y: releasedAt.targetY },
                     sag: restingSag,
+                    hold,
                     colour: detached.current
                         ? HANDLE_STYLE[detached.current.edge.kind].color
                         : "var(--color-accent)",
@@ -543,21 +544,19 @@ function CanvasInner() {
                 });
                 setSearchAt({ x: point.clientX, y: point.clientY });
                 /*
-                 * Play the snap-back now rather than holding it.
+                 * Hold the wire where it was dropped while the search is open.
                  *
-                 * I originally deferred it, reasoning that the wire was
-                 * "pending" while the search was open. In practice React Flow
-                 * unmounts the connection line the instant the pointer is
-                 * released, so deferring meant the wire simply blinked out of
-                 * existence — QA saw it vanish with no snap and no fade, which
-                 * reads as the editor losing the gesture.
-                 *
-                 * The ghost is only ~200ms, so it plays out while the search
-                 * is still opening: the wire recoils to the socket it came
-                 * from and fades, which is exactly what "your wire is waiting
-                 * at this socket" should look like.
+                 * Two earlier attempts got this wrong. Deferring the ghost
+                 * entirely made the wire blink out, because React Flow unmounts
+                 * the connection line the instant the pointer lifts. Retracting
+                 * immediately made it wind home while the author was still
+                 * choosing. A *held* ghost is the honest picture: the wire
+                 * really is pending, so it hangs there until the author either
+                 * picks a node (`addFromSearch` clears it and the real edge
+                 * takes over) or dismisses the search (`closeSearch` sets it
+                 * winding back).
                  */
-                ghostTheWire();
+                ghostTheWire(true);
                 return;
             }
             const fromNode = q.graph.nodes.find((n) => n.id === from.nodeId);
@@ -934,6 +933,13 @@ function CanvasInner() {
     }, []);
 
     const closeSearch = useCallback(() => {
+        /*
+         * Dismissed without choosing, so the wire was abandoned after all:
+         * wind it back to its socket now, like a vacuum cleaner's cable.
+         * Harmless when the search was opened by right-click, since there is
+         * no held ghost to retract.
+         */
+        retractWireGhosts();
         setSearchAt(null);
         setPendingWire(null);
     }, []);
@@ -973,6 +979,12 @@ function CanvasInner() {
                     );
                 }
             }
+            /*
+             * A node was placed and wired up, so the real edge now draws this
+             * connection: remove the held wire rather than winding it back to
+             * a socket it is no longer leaving.
+             */
+            dismissWireGhosts();
             closeSearch();
         },
         [addNode, closeSearch, connect, pendingWire, screenToFlowPosition, searchAt],

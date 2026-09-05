@@ -14,6 +14,7 @@ import {
     GHOST_MS,
     dismissWireGhosts,
     liveWireGhostCount,
+    retractWireGhosts,
     spawnWireGhost,
 } from "@/editor/canvas/wireGhost";
 
@@ -74,12 +75,15 @@ describe("appearing", () => {
 });
 
 describe("going away again", () => {
-    it("removes itself once its moment is over", () => {
-        vi.useFakeTimers();
+    it("removes itself once it has finished retracting", async () => {
+        /*
+         * Real timers: removal is driven by the retraction's own frames now,
+         * and fake timers do not advance requestAnimationFrame.
+         */
         const svg = layer();
-        spawn(svg);
+        spawn(svg, { retractMs: 20 });
         expect(liveWireGhostCount()).toBe(1);
-        vi.advanceTimersByTime(GHOST_MS + 10);
+        await new Promise((r) => setTimeout(r, 120));
         expect(liveWireGhostCount()).toBe(0);
         expect(svg.querySelectorAll("svg.qe-wire-ghost path")).toHaveLength(0);
     });
@@ -120,14 +124,23 @@ describe("going away again", () => {
         expect(svg.querySelectorAll("svg.qe-wire-ghost path")).toHaveLength(0);
     });
 
-    it("works where the engine cannot animate", () => {
-        // jsdom has no Element.animate. The ghost must still appear and go.
+    it("works where the engine cannot animate", async () => {
+        // jsdom has no Element.animate, so the retraction is driven by plain
+        // frames and arithmetic rather than the Web Animations API.
+        const svg = layer();
+        spawn(svg, { retractMs: 20 });
+        expect(svg.querySelectorAll("svg.qe-wire-ghost path")).toHaveLength(1);
+        await new Promise((r) => setTimeout(r, 120));
+        expect(svg.querySelectorAll("svg.qe-wire-ghost path")).toHaveLength(0);
+    });
+
+    it("still has a backstop if frames stop coming", () => {
+        // A backgrounded tab gets no rAF; the timer must still clean up.
         vi.useFakeTimers();
         const svg = layer();
-        spawn(svg);
-        expect(svg.querySelectorAll("svg.qe-wire-ghost path")).toHaveLength(1);
-        vi.advanceTimersByTime(GHOST_MS + 10);
-        expect(svg.querySelectorAll("svg.qe-wire-ghost path")).toHaveLength(0);
+        spawn(svg, { retractMs: 40 });
+        vi.advanceTimersByTime(GHOST_MS + 40 + 300);
+        expect(liveWireGhostCount()).toBe(0);
     });
 });
 
@@ -209,5 +222,113 @@ describe("r114: the ghost must be inside its own <svg>", () => {
         spawn(host);
         const wrapper = host.querySelector("svg.qe-wire-ghost") as SVGSVGElement;
         expect(wrapper.style.pointerEvents).toBe("none");
+    });
+});
+
+
+describe("r115: the wire winds back like a vacuum cable", () => {
+    /*
+     * QA's description, which is much clearer than the model I had: "it pulls
+     * itself back into its place of origin with a speed ramp (easeOutCubic)
+     * and a ghost fade out."
+     *
+     * The old ghost interpolated its sag to zero while fading but left both
+     * ends where they were, so it dissolved in place instead of travelling.
+     */
+    const path = (host: SVGElement) =>
+        host.querySelector("svg.qe-wire-ghost path") as SVGPathElement;
+
+    it("moves the free end towards the origin as it retracts", async () => {
+        const host = layer();
+        spawnWireGhost({
+            layer: host,
+            from: { x: 0, y: 0 },
+            to: { x: 400, y: 0 },
+            sag: 60,
+            colour: "#22d3ee",
+            retractMs: 200,
+        });
+        /*
+         * Assert the ENDPOINT moves, not merely that the path string changed —
+         * the sag relaxing would change it too, and an earlier version of this
+         * test passed even with the travel removed.
+         */
+        const endOf = (d: string) => Number(d.slice(d.lastIndexOf(" ") + 1).split(",")[0]);
+        const atStart = endOf(path(host).getAttribute("d")!);
+        expect(atStart).toBeCloseTo(400, 0);
+
+        await new Promise((r) => setTimeout(r, 60));
+        const later = path(host)?.getAttribute("d");
+        expect(later).toBeTruthy();
+        // Travelling home means the free end is now nearer the origin.
+        expect(endOf(later!)).toBeLessThan(atStart - 10);
+    });
+
+    it("removes itself once it has arrived", async () => {
+        const host = layer();
+        spawnWireGhost({
+            layer: host,
+            from: { x: 0, y: 0 },
+            to: { x: 200, y: 0 },
+            sag: 40,
+            colour: "#22d3ee",
+            retractMs: 30,
+        });
+        await new Promise((r) => setTimeout(r, 120));
+        expect(liveWireGhostCount()).toBe(0);
+        expect(host.children).toHaveLength(0);
+    });
+});
+
+describe("r115: a held wire waits for the search", () => {
+    /*
+     * Dropping a wire on empty canvas opens the node search, and the wire is
+     * genuinely pending at that point — not cancelled. It has to hang where it
+     * was dropped until the author decides.
+     */
+    const held = (host: SVGElement) =>
+        spawnWireGhost({
+            layer: host,
+            from: { x: 0, y: 0 },
+            to: { x: 300, y: 0 },
+            sag: 50,
+            colour: "#22d3ee",
+            hold: true,
+            retractMs: 40,
+        });
+
+    it("hangs where it was dropped instead of retracting", async () => {
+        const host = layer();
+        held(host);
+        const at = host.querySelector("svg.qe-wire-ghost path")!.getAttribute("d");
+        await new Promise((r) => setTimeout(r, 80));
+        // Still there, still in the same place.
+        expect(liveWireGhostCount()).toBe(1);
+        expect(host.querySelector("svg.qe-wire-ghost path")!.getAttribute("d")).toBe(at);
+    });
+
+    it("winds back when the search is dismissed", async () => {
+        const host = layer();
+        held(host);
+        retractWireGhosts();
+        await new Promise((r) => setTimeout(r, 150));
+        expect(liveWireGhostCount()).toBe(0);
+    });
+
+    it("disappears outright when a node is placed", () => {
+        // The real edge draws the connection now, so there is nothing to wind
+        // back to — the placeholder just goes.
+        const host = layer();
+        held(host);
+        dismissWireGhosts();
+        expect(liveWireGhostCount()).toBe(0);
+        expect(host.children).toHaveLength(0);
+    });
+
+    it("leaves nothing behind if the canvas closes while it waits", () => {
+        const host = layer();
+        held(host);
+        dismissWireGhosts();
+        expect(host.children).toHaveLength(0);
     });
 });

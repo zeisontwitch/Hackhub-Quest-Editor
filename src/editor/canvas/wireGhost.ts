@@ -38,6 +38,10 @@ interface LiveGhost {
     el: SVGPathElement;
     timer: ReturnType<typeof setTimeout>;
     animation?: Animation;
+    /** The retraction's pending frame, so teardown can cancel it. */
+    frame?: number;
+    /** Present while the ghost is held, waiting to be told to wind back. */
+    retract?: () => void;
 }
 
 const live = new Set<LiveGhost>();
@@ -45,6 +49,7 @@ const live = new Set<LiveGhost>();
 /** Remove one ghost and everything holding it open. */
 function dismiss(ghost: LiveGhost): void {
     clearTimeout(ghost.timer);
+    if (ghost.frame) cancelAnimationFrame(ghost.frame);
     try {
         ghost.animation?.cancel();
     } catch {
@@ -73,8 +78,25 @@ export interface WireGhostOptions {
     /** Sag to start from, so the ghost picks up where the live wire stopped. */
     sag?: number;
     colour: string;
-    /** Overridden in tests; real callers use the default. */
+    /**
+     * Draw the wire and hold it there, rather than retracting immediately.
+     *
+     * Used while the node search is open: the wire is genuinely pending, so it
+     * should hang where it was dropped until the author either picks a node
+     * (and it connects) or dismisses the search (and it winds home).
+     */
+    hold?: boolean;
+    /** Fade length. Overridden in tests; real callers use the default. */
     durationMs?: number;
+    /**
+     * How long the free end takes to travel home, in ms.
+     *
+     * Separate from the fade on purpose. QA described a vacuum-cleaner cable:
+     * the retraction should carry the motion and the fade should not compete
+     * with it, which is why the shipped fade is only 20ms while this is much
+     * longer.
+     */
+    retractMs?: number;
 }
 
 /**
@@ -83,7 +105,16 @@ export interface WireGhostOptions {
  * Returns a function that removes it early, for a caller that needs to.
  */
 export function spawnWireGhost(options: WireGhostOptions): () => void {
-    const { layer, from, to, sag = 0, colour, durationMs = wireTuning().ghostMs } = options;
+    const {
+        layer,
+        from,
+        to,
+        sag = 0,
+        colour,
+        durationMs = wireTuning().ghostMs,
+        retractMs = wireTuning().retractMs,
+        hold = false,
+    } = options;
     count("ghosts");
     record("ghost", `sag ${sag.toFixed(1)}, ${durationMs}ms`);
 
@@ -125,7 +156,14 @@ export function spawnWireGhost(options: WireGhostOptions): () => void {
     const ghost: LiveGhost = {
         root: svg,
         el,
-        timer: setTimeout(() => dismiss(ghost), durationMs),
+        /*
+         * A backstop, not the schedule. The retraction removes the ghost when
+         * it arrives; this only catches the case where frames stop coming —
+         * a backgrounded tab, say — so nothing is ever left on the canvas.
+         */
+        timer: hold
+            ? (undefined as unknown as ReturnType<typeof setTimeout>)
+            : setTimeout(() => dismiss(ghost), Math.max(durationMs, retractMs) + 250),
     };
     live.add(ghost);
 
@@ -135,19 +173,70 @@ export function spawnWireGhost(options: WireGhostOptions): () => void {
      * for the same moment and then goes, which still reads as a wire leaving
      * rather than blinking out.
      */
-    if (typeof el.animate === "function") {
-        try {
-            ghost.animation = el.animate(
-                [
-                    { d: `path("${sagPath(from.x, from.y, to.x, to.y, sag)}")`, opacity: 1 },
-                    { d: `path("${sagPath(from.x, from.y, to.x, to.y, 0)}")`, opacity: 0 },
-                ],
-                { duration: durationMs, easing: "cubic-bezier(0.2, 0, 0.2, 1)", fill: "forwards" },
-            );
-        } catch {
-            /* Engines that cannot interpolate `d` still fade via the timer. */
-        }
+    /*
+     * Wind the free end back to the socket it came from, like a vacuum
+     * cleaner's cable — rather than dissolving where it was dropped.
+     *
+     * The old version interpolated the sag to zero while fading, but left both
+     * endpoints where they were, so the wire melted in place. QA wanted it to
+     * travel: "it pulls itself back into its place of origin with a speed ramp
+     * and a ghost fade out" (r115).
+     *
+     * Driven frame by frame rather than by `Element.animate`. Interpolating a
+     * `d` attribute between two paths needs identical structure and is not
+     * supported everywhere, and easing the free end along its own route is
+     * clearer written out than expressed as keyframes.
+     */
+    const travel = Math.max(0, retractMs);
+    let startedAt: number | null = null;
+
+    const frame = (nowMs: number) => {
+        if (!live.has(ghost)) return;
+        // Measured from the first frame, so a held ghost's clock starts when
+        // it is released rather than when it was created.
+        startedAt ??= nowMs;
+        const elapsed = nowMs - startedAt;
+        const t = travel === 0 ? 1 : Math.min(1, elapsed / travel);
+        // easeOutCubic: quick off the mark, easing as it arrives home.
+        const eased = 1 - (1 - t) ** 3;
+
+        // The free end slides back along the wire towards the socket, and the
+        // sag relaxes with it so the cable straightens as it is drawn in.
+        const x = to.x + (from.x - to.x) * eased;
+        const y = to.y + (from.y - to.y) * eased;
+        el.setAttribute("d", sagPath(from.x, from.y, x, y, sag * (1 - eased)));
+        // Hold full opacity until the very end, then fade over the final
+        // stretch, so the retraction is what the eye follows.
+        el.style.opacity = String(1 - eased ** 3);
+
+        if (t < 1) ghost.frame = requestAnimationFrame(frame);
+        else dismiss(ghost);
+    };
+    /*
+     * A held ghost just hangs there. `retractWireGhosts()` starts the wind-up
+     * later, or `dismissWireGhosts()` removes it outright when the wire has
+     * been connected and there is nothing to wind back.
+     */
+    if (hold) {
+        ghost.retract = () => {
+            ghost.retract = undefined;
+            clearTimeout(ghost.timer);
+            ghost.timer = setTimeout(() => dismiss(ghost), Math.max(durationMs, retractMs) + 250);
+            ghost.frame = requestAnimationFrame(frame);
+        };
+    } else {
+        ghost.frame = requestAnimationFrame(frame);
     }
 
     return () => dismiss(ghost);
+}
+
+/**
+ * Set every held ghost winding back to its socket.
+ *
+ * Called when the node search is dismissed without a choice: the wire was
+ * abandoned after all, so it retracts now.
+ */
+export function retractWireGhosts(): void {
+    for (const ghost of [...live]) ghost.retract?.();
 }

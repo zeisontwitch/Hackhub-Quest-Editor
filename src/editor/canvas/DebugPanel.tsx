@@ -52,7 +52,8 @@ const NUMBERS: { key: keyof WireTuning; label: string; min: number; max: number;
     { key: "maxSag", label: "Max sag", min: 0, max: 300, step: 5 },
     { key: "tautDistance", label: "Taut at", min: 100, max: 1200, step: 20 },
     { key: "swing", label: "Swing", min: 0, max: 40, step: 0.5 },
-    { key: "ghostMs", label: "Ghost ms", min: 0, max: 1000, step: 25 },
+    { key: "ghostMs", label: "Fade ms", min: 0, max: 1000, step: 5 },
+    { key: "retractMs", label: "Retract ms", min: 0, max: 1200, step: 20 },
 ];
 
 export function DebugPanel({ onClose }: { onClose: () => void }) {

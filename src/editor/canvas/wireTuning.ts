@@ -34,8 +34,16 @@ export interface WireTuning {
      * the wire trail further behind the hand before the spring pulls it back.
      */
     swing: number;
-    /** How long the release ghost takes to snap back and fade, in ms. */
+    /** How long the release ghost takes to fade out, in ms. */
     ghostMs: number;
+    /**
+     * How long the released wire takes to wind back to its socket, in ms.
+     *
+     * The motion QA asked for: a vacuum-cleaner cable retracting on an
+     * easeOutCubic ramp. Kept separate from the fade so the travel can carry
+     * the eye while the fade stays out of its way.
+     */
+    retractMs: number;
 }
 
 /**
@@ -45,17 +53,27 @@ export interface WireTuning {
  * damping ratio near 0.75, so it still bounces once or twice.
  */
 export const DEFAULT_TUNING: WireTuning = {
-    stiffness: 520,
-    damping: 34,
-    maxSag: 115,
-    tautDistance: 560,
     /*
-     * 12, not 1: the kick has to overcome a stiff spring. At stiffness 520 a
-     * swing of 0.9 peaked at 2px of travel — real, and completely invisible.
-     * 12 gives roughly 25px, which reads as a pendulum.
+     * Zeis's numbers, found with the debug panel sliders (r115). Worth
+     * recording what they mean, since they are far from my guesses:
+     *
+     *   damping ratio 0.19 — very springy. My 520/34 sat at 0.75, which damps
+     *   almost immediately; this oscillates a few times at ~4Hz before
+     *   settling, which is what reads as a real cable.
+     *
+     *   taut at 340 rather than 560 — the wire straightens much sooner, so the
+     *   swing fades quickly as it is pulled out.
+     *
+     *   ghost 20ms — near-instant. The retraction carries the motion now, so
+     *   the fade should not compete with it.
      */
-    swing: 12,
-    ghostMs: 200,
+    stiffness: 700,
+    damping: 10,
+    maxSag: 125,
+    tautDistance: 340,
+    swing: 20,
+    ghostMs: 20,
+    retractMs: 260,
 };
 
 type Listener = () => void;

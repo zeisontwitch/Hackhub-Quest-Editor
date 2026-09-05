@@ -75,25 +75,33 @@ describe("the held wire has exactly one writer for `d`", () => {
     });
 });
 
-describe("the ghost plays on every ending", () => {
+describe("the ghost matches how the gesture ended", () => {
     /*
-     * r111 reversed an r108 decision. I had deferred the snap-back while the
-     * node search was open, on the theory that the wire was "pending" rather
-     * than cancelled. But React Flow unmounts the connection line the moment
-     * the pointer is released, so deferring meant the wire simply blinked out
-     * — QA saw it vanish with no snap and no fade. The ghost is ~200ms, short
-     * enough to play while the search is still opening.
+     * Three endings, three behaviours — the model QA described as a vacuum
+     * cleaner's cable. r114 retracted on every ending, including the drop that
+     * opens the node search, so the wire wound home while the author was still
+     * choosing what to connect it to.
      */
-    it("plays the snap-back when a drop opens the search", () => {
+    it("holds the wire while the node search is open", () => {
         const end = SOURCE.slice(SOURCE.indexOf("const onConnectEnd = useCallback"));
-        // Everything between opening the search and returning from the branch.
         const afterOpen = end.slice(end.indexOf("setSearchAt({ x: point.clientX"));
         const branch = afterOpen.slice(0, afterOpen.indexOf("return;"));
-        expect(branch).toContain("ghostTheWire();");
+        expect(branch).toContain("ghostTheWire(true)");
+    });
+
+    it("clears the held wire once a node is placed", () => {
+        // The real edge draws the connection now, so there is nothing to wind
+        // back to.
+        const add = SOURCE.slice(SOURCE.indexOf("const addFromSearch = useCallback"));
+        expect(add.slice(0, 2600)).toContain("dismissWireGhosts()");
+    });
+
+    it("winds it home when the search is dismissed", () => {
+        const close = SOURCE.slice(SOURCE.indexOf("const closeSearch = useCallback"));
+        expect(close.slice(0, 700)).toContain("retractWireGhosts()");
     });
 
     it("keeps no deferred-ghost machinery", () => {
-        // Dead state is a place for bugs to hide; the ref is gone entirely.
         expect(SOURCE).not.toContain("pendingGhost");
     });
 });

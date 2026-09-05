@@ -549,11 +549,32 @@ function CanvasInner() {
         (what: "row" | "column" | "spread-row" | "spread-column") => {
             const q = activeQuest();
             if (!q) return;
+            /*
+             * Sizes come from React Flow's own node lookup, which its
+             * ResizeObserver keeps authoritative for every rendered card.
+             *
+             * They used to come from our `measured` map, filled from
+             * "dimensions" change events — and a probe showed it handing
+             * alignPositions `size: undefined` for every node. A missing size
+             * counts as zero, so "align centres" quietly became "align
+             * top-left corners", the cards' middles stayed staggered, and the
+             * wires between them still curved. That is the bug in
+             * Align-wrong.png (r99).
+             */
+            const lookup = rfStore.getState().nodeLookup;
             const chosen = q.graph.nodes
                 .filter((n) => selection.nodeIds.includes(n.id))
-                // Measured sizes let alignment centre the cards rather than
-                // line up their top-left corners (r97).
-                .map((n) => ({ ...n, size: measured[n.id] }));
+                .map((n) => {
+                    const live = lookup.get(n.id) as
+                        | { measured?: { width?: number; height?: number } }
+                        | undefined;
+                    const w = live?.measured?.width ?? measured[n.id]?.width;
+                    const h = live?.measured?.height ?? measured[n.id]?.height;
+                    return {
+                        ...n,
+                        size: w != null && h != null ? { width: w, height: h } : undefined,
+                    };
+                });
             if (chosen.length < 2) return;
             /*
              * Snapping is handed to alignPositions so it can snap the shared
@@ -571,7 +592,7 @@ function CanvasInner() {
                     : distributePositions(chosen, what === "spread-row" ? "row" : "column");
             arrangeNodes(moved);
         },
-        [activeQuest, arrangeNodes, measured, selection.nodeIds],
+        [activeQuest, arrangeNodes, measured, rfStore, selection.nodeIds],
     );
 
     const onNodesChange = useCallback(

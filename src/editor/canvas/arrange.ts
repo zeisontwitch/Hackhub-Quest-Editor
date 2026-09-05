@@ -80,8 +80,22 @@ export function alignPositions(
     let line = (Math.min(...starts) + Math.max(...ends)) / 2;
     if (grid > 0) line = Math.round(line / grid) * grid;
 
+    /*
+     * Round the LINE, not each card's offset from it. Rounding per card leaves
+     * an odd-width card half a pixel off a fractional line, so two cards that
+     * should share a centre end up 0.5 apart — visible as a hairline kink in
+     * the wire between them.
+     */
+    line = Math.round(line);
     const moved: Record<string, XY> = {};
     for (const n of nodes) {
+        /*
+         * Positions stay whole pixels, so a card of odd size lands half a pixel
+         * off the shared line — unavoidable without fractional coordinates in
+         * the saved project, and invisible at any zoom. Rounding here (rather
+         * than rounding the line per card) keeps every card within half a pixel
+         * of the same line instead of letting the error accumulate.
+         */
         const target = Math.round(line - sizeOf(n) / 2) + 0;
         if (n.position[key] === target) continue;
         moved[n.id] = { ...n.position, [key]: target };

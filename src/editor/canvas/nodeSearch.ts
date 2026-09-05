@@ -11,7 +11,9 @@
  * Mail, which reads as broken.
  */
 import type { NodeTypeDef } from "@/schema/registry";
-import { paletteGroups } from "@/schema/registry";
+import { nodeTypeDef, paletteGroups, sourcesOf } from "@/schema/registry";
+import type { NodeDoc } from "@/schema/nodes";
+import type { EdgeKind } from "@/schema/edges";
 
 /**
  * Every addable node type, in palette order.
@@ -75,4 +77,53 @@ export function searchNodeTypes(query: string, pool = allNodeTypes()): NodeTypeD
 export function moveHighlight(current: number, delta: number, length: number): number {
     if (length === 0) return 0;
     return (((current + delta) % length) + length) % length;
+}
+
+
+/**
+ * The node types a wire of `kind` could legally reach.
+ *
+ * Used when a wire is dropped on empty canvas: offering a type the wire cannot
+ * plug into would create a node and then silently fail to connect it, which
+ * looks like the editor losing the gesture.
+ *
+ * `direction` is the end the author is dragging FROM — dragging out of an
+ * output needs candidates with a matching input, and vice versa.
+ */
+export function typesAcceptingWire(
+    kind: EdgeKind,
+    direction: "source" | "target",
+    pool = allNodeTypes(),
+): NodeTypeDef[] {
+    return pool.filter((def) => {
+        if (direction === "source") {
+            return def.targets.some((h) => h.kind === kind);
+        }
+        // Dragging from an input: the candidate must be able to feed it.
+        // Seeded data, since a node's sockets can depend on its own contents.
+        const outputs = sourcesOf({ type: def.type, data: def.create() } as NodeDoc);
+        return outputs.some((h) => h.kind === kind);
+    });
+}
+
+/**
+ * The socket on a newly created node that a dropped wire should land on.
+ *
+ * Mirrors `soleMatchingInput`/`soleMatchingOutput`, but for a node that does
+ * not exist yet — so it works from the type definition rather than a document.
+ * Returns the first socket of the right kind: unlike the drop-on-existing-node
+ * case there is no ambiguity to respect, because the author picked this type
+ * from a list that only offered compatible ones.
+ */
+export function entrySocketFor(
+    type: NodeTypeDef["type"],
+    kind: EdgeKind,
+    direction: "source" | "target",
+): string | null {
+    const def = nodeTypeDef(type);
+    if (direction === "source") {
+        return def.targets.find((h) => h.kind === kind)?.id ?? null;
+    }
+    const outputs = sourcesOf({ type, data: def.create() } as NodeDoc);
+    return outputs.find((h) => h.kind === kind)?.id ?? null;
 }

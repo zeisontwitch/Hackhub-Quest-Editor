@@ -12,7 +12,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { CATEGORY_HEX, categoryOf } from "@/schema/registry";
 import type { NodeType } from "@/schema/nodes";
-import { moveHighlight, searchNodeTypes } from "./nodeSearch";
+import type { EdgeKind } from "@/schema/edges";
+import { moveHighlight, searchNodeTypes, typesAcceptingWire } from "./nodeSearch";
 import {
     POPOVER_INPUT_HEIGHT,
     POPOVER_ROW_HEIGHT,
@@ -23,11 +24,17 @@ import {
 export interface NodeSearchPopoverProps {
     /** Where the author clicked, in screen coordinates. */
     at: { x: number; y: number };
+    /**
+     * Set when the popover was opened by dropping a wire on empty canvas. The
+     * list is then narrowed to types the wire can actually plug into, and the
+     * placeholder says so.
+     */
+    wire?: { kind: EdgeKind; direction: "source" | "target" } | null;
     onPick: (type: NodeType) => void;
     onClose: () => void;
 }
 
-export function NodeSearchPopover({ at, onPick, onClose }: NodeSearchPopoverProps) {
+export function NodeSearchPopover({ at, wire, onPick, onClose }: NodeSearchPopoverProps) {
     const [query, setQuery] = useState("");
     const [highlight, setHighlight] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -38,7 +45,11 @@ export function NodeSearchPopover({ at, onPick, onClose }: NodeSearchPopoverProp
      */
     const pointerMoved = useRef(false);
 
-    const results = useMemo(() => searchNodeTypes(query), [query]);
+    const pool = useMemo(
+        () => (wire ? typesAcceptingWire(wire.kind, wire.direction) : undefined),
+        [wire],
+    );
+    const results = useMemo(() => searchNodeTypes(query, pool), [query, pool]);
 
     // A new query means the old highlight index is meaningless.
     useEffect(() => setHighlight(0), [query]);
@@ -137,7 +148,7 @@ export function NodeSearchPopover({ at, onPick, onClose }: NodeSearchPopoverProp
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={onKeyDown}
-                    placeholder="Add a node…"
+                    placeholder={wire ? "Connect to…" : "Add a node…"}
                     aria-label="Search node types"
                     role="combobox"
                     aria-expanded

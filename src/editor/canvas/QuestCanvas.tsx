@@ -33,6 +33,8 @@ import { boxSelectionResult, onlyDeselects, resolveSelection } from "./applyChan
 import { alignPositions, distributePositions, GRID } from "./arrange";
 import { nodeSize } from "./nodeSize";
 import { NodeSearchPopover } from "./NodeSearchPopover";
+import { entrySocketFor } from "./nodeSearch";
+import type { EdgeKind } from "@/schema/edges";
 import { setSnapEnabled, snapEnabled, subscribeSnap } from "./snapGrid";
 import { TypedEdge, toRFEdge, type TypedRFEdge } from "./TypedEdge";
 import { setWireMotion, subscribeWireMotion, wireMotionEnabled } from "./wireMotion";
@@ -444,7 +446,31 @@ function CanvasInner() {
 
             const from = state.fromHandle;
             const q = activeQuest();
-            if (!from || !from.nodeId || !q || !overId) return;
+            if (!from || !from.nodeId || !q) return;
+
+            /*
+             * Dropped on empty canvas: offer to create the node the wire was
+             * reaching for, rather than discarding the gesture. Blender's best
+             * add-node affordance, and the natural pair to right-click search.
+             */
+            if (!overId) {
+                const fromDoc = q.graph.nodes.find((n) => n.id === from.nodeId);
+                if (!fromDoc) return;
+                const kind =
+                    from.type === "source"
+                        ? sourcesOf(fromDoc).find((h) => h.id === from.id)?.kind
+                        : nodeTypeDef(fromDoc.type).targets.find((h) => h.id === from.id)?.kind;
+                if (!kind) return;
+                const point = "changedTouches" in event ? event.changedTouches[0] : event;
+                setPendingWire({
+                    nodeId: from.nodeId,
+                    handleId: from.id ?? "",
+                    kind,
+                    direction: from.type === "source" ? "source" : "target",
+                });
+                setSearchAt({ x: point.clientX, y: point.clientY });
+                return;
+            }
             const fromNode = q.graph.nodes.find((n) => n.id === from.nodeId);
             const overNode = q.graph.nodes.find((n) => n.id === overId);
             if (!fromNode || !overNode) return;
@@ -713,6 +739,16 @@ function CanvasInner() {
      * toggle).
      */
     const [searchAt, setSearchAt] = useState<{ x: number; y: number } | null>(null);
+    /**
+     * Set when the search was opened by dropping a wire on empty canvas, so
+     * the chosen node can be connected to the wire's other end.
+     */
+    const [pendingWire, setPendingWire] = useState<{
+        nodeId: string;
+        handleId: string;
+        kind: EdgeKind;
+        direction: "source" | "target";
+    } | null>(null);
 
     /**
      * Right-click has to serve two masters: a *drag* pans the canvas, a *click*
@@ -725,7 +761,13 @@ function CanvasInner() {
     const RIGHT_CLICK_SLOP = 4;
 
     const openSearchAt = useCallback((x: number, y: number) => {
+        setPendingWire(null);
         setSearchAt({ x, y });
+    }, []);
+
+    const closeSearch = useCallback(() => {
+        setSearchAt(null);
+        setPendingWire(null);
     }, []);
 
     /** Add the chosen type where the popover was opened, then close it. */
@@ -735,17 +777,57 @@ function CanvasInner() {
             const position = screenToFlowPosition(searchAt);
             // Same nudge as the palette drop, so a searched node and a dragged
             // node land in the same place relative to the pointer.
-            addNode(type, { x: position.x - 20, y: position.y - 24 });
-            setSearchAt(null);
+            const id = addNode(type, { x: position.x - 20, y: position.y - 24 });
+
+            /*
+             * Opened by dropping a wire? Then finish the gesture the author
+             * started and join the two up. The list only offered types that
+             * can take this wire, so a socket is guaranteed — but check
+             * anyway rather than emit a broken edge.
+             */
+            if (id && pendingWire) {
+                const socket = entrySocketFor(type, pendingWire.kind, pendingWire.direction);
+                if (socket) {
+                    connect(
+                        pendingWire.direction === "source"
+                            ? {
+                                  source: pendingWire.nodeId,
+                                  sourceHandle: pendingWire.handleId,
+                                  target: id,
+                                  targetHandle: socket,
+                              }
+                            : {
+                                  source: id,
+                                  sourceHandle: socket,
+                                  target: pendingWire.nodeId,
+                                  targetHandle: pendingWire.handleId,
+                              },
+                    );
+                }
+            }
+            closeSearch();
         },
-        [addNode, screenToFlowPosition, searchAt],
+        [addNode, closeSearch, connect, pendingWire, screenToFlowPosition, searchAt],
     );
 
     /**
      * Where the pointer last was, so Shift+A can open the search under it —
      * the way Blender does, rather than at some fixed point.
+     *
+     * Two primitives rather than an object: pointermove fires on every frame
+     * the mouse is moving, and allocating a fresh `{x, y}` each time hands the
+     * garbage collector needless work during a drag.
+     *
+     * `overCanvas` is set by pointerenter/pointerleave, which the browser
+     * fires exactly once per boundary crossing and never in between. That
+     * replaces a getBoundingClientRect() in the Shift+A handler — a call that
+     * forces a synchronous layout — and is also more correct: a manual rect
+     * test counts the pointer as "on canvas" while it is over the inspector or
+     * a floating overlay drawn on top of it, whereas the native events do not.
      */
-    const pointer = useRef<{ x: number; y: number } | null>(null);
+    const pointerX = useRef(0);
+    const pointerY = useRef(0);
+    const overCanvas = useRef(false);
 
     /* Shift+A over the canvas, Blender's shortcut for the same job. */
     useEffect(() => {
@@ -765,15 +847,9 @@ function CanvasInner() {
              * an ancestor of the wrapper, not a descendant — so the guard
              * rejected every press.
              */
-            const at = pointer.current;
-            if (!at) return;
-            const rect = wrapperRef.current?.getBoundingClientRect();
-            if (!rect) return;
-            const inside =
-                at.x >= rect.left && at.x <= rect.right && at.y >= rect.top && at.y <= rect.bottom;
-            if (!inside) return;
+            if (!overCanvas.current) return;
             event.preventDefault();
-            openSearchAt(at.x, at.y);
+            openSearchAt(pointerX.current, pointerY.current);
         };
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
@@ -803,13 +879,23 @@ function CanvasInner() {
         <div
             ref={wrapperRef}
             className="relative h-full w-full"
+            onPointerEnter={() => {
+                overCanvas.current = true;
+            }}
+            onPointerLeave={() => {
+                overCanvas.current = false;
+            }}
             onPointerMove={(e) => {
-                // A ref, not state: this fires constantly and must never
+                // Refs, not state: this fires constantly and must never
                 // re-render the canvas (see canvasPerformance.test.tsx).
-                pointer.current = { x: e.clientX, y: e.clientY };
+                pointerX.current = e.clientX;
+                pointerY.current = e.clientY;
             }}
             onPointerDown={(e) => {
-                pointer.current = { x: e.clientX, y: e.clientY };
+                pointerX.current = e.clientX;
+                pointerY.current = e.clientY;
+                // A tap or stylus press may arrive with no preceding move.
+                overCanvas.current = true;
                 if (e.button === 2) rightDown.current = { x: e.clientX, y: e.clientY };
             }}
             onPointerUp={(e) => {
@@ -934,8 +1020,9 @@ function CanvasInner() {
             {searchAt && (
                 <NodeSearchPopover
                     at={searchAt}
+                    wire={pendingWire}
                     onPick={addFromSearch}
-                    onClose={() => setSearchAt(null)}
+                    onClose={closeSearch}
                 />
             )}
 

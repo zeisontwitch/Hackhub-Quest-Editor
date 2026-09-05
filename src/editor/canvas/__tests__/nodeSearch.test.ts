@@ -6,11 +6,13 @@ import { describe, expect, it } from "vitest";
 import {
     MatchRank,
     allNodeTypes,
+    entrySocketFor,
     moveHighlight,
     rankOf,
     searchNodeTypes,
+    typesAcceptingWire,
 } from "@/editor/canvas/nodeSearch";
-import { nodeTypeDef } from "@/schema/registry";
+import { nodeTypeDef, sourcesOf } from "@/schema/registry";
 
 const labelsFor = (q: string) => searchNodeTypes(q).map((d) => d.label);
 
@@ -82,5 +84,54 @@ describe("moveHighlight", () => {
     it("survives an empty list", () => {
         expect(moveHighlight(0, 1, 0)).toBe(0);
         expect(moveHighlight(0, -1, 0)).toBe(0);
+    });
+});
+
+
+describe("typesAcceptingWire", () => {
+    /*
+     * Offering a type a dropped wire cannot reach would create the node and
+     * then silently fail to connect it — which reads as the editor eating the
+     * gesture. Only compatible types are offered.
+     */
+    it("dragging from an output offers types with a matching input", () => {
+        const hits = typesAcceptingWire("flow", "source");
+        expect(hits.length).toBeGreaterThan(0);
+        for (const def of hits) {
+            expect(def.targets.some((h) => h.kind === "flow")).toBe(true);
+        }
+    });
+
+    it("dragging from an input offers types that can feed it", () => {
+        const hits = typesAcceptingWire("condition", "target");
+        expect(hits.length).toBeGreaterThan(0);
+        // Every candidate must actually own a condition output.
+        for (const def of hits) {
+            const outs = sourcesOf({ type: def.type, data: def.create() } as never);
+            expect(outs.some((h: { kind: string }) => h.kind === "condition")).toBe(true);
+        }
+    });
+
+    it("never offers a type that cannot take the wire", () => {
+        const all = allNodeTypes();
+        const hits = typesAcceptingWire("flow", "source");
+        const rejected = all.filter((d) => !hits.includes(d));
+        for (const def of rejected) {
+            expect(def.targets.some((h) => h.kind === "flow")).toBe(false);
+        }
+    });
+});
+
+describe("entrySocketFor", () => {
+    it("finds the input a dropped output-wire should land on", () => {
+        expect(entrySocketFor("fx.notify", "flow", "source")).toBe("in");
+    });
+
+    it("finds the output that should feed a dropped input-wire", () => {
+        expect(entrySocketFor("trigger.event", "condition", "target")).toBe("when");
+    });
+
+    it("returns null when the type has no socket of that kind", () => {
+        expect(entrySocketFor("fx.notify", "condition", "source")).toBeNull();
     });
 });

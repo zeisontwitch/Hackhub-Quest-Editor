@@ -103,13 +103,27 @@ describe("Shift+A", () => {
      * descendant — so the guard rejected every press. "Over the canvas" has to
      * mean the pointer, not the focus.
      */
-    async function mountAndPoint(x: number, y: number) {
+    /**
+     * Move the pointer onto the canvas, the way a browser reports it:
+     * pointerenter on crossing the boundary, then pointermove for position.
+     * `inside: false` skips the enter, standing in for a pointer that is
+     * somewhere else entirely.
+     */
+    async function mountAndPoint(x: number, y: number, inside = true) {
         render(<App />);
         await waitFor(() => expect(document.querySelector(".react-flow__pane")).toBeTruthy());
         const wrapper = document.querySelector(".react-flow")!.parentElement as HTMLElement;
-        wrapper.getBoundingClientRect = () =>
-            ({ x: 0, y: 0, left: 0, top: 0, right: 1000, bottom: 800, width: 1000, height: 800, toJSON() {} }) as DOMRect;
         act(() => {
+            /*
+             * React derives onPointerEnter from `pointerover` carrying a
+             * relatedTarget — dispatching a raw `pointerenter` reaches native
+             * listeners but never the synthetic handler.
+             */
+            if (inside) {
+                wrapper.dispatchEvent(
+                    new MouseEvent("pointerover", { bubbles: true, relatedTarget: document.body }),
+                );
+            }
             wrapper.dispatchEvent(new MouseEvent("pointermove", { bubbles: true, clientX: x, clientY: y }));
         });
         return userEvent.setup();
@@ -135,11 +149,47 @@ describe("Shift+A", () => {
     });
 
     it("stays out of the way when the pointer is off the canvas", async () => {
-        await mountAndPoint(5000, 5000);
+        await mountAndPoint(5000, 5000, false);
         act(() => {
             window.dispatchEvent(new KeyboardEvent("keydown", { key: "A", shiftKey: true, bubbles: true }));
         });
         expect(popover()).toBeNull();
+    });
+
+    it("stops firing once the pointer leaves the canvas", async () => {
+        await mountAndPoint(400, 300);
+        const wrapper = document.querySelector(".react-flow")!.parentElement as HTMLElement;
+        // Likewise, onPointerLeave comes from `pointerout` leaving the subtree.
+        act(() =>
+            wrapper.dispatchEvent(
+                new MouseEvent("pointerout", { bubbles: true, relatedTarget: document.body }),
+            ),
+        );
+        act(() => {
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "A", shiftKey: true, bubbles: true }));
+        });
+        expect(popover()).toBeNull();
+    });
+
+    it("does not force a layout to decide whether it should open", async () => {
+        /*
+         * getBoundingClientRect flushes pending layout synchronously. The
+         * boundary is tracked by pointerenter/pointerleave instead, so the
+         * shortcut must not need to measure anything.
+         */
+        await mountAndPoint(400, 300);
+        const wrapper = document.querySelector(".react-flow")!.parentElement as HTMLElement;
+        let measured = 0;
+        const real = wrapper.getBoundingClientRect.bind(wrapper);
+        wrapper.getBoundingClientRect = () => {
+            measured += 1;
+            return real();
+        };
+        act(() => {
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "A", shiftKey: true, bubbles: true }));
+        });
+        await waitFor(() => expect(popover()).toBeTruthy());
+        expect(measured).toBe(0);
     });
 
     it("does not fire for a plain A, or with ctrl held", async () => {
@@ -224,3 +274,17 @@ describe("it does not break the editor's other keys", () => {
         expect(quest().graph.nodes.some((n) => n.id === id)).toBe(true);
     });
 });
+
+/*
+ * NOT TESTED HERE: dropping a wire on empty canvas.
+ *
+ * React Flow's connection drag needs real hit-testing and handle geometry,
+ * neither of which jsdom provides — a simulated pointerdown on a handle never
+ * starts a connection, so any test here would pass while proving nothing. An
+ * earlier version of this file had exactly that: early-returns that made it
+ * green without exercising a single line.
+ *
+ * What IS covered: the compatibility rule and socket selection, as pure
+ * functions in nodeSearch.test.ts (typesAcceptingWire, entrySocketFor). The
+ * gesture itself is on Zeis's list to check in the preview.
+ */

@@ -7,8 +7,7 @@ them behind the in-game verification gate.
 
 ## Where things stand
 
-- **HEAD:** built and green on `arena/01a073d6-hackhub-quest-editor`, remote in
-  sync (branch `arena/01a073d6-hackhub-quest-editor`).
+- **HEAD:** `99e9926` on `arena/01a073d6-hackhub-quest-editor`, committed.
 - **1,065 tests green** (up from 1,032 — the two new templates add 33
   assertions), typecheck clean. The only noise is the 4 pre-existing
   `selectionGestures.test.tsx` d3-drag jsdom teardown errors, unrelated to this

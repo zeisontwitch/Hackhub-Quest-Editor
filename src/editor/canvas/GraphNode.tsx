@@ -202,6 +202,11 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
         };
         const color = bd.color || "#64748b";
         const text = bd.text || "";
+        /* The body sits on a translucent tint over the dark canvas, so the
+           surface is always dark — a fixed light text reads on any accent
+           colour, where readableOn(color) would wrongly pick dark for bright
+           shades (green, amber, cyan). */
+        const onCard = "#f2f4f7";
         const PREVIEW = 250;
         const isLong = text.length > PREVIEW;
         const shown = beatExpanded || !isLong ? text : text.slice(0, PREVIEW).trimEnd();
@@ -228,20 +233,21 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                     plan
                 </span>
 
-                {/* colour accent */}
-                <span className="absolute inset-y-0 left-0 w-[3px] rounded-l-[7px]" style={{ background: color }} aria-hidden />
+                {/* colour accent — nudged out by the 1px border so it sits flush
+                    with the card's rounded edge instead of beside a sliver */}
+                <span className="absolute inset-y-0 w-[3px] rounded-l-lg" style={{ background: color, left: -1 }} aria-hidden />
 
                 <div className="px-3 pt-2.5 pb-2 pl-4">
-                    <div className="truncate text-[12.5px] leading-tight font-semibold" style={{ color: readableOn(color) }}>
+                    <div className="truncate text-[12.5px] leading-tight font-semibold" style={{ color: onCard }}>
                         {bd.title || "Story Beat"}
                     </div>
-                    <div className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-relaxed" style={{ color: readableOn(color) }}>
+                    <div className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-relaxed" style={{ color: onCard }}>
                         {shown || "Empty beat — open the inspector to write it."}
                         {!beatExpanded && isLong && (
                             <button
                                 type="button"
                                 className="ml-1 font-medium underline decoration-dotted underline-offset-2"
-                                style={{ color: readableOn(color) }}
+                                style={{ color: onCard }}
                                 onClick={() => setBeatExpanded(true)}
                             >
                                 … more
@@ -255,7 +261,7 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                                 <div
                                     key={c.id}
                                     className="flex items-center gap-1.5 rounded border px-1.5 py-0.5 text-[10px]"
-                                    style={{ borderColor: color, color: readableOn(color) }}
+                                    style={{ borderColor: color, color: onCard }}
                                 >
                                     <Icon name="shuffle" size={9} className="shrink-0" style={{ color }} />
                                     <span className="truncate font-medium">{c.label || "Choice"}</span>
@@ -342,8 +348,8 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
 
             {/* category accent */}
             <span
-                className="absolute inset-y-0 left-0 w-[3px] rounded-l-[7px]"
-                style={{ background: category.color }}
+                className="absolute inset-y-0 w-[3px] rounded-l-lg"
+                style={{ background: category.color, left: -1 }}
                 aria-hidden
             />
 

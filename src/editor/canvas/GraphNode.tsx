@@ -207,9 +207,10 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
            colour, where readableOn(color) would wrongly pick dark for bright
            shades (green, amber, cyan). */
         const onCard = "#f2f4f7";
-        const PREVIEW = 250;
+        const PREVIEW = 800;
         const isLong = text.length > PREVIEW;
-        const shown = beatExpanded || !isLong ? text : text.slice(0, PREVIEW).trimEnd();
+        const collapsed = text.slice(0, PREVIEW).trimEnd();
+        const bodyText = beatExpanded ? text : collapsed;
         return (
             <div
                 className={cn(
@@ -238,32 +239,47 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                     <div className="truncate text-[12.5px] leading-tight font-semibold" style={{ color: onCard }}>
                         {bd.title || "Story Beat"}
                     </div>
-                    <div className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-relaxed" style={{ color: onCard }}>
-                        {shown || "Empty beat — open the inspector to write it."}
-                        {!beatExpanded && isLong && (
+                    <div className="mt-1 text-[11px] leading-relaxed" style={{ color: onCard }}>
+                        <div
+                            className={cn(
+                                "whitespace-pre-wrap break-words",
+                                // Expanded full text is bounded so it never swallows
+                                // the canvas; anything past it scrolls.
+                                beatExpanded && "max-h-[300px] overflow-y-auto pr-1",
+                            )}
+                        >
+                            {bodyText || "Empty beat — open the inspector to write it."}
+                        </div>
+                        {isLong && (
                             <button
                                 type="button"
-                                className="ml-1 font-medium underline decoration-dotted underline-offset-2"
+                                className="mt-0.5 font-medium underline decoration-dotted underline-offset-2"
                                 style={{ color: onCard }}
-                                onClick={() => setBeatExpanded(true)}
+                                onClick={() => setBeatExpanded(!beatExpanded)}
                             >
-                                … more
+                                {beatExpanded ? "… less" : "… more"}
                             </button>
                         )}
                     </div>
 
                     {(bd.choices ?? []).length > 0 && (
-                        <div className="mt-1.5 space-y-1">
+                        <div className="mt-2 space-y-1.5">
                             {(bd.choices ?? []).map((c) => (
                                 <div
                                     key={c.id}
-                                    className="flex items-center gap-1.5 rounded border px-1.5 py-0.5 text-[10px]"
-                                    style={{ borderColor: color, color: onCard }}
+                                    className="rounded-md border px-2 py-1"
+                                    style={{
+                                        borderColor: color,
+                                        background: `color-mix(in srgb, ${color} 8%, transparent)`,
+                                    }}
                                 >
-                                    <Icon name="shuffle" size={9} className="shrink-0" style={{ color }} />
-                                    <span className="truncate font-medium">{c.label || "Choice"}</span>
+                                    <div className="text-[10.5px] leading-snug font-semibold" style={{ color: onCard }}>
+                                        {c.label || "Choice"}
+                                    </div>
                                     {c.note && (
-                                        <span className="truncate text-[9.5px] opacity-80">— {c.note}</span>
+                                        <div className="mt-0.5 text-[10px] leading-snug" style={{ color: onCard, opacity: 0.8 }}>
+                                            {c.note}
+                                        </div>
                                     )}
                                 </div>
                             ))}

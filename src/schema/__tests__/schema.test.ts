@@ -27,6 +27,7 @@ import {
     NODE_TYPES_REGISTRY,
     PALETTE_HIDDEN_TYPES,
     paletteGroups,
+    storyBeatSockets,
     type FieldDef,
     type NodeTypeDef,
 } from "@/schema/registry";
@@ -152,6 +153,32 @@ describe("connection rules", () => {
         for (const kind of EDGE_KINDS as readonly EdgeKind[]) {
             expect(canConnect(kind, kind)).toBe(true);
         }
+    });
+});
+
+describe("story beat sockets", () => {
+    it("always keeps the generic Out pass-through socket", () => {
+        const sockets = storyBeatSockets({});
+        expect(sockets.map((s) => s.id)).toEqual(["out"]);
+        expect(sockets[0].kind).toBe("flow");
+    });
+
+    it("adds one flow socket per branch choice, named after it", () => {
+        const sockets = storyBeatSockets({
+            choices: [
+                { id: "c1", label: "Front door" },
+                { id: "c2", label: "Back door" },
+            ],
+        });
+        expect(sockets.map((s) => s.id)).toEqual(["out", "choice-c1", "choice-c2"]);
+        expect(sockets.every((s) => s.kind === "flow")).toBe(true);
+        expect(sockets[1].label).toBe("Front door");
+        expect(sockets[2].label).toBe("Back door");
+    });
+
+    it("falls back to a numbered label for an unnamed choice", () => {
+        const sockets = storyBeatSockets({ choices: [{ id: "c1", label: "" }] });
+        expect(sockets[1].label).toBe("Choice 1");
     });
 });
 

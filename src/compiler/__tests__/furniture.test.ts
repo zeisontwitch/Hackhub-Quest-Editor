@@ -70,6 +70,54 @@ describe("editor-only furniture is stripped from the export", () => {
         expect(js).not.toContain('"choices"');
     });
 
+    it("splices a beat that fans out through its branch-choice sockets", () => {
+        const quest = createQuest({
+            id: "q-fan",
+            name: "FanOut",
+            closingObjectiveText: "done",
+            title: "Fan Out",
+            autoStart: true,
+            description: "fan out",
+            rewards: { money: 0, xp: 0 },
+        });
+        const claim = makeNode("entry.start", { x: 0, y: 0 });
+        const beat = makeNode(
+            "flow.beat",
+            { x: 100, y: 0 },
+            {
+                title: "Plan",
+                text: "branch plan",
+                choices: [
+                    { id: "c1", label: "left" },
+                    { id: "c2", label: "right" },
+                ],
+            },
+        );
+        const left = makeNode("fx.pay", { x: 200, y: 0 }, { amount: 1 });
+        const right = makeNode("fx.pay", { x: 200, y: 100 }, { amount: 2 });
+        quest.graph = {
+            nodes: [claim, beat, left, right],
+            edges: [
+                // Two distinct downstream branches, wired through the beat.
+                makeEdge(claim, "out", beat, "in"),
+                makeEdge(beat, "choice-c1", left, "in"),
+                makeEdge(beat, "choice-c2", right, "in"),
+            ],
+        };
+        const project = createProject({
+            mod: { id: "fan-mod", name: "Fan", version: "1.0.0", author: "", description: "fan", tags: [], dependencies: [], minSdkVersion: "0.21.0", apiVersion: 1 },
+            quests: [quest],
+            websites: [],
+        });
+        const js = compileProject(project).files.find((f) => f.path === "dist/mod.js")!.content;
+        // The beat is stripped; both branches upstream of it are reconnected to
+        // the single incoming source. No chord to the beat survives.
+        expect(js).not.toContain('"flow.beat"');
+        expect(js).not.toContain('"choice-c1"');
+        expect(js).not.toContain('"choice-c2"');
+        expect((js.match(/bypass-/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    });
+
     it("emits a group as a comment block near the top of the mod", () => {
         const js = modJsOf({ withGroup: true });
         expect(js).toContain("planning notes");

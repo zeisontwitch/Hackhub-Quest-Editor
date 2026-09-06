@@ -23,7 +23,11 @@ export function ListEditor({
     items: Record<string, unknown>[];
     def: Extract<FieldDef, { kind: "list" }>;
 }) {
-    const [open, setOpen] = useState<Record<number, boolean>>({});
+    const [open, setOpen] = useState<Record<number, boolean>>(
+        // Honour `defaultOpen` so a list made to be read (a beat's branch
+        // choices) shows its rows expanded on first open instead of hiding them.
+        () => Object.fromEntries(items.map((_, i) => [i, def.defaultOpen ?? false])),
+    );
     const updateNodeData = useEditor((s) => s.updateNodeData);
 
     const write = (next: Record<string, unknown>[]) => updateNodeData(nodeId, { [path]: next });

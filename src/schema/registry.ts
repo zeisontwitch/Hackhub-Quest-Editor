@@ -103,6 +103,8 @@ export type FieldDef =
           addLabel: string;
           /** Text shown for a row when it has no meaningful title yet. */
           itemTitle: (item: Record<string, unknown>, index: number) => string;
+          /** Open every existing row by default (e.g. choices an author should read at once). */
+          defaultOpen?: boolean;
           fields: FieldDef[];
           newItem: () => Record<string, unknown>;
       }
@@ -1011,18 +1013,21 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         targets: [inFlow],
         sources: [outFlow],
         hook: "declarative",
+        /* One output socket per branch choice (plus the generic "Out"), so an
+           author can wire each branch onward while planning. Mirrors how a
+           Sequence grows an output per step. */
+        dynamicSources: (data) => storyBeatSockets(data),
         fields: [
             { kind: "note", tone: "info", text: "Planning only. This node is stripped from the exported mod and never runs. Wire it among reroute, branch and sequence to sketch a flow; the story passes through it unchanged." },
             { kind: "text", key: "title", label: "Headline", hint: "A short name for this beat, e.g. “Act 2 — the firewall”. It is the card's title bar." },
-            { kind: "textarea", key: "text", label: "Beat text", hint: "The body of the beat. The top ~250 characters are previewed on the card; the full text is in the inspector." },
-            { kind: "color", key: "color", label: "Card colour", hint: "Pick any colour. Colour-coding by act, character or branch is usually the clearest." },
-            { kind: "number", key: "width", label: "Width (px)", min: 200, max: 640, step: 20, hint: "How wide the card is on the canvas, in pixels." },
+            { kind: "textarea", key: "text", label: "Beat text", rows: 8, hint: "The key content of the beat. The card previews the top ~800 characters and expands into a scrollable panel for the rest." },
             {
                 kind: "list",
                 key: "choices",
                 label: "Branch choices",
-                hint: "Add a row for each path the story can take, so a branching beat reads at a glance.",
+                hint: "Add a row for each path the story can take. Each gets its own output socket on the card, so you can wire each branch onward while planning.",
                 addLabel: "Add choice",
+                defaultOpen: true,
                 itemTitle: (c: Record<string, unknown>, i: number) =>
                     String((c.label as string | undefined)?.trim() || `Choice ${i + 1}`),
                 fields: [
@@ -1031,6 +1036,8 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                 ],
                 newItem: () => ({ id: nanoid(8), label: "", note: "" }),
             },
+            { kind: "number", key: "width", label: "Width (px)", min: 200, max: 640, step: 20, hint: "How wide the card is on the canvas, in pixels." },
+            { kind: "color", key: "color", label: "Card colour", hint: "Pick any colour. Colour-coding by act, character or branch is usually the clearest." },
         ],
         create: () => seed(StoryBeatNodeDataSchema, { title: "", text: "", color: "#64748b", width: 280 }),
     },
@@ -1077,6 +1084,24 @@ export function sequenceSockets(data: unknown): HandleSpec[] {
         kind: "flow" as const,
         label: step.label?.trim() || `Step ${i + 1}`,
     }));
+}
+
+/**
+ * The output sockets a Story Beat shows: the generic "Out" pass-through plus one
+ * per branch choice (in author order), so each planned branch can be wired
+ * onward. A choice's socket survives until the choice is removed; the compiler
+ * strips the whole beat and splices these wires, so they never reach the mod.
+ */
+export function storyBeatSockets(data: unknown): HandleSpec[] {
+    const choices = (data as { choices?: { id?: string; label?: string }[] })?.choices ?? [];
+    return [
+        outFlow,
+        ...choices.map((c, i) => ({
+            id: `choice-${c.id}`,
+            kind: "flow" as const,
+            label: c.label?.trim() || `Choice ${i + 1}`,
+        })),
+    ];
 }
 
 /**

@@ -220,6 +220,7 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                 style={{
                     width: bd.width ?? 280,
                     borderColor: selected ? "var(--color-accent)" : color,
+                    borderLeftWidth: 3,
                     background: `color-mix(in srgb, ${color} 14%, transparent)`,
                 }}
             >
@@ -232,10 +233,6 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                     <Icon name="flag" size={9} />
                     plan
                 </span>
-
-                {/* colour accent — nudged out by the 1px border so it sits flush
-                    with the card's rounded edge instead of beside a sliver */}
-                <span className="absolute inset-y-0 w-[3px] rounded-l-lg" style={{ background: color, left: -1 }} aria-hidden />
 
                 <div className="px-3 pt-2.5 pb-2 pl-4">
                     <div className="truncate text-[12.5px] leading-tight font-semibold" style={{ color: onCard }}>
@@ -319,6 +316,11 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                     // Grow with the socket count so a node with many outputs
                     // (a Sequence) never crams its dots on top of each other.
                     minHeight: 48 + Math.max(0, Math.max(sources.length, def.targets.length) - 2) * 26,
+                    // The category accent is the card's left border, so it follows
+                    // the rounded outline exactly — an overlaid bar pokes past the
+                    // corner radius. 3px reads as the rail, inside the 1px chroma.
+                    borderLeftWidth: 3,
+                    borderLeftColor: category.color,
                     ...(selected
                         ? {
                               ["--tw-ring-color" as string]: category.color,
@@ -345,13 +347,6 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                     {issue.label}
                 </span>
             )}
-
-            {/* category accent */}
-            <span
-                className="absolute inset-y-0 w-[3px] rounded-l-lg"
-                style={{ background: category.color, left: -1 }}
-                aria-hidden
-            />
 
             <div className="flex items-start gap-2 px-3 pt-2.5 pb-2 pl-4">
                 <span

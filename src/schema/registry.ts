@@ -999,12 +999,27 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
     },
 };
 
+/**
+ * Node types that exist in the engine and schema but are deliberately not
+ * offered in the editor's palette or add-node search.
+ *
+ * `world.wifi` is the reservation for the in-game wireless system (the game
+ * generates hackable Wi-Fi networks, and switching between them lowers
+ * suspicion), but SDK 0.21.0 ships no wireless API — the node falls back to a
+ * plain router network and `ssid`/`password`/`signal` are stored but not read.
+ * It is kept in `NODE_TYPES_REGISTRY` (and the schema) so legacy projects that
+ * already use it still parse, compile and render; it is only hidden from the
+ * authoring surface so nobody builds a "Wi-Fi" quest that cannot be validated.
+ * Re-enable by removing it from this set once the SDK ships the API.
+ */
+export const PALETTE_HIDDEN_TYPES: ReadonlySet<NodeType> = new Set(["world.wifi"]);
+
 /** Palette order: categories first, then registry order within each. */
 export function paletteGroups(): { category: (typeof CATEGORIES)[number]; types: NodeTypeDef[] }[] {
     return CATEGORIES.map((category) => ({
         category,
         types: (Object.values(NODE_TYPES_REGISTRY) as NodeTypeDef[]).filter(
-            (t) => t.category === category.id,
+            (t) => t.category === category.id && !PALETTE_HIDDEN_TYPES.has(t.type),
         ),
     }));
 }

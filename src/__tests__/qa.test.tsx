@@ -11,7 +11,7 @@ import { compileProject } from "@/compiler/compile";
 import { summarize } from "@/editor/canvas/summarize";
 import { NODE_TYPES, NodeSchema, type NodeDoc } from "@/schema/nodes";
 import { ProjectSchema, createProject } from "@/schema/project";
-import { NODE_TYPES_REGISTRY, nodeTypeDef, paletteGroups, categoryOf } from "@/schema/registry";
+import { NODE_TYPES_REGISTRY, nodeTypeDef, paletteGroups, categoryOf, PALETTE_HIDDEN_TYPES } from "@/schema/registry";
 import { TEMPLATES } from "@/templates";
 import { loadDraft, saveDraft } from "@/store/autosave";
 
@@ -76,7 +76,14 @@ describe("registry integrity", () => {
             expect(def.label, `${type}: label`).toBeTruthy();
             expect(def.category, `${type}: category`).toBe(categoryOf(type).id);
             expect(Array.isArray(def.fields), `${type}: fields`).toBe(true);
-            expect(paletteTypes.has(type), `${type}: missing from palette`).toBe(true);
+            if (PALETTE_HIDDEN_TYPES.has(type)) {
+                // Deliberately hidden from the authoring surface (see
+                // PALETTE_HIDDEN_TYPES) but still fully defined for legacy
+                // projects to parse and compile.
+                expect(paletteTypes.has(type), `${type}: should be hidden from palette`).toBe(false);
+            } else {
+                expect(paletteTypes.has(type), `${type}: missing from palette`).toBe(true);
+            }
         }
     });
 

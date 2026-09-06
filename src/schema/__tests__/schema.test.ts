@@ -25,6 +25,7 @@ import {
     CATEGORIES,
     nodeTypeDef,
     NODE_TYPES_REGISTRY,
+    PALETTE_HIDDEN_TYPES,
     paletteGroups,
     type FieldDef,
     type NodeTypeDef,
@@ -69,10 +70,25 @@ describe("registry ↔ node union", () => {
     it("renders a non-empty palette group for every category", () => {
         const groups = paletteGroups().filter((g) => g.types.length > 0);
         const grouped = new Set(groups.flatMap((g) => g.types.map((t) => t.type)));
-        expect(grouped.size).toBe(ALL_TYPES.length);
+        // Hidden types stay in the schema/registry (legacy projects parse) but
+        // are not offered in the palette.
+        expect(grouped.size).toBe(ALL_TYPES.filter((t) => !PALETTE_HIDDEN_TYPES.has(t)).length);
         for (const group of groups) {
             expect(group.types.length).toBeGreaterThan(0);
             expect(group.category.label.length).toBeGreaterThan(0);
+        }
+    });
+
+    it("hides the palette-excluded types but keeps them registered", () => {
+        // Every hidden type is a real node type the engine can still emit.
+        for (const t of PALETTE_HIDDEN_TYPES) {
+            expect(ALL_TYPES).toContain(t);
+            expect(nodeTypeDef(t)).toBeDefined();
+        }
+        // ...and none of them is offered in the palette.
+        const palette = new Set(paletteGroups().flatMap((g) => g.types.map((t) => t.type)));
+        for (const t of PALETTE_HIDDEN_TYPES) {
+            expect(palette.has(t)).toBe(false);
         }
     });
 });

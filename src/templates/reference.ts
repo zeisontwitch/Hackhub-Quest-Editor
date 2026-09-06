@@ -1,6 +1,6 @@
 import { createQuest, createProject } from "@/schema/project";
 import type { ProjectDocument } from "@/schema/project";
-import { NODE_TYPES_REGISTRY, nodeTypeDef } from "@/schema/registry";
+import { NODE_TYPES_REGISTRY, PALETTE_HIDDEN_TYPES, nodeTypeDef } from "@/schema/registry";
 import type { NodeDoc, NodeType } from "@/schema/nodes";
 import { makeNode, resetIds } from "@/templates/kit";
 
@@ -54,12 +54,10 @@ export const EXAMPLES: Partial<Record<NodeType, Record<string, unknown>>> = {
         ],
     },
     },
-    "world.wifi": {
-        ssid: "DOCKNET-5G",
-        password: "forklift",
-        signal: 2,
-        model: "TP-Link Archer C6",
-    },
+    /* "world.wifi": hidden from the palette (see PALETTE_HIDDEN_TYPES) because
+       the mod SDK has no wireless API yet; re-add the example here and drop it
+       from PALETTE_HIDDEN_TYPES once the SDK ships one.
+       ssid: "DOCKNET-5G", password: "forklift", signal: 2, model: "TP-Link Archer C6". */
     "world.firewall": {
         ip: "10.0.0.1",
         removeOnComplete: true,
@@ -196,8 +194,12 @@ export function buildReference(): ProjectDocument {
     const COL_WIDTH = 250;
 
     groups.forEach((group, row) => {
+        /* The reference sheet mirrors the palette: it shows what an author can
+           actually build. Engine-only types that are hidden from the palette
+           (see PALETTE_HIDDEN_TYPES) are left out so a reader is not shown a
+           node they cannot add. */
         const types = (Object.keys(NODE_TYPES_REGISTRY) as NodeType[]).filter(
-            (t) => nodeTypeDef(t).category === group.id,
+            (t) => nodeTypeDef(t).category === group.id && !PALETTE_HIDDEN_TYPES.has(t),
         );
         const y = row * (ROW_HEIGHT + 120);
 

@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { ProjectSchema } from "@/schema/project";
 import { NodeSchema, type NodeDoc, type NodeType } from "@/schema/nodes";
 import { EdgeSchema, canConnect, type EdgeKind } from "@/schema/edges";
-import { nodeTypeDef, NODE_TYPES_REGISTRY, sourcesOf } from "@/schema/registry";
+import { nodeTypeDef, NODE_TYPES_REGISTRY, PALETTE_HIDDEN_TYPES, sourcesOf } from "@/schema/registry";
 import { summarize } from "@/editor/canvas/summarize";
 import { getTemplate, TEMPLATES } from "@/templates";
 import { analyseGraph } from "@/analysis/graph";
@@ -196,12 +196,16 @@ describe("template registry", () => {
 
     // The reference sheet is deliberately unwired: it is a field catalogue, not a
     // story, so "unreachable" is not a defect there.
-    it("reference: puts every node type on the canvas", () => {
+    it("reference: puts every palette node type on the canvas", () => {
         const reference = getTemplate("reference")!.build();
         const types = reference.quests[0].graph.nodes.map((n) => n.type);
 
-        // Every registered type is represented.
-        expect(new Set(types).size).toBe(31);
+        // Every palette-visible registered type is represented. Engine-only
+        // types hidden from the palette (PALETTE_HIDDEN_TYPES) are not shown.
+        const expected = (Object.keys(NODE_TYPES_REGISTRY) as NodeType[]).filter(
+            (t) => !PALETTE_HIDDEN_TYPES.has(t),
+        ).length;
+        expect(new Set(types).size).toBe(expected);
 
         // Sticky notes double as row headers, so they are the one repeat.
         const counts = new Map<string, number>();

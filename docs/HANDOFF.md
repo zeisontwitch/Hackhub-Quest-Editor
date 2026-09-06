@@ -35,6 +35,27 @@ them behind the in-game verification gate.
    — what the handbook settled, and where the editor still cannot express what
    it teaches.
 
+## The world.wifi node: hidden from authors, kept in the engine
+
+Per Zeis's call, `world.wifi` is **removed from the authoring surface** (the
+node palette, the add-node search, and the Node Reference sheet) but **kept in
+the infrastructure** — the schema node, the `NODE_TYPES_REGISTRY` entry, the
+compiler/runtime forward-compat branch, and the `world.wifi` compile test all
+stay, so a legacy project using it still parses and compiles and a future SDK
+wireless API can be wired straight back in.
+
+Mechanism: `PALETTE_HIDDEN_TYPES` in `src/schema/registry.ts` (currently
+`{ "world.wifi" }`). `paletteGroups()` filters it out; `reference.ts` mirrors the
+palette by skipping hidden types. Re-enable by emptying the set (and re-adding
+the `world.wifi` example in `reference.ts`).
+
+Why: SDK 0.21.0 ships no wireless API, so the node fell back to a plain router
+network and its `ssid`/`password`/`signal` were stored but not read. Worse, the
+editor's own tooling (the exploitable guard and `seedRemoteFiles`) only reads a
+node's nested `.device`, so a machine hosted behind a Wi-Fi node was invisible —
+the one place an author could build something the editor couldn't validate. It
+was that gap, not the concept, that made it feel obsolete.
+
 ## The task in progress: rebuilding the templates
 
 Zeis's instruction: keep **Harbour** (`data-grab`, the only template ever

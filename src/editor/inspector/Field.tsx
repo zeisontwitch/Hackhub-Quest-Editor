@@ -5,12 +5,13 @@
  * a field can live at any depth (`attachment.name`, `messages.2.content`) without
  * the parent threading callbacks down.
  */
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { ColourPicker } from "./ColourPicker";
 import { Icon } from "@/components/Icon";
 import type { FieldDef } from "@/schema/registry";
 import { getPath, useEditor } from "@/store/editor";
+import { fieldWarnings } from "@/analysis/fields";
 import { ImagePickerField } from "./ModFields";
 import { ConditionsEditor } from "./ConditionsEditor";
 import { DeviceEditor, DeviceListEditor } from "./DeviceTree";
@@ -52,6 +53,10 @@ export function Field({
         const quest = s.project.quests.find((q) => q.id === s.project.editor.activeQuestId);
         return quest?.graph.nodes.find((n) => n.id === nodeId) ?? null;
     });
+    const quest = useEditor((s) =>
+        (s.project.quests.find((q) => q.id === s.project.editor.activeQuestId) ?? null),
+    );
+    const warnings = useMemo(() => fieldWarnings(quest ?? undefined, node!), [quest, node]);
     const updateNodeData = useEditor((s) => s.updateNodeData);
 
     if (!node) return null;
@@ -109,6 +114,9 @@ export function Field({
     }
 
     const path = basePath ? `${basePath}.${def.key}` : def.key;
+    // Only match warnings on exactly this field — a nested or sibling field's
+    // problem belongs to its own control, not here.
+    const fieldWarning = warnings.find((w) => w.path === path);
     const raw = getPath(node.data, path);
 
     const write = (value: unknown) => updateNodeData(nodeId, { [path]: value });
@@ -120,7 +128,7 @@ export function Field({
     switch (def.kind) {
         case "text":
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <TextInput
                         ariaLabel={def.label}
                         value={asString(raw)}
@@ -133,7 +141,7 @@ export function Field({
 
         case "date":
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <input
                         type="date"
                         aria-label={def.label}
@@ -146,7 +154,7 @@ export function Field({
 
         case "textarea":
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <TextArea
                         ariaLabel={def.label}
                         value={asString(raw)}
@@ -160,7 +168,7 @@ export function Field({
 
         case "number":
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <NumberInput
                         ariaLabel={def.label}
                         value={asNumber(raw)}
@@ -175,7 +183,7 @@ export function Field({
         case "slider": {
             const value = Math.min(def.max, Math.max(def.min, asNumber(raw)));
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <div className="flex items-center gap-3">
                         <input
                             type="range"
@@ -202,7 +210,7 @@ export function Field({
         case "color": {
             const current = asString(raw) || GROUP_COLORS[0].value;
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <ColourPicker
                         label={def.label}
                         value={current}
@@ -236,7 +244,7 @@ export function Field({
 
         case "select":
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <SelectInput
                         ariaLabel={def.label}
                         value={asString(raw)}
@@ -248,7 +256,7 @@ export function Field({
 
         case "event":
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <EventPicker value={asString(raw)} onChange={write} />
                 </FieldShell>
             );
@@ -257,7 +265,7 @@ export function Field({
             const eventPath = basePath ? `${basePath}.event` : "event";
             const eventName = asString(getPath(node.data, eventPath));
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <ConditionsEditor
                         value={(raw as ConditionClause[] | undefined) ?? []}
                         onChange={(next) => write(next)}
@@ -269,7 +277,7 @@ export function Field({
 
         case "list":
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <ListEditor nodeId={nodeId} path={path} items={asArray(raw)} def={def} />
                 </FieldShell>
             );
@@ -277,7 +285,7 @@ export function Field({
         case "deviceTree": {
             const value = raw as NetworkDevice | NetworkDevice[] | undefined;
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     {Array.isArray(value) ? (
                         <DeviceListEditor nodeId={nodeId} path={path} devices={value} />
                     ) : value ? (

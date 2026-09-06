@@ -621,12 +621,12 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                 label: "Response",
                 mono: true,
                 rows: 8,
-                hint: "One “Label: value” per line. The editor turns them into the shape that tool returns in-game.",
+                hint: "One “Label: value” per line. The editor turns them into exactly what that tool shows in-game — add a line for each thing you want the player to see.",
             },
             {
                 kind: "note",
                 tone: "info",
-                text: "Labels the tools understand: whois → domain, ip, registrant, email · lynx → web, email, phone, social, address (anything else is shown as extra detail) · geoip → country, city, latitude, longitude · hydra → username, password · nslookup / mxlookup → ip. nmap is different: write one port per line, like “22 open ssh OpenSSH 8.9”. Paste JSON instead if you want to set the result exactly.",
+                text: "What each tool reads: whois → domain, ip, registrant, email · lynx → web, email, phone, social, address (anything else is shown as extra detail) · geoip → country, city, latitude, longitude · hydra → username, password · nslookup / mxlookup → ip. nmap is different: write one port per line, like “22 open ssh OpenSSH 8.9”. You can also paste a finished result block if you copied one from somewhere else.",
             },
             { kind: "toggle", key: "removeOnComplete", hint: "Stop intercepting the command when the quest ends.", label: "Remove when the quest ends" },
         ],
@@ -655,7 +655,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...{ targets: [inFlow], sources: [successOut, failureOut] },
         hook: "onObjectivesStart",
         fields: [
-            { kind: "note", tone: "info", text: "Compiles to a custom terminal command using tools.prompt(). Wire the green “Correct” socket for success and the red “Wrong” socket for failure." },
+            { kind: "note", tone: "info", text: "This makes a new command the player can type in the terminal. Wire the green “Correct” socket for a right answer and the red “Wrong” socket for a wrong one." },
             { kind: "text", key: "commandName", hint: "The terminal command the player runs, e.g. decrypt. It appears in help output.", label: "Command name", mono: true, placeholder: "decrypt" },
             { kind: "text", key: "commandDescription", hint: "The one-line description shown next to the command in help.", label: "Help text" },
             { kind: "text", key: "prompt", hint: "The text printed before the cursor, e.g. \"Passphrase >\".", label: "Prompt", placeholder: "Passphrase >" },
@@ -980,7 +980,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         fields: [
             { kind: "text", key: "label", hint: "Names itself after whatever you wire it to — socket, node and detail. Type your own to override it.", label: "Label", placeholder: "named when you connect it" },
             { kind: "toggle", key: "includeData", hint: "Print everything the quest has saved with a “Remember a value” node.", label: "Include saved values" },
-            { kind: "toggle", key: "includePayload", hint: "Print the event that got here — the field names it really carries, which are not always the ones the docs promise.", label: "Include the event" },
+            { kind: "toggle", key: "includePayload", hint: "Also print the details the game passed to this point, so you can see the real values instead of guessing what arrived.", label: "Include the event" },
             { kind: "toggle", key: "toast", hint: "Also show it on screen, so you can test without reading the log file.", label: "Show on screen too" },
         ],
         create: () => seed(DebugNodeDataSchema, { label: "" }),

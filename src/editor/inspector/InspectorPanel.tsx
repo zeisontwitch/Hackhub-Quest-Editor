@@ -3,12 +3,14 @@
  * settings. One panel, three tabs, so the author never has to hunt for where a
  * setting lives.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/Icon";
 import { categoryOf, nodeTypeDef } from "@/schema/registry";
 import { selectActiveQuest, selectSelectedNode, useEditor } from "@/store/editor";
+import { fieldWarnings } from "@/analysis/fields";
+import { analyseGraph } from "@/analysis/graph";
 import { Field } from "./Field";
 import { ImagePickerField, TagInput } from "./ModFields";
 import { FieldShell, NumberInput, SelectInput, TextArea, TextInput, Toggle } from "./primitives";
@@ -75,12 +77,25 @@ export function InspectorPanel() {
 
 function NodeInspector({ nodeId }: { nodeId: string }) {
     const node = useEditor(selectSelectedNode);
+    const quest = useEditor(selectActiveQuest);
     const removeNodes = useEditor((s) => s.removeNodes);
     if (!node) return <Empty>Select a node.</Empty>;
 
     const def = nodeTypeDef(node.type);
     const category = categoryOf(node.type);
     const SimEditor = NODE_SIM_EDITORS[node.type];
+
+    // Node-level "why is this flagged" issues, condensed here so an author sees
+    // them next to the fields, not only as a badge on the card.
+    const nodeWarnings = useMemo(() => {
+        const analysis = analyseGraph(quest?.graph.nodes ?? [], quest?.graph.edges ?? []);
+        const issues = analysis.issues.filter((i) => i.nodeId === node.id);
+        const fromFields = fieldWarnings(quest ?? undefined, node).filter((w) => w.path === "");
+        return {
+            issues,
+            banner: fromFields[0],
+        };
+    }, [node, quest]);
 
     return (
         <div className="pb-8">
@@ -111,6 +126,45 @@ function NodeInspector({ nodeId }: { nodeId: string }) {
                     <Icon name="trash" size={14} />
                 </button>
             </div>
+
+            {/* Why this node is flagged, in the place the author is editing. */}
+            {(nodeWarnings.banner || nodeWarnings.issues.length > 0) && (
+                <div className="mx-3 mt-2 space-y-1.5">
+                    {nodeWarnings.banner && (
+                        <p className="flex items-start gap-1.5 rounded-md border border-danger/30 bg-danger/10 px-2 py-1.5 text-[11px] leading-snug text-ink-2">
+                            <Icon name="alert" size={13} className="mt-px shrink-0 text-danger" />
+                            <span>
+                                <span className="font-semibold text-danger">{nodeWarnings.banner.detail}</span>{" "}
+                                <span className="text-ink-3">Next step: {nodeWarnings.banner.nextStep}</span>
+                            </span>
+                        </p>
+                    )}
+                    {!nodeWarnings.banner &&
+                        nodeWarnings.issues.map((issue) => (
+                            <p
+                                key={issue.label}
+                                className={cn(
+                                    "flex items-start gap-1.5 rounded-md border px-2 py-1.5 text-[11px] leading-snug text-ink-2",
+                                    issue.severity === "danger"
+                                        ? "border-danger/30 bg-danger/10"
+                                        : "border-warn/30 bg-warn/10",
+                                )}
+                            >
+                                <Icon
+                                    name="alert"
+                                    size={13}
+                                    className={cn("mt-px shrink-0", issue.severity === "danger" ? "text-danger" : "text-warn")}
+                                />
+                                <span>
+                                    <span className={cn("font-semibold", issue.severity === "danger" ? "text-danger" : "text-warn")}>
+                                        {issue.label}
+                                    </span>{" "}
+                                    <span className="text-ink-3">{issue.detail}</span>
+                                </span>
+                            </p>
+                        ))}
+                </div>
+            )}
 
             {SimEditor && <SimEditor node={node} />}
 

@@ -133,6 +133,29 @@ describe("field explanations", () => {
             expect(/[.!?]$/.test(hint), hint).toBe(true);
         }
     });
+
+    it("keeps hints and notes free of mod-coding jargon", () => {
+        // The game's own vocabulary (nmap, metasploit, hydra, targetIp, SDK) is
+        // fine — a HackHub player learns those playing. What must not appear is
+        // language that only means something to someone *building* the mod.
+        const JARGON =
+            /\b(JSON|schema|node type|d\.ts|Zod|esbuild|prop(-| )drill|nested path|apiVersion|minSdkVersion|runtime source|mod package|aggregate|declarative|descriptor|source map|compile)\b/i;
+        const offenders: string[] = [];
+        for (const type of ALL_TYPES) {
+            const def = nodeTypeDef(type);
+            const walk = (fields: FieldDef[], prefix: string) => {
+                for (const f of fields) {
+                    if (f.kind === "section") { walk(f.fields, prefix); continue; }
+                    if ("text" in f && f.text && JARGON.test(f.text)) offenders.push(`${prefix}${"key" in f ? f.key : f.kind}: ${f.text}`);
+                    const hint = "hint" in f ? f.hint : undefined;
+                    if (hint && JARGON.test(hint)) offenders.push(`${prefix}${"key" in f ? f.key : f.kind}: ${hint}`);
+                    if (f.kind === "list") walk(f.fields, `${prefix}${f.key}.`);
+                }
+            };
+            walk(def.fields, `${type}:`);
+        }
+        expect(offenders, "these hints/notes use mod-coding jargon").toEqual([]);
+    });
 });
 
 describe("connection rules", () => {

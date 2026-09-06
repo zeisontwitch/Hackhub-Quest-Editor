@@ -1,12 +1,13 @@
 # Rebuilding the template set — plan
 
-> **Build status (r121, 2026-09-06).** Done: module split (`kit.ts` + one
+> **Build status (r122, 2026-09-06).** Complete. Module split (`kit.ts` + one
 > module per template), the two kept templates (Harbour → Advanced,
 > Ledger → Expert), the beginner tier (First Contact, The Byline, Cold Call),
-> and the Help Desk Leak re-registered under `the-help-desk-leak`. The
-> difficulty scale is now three tiers. **Not built yet:** **Cold Storage** and
-> **Bad Attachment** — both are gated on in-game verification in §6 and were
-> deliberately left rather than shipped on guesswork. See `docs/HANDOFF.md`.
+> the Help Desk Leak re-registered under `the-help-desk-leak`, and **Cold
+> Storage** and **Bad Attachment** built (r122). The difficulty scale is three
+> tiers. The two new templates are in `src/templates/coldStorage.ts` and
+> `src/templates/badAttachment.ts`. Per Zeis's call, both were built for the
+> playtest rather than held behind the §6 in-game gate. See `docs/HANDOFF.md`.
 
 Zeis: keep **Harbour** (the only one proven in-game) and **Ledger** (needs a
 small fix), drop the rest, rebuild from what we have learned. Each template

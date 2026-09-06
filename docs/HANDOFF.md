@@ -1,21 +1,24 @@
-# Handoff — r121
+# Handoff — r122
 
-The template rebuild is underway and committed. The module architecture is in
-place and the beginner tier ships; two planned templates remain (Cold Storage,
-Bad Attachment), both gated on in-game verification.
+The template rebuild is complete. The module architecture is in place and all
+ten templates ship, including the last two (Cold Storage, Bad Attachment), which
+were built this round on Zeis's call to playtest everything rather than hold
+them behind the in-game verification gate.
 
 ## Where things stand
 
-- **HEAD:** `723f4ce` on `arena/01a073d6-hackhub-quest-editor`, committed,
-  remote in sync (branch `arena/01a073d6-hackhub-quest-editor`).
-- **1,032 tests green** (fewer than r120's 1,035 because the deleted templates
-  removed their `it.each` cases), typecheck clean, build clean.
+- **HEAD:** built and green on `arena/01a073d6-hackhub-quest-editor`, remote in
+  sync (branch `arena/01a073d6-hackhub-quest-editor`).
+- **1,065 tests green** (up from 1,032 — the two new templates add 33
+  assertions), typecheck clean. The only noise is the 4 pre-existing
+  `selectionGestures.test.tsx` d3-drag jsdom teardown errors, unrelated to this
+  work.
 - **Editor build stamp:** `2026-09-05.r120`.
 - Shared graph helpers extracted to `src/templates/kit.ts`; each template is its
   own module (`blank.ts`, `firstContact.ts`, `byline.ts`, `coldCall.ts`,
-  `harbourManifest.ts`, `helpDeskLeak.ts`, `ledgerContract.ts`, `reference.ts`).
-  `src/templates/index.ts` is a thin registry. `Template.difficulty` is
-  `Beginner | Advanced | Expert | Reference`.
+  `harbourManifest.ts`, `helpDeskLeak.ts`, `badAttachment.ts`, `coldStorage.ts`,
+  `ledgerContract.ts`, `reference.ts`). `src/templates/index.ts` is a thin
+  registry. `Template.difficulty` is `Beginner | Advanced | Expert | Reference`.
 
 ## Read these first, in this order
 
@@ -41,14 +44,28 @@ r118), delete the rest, and rebuild using what we have learned. Each template
 should cover a different situation, at a stated difficulty, so authors can
 reference them or start a story from one.
 
-**Built so far (r121):** `blank`, `first-contact`, `the-byline`, `cold-call`,
+**Built (r122):** `blank`, `first-contact`, `the-byline`, `cold-call`,
 `data-grab` (The Harbour Manifest, Advanced), `the-help-desk-leak` (the former
-`dirhunter-leak` quest, re-registered), `contract-hack` (The Ledger Contract,
-Expert), `reference`. The four legacy templates (`hello-hack`, `wifi-hack`,
-`investigation`, `dirhunter-leak`) are deleted. **Not yet built:** `cold-storage`
-and `bad-attachment` — both are gated on in-game verification per
-`docs/plans/r117-template-rebuild-plan.md` §6 and were deliberately left rather
-than shipped on guesswork.
+`dirhunter-leak` quest, re-registered), `bad-attachment` (Advanced, new),
+`cold-storage` (Expert, new), `contract-hack` (The Ledger Contract, Expert),
+`reference`. The four legacy templates (`hello-hack`, `wifi-hack`,
+`investigation`, `dirhunter-leak`) are deleted.
+
+**Cold Storage** was designed to satisfy the exploitable guard: it models the
+"wireless" identity as a plain `world.network` router (the SDK ships no wireless
+API, and `world.wifi` falls back to a router anyway) so the break-in machine —
+an SSH host behind the edge — is visible to the guard's device-tree walk. Every
+objective waits on an event the runtime actually emits (`Terminal.NmapScan`,
+`Fern.FindPassword`, `Metasploit.Meterpreter.Connected`, `Sqlmap.DumpTable`,
+`Mail.Sent`). The wireless recon/join events are deliberately left out because
+they cannot be guaranteed to fire; that is the flagged playtest item.
+
+**Bad Attachment** is pure mail: a lure goes out (`Mail.Sent`), the target's
+reply is staged as a drop into the player's inbox and read (`Mail.Read`), and
+the credential is forwarded. `Mail.registerTemplate` (a GoMail compose template) is
+not expressible in the editor yet, and whether the engine simulates a target
+opening a malicious attachment is unverifiable from the SDK, so the quest runs
+entirely on mail events — the plan's explicitly allowed fallback.
 
 ### The agreed set
 
@@ -64,9 +81,9 @@ how hard the hack is.
 | **Cold Call** | Beginner | A story told in conversation — Kisscord/WeeChat, no break-in | new |
 | The Harbour Manifest | Advanced | The standard contract | **keep, proven** |
 | **The Help Desk Leak** | Advanced | **Website #2:** the site *hides* something — `dirhunter` an unlisted page, credentials inside | rebuild |
-| **Bad Attachment** | Advanced | Phishing: Metasploit builds the document, mail delivers it | new |
+| **Bad Attachment** | Advanced | Phishing: a lure goes out, the reply carries the credential. All mail, no shell | new, built r122 |
 | The Ledger Contract | Expert | Long route, privilege escalation | keep (r118 fixed) |
-| **Cold Storage** | Expert | bettercap → fern → router login → open a port → past a firewall → pivot → sqlmap a database | new |
+| **Cold Storage** | Expert | scan edge → fern passphrase → shell → sqlmap a database | new, built r122 |
 | Node Reference | — | Every node type, annotated | keep as-is |
 
 Zeis's steers, verbatim in spirit:

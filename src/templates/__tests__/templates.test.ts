@@ -23,6 +23,8 @@ describe("template registry", () => {
             "cold-call",
             "data-grab",
             "the-help-desk-leak",
+            "bad-attachment",
+            "cold-storage",
             "contract-hack",
             "reference",
         ]);

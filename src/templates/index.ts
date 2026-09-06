@@ -17,6 +17,8 @@ import { buildByline } from "@/templates/byline";
 import { buildColdCall } from "@/templates/coldCall";
 import { buildDataGrab } from "@/templates/harbourManifest";
 import { buildHelpDeskLeak } from "@/templates/helpDeskLeak";
+import { buildBadAttachment } from "@/templates/badAttachment";
+import { buildColdStorage } from "@/templates/coldStorage";
 import { buildContractHack } from "@/templates/ledgerContract";
 import { buildReference } from "@/templates/reference";
 
@@ -75,6 +77,24 @@ export const TEMPLATES: Template[] = [
         difficulty: "Advanced",
         nodeCount: 21,
         build: buildHelpDeskLeak,
+    },
+    {
+        id: "bad-attachment",
+        name: "Bad Attachment",
+        description:
+            "A phishing trip with no break-in: write a convincing lure, send it (Mail.Sent), and the target's reply lands in your inbox and is read (Mail.Read) carrying a credential a client will pay for. All mail, no shell — the words are the weapon.",
+        difficulty: "Advanced",
+        nodeCount: 14,
+        build: buildBadAttachment,
+    },
+    {
+        id: "cold-storage",
+        name: "Cold Storage",
+        description:
+            "The long route into one company: scan the box, recover the edge passphrase, land a session on the storage server, and read the ledger straight out of the database. Every objective waits on a real game event the runtime actually emits.",
+        difficulty: "Expert",
+        nodeCount: 22,
+        build: buildColdStorage,
     },
     {
         id: "contract-hack",

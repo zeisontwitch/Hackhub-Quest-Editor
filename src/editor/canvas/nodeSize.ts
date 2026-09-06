@@ -86,11 +86,11 @@ if (doc.type === "flow.beat") {
     };
     const width = data.width ?? 280;
     const chars = (data.text ?? "").length;
-    // ~22 chars per line at the beat card's 11px / width-280 body. The preview
-    // is capped at 800 chars, and the expanded body scrolls at ~18 lines, so a
-    // huge text never inflates the estimate (and the real card).
-    const shownChars = Math.min(chars, 800);
-    const bodyLines = Math.max(1, Math.min(Math.ceil(shownChars / 22), 18));
+    // ~22 chars per line at the beat card's 11px / width-280 body. Alignment is
+    // based on the collapsed card, so estimate the 250-char teaser; the expanded
+    // body and any per-card expansion are handled live by the component.
+    const shownChars = Math.min(chars, 250);
+    const bodyLines = Math.max(1, Math.ceil(shownChars / 22));
     // Each choice sits in its own row: label + a note line, plus a 6px gap.
     const chipRows = Math.max(0, (data.choices ?? []).length);
     const choiceHeight = chipRows * 34;

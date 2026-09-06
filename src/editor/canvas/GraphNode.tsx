@@ -207,10 +207,14 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
            colour, where readableOn(color) would wrongly pick dark for bright
            shades (green, amber, cyan). */
         const onCard = "#f2f4f7";
-        const PREVIEW = 800;
-        const isLong = text.length > PREVIEW;
-        const collapsed = text.slice(0, PREVIEW).trimEnd();
-        const bodyText = beatExpanded ? text : collapsed;
+        /* The card shows a 250-char teaser by default; "… more" expands to the
+           full text, and only once that passes 800 chars does the body scroll
+           (so a long beat never takes over the canvas). */
+        const COLLAPSE_CHARS = 250;
+        const EXPAND_CHARS = 800;
+        const showMore = text.length > COLLAPSE_CHARS;
+        const needsScroll = beatExpanded && text.length > EXPAND_CHARS;
+        const bodyText = beatExpanded ? text : text.slice(0, COLLAPSE_CHARS).trimEnd();
         return (
             <div
                 className={cn(
@@ -243,14 +247,14 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                         <div
                             className={cn(
                                 "whitespace-pre-wrap break-words",
-                                // Expanded full text is bounded so it never swallows
-                                // the canvas; anything past it scrolls.
-                                beatExpanded && "max-h-[300px] overflow-y-auto pr-1",
+                                // Only a beat past 800 chars gets a scrollbar; the
+                                // 250-teaser / 800-expanded previews flow freely.
+                                needsScroll && "max-h-[300px] overflow-y-auto pr-1",
                             )}
                         >
                             {bodyText || "Empty beat — open the inspector to write it."}
                         </div>
-                        {isLong && (
+                        {showMore && (
                             <button
                                 type="button"
                                 className="mt-0.5 font-medium underline decoration-dotted underline-offset-2"
@@ -265,22 +269,36 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                     {(bd.choices ?? []).length > 0 && (
                         <div className="mt-2 space-y-1.5">
                             {(bd.choices ?? []).map((c) => (
+                                /* Each choice carries its own output socket, so an
+                                   author can wire that exact branch onward. The row
+                                   is `relative` so the handle sits on its right edge. */
                                 <div
                                     key={c.id}
-                                    className="rounded-md border px-2 py-1"
+                                    className="relative flex items-stretch rounded-md border px-2 py-1"
                                     style={{
                                         borderColor: color,
                                         background: `color-mix(in srgb, ${color} 8%, transparent)`,
                                     }}
                                 >
-                                    <div className="text-[10.5px] leading-snug font-semibold" style={{ color: onCard }}>
-                                        {c.label || "Choice"}
-                                    </div>
-                                    {c.note && (
-                                        <div className="mt-0.5 text-[10px] leading-snug" style={{ color: onCard, opacity: 0.8 }}>
-                                            {c.note}
+                                    <div className="min-w-0 flex-1 pr-6">
+                                        <div className="text-[10.5px] leading-snug font-semibold" style={{ color: onCard }}>
+                                            {c.label || "Choice"}
                                         </div>
-                                    )}
+                                        {c.note && (
+                                            <div className="mt-0.5 text-[10px] leading-snug" style={{ color: onCard, opacity: 0.8 }}>
+                                                {c.note}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <Handle
+                                        id={`choice-${c.id}`}
+                                        type="source"
+                                        position={Position.Right}
+                                        data-kind="flow"
+                                        title={c.label || "Choice"}
+                                        onPointerDownCapture={(e) => unplug(e, `choice-${c.id}`, "source")}
+                                        style={{ top: "50%" }}
+                                    />
                                 </div>
                             ))}
                         </div>
@@ -288,8 +306,9 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                 </div>
 
                 {/* Sockets: the beat is a planning pass-through, so it can be
-                    wired among reroute / branch / sequence. It uses the same
-                    socket specs as any flow node so edges validate and unplug. */}
+                    wired among reroute / branch / sequence. The branch choices
+                    carry their own outputs (rendered on each row); the generic
+                    "Out" stays at card level so the beat itself continues. */}
                 {def.targets.map((handle, i) => (
                     <Handle
                         key={handle.id}
@@ -302,18 +321,15 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                         style={{ top: socketTop(i, def.targets.length) }}
                     />
                 ))}
-                {sources.map((handle, i) => (
-                    <Handle
-                        key={handle.id}
-                        id={handle.id}
-                        type="source"
-                        position={Position.Right}
-                        data-kind={handle.kind}
-                        title={handle.label}
-                        onPointerDownCapture={(e) => unplug(e, handle.id, "source")}
-                        style={{ top: socketTop(i, sources.length) }}
-                    />
-                ))}
+                <Handle
+                    id="out"
+                    type="source"
+                    position={Position.Right}
+                    data-kind="flow"
+                    title="Out — the beat continues here"
+                    onPointerDownCapture={(e) => unplug(e, "out", "source")}
+                    style={{ top: 34 }}
+                />
             </div>
         );
     }

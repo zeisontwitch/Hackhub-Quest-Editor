@@ -114,7 +114,7 @@ describe("editor shell", () => {
         await user.click(screen.getByRole("button", { name: /^Templates$/i }));
         expect(await screen.findByRole("heading", { name: "Start from a template" })).toBeInTheDocument();
 
-        // Share controls live in the same dialog.
+        // Share controls live in the same dialog — and keep their original names.
         expect(screen.getByRole("button", { name: /export current quest/i })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /import a quest file/i })).toBeInTheDocument();
 
@@ -123,6 +123,17 @@ describe("editor shell", () => {
         const quest = selectActiveQuest(useEditor.getState())!;
         expect(quest.name).toBe("FirstContact");
         expect(quest.graph.nodes).toHaveLength(9);
+    });
+
+    it("offers Save and Load on the top bar, in addition to the template dialog's buttons", async () => {
+        render(<App />);
+
+        // Save/Load are the top-bar naming for the same project-file round-trip.
+        expect(screen.getByRole("button", { name: /^save$/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /^load$/i })).toBeInTheDocument();
+        // The template dialog's own labels remain, so it is still possible to
+        // find the file buttons in that popup without opening the top-bar ones.
+        expect(screen.getByRole("button", { name: /^templates$/i })).toBeInTheDocument();
     });
 
     it("undoes with the keyboard", async () => {

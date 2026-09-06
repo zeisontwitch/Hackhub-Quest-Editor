@@ -1,9 +1,11 @@
 /**
  * The top bar: identity, history, quest switching, templates and export.
  */
+import { useRef } from "react";
 import { Icon } from "@/components/Icon";
 import { selectCanRedo, selectCanUndo, useEditor } from "@/store/editor";
 import { TEMPLATES } from "@/templates";
+import { downloadProject, parseProjectFile } from "@/templates/share";
 import { EVENT_COUNT, SDK_VERSION } from "@/schema/events";
 import { EDITOR_BUILD } from "@/compiler/compile";
 
@@ -21,6 +23,25 @@ export function TopBar() {
     const canRedo = useEditor(selectCanRedo);
     const setUi = useEditor((s) => s.setUi);
     const toast = useEditor((s) => s.toast);
+    const project = useEditor((s) => s.project);
+    const load = useEditor((s) => s.load);
+    const fileInput = useRef<HTMLInputElement>(null);
+
+    const saveProject = () => {
+        const name = downloadProject(project);
+        toast(`Saved “${name}” — send it to anyone with the editor.`, "ok");
+    };
+
+    const onLoadFile = async (file: File) => {
+        const text = await file.text();
+        const result = parseProjectFile(text);
+        if (!result.ok) {
+            toast(result.error, "danger");
+            return;
+        }
+        load(result.project, { clearHistory: true });
+        toast(`Loaded “${result.project.mod.name || result.project.mod.id}”.`, "ok");
+    };
 
     return (
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line bg-surface px-3">
@@ -152,6 +173,38 @@ export function TopBar() {
                 <Icon name="file" size={13} />
                 <span className="hidden lg:inline">New</span>
             </button>
+
+            <button
+                type="button"
+                className="btn-default"
+                onClick={saveProject}
+                title="Save the project to a file — reopen it any time with Load"
+            >
+                <Icon name="save" size={13} />
+                <span className="hidden lg:inline">Save</span>
+            </button>
+
+            <button
+                type="button"
+                className="btn-default"
+                onClick={() => fileInput.current?.click()}
+                title="Load a saved project file"
+            >
+                <Icon name="upload" size={13} />
+                <span className="hidden lg:inline">Load</span>
+            </button>
+            <input
+                ref={fileInput}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                aria-label="Load a saved project file"
+                onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void onLoadFile(file);
+                    e.target.value = "";
+                }}
+            />
 
             <button type="button" className="btn-default" onClick={() => setUi({ modal: "templates" })}>
                 <Icon name="layers" size={13} />

@@ -328,7 +328,7 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                     data-kind="flow"
                     title="Out — the beat continues here"
                     onPointerDownCapture={(e) => unplug(e, "out", "source")}
-                    style={{ top: 34 }}
+                    style={{ top: "50%" }}
                 />
             </div>
         );

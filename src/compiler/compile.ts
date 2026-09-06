@@ -14,7 +14,91 @@
 import type { ProjectDocument } from "@/schema/project";
 import { seedRemoteFiles } from "./seedRemoteFiles";
 import type { NodeDoc } from "@/schema/nodes";
+import type { EdgeDoc } from "@/schema/edges";
 import { RUNTIME_SOURCE } from "./runtimeSource";
+
+/**
+ * Node types that live in the editor only: they are canvas furniture and
+ * planning aids, never part of the story the game runs. They are stripped from
+ * the exported graph so the mod carries no trace of them.
+ */
+const FURNITURE_NODE_TYPES = new Set(["flow.note", "layout.group", "flow.beat"]);
+
+/**
+ * Remove editor-only furniture from a quest graph.
+ *
+ * Story Beats are the one furniture type that is wireable, so its flow edges are
+ * spliced: a wire A→beat→B becomes a direct A→B. Notes and group frames have no
+ * sockets, so they simply drop. Any edge that touched a removed node (and was
+ * not reconnected) is dropped too, so no dangling references survive into the
+ * runtime.
+ */
+function stripFurniture(graphNodes: NodeDoc[], graphEdges: EdgeDoc[]): { nodes: NodeDoc[]; edges: EdgeDoc[] } {
+    const removed = new Set(graphNodes.filter((n) => FURNITURE_NODE_TYPES.has(n.type)).map((n) => n.id));
+    if (removed.size === 0) return { nodes: graphNodes, edges: graphEdges };
+
+    const bypass: EdgeDoc[] = [];
+    const beats = graphNodes.filter((n) => n.type === "flow.beat").map((n) => n.id);
+    for (const beatId of beats) {
+        const inEdges = graphEdges.filter((e) => e.target === beatId && e.kind === "flow");
+        const outEdges = graphEdges.filter((e) => e.source === beatId && e.kind === "flow");
+        for (const incoming of inEdges) {
+            for (const outgoing of outEdges) {
+                if (removed.has(incoming.source) || removed.has(outgoing.target)) continue;
+                bypass.push({
+                    id: `bypass-${incoming.id}-${outgoing.id}`,
+                    source: incoming.source,
+                    sourceHandle: incoming.sourceHandle,
+                    target: outgoing.target,
+                    targetHandle: outgoing.targetHandle,
+                    kind: "flow",
+                });
+            }
+        }
+    }
+
+    return {
+        nodes: graphNodes.filter((n) => !removed.has(n.id)),
+        edges: [...graphEdges.filter((e) => !removed.has(e.source) && !removed.has(e.target)), ...bypass],
+    };
+}
+
+/** A block comment that can never break out of the comment it sits in. */
+function safeComment(text: string): string {
+    return text.replace(/\*\//g, "* /").replace(/\/\*/g, "/ *");
+}
+
+/**
+ * Turn each quest's group frames into a comment block near the top of the mod.
+ *
+ * A group's `label` and `comment` are the author's own structure ("Act 1 —
+ * recon"). Emitting them as comments means somebody reading the mod with a
+ * plain text editor — who does not use the Quest Mod Editor — can still follow
+ * how the author laid the quest out. Notes are left out by default.
+ */
+function planningComments(quests: ProjectDocument["quests"]): string {
+    const blocks: string[] = [];
+    for (const quest of quests) {
+        const groups = quest.graph.nodes.filter((n) => n.type === "layout.group");
+        if (groups.length === 0) continue;
+        const lines = groups.map((g) => {
+            const d = g.data as { label?: string; comment?: string };
+            const label = d.label?.trim() || "Group";
+            const comment = d.comment?.trim();
+            return comment
+                ? `   [Group] ${label}: ${safeComment(comment)}`
+                : `   [Group] ${label}`;
+        });
+        blocks.push(
+            [
+                `/* ── "${safeComment(quest.name)}" — planning notes ────────`,
+                ...lines,
+                `──────────────────────────────────────────────────────── */`,
+            ].join("\n"),
+        );
+    }
+    return blocks.join("\n\n");
+}
 
 /**
  * Stamped into the header comment of every exported mod. When a bug report
@@ -367,16 +451,19 @@ export function compileProject(project: ProjectDocument): CompileResult {
         }
     }
 
-    const compiledQuests = working.quests.map((q) => ({
-        q,
-        graph: {
+    const compiledQuests = working.quests.map((q) => {
+        const graph = {
             ...q.graph,
             /* An absorbed node's files are already on the device; leaving the
                node in would make it a no-op step in the flow. */
             nodes: q.graph.nodes.filter((n) => !absorbed.has(n.id)),
             edges: q.graph.edges,
-        },
-    }));
+        };
+        /* Editor-only furniture (notes, group frames, story beats) never reaches
+           the exported mod; a beat's wires are spliced so nothing dangles. */
+        const { nodes, edges } = stripFurniture(graph.nodes, graph.edges);
+        return { q, graph: { ...graph, nodes, edges } };
+    });
 
     const PROJECT = {
         mod: project.mod,
@@ -404,9 +491,11 @@ export function compileProject(project: ProjectDocument): CompileResult {
         websites: project.websites,
     };
 
+    const planningBlock = planningComments(working.quests);
     const modJs = [
         '"use strict";',
             `/* Generated by the HackHub Quest Mod Editor (build ${EDITOR_BUILD}). Edit the project, not this file. */`,
+        ...(planningBlock ? [planningBlock] : []),
         'var sdk = require("@hotbunny/hackhub-content-sdk");',
         `var PROJECT = ${JSON.stringify(PROJECT)};`,
         `var __QE_BUILD = ${JSON.stringify(EDITOR_BUILD)};`,

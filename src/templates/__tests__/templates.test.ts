@@ -743,8 +743,8 @@ describe("replyable mail is offered honestly", () => {
  * A template is a worked example. Anything on its canvas should be doing a job.
  */
 describe("no template ships a node that does nothing", () => {
-    /** Sticky notes and group frames are canvas furniture, not quest logic. */
-    const FURNITURE = ["flow.note", "layout.group"];
+    /** Sticky notes, group frames and story beats are canvas furniture, not quest logic. */
+    const FURNITURE = ["flow.note", "layout.group", "flow.beat"];
 
     for (const t of TEMPLATES) {
         // The reference sheet is a field catalogue: every node, deliberately

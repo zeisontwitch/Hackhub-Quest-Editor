@@ -71,11 +71,31 @@ export function nodeSize(doc: NodeDoc, quest?: QuestDoc): Size {
     if (doc.type === "flow.note") {
         const data = doc.data as { text?: string; width?: number };
         const width = data.width ?? NOTE_WIDTH;
-        // Rough, and deliberately so: a note is free-form text and never
-        // participates meaningfully in alignment.
-        const lines = Math.max(1, (data.text ?? "").split("\n").length);
-        return { width, height: NOTE_PADDING + lines * NOTE_LINE_HEIGHT };
-    }
+    // Rough, and deliberately so: a note is free-form text and never
+    // participates meaningfully in alignment.
+    const lines = Math.max(1, (data.text ?? "").split("\n").length);
+    return { width, height: NOTE_PADDING + lines * NOTE_LINE_HEIGHT };
+}
+
+if (doc.type === "flow.beat") {
+    const data = doc.data as {
+        title?: string;
+        text?: string;
+        width?: number;
+        choices?: { label?: string }[];
+    };
+    const width = data.width ?? 280;
+    const chars = (data.text ?? "").length;
+    // ~22 chars per line at the beat card's 11px / width-280 body; cap the
+    // preview at 250 chars so a long beat does not blow up the layout.
+    const shownChars = Math.min(chars, 250);
+    const bodyLines = Math.max(1, Math.ceil(shownChars / 22));
+    const chipRows = Math.max(0, (data.choices ?? []).length);
+    return {
+        width,
+        height: HEADER_HEIGHT + bodyLines * SUMMARY_LINE_HEIGHT + chipRows * 18 + SUMMARY_PADDING,
+    };
+}
 
     if (doc.type === "flow.reroute") {
         // A bare nodule: no card, just the socket.

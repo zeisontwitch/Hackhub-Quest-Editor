@@ -504,6 +504,28 @@ export const NoteNodeDataSchema = z.object({
     width: z.number().default(240),
 });
 
+/**
+ * A planning beat: a colour, a headline and a short body the author uses to
+ * sketch linear and branching story beats. It is canvas furniture — it can be
+ * wired (in/out) so it sits among reroute / branch / sequence nodes while a
+ * story is being planned, but it is stripped from the exported mod, and the
+ * flow through it is a transparent pass-through.
+ */
+export const StoryBeatChoiceSchema = z.object({
+    id: z.string(),
+    label: z.string().default(""),
+    note: z.string().default(""),
+});
+export const StoryBeatNodeDataSchema = z.object({
+    title: z.string().default(""),
+    text: z.string().default(""),
+    /** Card tint. Any CSS hex; older drafts fall back to slate. */
+    color: z.string().default("#64748b"),
+    width: z.number().default(280),
+    /** Branch "chiplets": a label plus a one-line note for each path. */
+    choices: z.array(StoryBeatChoiceSchema).default([]),
+});
+
 /* ── The node union ──────────────────────────────────────────────────────── */
 
 /**
@@ -549,6 +571,7 @@ export const NodeSchema = z.discriminatedUnion("type", [
     node("flow.sequence", SequenceNodeDataSchema),
     node("flow.debug", DebugNodeDataSchema),
     node("flow.note", NoteNodeDataSchema),
+    node("flow.beat", StoryBeatNodeDataSchema),
     node("flow.reroute", RerouteNodeDataSchema),
     node("layout.group", LayoutGroupNodeDataSchema),
 ]);

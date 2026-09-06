@@ -34,9 +34,11 @@ const sdk = readFileSync(resolve(root, "node_modules/@hotbunny/hackhub-content-s
  * decision; anything NOT here that goes unread is a bug.
  */
 const EDITOR_ONLY: Record<string, string> = {
-    "layout.group.comment": "group frames are canvas furniture — they are never exported",
     "layout.group.color": "the frame's tint on the canvas; group frames are never exported",
     "flow.note.width": "how wide the sticky note is drawn on the canvas",
+    "flow.beat.color": "a story beat card's tint is stripped with the beat — it never reaches the mod",
+    "flow.beat.width": "how wide a story beat card is on the canvas; beats never reach the mod",
+    "flow.beat.choices": "branch chips on a story beat card; beats never reach the mod",
     "fx.handbook.articleId": "handbook nodes are not compiled yet; export warns about them",
     "fx.handbook.category": "handbook nodes are not compiled yet; export warns about them",
 };

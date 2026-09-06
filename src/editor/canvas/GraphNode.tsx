@@ -63,6 +63,7 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
     const updateNodeData = useEditor((s) => s.updateNodeData);
     const lines = useMemo(() => summarize(doc, quest ?? undefined).filter(Boolean), [doc, quest]);
     const [hovered, setHovered] = useState(false);
+    const [beatExpanded, setBeatExpanded] = useState(false);
     const connecting = useConnection((c) => c.inProgress);
 
     // Socket names are useful exactly when you are about to wire something. At
@@ -187,6 +188,113 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                 <div className="whitespace-pre-wrap break-words text-[12px] leading-relaxed">
                     {(doc.data as { text?: string }).text || "Empty note"}
                 </div>
+            </div>
+        );
+    }
+
+    if (doc.type === "flow.beat") {
+        const bd = doc.data as {
+            title?: string;
+            text?: string;
+            color?: string;
+            width?: number;
+            choices?: { id?: string; label?: string; note?: string }[];
+        };
+        const color = bd.color || "#64748b";
+        const text = bd.text || "";
+        const PREVIEW = 250;
+        const isLong = text.length > PREVIEW;
+        const shown = beatExpanded || !isLong ? text : text.slice(0, PREVIEW).trimEnd();
+        return (
+            <div
+                className={cn(
+                    "relative w-fit rounded-lg border",
+                    "transition-[border-color,box-shadow] duration-150",
+                    selected ? "border-transparent ring-2" : "border-line hover:border-line-strong",
+                )}
+                style={{
+                    width: bd.width ?? 280,
+                    borderColor: selected ? "var(--color-accent)" : color,
+                    background: `color-mix(in srgb, ${color} 14%, transparent)`,
+                }}
+            >
+                {/* planning-only badge */}
+                <span
+                    title="A planning beat — stripped from the exported mod, never runs"
+                    className="absolute -top-2 -right-2 z-10 flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[8.5px] font-semibold tracking-wide uppercase shadow-node"
+                    style={{ borderColor: color, background: color, color: readableOn(color) }}
+                >
+                    <Icon name="flag" size={9} />
+                    plan
+                </span>
+
+                {/* colour accent */}
+                <span className="absolute inset-y-0 left-0 w-[3px] rounded-l-[7px]" style={{ background: color }} aria-hidden />
+
+                <div className="px-3 pt-2.5 pb-2 pl-4">
+                    <div className="truncate text-[12.5px] leading-tight font-semibold" style={{ color: readableOn(color) }}>
+                        {bd.title || "Story Beat"}
+                    </div>
+                    <div className="mt-1 whitespace-pre-wrap break-words text-[11px] leading-relaxed" style={{ color: readableOn(color) }}>
+                        {shown || "Empty beat — open the inspector to write it."}
+                        {!beatExpanded && isLong && (
+                            <button
+                                type="button"
+                                className="ml-1 font-medium underline decoration-dotted underline-offset-2"
+                                style={{ color: readableOn(color) }}
+                                onClick={() => setBeatExpanded(true)}
+                            >
+                                … more
+                            </button>
+                        )}
+                    </div>
+
+                    {(bd.choices ?? []).length > 0 && (
+                        <div className="mt-1.5 space-y-1">
+                            {(bd.choices ?? []).map((c) => (
+                                <div
+                                    key={c.id}
+                                    className="flex items-center gap-1.5 rounded border px-1.5 py-0.5 text-[10px]"
+                                    style={{ borderColor: color, color: readableOn(color) }}
+                                >
+                                    <Icon name="shuffle" size={9} className="shrink-0" style={{ color }} />
+                                    <span className="truncate font-medium">{c.label || "Choice"}</span>
+                                    {c.note && (
+                                        <span className="truncate text-[9.5px] opacity-80">— {c.note}</span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Sockets: the beat is a planning pass-through, so it can be
+                    wired among reroute / branch / sequence. It uses the same
+                    socket specs as any flow node so edges validate and unplug. */}
+                {def.targets.map((handle, i) => (
+                    <Handle
+                        key={handle.id}
+                        id={handle.id}
+                        type="target"
+                        position={Position.Left}
+                        data-kind={handle.kind}
+                        title={handle.label}
+                        onPointerDownCapture={(e) => unplug(e, handle.id, "target")}
+                        style={{ top: socketTop(i, def.targets.length) }}
+                    />
+                ))}
+                {sources.map((handle, i) => (
+                    <Handle
+                        key={handle.id}
+                        id={handle.id}
+                        type="source"
+                        position={Position.Right}
+                        data-kind={handle.kind}
+                        title={handle.label}
+                        onPointerDownCapture={(e) => unplug(e, handle.id, "source")}
+                        style={{ top: socketTop(i, sources.length) }}
+                    />
+                ))}
             </div>
         );
     }

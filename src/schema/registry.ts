@@ -39,6 +39,7 @@ ClaimQuestNodeDataSchema,
     TriggerEventDataSchema,
 WifiNodeDataSchema,
     NoteNodeDataSchema,
+    StoryBeatNodeDataSchema,
     RerouteNodeDataSchema,
     LayoutGroupNodeDataSchema,
     type NodeDoc,
@@ -996,6 +997,42 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
             { kind: "number", key: "width", hint: "How wide the note is on the canvas, in pixels.", label: "Width", min: 160, max: 640, step: 20 },
         ],
         create: () => seed(NoteNodeDataSchema, { text: "" }),
+    },
+
+    "flow.beat": {
+        type: "flow.beat",
+        category: "layout",
+        label: "Story Beat",
+        blurb: "Plan a story beat — colour it, preview it",
+        icon: "flag",
+        /* Wireable so it can sit among reroute / branch / sequence while a story
+           is being planned. The flow through it is a transparent pass-through
+           (the runtime's default case), and it is stripped from the export. */
+        targets: [inFlow],
+        sources: [outFlow],
+        hook: "declarative",
+        fields: [
+            { kind: "note", tone: "info", text: "Planning only. This node is stripped from the exported mod and never runs. Wire it among reroute, branch and sequence to sketch a flow; the story passes through it unchanged." },
+            { kind: "text", key: "title", label: "Headline", hint: "A short name for this beat, e.g. “Act 2 — the firewall”. It is the card's title bar." },
+            { kind: "textarea", key: "text", label: "Beat text", hint: "The body of the beat. The top ~250 characters are previewed on the card; the full text is in the inspector." },
+            { kind: "color", key: "color", label: "Card colour", hint: "Pick any colour. Colour-coding by act, character or branch is usually the clearest." },
+            { kind: "number", key: "width", label: "Width (px)", min: 200, max: 640, step: 20, hint: "How wide the card is on the canvas, in pixels." },
+            {
+                kind: "list",
+                key: "choices",
+                label: "Branch choices",
+                hint: "Add a row for each path the story can take, so a branching beat reads at a glance.",
+                addLabel: "Add choice",
+                itemTitle: (c: Record<string, unknown>, i: number) =>
+                    String((c.label as string | undefined)?.trim() || `Choice ${i + 1}`),
+                fields: [
+                    { kind: "text", key: "label", label: "Choice", hint: "Short title for this path, e.g. “Go in through the front door”." },
+                    { kind: "textarea", key: "note", label: "What happens", rows: 2, hint: "One line on where this path leads, so a branching beat reads at a glance." },
+                ],
+                newItem: () => ({ id: nanoid(8), label: "", note: "" }),
+            },
+        ],
+        create: () => seed(StoryBeatNodeDataSchema, { title: "", text: "", color: "#64748b", width: 280 }),
     },
 };
 

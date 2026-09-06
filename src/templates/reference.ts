@@ -163,6 +163,16 @@ export const EXAMPLES: Partial<Record<NodeType, Record<string, unknown>>> = {
         text: "This quest is a reference sheet, not a story.\n\nEvery node type is here once, filled with example input. Select any node and hover the ⓘ next to a field label to read what it does.",
         width: 300,
     },
+    "flow.beat": {
+        title: "Act 1 — recon",
+        text: "A planning beat. It is stripped from the exported mod and never runs; it just helps you sketch the story on the canvas.",
+        color: "#0ea5e9",
+        width: 280,
+        choices: [
+            { id: "c1", label: "Scan the edge", note: "find port 22" },
+            { id: "c2", label: "Go in the front", note: "social engineering" },
+        ],
+    },
 }
 
 export function buildReference(): ProjectDocument {

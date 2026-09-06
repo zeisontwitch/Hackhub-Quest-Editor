@@ -255,6 +255,16 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
         case "flow.note":
             return d.text ? [clip(String(d.text), 120)] : ["Empty note"];
 
+        case "flow.beat": {
+            const lines: string[] = [];
+            if (d.title) lines.push(clip(String(d.title), 80));
+            if (d.text) lines.push(clip(String(d.text), 120));
+            for (const c of (d.choices as { label?: string }[]) ?? []) {
+                if (c.label) lines.push(`· ${clip(String(c.label), 60)}`);
+            }
+            return lines.length ? lines : ["Empty beat"];
+        }
+
         default: {
             const exhaustive: never = node;
             return [String(exhaustive)];

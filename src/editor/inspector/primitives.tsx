@@ -168,6 +168,7 @@ export function TextInput({
     id,
     ariaLabel,
     disabled,
+    inputRef,
 }: {
     value: string;
     onChange: (value: string) => void;
@@ -177,6 +178,8 @@ export function TextInput({
     ariaLabel?: string;
     /** Shown but not editable — the value is decided for the author. */
     disabled?: boolean;
+    /** Receives the element, so the token picker can insert at the caret. */
+    inputRef?: (el: HTMLInputElement | HTMLTextAreaElement | null) => void;
 }) {
     return (
         <input
@@ -185,6 +188,7 @@ export function TextInput({
             value={value}
             placeholder={placeholder}
             disabled={disabled}
+            ref={inputRef as (el: HTMLInputElement | null) => void}
             onChange={(e) => onChange(e.target.value)}
             className={cn("field-input", mono && "font-mono text-[12px]", disabled && "cursor-not-allowed opacity-60")}
         />
@@ -234,6 +238,7 @@ export function TextArea({
     rows = 3,
     id,
     ariaLabel,
+    inputRef,
 }: {
     value: string;
     onChange: (value: string) => void;
@@ -242,6 +247,8 @@ export function TextArea({
     rows?: number;
     id?: string;
     ariaLabel?: string;
+    /** Receives the element, so the token picker can insert at the caret. */
+    inputRef?: (el: HTMLInputElement | HTMLTextAreaElement | null) => void;
 }) {
     return (
         <textarea
@@ -250,6 +257,7 @@ export function TextArea({
             value={value}
             rows={rows}
             placeholder={placeholder}
+            ref={inputRef as (el: HTMLTextAreaElement | null) => void}
             onChange={(e) => onChange(e.target.value)}
             className={cn("field-textarea", mono && "font-mono text-[12px]")}
         />

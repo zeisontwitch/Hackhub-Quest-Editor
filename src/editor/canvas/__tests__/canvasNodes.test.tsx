@@ -107,7 +107,7 @@ describe("sequence node sockets", () => {
         );
         const node = quest().graph.nodes.find((n) => n.id === id)!;
         expect(sourcesOf(node).map((h) => h.id)).toEqual(["step-a", "step-b", "step-c"]);
-        expect(sourcesOf(node).map((h) => h.label)).toEqual(["Lights out", "Sirens", "Step 3"]);
+        expect(sourcesOf(node).map((h) => h.label)).toEqual(["Lights out", "Sirens", "3"]);
         expect(sourcesOf(node).every((h) => h.kind === "flow")).toBe(true);
     });
 

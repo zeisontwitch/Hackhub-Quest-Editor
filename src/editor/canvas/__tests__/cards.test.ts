@@ -38,6 +38,18 @@ describe("sequence card", () => {
     });
 });
 
+describe("trigger card", () => {
+    it("names the event in words, not in code", () => {
+        const node = {
+            id: "t1",
+            type: "trigger.event",
+            position: { x: 0, y: 0 },
+            data: { event: "Terminal.NmapScan", conditions: [] },
+        } as NodeDoc;
+        expect(summarize(node)[0]).toBe("Terminal: Nmap scan");
+    });
+});
+
 describe("tag memory", () => {
     beforeEach(() => localStorage.clear());
 

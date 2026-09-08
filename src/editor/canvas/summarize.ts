@@ -7,7 +7,7 @@
  */
 import type { DialogueKind, NodeDoc } from "@/schema/nodes";
 import type { QuestDoc } from "@/schema/project";
-import { eventLabel } from "@/schema/events";
+import { humanEventName } from "@/schema/events";
 import { DEVICE_TYPE_LABELS } from "@/schema/common";
 
 export const DIALOGUE_KIND_LABELS: Record<DialogueKind, string> = {
@@ -100,7 +100,7 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
             const conditions = d.conditions as { id: string }[] | undefined;
             const n = conditions?.length ?? 0;
             return [
-                d.event ? eventLabel(String(d.event)) : "no event chosen",
+                d.event ? humanEventName(String(d.event)) : "no event chosen",
                 n === 0 ? "fires on any occurrence" : `${n} condition${n === 1 ? "" : "s"}`,
             ];
         }

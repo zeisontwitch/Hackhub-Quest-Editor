@@ -13,6 +13,7 @@ import { cn } from "@/lib/cn";
 import { Icon } from "@/components/Icon";
 import { DEVICE_TYPES, DEVICE_TYPE_LABELS, type DeviceType, type NetworkDevice } from "@/schema/common";
 import { TARGET_IP_TOKEN } from "@/schema/common";
+import { PORT_PRESETS } from "@/schema/portPresets";
 import { FIELD_GROUPS } from "@/schema/registry";
 import { useEditor } from "@/store/editor";
 import { ListEditor } from "./ListEditor";
@@ -174,6 +175,36 @@ export function DeviceEditor({
                 )}
 
                 <Collapsible title={`Ports (${device.ports.length})`}>
+                    <FieldShell
+                        label="Add a common port"
+                        hint="Fills a port with values from the game's own quests and scans. Mail ports leave the version blank — fill it from your scan."
+                    >
+                        <SelectInput
+                            ariaLabel="Add a common port"
+                            value=""
+                            onChange={(id) => {
+                                const preset = PORT_PRESETS.find((p) => p.id === id);
+                                if (!preset) return;
+                                write({
+                                    ports: [
+                                        ...device.ports,
+                                        {
+                                            id: nanoid(8),
+                                            external: preset.external,
+                                            internal: preset.internal,
+                                            active: true,
+                                            service: preset.service,
+                                            version: preset.version,
+                                        },
+                                    ],
+                                });
+                            }}
+                            options={[
+                                { value: "", label: "Pick a port…" },
+                                ...PORT_PRESETS.map((p) => ({ value: p.id, label: p.label })),
+                            ]}
+                        />
+                    </FieldShell>
                     <ListEditor
                         nodeId={nodeId}
                         path={`${path}.ports`}

@@ -83,7 +83,7 @@ export function fieldWarnings(quest: QuestDoc | undefined, node: NodeDoc): Field
         }
     }
 
-    // A "Seed files" aimed at a remote device must resolve to a real device,
+    // A "Place files" aimed at a remote device must resolve to a real device,
     // or export drops the files. This is the SAME check the compiler runs
     // (placementFor), so the warning appears while editing instead of after
     // export — when the files are already gone.
@@ -97,7 +97,7 @@ export function fieldWarnings(quest: QuestDoc | undefined, node: NodeDoc): Field
                 path: "ip",
                 severity: "danger",
                 detail:
-                    "This “Seed files” node puts files on a remote device, but no network in this quest exists for that device to live on — export would drop the files.",
+                    "This “Place files” node puts files on a remote device, but no network in this quest exists for that device to live on — export would drop the files.",
                 nextStep:
                     "Add a “Create network” node and give it the device this is aimed at, so the files land somewhere real.",
             });

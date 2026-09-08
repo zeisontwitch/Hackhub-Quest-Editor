@@ -39,8 +39,6 @@ const EDITOR_ONLY: Record<string, string> = {
     "flow.beat.color": "a story beat card's tint is stripped with the beat — it never reaches the mod",
     "flow.beat.width": "how wide a story beat card is on the canvas; beats never reach the mod",
     "flow.beat.choices": "branch chips on a story beat card; beats never reach the mod",
-    "fx.handbook.articleId": "handbook nodes are not compiled yet; export warns about them",
-    "fx.handbook.category": "handbook nodes are not compiled yet; export warns about them",
 };
 
 type Field = { kind: string; key?: string; label?: string; fields?: Field[] };

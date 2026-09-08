@@ -194,6 +194,13 @@ Zeis asked for these next, in order:
 
 1. **A UX check on the editor** — a lot has been added recently and it has not
    been reviewed as a whole.
+   — **Done in r125** (`docs/plans/r125-zeis-ux-check-fixes.md`): his
+   14-item list, end to end — human event names, port presets, guided
+   firewall addresses, Place-files rename, tag picker on every tag-taking
+   box, database table editor, working Open-handbook node, numbered
+   sequence outputs, silent story beats. Also fixed en route: the
+   firewall node's rule was a list field over single-object data (fresh
+   nodes showed "None yet" for a rule they had), now a section.
 2. **Much better "something isn't hooked up" warnings** — his words: a
    red-triangle-exclamation that explains *in detail* what is wrong, what is
    missing, and which nodes to put where to fix it. Currently issues surface as

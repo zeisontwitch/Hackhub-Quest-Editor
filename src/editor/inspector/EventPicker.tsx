@@ -12,7 +12,7 @@ import { Icon } from "@/components/Icon";
 import {
     EVENT_COUNT,
     SDK_VERSION,
-    eventLabel,
+    humanEventName,
     getEvent,
     groupedEvents,
     isKnownEvent,
@@ -39,7 +39,7 @@ export function EventPicker({
                 events: g.events.filter(
                     (e) =>
                         e.name.toLowerCase().includes(q) ||
-                        eventLabel(e.name).toLowerCase().includes(q) ||
+                        humanEventName(e.name).toLowerCase().includes(q) ||
                         e.payload.toLowerCase().includes(q),
                 ),
             }))
@@ -58,11 +58,11 @@ export function EventPicker({
                             <span className="text-ink-4">Choose an event…</span>
                         ) : (
                             <>
-                                <span className="block truncate font-mono text-[12px] text-ink">
-                                    {value}
+                                <span className="block truncate text-[12px] text-ink">
+                                    {humanEventName(value)}
                                 </span>
-                                <span className="block truncate text-[10.5px] text-ink-4">
-                                    {selected ? eventLabel(value) : "custom event"}
+                                <span className="block truncate font-mono text-[10.5px] text-ink-4">
+                                    {value}
                                 </span>
                             </>
                         )}
@@ -126,13 +126,11 @@ export function EventPicker({
                                             value === event.name && "bg-accent-soft",
                                         )}
                                     >
-                                        <span className="flex items-baseline gap-2">
-                                            <span className="font-mono text-[11.5px] text-ink">
-                                                {event.name}
-                                            </span>
-                                            <span className="truncate text-[10.5px] text-ink-4">
-                                                {eventLabel(event.name)}
-                                            </span>
+                                        <span className="block truncate text-[12px] text-ink">
+                                            {humanEventName(event.name)}
+                                        </span>
+                                        <span className="block truncate font-mono text-[10.5px] text-ink-4">
+                                            {event.name}
                                         </span>
                                         <span className="truncate font-mono text-[10px] text-ink-4">
                                             {event.payload}

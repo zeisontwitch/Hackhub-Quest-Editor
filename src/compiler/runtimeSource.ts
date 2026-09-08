@@ -1096,8 +1096,8 @@ function __qeRegisterProject(sdk, PROJECT) {
                             allowed: !!d.rule.allowed,
                             port: Number(d.rule.port || 0),
                         };
-                        if (d.rule.source) rule.source = d.rule.source;
-                        if (d.rule.destination) rule.destination = d.rule.destination;
+                        if (d.rule.source) rule.source = __QE.fill(d.rule.source, scope);
+                        if (d.rule.destination) rule.destination = __QE.fill(d.rule.destination, scope);
                         if (d.rule.locked != null) rule.locked = !!d.rule.locked;
                         sdk.Network.addFirewallRule(fwIp, rule);
                         if (d.removeOnComplete !== false) questCleanup.push({ kind: "firewall", ip: fwIp, port: rule.port });
@@ -1210,6 +1210,20 @@ function __qeRegisterProject(sdk, PROJECT) {
                            to be dropped, so every toast looked the same. */
                         if (d.variant === "toast" && sdk.UI.toast) sdk.UI.toast(notifyMsg, d.tone || "info");
                         else if (sdk.UI.notify) sdk.UI.notify(notifyMsg);
+                    }
+                    return next();
+                }
+                case "fx.handbook": {
+                    /* No permission needed: the SDK's permission list has no
+                       handbook entry, and open() only reads. A blank article
+                       does nothing — the export warns about it instead. */
+                    if (sdk.Handbook && sdk.Handbook.open) {
+                        var articleId = __QE.fill(d.articleId || "", scope).trim();
+                        if (articleId) {
+                            var articleCat = __QE.fill(d.category || "", scope).trim();
+                            if (articleCat) sdk.Handbook.open(articleId, articleCat);
+                            else sdk.Handbook.open(articleId);
+                        }
                     }
                     return next();
                 }

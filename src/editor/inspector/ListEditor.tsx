@@ -124,7 +124,7 @@ export function ListEditor({
             <button
                 type="button"
                 onClick={() => {
-                    write([...items, def.newItem()]);
+                    write([...items, def.newItem(items.length)]);
                     setOpen((o) => ({ ...o, [items.length]: true }));
                 }}
                 className="btn-default w-full text-[11.5px]"

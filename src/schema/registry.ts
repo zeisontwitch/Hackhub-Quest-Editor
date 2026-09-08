@@ -45,7 +45,7 @@ WifiNodeDataSchema,
     type NodeDoc,
     type NodeType,
 } from "./nodes";
-import { VULNERABILITY_TYPES } from "./common";
+import { TARGET_IP_TOKEN, VULNERABILITY_TYPES } from "./common";
 
 /* ── Inspector field descriptors ─────────────────────────────────────────── */
 
@@ -90,6 +90,28 @@ export type FieldDef =
           options: readonly { value: string; label: string; hint?: string }[];
           showWhen?: FieldShowWhen;
       }
+    | {
+          kind: "selectOrCustom";
+          key: string;
+          label: string;
+          hint?: string;
+          placeholder?: string;
+          mono?: boolean;
+          /** Offer the token menu in the custom box. */
+          tokens?: boolean;
+          /** Fixed choices. Anything else falls through to the custom box. */
+          options: readonly { value: string; label: string }[];
+          /**
+           * An extra "same as …" choice that copies another field's current
+           * value — a snapshot, not a live link. `fromKey` starting with
+           * "/" reads from the node root (e.g. "/ip"); otherwise the row is
+           * tried first, then the root.
+           */
+          sameAs?: { label: string; fromKey: string };
+          showWhen?: FieldShowWhen;
+      }
+    | { kind: "tables"; key: string; label: string; hint?: string }
+    | { kind: "handbookArticle"; key: string; label: string; hint?: string }
     | { kind: "date"; key: string; label: string; hint?: string; showWhen?: FieldShowWhen }
     | { kind: "color"; key: string; label: string; hint?: string; showWhen?: FieldShowWhen }
     | { kind: "image"; key: string; label: string; hint?: string; showWhen?: FieldShowWhen }
@@ -106,10 +128,18 @@ export type FieldDef =
           /** Open every existing row by default (e.g. choices an author should read at once). */
           defaultOpen?: boolean;
           fields: FieldDef[];
-          newItem: () => Record<string, unknown>;
+          /** Receives the new row's index, so numbered rows (sequence outputs) can name themselves. */
+          newItem: (index: number) => Record<string, unknown>;
       }
     | { kind: "deviceTree"; key: string; label: string; hint?: string }
-    | { kind: "section"; label: string; hint?: string; fields: FieldDef[] }
+    | {
+          kind: "section";
+          label: string;
+          hint?: string;
+          fields: FieldDef[];
+          /** Address children under this path (e.g. a single nested record). */
+          path?: string;
+      }
     | { kind: "note"; text: string; tone?: "info" | "warn"; showWhen?: FieldShowWhen };
 
 /* ── Categories ──────────────────────────────────────────────────────────── */
@@ -191,13 +221,49 @@ const vulnFields: FieldDef[] = [
     { kind: "text", key: "version", hint: "The affected component's version, e.g. \"WordPress 5.8\". Cosmetic unless a trigger matches on it.", label: "Version", placeholder: "optional", mono: true },
 ];
 
-const ruleFields: FieldDef[] = [
-    { kind: "number", key: "port", hint: "The port this rule applies to.", label: "Port", min: 0, max: 65535 },
-    { kind: "toggle", key: "allowed", label: "Allowed", hint: "Off means the port is blocked by the firewall." },
-    { kind: "text", key: "source", hint: "Which source addresses the rule matches. `*` means anywhere; write a single IP to narrow it.", label: "Source", placeholder: "*", mono: true },
-    { kind: "text", key: "destination", hint: "Which destination addresses the rule matches. `*` means this machine.", label: "Destination", placeholder: "*", mono: true },
-    { kind: "toggle", key: "locked", label: "Locked", hint: "The player cannot remove a locked rule." },
-];
+/**
+ * Firewall rule fields, shared by the Firewall-rule node and firewall devices.
+ * The node variant offers "same as the protected IP" for the destination; a
+ * device rule has no protected IP, so its destination stays a plain address.
+ */
+function firewallRuleFields(sameAsProtected: boolean): FieldDef[] {
+    return [
+        { kind: "number", key: "port", hint: "The port this rule applies to.", label: "Port", min: 0, max: 65535 },
+        { kind: "toggle", key: "allowed", label: "Allowed", hint: "Off means the port is blocked by the firewall." },
+        {
+            kind: "selectOrCustom",
+            key: "source",
+            label: "Source",
+            hint: "Which machines the rule applies to: anywhere on the internet, or one machine you name.",
+            mono: true,
+            placeholder: "45.33.32.156",
+            options: [{ value: "*", label: "Anywhere" }],
+        },
+        ...(sameAsProtected
+            ? [
+                  {
+                      kind: "selectOrCustom",
+                      key: "destination",
+                      label: "Destination",
+                      hint: "The machine the rule protects — usually the one in “Protected IP” above. Picking it copies that address; changing it later won't follow.",
+                      mono: true,
+                      placeholder: "45.33.32.156",
+                      options: [],
+                      sameAs: { label: "Same as the protected IP", fromKey: "/ip" },
+                  } as const,
+              ]
+            : [
+                  {
+                      kind: "text",
+                      key: "destination",
+                      label: "Destination",
+                      hint: "The destination address the rule matches — usually the protected machine's own address.",
+                      mono: true,
+                  } as const,
+              ]),
+        { kind: "toggle", key: "locked", label: "Locked", hint: "The player cannot remove a locked rule." },
+    ];
+}
 
 const fileFields: FieldDef[] = [
     { kind: "text", key: "name", hint: "The file or folder name, exactly as it appears in ls.", label: "Name", mono: true },
@@ -225,7 +291,7 @@ export const FIELD_GROUPS = {
         newItem: () => ({ id: nanoid(8), username: "admin" }),
     },
     rules: {
-        fields: ruleFields,
+        fields: firewallRuleFields(false),
         addLabel: "Add rule",
         itemTitle: (r: Record<string, unknown>) => `${r.allowed ? "Allow" : "Block"} ${r.port}`,
         newItem: () => ({ id: nanoid(8), allowed: false, port: 22, source: "*" }),
@@ -453,15 +519,21 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            { kind: "text", key: "ip", hint: "The machine these rules protect. Use {{data.targetIp}} to refer to a randomly-allocated router.", label: "Protected IP", mono: true, tokens: true },
             {
-                kind: "list",
-                key: "rule", hint: "Rules are evaluated in order; the first match wins.",
+                kind: "selectOrCustom",
+                key: "ip",
+                hint: "The machine these rules protect: the quest's own network, or one machine you name.",
+                label: "Protected IP",
+                mono: true,
+                tokens: true,
+                placeholder: "45.33.32.156",
+                options: [{ value: TARGET_IP_TOKEN, label: "Random — the quest's network" }],
+            },
+            {
+                kind: "section",
                 label: "Rule",
-                addLabel: "Add rule",
-                itemTitle: (r) => `${r.allowed ? "Allow" : "Block"} ${r.port}`,
-                fields: ruleFields,
-                newItem: () => ({ id: nanoid(8), allowed: false, port: 22, source: "*" }),
+                path: "rule",
+                fields: firewallRuleFields(true),
             },
             { kind: "toggle", key: "removeOnComplete", hint: "Drop the firewall when the quest ends so the machine is reachable afterwards.", label: "Remove when the quest ends" },
         ],
@@ -481,6 +553,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
+            { kind: "note", tone: "info", text: "Adjusts a machine that already exists — one your “Create network” node built. To add the machine itself, use “Create network”; to open, close, add or remove one of its ports later in the story, use this." },
             { kind: "text", key: "ip", label: "Device IP", mono: true, tokens: true, hint: "A router IP or any device behind it." },
             {
                 kind: "select",
@@ -545,7 +618,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
             { kind: "text", key: "host", hint: "The address the player points a database client at.", label: "Host IP", mono: true, tokens: true },
             { kind: "text", key: "user", hint: "The login sqlmap or a client uses.", label: "Username", mono: true },
             { kind: "text", key: "password", hint: "The password. Give the player a way to find it — a config file, a leaked dump, a cracked hash.", label: "Password", mono: true },
-            { kind: "note", tone: "info", text: "Table editing arrives with the full data inspector in Step 3." },
+            { kind: "tables", key: "tables", hint: "The data inside: tables holding rows of named values, ready for the player's SQL.", label: "Tables" },
             { kind: "toggle", key: "removeOnComplete", hint: "Drop the database when the quest ends.", label: "Remove when the quest ends" },
         ],
         create: () => seed(DatabaseNodeDataSchema, { host: "", user: "admin", password: "secret123" }),
@@ -554,7 +627,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
     "world.files": {
         type: "world.files",
         category: "world",
-        label: "Seed files",
+        label: "Place files",
         blurb: "Drop files on a PC or a remote device",
         icon: "folder",
         ...io,
@@ -626,7 +699,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
             {
                 kind: "note",
                 tone: "info",
-                text: "What each tool reads: whois → domain, ip, registrant, email · lynx → web, email, phone, social, address (anything else is shown as extra detail) · geoip → country, city, latitude, longitude · hydra → username, password · nslookup / mxlookup → ip. nmap is different: write one port per line, like “22 open ssh OpenSSH 8.9”. You can also paste a finished result block if you copied one from somewhere else.",
+                text: "What each tool reads: whois → domain, ip, registrant, email · lynx → web, email, phone, social, address (anything else is shown as extra detail) · geoip → country, city, latitude, longitude · hydra → username, password · nslookup / mxlookup → ip. nmap is different: write one port per line, like “22 open ssh OpenSSH 8.9.0” — always three numbers. Tags work here too: {{data.targetIp}} is the address the game gave your network, {{data.name}} anything you saved with “Set quest data”, {{player.username}} the player's login, and {{random.password}} a fresh password.",
             },
             { kind: "toggle", key: "removeOnComplete", hint: "Stop intercepting the command when the quest ends.", label: "Remove when the quest ends" },
         ],
@@ -659,7 +732,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
             { kind: "text", key: "commandName", hint: "The terminal command the player runs, e.g. decrypt. It appears in help output.", label: "Command name", mono: true, placeholder: "decrypt" },
             { kind: "text", key: "commandDescription", hint: "The one-line description shown next to the command in help.", label: "Help text" },
             { kind: "text", key: "prompt", hint: "The text printed before the cursor, e.g. \"Passphrase >\".", label: "Prompt", placeholder: "Passphrase >" },
-            { kind: "toggle", key: "mask", label: "Mask the input", hint: "Shown as *, like the built-in ssh and sudo prompts." },
+            { kind: "toggle", key: "mask", label: "Mask the input", hint: "Hides typing behind * — the player sees “Passphrase > ****” instead of their answer, like a password box. Use it when the answer is a secret." },
             {
                 kind: "select",
                 key: "matchMode", hint: "Exactly equals checks the whole answer. Contains accepts it anywhere in what the player types. Matches pattern is for advanced authors who want to accept a whole family of answers at once.",
@@ -694,23 +767,16 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            {
-                kind: "select",
-                key: "amountMode",
-                label: "Amount type",
-                hint: "A fixed sum, or a slice of whatever the player currently has.",
-                options: [
-                    { value: "fixed", label: "Fixed amount" },
-                    { value: "percent", label: "Percentage of balance" },
-                ],
-            },
             { kind: "number", key: "amount", hint: "Credits deposited into the player's bank account.", label: "Amount", min: 0 },
-            { kind: "number", key: "percent", hint: "Percentage of the player's current balance, taken when this node runs.", label: "Percent", min: 0, max: 100 },
             { kind: "text", key: "description", hint: "The label on the bank statement line.", label: "Description" },
             { kind: "text", key: "fromIBAN", hint: "The sending account, shown in the transfer details.", label: "From IBAN", mono: true },
             { kind: "text", key: "fromName", hint: "The sender's name on the statement.", label: "From name" },
+            /* Percent-of-balance on a payment was removed from new nodes (it is
+               the Charge node's job). Old projects that used it still run as
+               written — this note is the only trace left. */
+            { kind: "note", tone: "info", showWhen: { key: "amountMode", equals: "percent" }, text: "Kept from an earlier version: this pays a percentage of the player's balance. It still works." },
         ],
-        create: () => seed(PayNodeDataSchema, { amount: 1000, description: "Job payment" }),
+        create: () => seed(PayNodeDataSchema, { amount: 100, description: "Job payment" }),
     },
 
     "fx.withdraw": {
@@ -808,7 +874,10 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         icon: "terminal",
         ...io,
         hook: "onStart",
-        fields: [{ kind: "text", key: "command", hint: "The command executed in the player's terminal, as if they had typed it.", label: "Command", mono: true, tokens: true }],
+        fields: [
+            { kind: "note", tone: "info", text: "Runs a command the moment the story reaches this node, as if the player had typed it — for things the story should do that the player hasn't. Example: “nmap {{data.targetIp}}” runs a scan the player can read." },
+            { kind: "text", key: "command", hint: "The command executed in the player's terminal, as if they had typed it. Tags like {{data.targetIp}} are filled in first.", label: "Command", mono: true, tokens: true },
+        ],
         create: () => seed(ShellExecNodeDataSchema),
     },
 
@@ -821,7 +890,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            { kind: "text", key: "articleId", hint: "The in-game article to open.", label: "Article", mono: true },
+            { kind: "handbookArticle", key: "articleId", hint: "The in-game article the player lands on. Pick a known page, or type any article id.", label: "Article" },
             { kind: "text", key: "category", hint: "The handbook section the article sits under.", label: "Category" },
         ],
         create: () => seed(HandbookNodeDataSchema),
@@ -940,7 +1009,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                 label: "Outputs, in order",
                 hint: "They fire top to bottom. Drag the rows' ✕ to remove an output — any wire attached to it is removed too.",
                 addLabel: "Add output",
-                itemTitle: (s, i) => String(s.label || `Step ${i + 1}`),
+                itemTitle: (s, i) => String(s.label || `${i + 1}`),
                 fields: [
                     {
                         kind: "text",
@@ -957,14 +1026,14 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                         step: 100,
                     },
                 ],
-                newItem: () => ({ id: nanoid(8), label: "Step", delayMs: 500 }),
+                newItem: (index) => ({ id: nanoid(8), label: String(index + 1), delayMs: 500 }),
             },
         ],
         create: () =>
             seed(SequenceNodeDataSchema, {
                 steps: [
-                    { id: nanoid(8), label: "First", delayMs: 0 },
-                    { id: nanoid(8), label: "Then", delayMs: 1000 },
+                    { id: nanoid(8), label: "1", delayMs: 0 },
+                    { id: nanoid(8), label: "2", delayMs: 1000 },
                 ],
             }),
     },
@@ -1082,7 +1151,7 @@ export function sequenceSockets(data: unknown): HandleSpec[] {
     return steps.map((step, i) => ({
         id: `step-${step.id}`,
         kind: "flow" as const,
-        label: step.label?.trim() || `Step ${i + 1}`,
+        label: step.label?.trim() || `${i + 1}`,
     }));
 }
 

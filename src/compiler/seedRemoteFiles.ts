@@ -1,5 +1,5 @@
 /**
- * Fold "Seed files → a remote device" nodes into the device that owns them.
+ * Fold "Place files → a remote device" nodes into the device that owns them.
  *
  * ## Why this exists
  *

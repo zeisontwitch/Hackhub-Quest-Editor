@@ -12,7 +12,7 @@ import {
     EVENTS,
     EVENT_COUNT,
     eventFields,
-    eventLabel,
+    humanEventName,
     getEvent,
     groupedEvents,
     isKnownEvent,
@@ -258,12 +258,19 @@ describe("event catalogue", () => {
         expect(eventFields(primitive!.name)).toEqual([]);
     });
 
-    it("renders a human label distinct from the raw id", () => {
-        expect(eventLabel("Terminal.NmapScan")).not.toBe("Terminal.NmapScan");
-        expect(eventLabel("Terminal.NmapScan")).toMatch(/nmap/i);
-        // Custom events are humanised the same way — the namespace is dropped
-        // because the picker already groups by it.
-        expect(eventLabel("MyMod.Custom")).toBe("Custom");
+    it("renders human-readable event names", () => {
+        expect(humanEventName("Terminal.Cat")).toBe("Terminal: Cat");
+        expect(humanEventName("Metasploit.Meterpreter.Connected")).toBe(
+            "Metasploit: Meterpreter connected",
+        );
+        // Acronyms survive; only later words are lowercased.
+        expect(humanEventName("Terminal.SSH.Connected")).toBe("Terminal: SSH connected");
+        expect(humanEventName("Terminal.FTP.Connect")).toBe("Terminal: FTP connect");
+        // Single-segment names just get their words split.
+        expect(humanEventName("Hashcat")).toBe("Hashcat");
+        expect(humanEventName("NetworkPacketTransfer")).toBe("Network packet transfer");
+        // Custom events are humanised the same way.
+        expect(humanEventName("MyMod.Custom")).toBe("MyMod: Custom");
     });
 });
 
@@ -330,5 +337,116 @@ describe("cleanup toggles the editor offers are honoured by the compiler", () =>
             expect(runtime, kind).toContain(`kind: "${kind}"`);
             expect(runtime, kind).toContain(`item.kind === "${kind}"`);
         }
+    });
+});
+
+describe("choice-or-custom fields", () => {
+    /** Every selectOrCustom, with the keys visible from where it sits. */
+    function collect() {
+        const found: { type: string; field: Extract<FieldDef, { kind: "selectOrCustom" }>; rootKeys: string[]; rowKeys: string[] | null }[] = [];
+        for (const type of ALL_TYPES) {
+            const def = nodeTypeDef(type);
+            const keys = (fields: FieldDef[]) =>
+                fields.flatMap((f) => ("key" in f ? [f.key as string] : []));
+            const rootKeys = keys(def.fields);
+            const walk = (fields: FieldDef[], rowKeys: string[] | null) => {
+                for (const f of fields) {
+                    if (f.kind === "selectOrCustom") found.push({ type, field: f, rootKeys, rowKeys });
+                    if (f.kind === "list") walk(f.fields, keys(f.fields));
+                    if (f.kind === "section") walk(f.fields, f.path ? keys(f.fields) : rowKeys);
+                }
+            };
+            walk(def.fields, null);
+        }
+        return found;
+    }
+
+    it("offers distinct values and always a way out", () => {
+        const found = collect();
+        expect(found.length).toBeGreaterThan(0);
+        for (const { type, field } of found) {
+            const values = field.options.map((o) => o.value);
+            expect(new Set(values).size, `${type}:${field.key} has duplicate options`).toBe(values.length);
+            // Options may be empty only when sameAs offers the way out — plus
+            // the Custom box the component always renders.
+            expect(
+                field.options.length > 0 || field.sameAs !== undefined,
+                `${type}:${field.key} offers no choice at all`,
+            ).toBe(true);
+        }
+    });
+
+    it("points every sameAs at a field that exists", () => {
+        for (const { type, field, rootKeys, rowKeys } of collect()) {
+            if (!field.sameAs) continue;
+            const from = field.sameAs.fromKey;
+            if (from.startsWith("/")) {
+                expect(rootKeys, `${type}:${field.key} sameAs ${from}`).toContain(from.slice(1));
+            } else {
+                const visible = [...(rowKeys ?? []), ...rootKeys];
+                expect(visible, `${type}:${field.key} sameAs ${from}`).toContain(from);
+            }
+        }
+    });
+
+    it("keeps the firewall node a single rule with guided addresses", () => {
+        // The rule used to be a list field over single-object data: a fresh
+        // node showed "None yet" for a rule it had, and adding a row wrote an
+        // array the schema rejects. One rule, always visible, no add button.
+        const def = nodeTypeDef("world.firewall");
+        const ip = def.fields.find((f) => "key" in f && f.key === "ip");
+        expect(ip?.kind).toBe("selectOrCustom");
+        expect(
+            (ip as Extract<FieldDef, { kind: "selectOrCustom" }>).options.map((o) => o.value),
+        ).toContain("{{data.targetIp}}");
+        const rule = def.fields.find((f) => f.kind === "section");
+        expect(rule, "the rule must be a section, not a list").toMatchObject({
+            kind: "section",
+            path: "rule",
+        });
+        const section = rule as Extract<FieldDef, { kind: "section" }>;
+        expect(section.fields.some((f) => f.kind === "selectOrCustom" && f.key === "source")).toBe(true);
+        const destination = section.fields.find((f) => "key" in f && f.key === "destination") as Extract<
+            FieldDef,
+            { kind: "selectOrCustom" }
+        >;
+        expect(destination.kind).toBe("selectOrCustom");
+        expect(destination.sameAs?.fromKey).toBe("/ip");
+    });
+
+    it("numbers sequence outputs instead of naming them", () => {
+        const seq = nodeTypeDef("flow.sequence");
+        const created = seq.create() as { steps: { label: string }[] };
+        expect(created.steps.map((s) => s.label)).toEqual(["1", "2"]);
+        const steps = seq.fields.find((f) => f.kind === "list") as Extract<
+            FieldDef,
+            { kind: "list" }
+        >;
+        // The list editor passes the new row's index in, so the third output
+        // arrives already called "3".
+        expect(steps.newItem(2)).toMatchObject({ label: "3" });
+        expect(steps.itemTitle({ label: "" }, 4)).toBe("5");
+    });
+
+    it("starts payments at 100 with no percent option, but honours old ones", () => {
+        const pay = nodeTypeDef("fx.pay");
+        expect((pay.create() as { amount: number }).amount).toBe(100);
+        expect(pay.fields.some((f) => "key" in f && f.key === "amountMode")).toBe(false);
+        expect(pay.fields.some((f) => "key" in f && f.key === "percent")).toBe(false);
+        // …while an old project that paid a percent still explains itself.
+        const legacy = pay.fields.find((f) => f.kind === "note");
+        expect(legacy).toMatchObject({ showWhen: { key: "amountMode", equals: "percent" } });
+        // Charge keeps the percent: taking a cut is its whole job.
+        const charge = nodeTypeDef("fx.withdraw");
+        expect(charge.fields.some((f) => "key" in f && f.key === "amountMode")).toBe(true);
+    });
+
+    it("gives the database its tables and the handbook its article picker", () => {
+        const db = nodeTypeDef("world.database");
+        expect(db.fields.some((f) => f.kind === "tables" && "key" in f && f.key === "tables")).toBe(true);
+        const handbook = nodeTypeDef("fx.handbook");
+        expect(
+            handbook.fields.some((f) => f.kind === "handbookArticle" && "key" in f && f.key === "articleId"),
+        ).toBe(true);
     });
 });

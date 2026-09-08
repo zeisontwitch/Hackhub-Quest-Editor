@@ -107,7 +107,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-05.r120";
+export const EDITOR_BUILD = "2026-09-08.r125";
 
 export interface CompiledFile {
     path: string;
@@ -361,9 +361,15 @@ export function computeWarnings(project: ProjectDocument): string[] {
                     }
                     break;
                 }
-                case "fx.handbook":
-                    warnings.push(`${q.name}: handbook nodes are not compiled yet.`);
+                case "fx.handbook": {
+                    const article = (n.data as { articleId?: string }).articleId?.trim();
+                    if (!article) {
+                        warnings.push(
+                            `${q.name}: an “Open handbook” node has no article, so it does nothing. Pick the article the player should land on.`,
+                        );
+                    }
                     break;
+                }
                 case "world.wifi":
                     warnings.push(
                         `${q.name}: the mod SDK (0.21.0) cannot create wireless networks yet — “Create Wi-Fi” exports as a regular router network the player reaches by IP, not through the in-game Wi-Fi list.`,
@@ -429,7 +435,7 @@ export function compileProject(project: ProjectDocument): CompileResult {
     const working: ProjectDocument = structuredClone(project);
 
     /*
-     * Fold "Seed files → a remote device" into the device that owns them.
+     * Fold "Place files → a remote device" into the device that owns them.
      * Runtime cannot do it — every `Files.*` call resolves against the current
      * session — so it happens here, while the device definition is still
      * reachable. See seedRemoteFiles.ts.
@@ -445,7 +451,7 @@ export function compileProject(project: ProjectDocument): CompileResult {
     for (const { quest, result } of seeded) {
         for (const { reason } of result.unplaced) {
             warnings.push(
-                `${quest.name}: a “Seed files” node could not be placed — ${reason}. ` +
+                `${quest.name}: a “Place files” node could not be placed — ${reason}. ` +
                     "Point it at a device this quest creates, or target the player's PC instead.",
             );
         }

@@ -1056,7 +1056,7 @@ describe("the contract hack template runs", () => {
 });
 
 /**
- * Files on the player's own PC. A "Seed files" node aimed at the player used to
+ * Files on the player's own PC. A "Place files" node aimed at the player used to
  * compile to nothing at all — the quest said it dropped a file and no file
  * appeared.
  */
@@ -1259,6 +1259,9 @@ describe("world nodes that used to be notes", () => {
             },
             remove: (id: string) => calls.push(`db-gone:${id}`),
         };
+        sdk.Handbook = {
+            open: (id?: string, category?: string) => calls.push(`handbook:${id ?? ""}:${category ?? ""}`),
+        };
         return sdk;
     }
 
@@ -1289,6 +1292,60 @@ describe("world nodes that used to be notes", () => {
         expect(calls).toContain("fw:10.0.0.1:22:false");
         q.OnAbandon();
         expect(calls).toContain("fw-gone:10.0.0.1:22");
+    });
+
+    it("opens the handbook at the named article", async () => {
+        const { calls } = await play([
+            { type: "fx.setData", data: { key: "page", value: "Router Fields Explained" } },
+            { type: "fx.handbook", data: { articleId: "{{data.page}}", category: "" } },
+        ]);
+        expect(calls).toContain("handbook:Router Fields Explained:");
+    });
+
+    it("passes a category when one is given", async () => {
+        const { calls } = await play([
+            { type: "fx.handbook", data: { articleId: "Port Forwarding: Start Here", category: "Networking" } },
+        ]);
+        expect(calls).toContain("handbook:Port Forwarding: Start Here:Networking");
+    });
+
+    it("opens nothing, and warns, when no article is named", async () => {
+        const { calls } = await play([
+            { type: "fx.handbook", data: { articleId: "", category: "" } },
+        ]);
+        expect(calls.filter((c) => c.startsWith("handbook:"))).toEqual([]);
+        const warnings = computeWarnings(
+            worldProject([{ type: "fx.handbook", data: { articleId: "", category: "" } }]),
+        );
+        expect(warnings.join("\n")).toMatch(/no article/);
+    });
+
+    it("fills tokens in the rule's addresses before sending it", async () => {
+        // A destination copied from "Same as the protected IP" arrives here
+        // as {{data.targetIp}} — the game must never see the braces.
+        const seen: { ip: string; rule: { source?: string; destination?: string } }[] = [];
+        const calls: string[] = [];
+        const sdk = worldSdk(calls);
+        sdk.Network.addFirewallRule = (ip: string, rule: { source?: string; destination?: string }) => {
+            seen.push({ ip, rule });
+        };
+        runMod(
+            compileProject(
+                worldProject([
+                    { type: "fx.setData", data: { key: "hq", value: "10.20.30.40" } },
+                    { type: "world.firewall", data: { ip: "{{data.hq}}", rule: { id: "r", allowed: false, port: 22, source: "{{data.hq}}", destination: "{{data.hq}}" }, removeOnComplete: false } },
+                ]),
+            ).files.find((f) => f.path === "dist/mod.js")!.content,
+            sdk,
+        );
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = q.CreateData();
+        q.OnStart();
+        await settle();
+        expect(seen).toHaveLength(1);
+        expect(seen[0].ip).toBe("10.20.30.40");
+        expect(seen[0].rule.source).toBe("10.20.30.40");
+        expect(seen[0].rule.destination).toBe("10.20.30.40");
     });
 
     it("opens, closes, adds and removes ports", async () => {

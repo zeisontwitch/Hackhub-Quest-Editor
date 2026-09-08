@@ -74,8 +74,10 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
     for (const node of nodes) {
         const def = nodeTypeDef(node.type);
 
-        // Sticky notes are annotations; nothing about them is broken.
-        if (node.type === "flow.note" || node.type === "layout.group") continue;
+        // Sticky notes, groups and story beats are planning furniture; nothing
+        // about them is broken. (Beats are wireable pass-throughs, stripped
+        // from the export — reachability through them is unaffected.)
+        if (node.type === "flow.note" || node.type === "layout.group" || node.type === "flow.beat") continue;
 
         const wiredOut = (outgoing.get(node.id) ?? []).length;
 

@@ -120,13 +120,23 @@ export function groupedEvents(): { group: string; label: string; events: Catalog
 }
 
 /**
- * Human label for an event, e.g. `Terminal.NmapScan` → `Nmap scan`.
+ * Human-readable event name, e.g. `Metasploit.Meterpreter.Connected` →
+ * `Metasploit: Meterpreter connected`.
  *
- * The namespace is dropped because the picker already groups events by it.
+ * The namespace stays — it says which part of the game fires — and the tail
+ * is split on camelCase with only the first word keeping its capitals, so
+ * acronyms (`SSH`, `FTP`) survive while `Connected` reads as `connected`.
+ * Single-segment names just get their words split (`NetworkPacketTransfer` →
+ * `Network packet transfer`). Stored values are always the raw id; this is
+ * display only.
  */
-export function eventLabel(name: string): string {
-    const last = name.split(".").pop() ?? name;
-    const words = last.replace(/([a-z0-9])([A-Z])/g, "$1 $2").trim().toLowerCase();
-    if (!words) return name;
-    return words.charAt(0).toUpperCase() + words.slice(1);
+export function humanEventName(name: string): string {
+    const parts = name.split(".").filter((p) => p.length > 0);
+    if (parts.length === 0) return name;
+    const split = (s: string) => s.replace(/([a-z0-9])([A-Z])/g, "$1 $2").trim().split(/\s+/);
+    const sentence = (words: string[]) =>
+        [words[0], ...words.slice(1).map((w) => w.toLowerCase())].join(" ");
+    if (parts.length === 1) return sentence(split(parts[0]));
+    const [ns, ...tail] = parts;
+    return `${ns}: ${sentence(tail.flatMap(split))}`;
 }

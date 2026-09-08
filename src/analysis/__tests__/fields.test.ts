@@ -72,7 +72,7 @@ describe("fieldWarnings", () => {
         expect(warning!.detail).toMatch(/No machine set/);
     });
 
-    it("flags device-targeted Seed files with no network as blocking", () => {
+    it("flags device-targeted Place files with no network as blocking", () => {
         const files = makeNode("world.files", { x: 0, y: 0 }, { target: "device", ip: "45.33.32.156", files: [file("ledger.txt")] });
         const quest = questWith(files);
         const warning = fieldWarnings(quest, files).find((w) => w.path === "ip");
@@ -81,7 +81,7 @@ describe("fieldWarnings", () => {
         expect(warning!.nextStep).toMatch(/Create network/i);
     });
 
-    it("flags device-targeted Seed files with no network even when the address is blank", () => {
+    it("flags device-targeted Place files with no network even when the address is blank", () => {
         const files = makeNode("world.files", { x: 0, y: 0 }, { target: "device", ip: "", files: [file("ledger.txt")] });
         const quest = questWith(files);
         const warning = fieldWarnings(quest, files).find((w) => w.path === "ip");
@@ -89,13 +89,13 @@ describe("fieldWarnings", () => {
         expect(warning!.nextStep).toMatch(/Create network/i);
     });
 
-    it("stays quiet on device-targeted Seed files with nothing to place", () => {
+    it("stays quiet on device-targeted Place files with nothing to place", () => {
         const files = makeNode("world.files", { x: 0, y: 0 }, { target: "device", ip: "45.33.32.156", files: [] });
         const quest = questWith(files);
         expect(fieldWarnings(quest, files)).toEqual([]);
     });
 
-    it("does not warn on a player-targeted Seed files", () => {
+    it("does not warn on a player-targeted Place files", () => {
         const files = makeNode("world.files", { x: 0, y: 0 }, { target: "player", ip: "", files: [] });
         const quest = questWith(files);
         expect(fieldWarnings(quest, files)).toEqual([]);

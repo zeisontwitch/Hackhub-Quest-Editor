@@ -17,6 +17,11 @@ import { ConditionsEditor } from "./ConditionsEditor";
 import { DeviceEditor, DeviceListEditor } from "./DeviceTree";
 import { EventPicker } from "./EventPicker";
 import { ListEditor } from "./ListEditor";
+import { HANDBOOK_ARTICLES } from "@/schema/handbookArticles";
+import { SelectOrCustomInput } from "./SelectOrCustom";
+import { TablesEditor } from "./TablesEditor";
+import { TokenTextInput } from "./TokenInsert";
+import { listTokenSuggestions } from "./tokenSuggestions";
 import {
     FieldShell,
     NumberInput,
@@ -76,6 +81,9 @@ export function Field({
     }
 
     if (def.kind === "section") {
+        // A section with `path` addresses its children under a nested record
+        // (the firewall node's single rule); without one they share the parent.
+        const childBase = def.path ? (basePath ? `${basePath}.${def.path}` : def.path) : basePath;
         return (
             <fieldset className="my-1 rounded-md border border-line/70 py-0.5">
                 <legend className="ml-2 px-1 text-[10px] font-semibold tracking-wider text-ink-4 uppercase">
@@ -86,7 +94,7 @@ export function Field({
                         key={"key" in child ? child.key : `${i}-${child.kind}`}
                         def={child}
                         nodeId={nodeId}
-                        basePath={basePath}
+                        basePath={childBase}
                     />
                 ))}
             </fieldset>
@@ -129,13 +137,24 @@ export function Field({
         case "text":
             return (
                 <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
-                    <TextInput
-                        ariaLabel={def.label}
-                        value={asString(raw)}
-                        onChange={write}
-                        placeholder={def.placeholder}
-                        mono={def.mono}
-                    />
+                    {def.tokens ? (
+                        <TokenTextInput
+                            ariaLabel={def.label}
+                            value={asString(raw)}
+                            onChange={write}
+                            placeholder={def.placeholder}
+                            mono={def.mono}
+                            suggestions={listTokenSuggestions(quest, nodeId)}
+                        />
+                    ) : (
+                        <TextInput
+                            ariaLabel={def.label}
+                            value={asString(raw)}
+                            onChange={write}
+                            placeholder={def.placeholder}
+                            mono={def.mono}
+                        />
+                    )}
                 </FieldShell>
             );
 
@@ -155,14 +174,27 @@ export function Field({
         case "textarea":
             return (
                 <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
-                    <TextArea
-                        ariaLabel={def.label}
-                        value={asString(raw)}
-                        onChange={write}
-                        placeholder={def.placeholder}
-                        mono={def.mono}
-                        rows={def.rows ?? 3}
-                    />
+                    {def.tokens ? (
+                        <TokenTextInput
+                            ariaLabel={def.label}
+                            value={asString(raw)}
+                            onChange={write}
+                            placeholder={def.placeholder}
+                            mono={def.mono}
+                            multiline
+                            rows={def.rows ?? 3}
+                            suggestions={listTokenSuggestions(quest, nodeId)}
+                        />
+                    ) : (
+                        <TextArea
+                            ariaLabel={def.label}
+                            value={asString(raw)}
+                            onChange={write}
+                            placeholder={def.placeholder}
+                            mono={def.mono}
+                            rows={def.rows ?? 3}
+                        />
+                    )}
                 </FieldShell>
             );
 
@@ -254,6 +286,48 @@ export function Field({
                 </FieldShell>
             );
 
+        case "selectOrCustom": {
+            const sameValue = def.sameAs
+                ? resolveSameAs(node.data, basePath, def.sameAs.fromKey)
+                : undefined;
+            return (
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
+                    <SelectOrCustomInput
+                        ariaLabel={def.label}
+                        value={asString(raw)}
+                        onChange={(v) => write(v)}
+                        options={def.options}
+                        sameAsLabel={def.sameAs?.label}
+                        sameAsValue={sameValue}
+                        placeholder={def.placeholder}
+                        mono={def.mono}
+                        tokenSuggestions={def.tokens ? listTokenSuggestions(quest, nodeId) : undefined}
+                    />
+                </FieldShell>
+            );
+        }
+
+        case "tables":
+            return (
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
+                    <TablesEditor value={asArray(raw)} onChange={(next) => write(next)} />
+                </FieldShell>
+            );
+
+        case "handbookArticle":
+            return (
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
+                    <SelectOrCustomInput
+                        ariaLabel={def.label}
+                        value={asString(raw)}
+                        onChange={(v) => write(v)}
+                        options={HANDBOOK_ARTICLES.map((a) => ({ value: a.id, label: a.title }))}
+                        placeholder="Article id"
+                        mono
+                    />
+                </FieldShell>
+            );
+
         case "event":
             return (
                 <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
@@ -302,6 +376,24 @@ export function Field({
             return <NoValue label={String(exhaustive)} />;
         }
     }
+}
+
+/**
+ * Reads the field a `sameAs` choice copies. A leading "/" addresses the node
+ * root (the firewall rule's "/ip"); otherwise the row is tried first so a
+ * row-local key wins, then the root.
+ */
+function resolveSameAs(data: unknown, basePath: string, fromKey: string): string {
+    const read = (path: string) => {
+        const v = getPath(data, path);
+        return v === undefined || v === null ? "" : String(v);
+    };
+    if (fromKey.startsWith("/")) return read(fromKey.slice(1));
+    if (basePath) {
+        const scoped = getPath(data, `${basePath}.${fromKey}`);
+        if (scoped !== undefined && scoped !== null) return String(scoped);
+    }
+    return read(fromKey);
 }
 
 function NoValue({ label }: { label?: ReactNode }) {

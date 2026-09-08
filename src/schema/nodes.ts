@@ -463,7 +463,9 @@ export const RandomPickNodeDataSchema = z.object({
  */
 export const SequenceStepSchema = z.object({
     id: z.string(),
-    label: z.string().default("Step"),
+    /* Blank falls back to the step number wherever the label shows, so an
+       unnamed step still reads as "1", "2", ... */
+    label: z.string().default(""),
     /** Pause before this output fires, in milliseconds. */
     delayMs: z.number().min(0).default(0),
 });

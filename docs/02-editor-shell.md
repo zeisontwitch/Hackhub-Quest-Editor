@@ -1167,10 +1167,10 @@ directions: paid, and not paid.
    dead-ended the trail at step two. Vulnerabilities move inside the domain,
    where the SDK actually keeps them.
 3. **There was no way to put a file on a remote machine.** `mapDevice` dropped a
-   user's `files` (and `acceptReverseTCP`, `online`, `email`), and a “Seed files”
+   user's `files` (and `acceptReverseTCP`, `online`, `email`), and a “Place files”
    node compiled to nothing at all. Now: user files mount in that user's home,
    root files mount at `/`, editor ids are stripped and `locked` becomes the
-   engine's `readonly`; a “Seed files” node aimed at **the player's own PC**
+   engine's `readonly`; a “Place files” node aimed at **the player's own PC**
    compiles to `Files.createTree`, and one aimed at a device says so plainly in
    the export notes instead of pretending.
 
@@ -1270,7 +1270,7 @@ to their opposite (an opened port closes, an added port is removed) only when th
 author asks for it.
 
 The remaining honest warnings: Wi-Fi creation (no SDK), handbook nodes (not
-compiled), remote-device “Seed files” (belongs in the device tree), and a port or
+compiled), remote-device “Place files” (belongs in the device tree), and a port or
 firewall node with no device IP, which now says so instead of being silent.
 
 ### A note on sources

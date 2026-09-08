@@ -132,6 +132,28 @@ describe("analyseGraph", () => {
         expect(analyseGraph([note], []).issues).toEqual([]);
     });
 
+    it("never calls an unwired story beat unreachable", () => {
+        // Beats are planning furniture: stripped from the export, so there is
+        // nothing broken about one sitting alone waiting to be wired.
+        const beat = node("flow.beat", { title: "The Approach" });
+        const analysis = analyseGraph([beat], []);
+        expect(analysis.issues.filter((i) => i.nodeId === beat.id)).toEqual([]);
+    });
+
+    it("still reaches through a wired story beat", () => {
+        // Silence must not mean invisibility: flow passes through a beat, so
+        // what follows it stays reachable.
+        const claim = node("entry.start");
+        const beat = node("flow.beat", { title: "The Approach" });
+        const notify = node("fx.notify");
+        const analysis = analyseGraph(
+            [claim, beat, notify],
+            [edge(claim, "out", beat, "in"), edge(beat, "out", notify, "in")],
+        );
+        expect(analysis.issues.filter((i) => i.label === "Unreachable")).toEqual([]);
+        expect(analysis.reachable.has(notify.id)).toBe(true);
+    });
+
     it("finds nothing wrong with any shipped quest template", () => {
         for (const template of TEMPLATES.filter((t) => t.difficulty !== "Reference")) {
             for (const quest of template.build().quests) {

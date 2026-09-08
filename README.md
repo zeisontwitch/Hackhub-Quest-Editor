@@ -37,51 +37,50 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 | # | Item | Notes |
 |---|---|---|
 | 5 | **Settings page** | The wire-physics dials currently live in the debug panel, which is a developer tool. They — and the snap/animation/physics toggles — deserve a proper home an author can find. |
-| 6 | "Contact-driven story" template | Phone brief → Kisscord drip gated on objectives → WeeChat timed to a beat. |
-| 7 | "Branching consequence" template | A choice that changes which ending the player gets. |
+| 6 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
+| 7 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. |
 
 ### Known limitations (not bugs)
 
 | Item | Why |
 |---|---|
 | No ctrl+drag to deselect | Three rounds (r93–r95) failed to make it work in a real browser and it was dropped as not worth the cost. React Flow sends no change events for a box over already-selected nodes, and the geometry workaround needed a store subscription firing every frame. **Ctrl+click** to deselect works. |
-| No Wi-Fi networks | SDK 0.21.0 has no wireless API. "Create Wi-Fi" exports as a router network reachable by IP. |
+| No Wi-Fi networks (node hidden) | SDK 0.21.0 has no wireless API. `world.wifi` is hidden from the palette but kept in the schema and compiler for forward-compat; Cold Storage models wireless as a router network. |
 | No Twotter | Removed in r31: the SDK declares it but this build does not honour it. Revisit if a newer build ships it. |
-| Handbook nodes are not compiled | Declared in the editor, no export path yet. |
 | No log-cleaning node | Entirely engine-side: the game logs connections on the machine, and the player wipes them from its own UI. |
 
 ### Done recently
 
 | Round | Item |
 |---|---|
-| r115 | **The released wire now winds home like a vacuum-cleaner cable**, and waits properly while the node search is open. Zeis's description was much clearer than my "pending" model: the wire should freeze on release, then either snap into a placed node or retract to its origin on an easeOutCubic ramp with a fade. The old ghost interpolated its sag to zero but left both endpoints where they were, so it dissolved in place rather than travelling. Three endings now behave differently: **held** while the search is open, **cleared** when a node is placed (the real edge takes over), **retracted** when the search is dismissed. Retraction and fade are separate dials, since the travel should carry the eye and the fade should stay out of its way. Zeis's tuned numbers are now the defaults — damping ratio **0.19**, far springier than my 0.75 guess. |
-| r114 | **The ghost was never rendering, and the wire had no swing.** Both found by probing the real DOM rather than reasoning. (1) `.react-flow__edges` is a plain `<div>` — React Flow gives every edge its own `<svg>` child — so the ghost's bare `<path>` was created, kept in the DOM and never painted. That is exactly QA's "log says the ghost fired, screen shows nothing". It now brings its own `<svg>` wrapper. (2) The sag was a single scalar pointing straight down, so dragging sideways produced no swing: a hanging rope, never a pendulum. The midpoint now carries a horizontal offset that cursor motion throws and the same spring pulls back, scaled by slack so it fades as the wire pulls taut. The throw needed a **swing of 12, not 1** — against a stiffness of 520 a value of 0.9 peaked at 2px of travel, real and completely invisible. |
-| r113 | **With physics off, the wire froze a few pixels out of its socket.** Caught by the new debug panel's event log on its first outing. r108 removed the `d` prop so React could not overwrite the physics loop — correct — but with physics *off* there is no loop, and the off-path painted once and then cleared its target, so nothing redrew the wire for the rest of the drag. "No spring" now means a straight wire that still tracks the pointer, not a frozen one, and still schedules no frames. |
-| r112 | **Debug panel** — a *Debug* toggle in the canvas toolbar. Built because the last several rounds shared a shape: something upstream silently refused the feature, the UI looked identical either way, and the only way to find out was Zeis pasting console output. It shows the **build stamp** (a stale bundle looks exactly like a broken feature — and the stamp had been stuck at r88 for 24 rounds), whether physics is **allowed and which switch refused it**, live **counters and FPS** for the loop, a **recent-event log**, and **sliders for every spring number** so feel can be tuned in the browser instead of round-tripping guesses through me. Costs nothing while closed: no subscription, no timer, no render; the event log is a fixed 60-entry ring, and frame counting is coalesced so the panel cannot become the performance problem it exists to find. |
-| r111 | **Tuned the wire, and stopped it vanishing into the node search.** QA: the wire felt "too floaty" and disappeared outright when dropped on empty canvas. Floatiness was low natural frequency rather than shallow sag — at `k=180` the spring took ~0.44s to settle, which reads as weightless — so stiffness and damping rose together (520/34) to roughly halve that while holding the damping ratio near 0.75, keeping the bounce. Sag deepened to 115 over a 560px taut distance. The vanishing was my own r108 decision: I deferred the snap-back while the search was open, reasoning the wire was "pending", but React Flow unmounts the connection line the instant the pointer lifts, so deferring meant it simply blinked out. The ghost is ~200ms and now plays immediately, recoiling to its socket while the search opens. |
-| r110 | **The physics was switched off, by a gate nobody asked for.** The console said `motionAllowed = false` — the loop was refused before it ever started. Two causes, both mine. (1) I had added `prefers-reduced-motion` as a silent third gate, unprompted: an author with OS animations disabled got a toggle that did nothing and explained nothing, even after deliberately switching physics *on*. The preference now picks the **default** and never overrides an explicit choice, which is what the visible toggle is for. (2) The button read "Plain wires", which states the current mode but reads just as naturally as an action that will *make* them plain — QA tested a full round with physics off, believing it was on. It now reads **"Springy wires: on/off"** with a lit dot. |
-| r108 | **Wire physics actually runs now.** r107 shipped it dead, and every unit test passed: the held wire's `<path>` carried a `d` prop, so React rewrote it to the straight bezier on each pointer move and wiped the loop's write — React winning sixty times a second. Nothing simulated a re-render, so nothing caught it. The attribute now has exactly **one writer**: the ref paints the first frame, the loop owns it after. A second bug hid behind it — the loop parks itself once the spring settles (what makes a still wire free), but the ref only fires on mount, so nothing restarted it and the wire froze mid-drag; a pointer move now wakes it. Also, on Zeis's question: dropping a wire on empty canvas opens the node search, and the wire is **pending, not cancelled**, so the snap-back is deferred — discarded if a node is chosen (it arrives connected), played if the search is dismissed. |
-| r107 | **Wire physics** (roadmap 5; architecture in `docs/r107-wire-physics-plan.md`). A wire dragged off a socket now hangs, bounces and pulls straight as the span grows, and leaves a ghost that snaps back and fades on release. A damped spring on a single sag scalar rather than a Verlet rope — the behaviour is one degree of freedom, and a spring gives the bounce for free while staying stable. The loop writes one `d` attribute on one `<path>` inside React Flow's transformed viewport: no React state, no store write, no custom property, nothing above the canvas (r42). It self-terminates once the spring settles, so a held-but-still wire costs nothing, and cursor coordinates reach it through a ref so the pointer never re-renders the canvas. New **Springy wires / Plain wires** toggle, on Zeis's request, alongside the wire-motion master switch and `prefers-reduced-motion` — any of the three off means the wire is drawn straight once and no loop ever starts. |
-| r106 | **In-app colour picker** (roadmap 5). `<input type="color">` handed the author whatever dialog the OS provides — different size, language and shape per machine, drawn outside the editor's styling and impossible to test. Replaced with presets, hue/saturation/lightness sliders and a hex field, all inside the app. Sliders rather than a hue wheel on purpose: a wheel needs pointer geometry, which means `getBoundingClientRect` and the measurement trap that cost four rounds on alignment, whereas a range input carries its own value and is keyboard-accessible for free. One real bug found by the tests: rounding HSL to integers shifts the colour — `#64748b` is lightness 46.863, and storing 47 returns `#65758b` — so an author who opened the picker and closed it would have silently changed their colour. HSL is kept as floats and only rounded for display. |
-| r105 | **Click away to dismiss the node search, and ctrl+click a socket to unplug it.** Pulling a wire loose opens the search, so clicking empty canvas has to mean "leave it unplugged" and dismiss both — instead the popover stayed up until it was focused and Escaped, because there was no click-outside handler at all (listed in the r102 plan, never built). The listener is capture-phase: the canvas stops propagation on its own pointerdown, so a bubbling one never hears a click on the pane. Ctrl+click (or Cmd+click) on a socket now clears whatever is plugged into it, including every wire fanning out of one output — capture-phase and `stopPropagation`, or React Flow would read the press as the start of a new connection. |
-| r104 | **Wire-drop-to-create, and cheaper pointer tracking.** Drag a wire off a socket into empty canvas and the search opens there, narrowed to node types that wire can actually plug into ("Connect to…"); pick one and it arrives already wired up. Separately, Zeis questioned the cost of pointer tracking: it was never a 60fps poll (`pointermove` is event-driven and silent at rest), but the real waste was a `getBoundingClientRect()` in the Shift+A handler forcing a synchronous layout on every press. His hitbox idea is what the browser already implements natively — `pointerenter`/`pointerleave` fire exactly once per boundary crossing — so the measurement is gone entirely, coordinates are two primitive writes instead of an object allocation, and the bounds test is now *more* correct: a manual rect counted the pointer as on-canvas while it hovered the inspector or a floating overlay. |
-| r103 | **Fixed Shift+A, which r102 shipped dead.** The handler required `wrapperRef.contains(event.target)` — but with nothing focused a keydown targets `<body>`, an *ancestor* of the canvas rather than a descendant, so the guard rejected every press. "Over the canvas" has to mean the pointer, not the focus: the last pointer position is tracked in a ref (a ref, not state — `pointermove` must never re-render the canvas) and Shift+A opens the search there, which also makes it open under the cursor like Blender rather than at a fixed point. Shipped untested in r102; now covered by four tests, verified against the original bug. |
-| r102 | **Right-click node search** (roadmap 5; design in `docs/r102-node-search-plan.md`). Right-click empty canvas — or press `Shift+A` — and a search popover opens at the pointer with the input already focused: type, arrow, Enter, and the node lands exactly where you clicked. Blender's model, where typing *is* the search with no separate mode to enter. Right-click still pans when you **drag** it; press-and-release within 4px counts as a click, which also let r92's `panOnDrag` restriction be lifted (the context-menu prevention was the actual fix there, not dropping button 2). Ranking puts a name match above a description match, so "mail" finds the Mail node rather than whatever mentions mail. Placement is **computed** from the click point and window size against known CSS constants — never measured — which is the r97–r100 lesson applied up front. |
-| r101 | **Split the arrange buttons into two groups.** Four lookalike buttons in one strip made it easy to press "Even across" while meaning "Row" — which is exactly what happened during r97–r100 QA, sending three rounds chasing a phantom. Aligning and spacing-out are now visually separate groups, and the tooltips lead with the verb: "Align: move the selected nodes onto one horizontal line" versus "Space out: equalise the gaps only. Does not move anything onto a line — use Row for that." (The three defects those rounds uncovered were all real and remain fixed.) |
-| r100 | **Stopped measuring the cards and started computing them** — Zeis's suggestion, and the right one. Reading sizes back had failed three rounds running: our own `measured` map was empty at click time, and React Flow's `nodeLookup` only carries sizes after its ResizeObserver has run. A missing size counts as zero, which silently turns "line up the centres" into "line up the top-left corners". The cards never needed measuring: width is the fixed `w-60`, height follows the same `minHeight` formula and 3-line summary cap the component renders with. New `nodeSize.ts` computes both, and `nodeSize.test.ts` asserts its constants against `GraphNode.tsx` so a layout change fails the build instead of quietly skewing alignment. New `alignReal.test.tsx` drives the real toolbar with **no faked geometry at all** — the case every previous test missed. |
+| Round | Item |
+|---|---|
+| r126 | **Template audit: three quests had stories that could not end.** First Contact never paid — its payment was wired to "On quest complete", which never fires with the defaults — and Byline/Cold Storage lost their closings the same way; all rewired to end from the last objective. Cold Storage's database had no tables for its own read-ledger trigger (seeded `lead_ledger`). Help Desk's client confirmed a file nobody sent (new `send-report` objective). Help Desk taught `ssh user@ip`; the handbook says `ssh -h user@ip`. New guards: a wired On-complete warns, and database rows are shaped as `{value, type}` for the engine. (Ledger has the same dead wiring — deferred per Zeis.) |
+| r125 | **Zeis's 14-item UX check, end to end** ([plan](docs/plans/r125-zeis-ux-check-fixes.md)): human event names with explanations, port presets, guided firewall addresses, Place-files rename, tag picker on every tag-taking box, database table editor, a working Open-handbook node, numbered sequence outputs, silent story beats. Fixed en route: the firewall rule was a list field over single-object data, so fresh nodes showed "None yet" for a rule they had. |
+| r124 | **Hookup warnings say which nodes to put where** ([plan](docs/plans/r124-actionable-hookup-warnings.md)). Every node issue carries a `nextStep`, shown in the inspector header and both canvas tooltips; field warnings gained empty-IP and seed-files placement checks. |
+| r123 | **Editor UX audit** ([plan](docs/plans/r123-editor-ux-audit.md)): field-level warnings (a red ⚠ beside the label, hovered for what's wrong + the next step) and a plain-language sweep under the "no mod-coding jargon" rule — the game's own vocabulary (`nmap`, `metasploit`, `{{data.targetIp}}`) stays. |
+| r122 | **Template rebuild complete.** Cold Storage and Bad Attachment built on Zeis's call to playtest rather than gate; module split (`kit.ts` + one module per template); all ten templates ship. |
+| r121 | **Template rebuild, the bulk of it**: the beginner tier (First Contact, The Byline, Cold Call) and the rebuilt Help Desk Leak land; the four legacy templates are deleted. |
+| r120 | **Remote file seeding**: "Place files" aimed at a device folded into nothing — it now lands in the device's owning user at build time, and says plainly when it can't place something. Template work also split into one module per template (the write-size limit kept biting). |
+| r119 | **Handbook gap analysis** ([plan](docs/plans/r119-handbook-gap-analysis.md)): Zeis's 4,102-line transcription of the in-game handbook, now the top authority for how a player acts. Settled phishing (the mod doesn't author the attachment — metasploit generates it), Suspicion, port forwarding, log paths; contradicted three r117 guesses. |
+| r118 | **Ledger fix**: `extraAccounts: false`, so the exploit lands the player as `aritter` instead of a guest — the one-line correction from the rebuild plan. |
+| r117 | **Template rebuild plan** ([plan](docs/plans/r117-template-rebuild-plan.md)): nine entries across three tiers (Beginner/Advanced/Expert), two website styles, the phishing flow, a multi-tool expert chain — plus the mechanical exploitability test, which corrected two claims the r116 audit got wrong. |
+| r116 | **Template audit, findings only** ([plan](docs/plans/r116-template-audit.md)): three templates ask the player to break in and were never given the account setup that allows it; `investigation` ships two nodes that compile to nothing. Plus a re-read of what each template is for. |
 
-Older rounds are in the build log at
-[`docs/02-editor-shell.md`](docs/02-editor-shell.md), which is kept as an
-archive — the bug histories in it explain several of the rules the code now
-follows.
+Rounds 100–115 are archived at
+[`docs/archive/rounds-100-115.md`](docs/archive/rounds-100-115.md). Rounds 1–74
+are in the build log at [`docs/02-editor-shell.md`](docs/02-editor-shell.md),
+which is kept as an archive — the bug histories in it explain several of the
+rules the code now follows.
 
 ### Build status
 
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-05.r115`: **1,008 tests** across 38
-files, **31 node types** in 9 categories, **8 templates**, **92 game events**,
+Counted from the code at build `2026-09-08.r126`: **1,166 tests** across 55
+files, **32 node types** in 9 categories (31 in the palette — Wi-Fi is hidden),
+**10 templates**, **92 game events**,
 against `@hotbunny/hackhub-content-sdk@0.21.0`.
 
 ### Documentation
@@ -96,6 +95,8 @@ against `@hotbunny/hackhub-content-sdk@0.21.0`.
 | [`docs/04-engine-bug-quest-completion.md`](docs/04-engine-bug-quest-completion.md) | The engine bug that stops a mod quest completing. |
 | [`docs/05-bug-report-for-hotbunny.md`](docs/05-bug-report-for-hotbunny.md) | The consolidated report sent to the game's developer. |
 | [`docs/plans/`](docs/plans/) | Per-round working notes: the evidence behind specific fixes. |
+| [`docs/In-Game-Handbook.md`](docs/In-Game-Handbook.md) | Zeis's transcription of the game's handbook — the top authority for how a player acts. |
+| [`docs/archive/`](docs/archive/) | Retired roadmap history (rounds 100–115). |
 
 ---
 
@@ -125,7 +126,7 @@ Only relevant to coders, if you just want to use the tool you can ignore this.
 
 ```bash
 npm run typecheck    # tsc --noEmit
-npm test             # 1,008 tests (vitest)
+npm test             # 1,166 tests (vitest)
 npm run build        # typecheck + vite build → dist/
 ```
 
@@ -204,7 +205,15 @@ foundation for everything that follows. The three findings that shape the whole 
 Launch.bat                          # Windows one-click launcher
 docs/
   01-analysis-and-architecture.md   # Step 1 — schema, stack, architecture
-  02-editor-shell.md                # Steps 2–4 — contracts + round-by-round addenda
+  02-editor-shell.md                # Steps 2–4 — contracts + build log, rounds 1–74
+  03-questions-for-the-developers.md# Open questions about the game and SDK
+  04-engine-bug-quest-completion.md # The freeze-on-complete engine bug
+  05-bug-report-for-hotbunny.md     # Consolidated report sent to the developer
+  06-how-it-works-today.md          # How the editor is built as it stands
+  HANDOFF.md                        # Current state, and what is next
+  In-Game-Handbook.md               # Zeis's transcription of the game's handbook
+  plans/                            # Per-round working notes (the evidence)
+  archive/                          # Retired roadmap history
 reference/
   generate-event-catalogue.mjs      # parses the SDK's index.d.ts → event palette data
   hackhub-events.json               # all 92 events with verified payloads (generated)
@@ -217,6 +226,7 @@ src/
     events.ts                       #   the 92-event catalogue, with real payloads
     migrate.ts                      #   upgrades old drafts (e.g. the 4 comms node types
                                     #   that became one general dialogue node)
+  analysis/                         # node + field warnings (issues with next steps)
   store/                            # Zustand + Immer: undo/redo, autosave
   editor/
     canvas/                         # React Flow surface, typed nodes and edges

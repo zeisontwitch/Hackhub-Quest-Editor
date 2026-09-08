@@ -198,6 +198,10 @@ Zeis asked for these next, in order:
    red-triangle-exclamation that explains *in detail* what is wrong, what is
    missing, and which nodes to put where to fix it. Currently issues surface as
    terse badges; he wants them actionable.
+   — **Done in r124** (`docs/plans/r124-actionable-hookup-warnings.md`):
+   every node issue carries a `nextStep`, shown in the inspector header and
+   both canvas tooltips; field warnings gained empty-IP and compiler-mirrored
+   seed-files placement checks.
 3. **A settings page** (roadmap item 5) — the wire-physics dials live in the
    debug panel, which is a developer tool. Those and the snap/animation/physics
    toggles deserve a home an author can find.

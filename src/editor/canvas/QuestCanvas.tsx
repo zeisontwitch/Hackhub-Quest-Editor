@@ -59,7 +59,7 @@ import {
     soleMatchingInput,
     soleMatchingOutput,
 } from "./wiring";
-import { analyseGraph, summariseIssues } from "@/analysis/graph";
+import { analyseGraph, summariseIssues, type GraphIssue } from "@/analysis/graph";
 import { Icon } from "@/components/Icon";
 import { useEditor, selectActiveQuest } from "@/store/editor";
 import { categoryOf, nodeTypeDef, sourcesOf, CATEGORY_HEX } from "@/schema/registry";
@@ -156,7 +156,7 @@ function CanvasInner() {
         [quest],
     );
     const issuesByNode = useMemo(() => {
-        const map = new Map<string, { label: string; detail: string; severity: "warn" | "danger" }>();
+        const map = new Map<string, GraphIssue>();
         for (const issue of analysis.issues) {
             // Worst issue wins if a node has several.
             const existing = map.get(issue.nodeId);
@@ -1349,7 +1349,11 @@ function CanvasInner() {
                               ? "border-warn/40 bg-warn/10 text-warn"
                               : "border-line bg-surface/90 text-ink-4")
                     }
-                    title={analysis.issues.map((i) => i.detail).join("\n\n") || "Nothing looks wrong."}
+                    title={
+                        analysis.issues
+                            .map((i) => `${i.label} — ${i.detail} Next step: ${i.nextStep}`)
+                            .join("\n\n") || "Nothing looks wrong."
+                    }
                 >
                     {summariseIssues(analysis)}
                 </span>

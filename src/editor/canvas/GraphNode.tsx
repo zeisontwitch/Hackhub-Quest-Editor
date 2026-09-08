@@ -11,13 +11,14 @@ import { categoryOf, nodeTypeDef, sourcesOf } from "@/schema/registry";
 import { selectActiveQuest, useEditor } from "@/store/editor";
 import { HANDLE_STYLE, type EdgeKind } from "@/schema/edges";
 import type { NodeDoc } from "@/schema/nodes";
+import type { GraphIssue } from "@/analysis/graph";
 import { summarize } from "./summarize";
 import { edgesAtHandle } from "./wiring";
 
 export interface GraphNodeData extends Record<string, unknown> {
     doc: NodeDoc;
     /** The most serious problem the analysis found with this node, if any. */
-    issue?: { label: string; detail: string; severity: "warn" | "danger" };
+    issue?: GraphIssue;
 }
 
 export type GraphRFNode = Node<GraphNodeData, "qe">;
@@ -366,7 +367,7 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                 wrong" to "here is what and why" */}
             {issue && (
                 <span
-                    title={issue.detail}
+                    title={`${issue.detail} Next step: ${issue.nextStep}`}
                     className={
                         "absolute -top-2 -right-2 z-10 flex items-center gap-1 rounded-full border px-1.5 py-0.5 " +
                         "text-[9.5px] font-semibold tracking-wide uppercase shadow-node " +

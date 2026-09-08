@@ -198,9 +198,11 @@ describe("editor shell", () => {
 
         await user.click(screen.getByRole("button", { name: /^Objective$/i }));
 
-        // The badge names the problem; the node itself carries the explanation.
+        // The badge names the problem on the card; the inspector header repeats
+        // it with the next step, where the author is editing.
         expect(await screen.findByText(/1 blocking/i)).toBeInTheDocument();
-        expect(screen.getByText("No trigger")).toBeInTheDocument();
+        expect(screen.getAllByText("No trigger")).toHaveLength(2);
+        expect(screen.getByText(/Next step:/)).toBeInTheDocument();
     });
 
     it("persists the draft to localStorage", async () => {

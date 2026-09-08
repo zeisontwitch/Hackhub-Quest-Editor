@@ -17,6 +17,12 @@ export interface GraphIssue {
     label: string;
     /** Full explanation, used by the health panel and export report. */
     detail: string;
+    /**
+     * The concrete next step, in game terms ("which nodes to put where").
+     * Required: a warning that says what is wrong without saying how to fix
+     * it is a dead end for a non-coder (r124).
+     */
+    nextStep: string;
     severity: "warn" | "danger";
 }
 
@@ -71,7 +77,6 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
         // Sticky notes are annotations; nothing about them is broken.
         if (node.type === "flow.note" || node.type === "layout.group") continue;
 
-        const wiredIn = (incoming.get(node.id) ?? []).length;
         const wiredOut = (outgoing.get(node.id) ?? []).length;
 
         // An objective nothing can ever complete.
@@ -83,6 +88,8 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
                     label: "No trigger",
                     detail:
                         "Nothing completes this objective. Wire a “When event” node into its trigger socket, or the player can never finish the quest.",
+                    nextStep:
+                        "Add a “When event” node from Triggers, pick the game event that means the player did it, and wire its “When” socket into this objective's “Trigger” socket.",
                     severity: "danger",
                 });
             }
@@ -111,6 +118,12 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
                         node.type === "flow.sequence"
                             ? `The “${names}” output goes nowhere, so that step of the sequence does nothing. Wire it up or remove the output.`
                             : `The “${names}” outcome goes nowhere, so the quest stalls if the player takes it.`,
+                    nextStep:
+                        node.type === "flow.sequence"
+                            ? `Wire the “${names}” step to the node that should run at that point, or remove the step.`
+                            : node.type === "reply.input"
+                              ? `Wire the “${names}” answer to the node that should run next.`
+                              : `Wire the “${names}” outcome to the node that should run down that path.`,
                     severity: "warn",
                 });
             }
@@ -123,19 +136,16 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
                 label: "Unreachable",
                 detail:
                     "Nothing leads to this node. Wire it to the chain that should run it — nodes do nothing until something points at them.",
+                nextStep:
+                    "Drag a wire from the node that should run it into this node's input — usually the last node of your “Quest start” chain.",
                 severity: "warn",
             });
         }
 
-        // A non-root with no inputs at all is almost certainly a mistake.
-        if (!isRoot(node.type) && wiredIn === 0 && reachable.has(node.id)) {
-            issues.push({
-                nodeId: node.id,
-                label: "Unwired",
-                detail: "This node has no input socket connected, so nothing will ever run it.",
-                severity: "warn",
-            });
-        }
+        // There used to be an "Unwired" issue here (non-root, reachable, no
+        // inputs). It could never fire: a non-root only becomes reachable by
+        // following an edge that targets it, so it always has an input.
+        // Removed in r124 rather than kept as a guard no test can exercise.
 
         // A lifecycle entry point with nothing after it is dead weight.
         if (ENTRY_TYPES.has(node.type) && wiredOut === 0) {
@@ -143,6 +153,10 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
                 nodeId: node.id,
                 label: "Empty",
                 detail: `Nothing is wired to “${def.label}”. That is fine if you do not need it — delete the node to clear this.`,
+                nextStep:
+                    node.type === "entry.start"
+                        ? "Wire the nodes that should run when the quest is claimed to its output — usually your briefing mail first — or delete it if you don't need it."
+                        : `Wire the nodes that should run at “${def.label}” to its output, or delete it if you don't need it.`,
                 severity: "warn",
             });
         }

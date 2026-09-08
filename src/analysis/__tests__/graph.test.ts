@@ -143,6 +143,81 @@ describe("analyseGraph", () => {
             }
         }
     });
+
+    it("gives every issue a concrete next step", () => {
+        const claim = node("entry.start");
+        const stranded = node("fx.notify");
+        const objective = node("objective");
+        const branch = node("flow.branch");
+        const yes = node("fx.notify");
+
+        const analysis = analyseGraph(
+            [claim, stranded, objective, branch, yes],
+            [edge(branch, "true", yes, "in")],
+        );
+
+        // Unreachable, No trigger, Dead end, Empty — one of each flavour.
+        expect(analysis.issues.length).toBeGreaterThanOrEqual(4);
+        for (const issue of analysis.issues) {
+            expect(issue.nextStep.trim().length, issue.label).toBeGreaterThan(0);
+        }
+    });
+
+    it("gives every template issue a next step too", () => {
+        for (const template of TEMPLATES.filter((t) => t.difficulty !== "Reference")) {
+            for (const quest of template.build().quests) {
+                const analysis = analyseGraph(quest.graph.nodes, quest.graph.edges);
+                for (const issue of analysis.issues) {
+                    expect(
+                        issue.nextStep.trim().length,
+                        `${template.id}: ${issue.label}`,
+                    ).toBeGreaterThan(0);
+                }
+            }
+        }
+    });
+
+    it("tells the author which nodes to put where for an untriggered objective", () => {
+        const objective = node("objective");
+        const analysis = analyseGraph([objective], []);
+
+        const issue = analysis.issues.find((i) => i.nodeId === objective.id);
+        expect(issue?.nextStep).toMatch(/When event/);
+        expect(issue?.nextStep).toMatch(/Trigger/);
+    });
+
+    it("names the missing output in a dead-end next step", () => {
+        const trigger = node("trigger.event");
+        const branch = node("flow.branch");
+        const yes = node("fx.notify");
+
+        const analysis = analyseGraph(
+            [trigger, branch, yes],
+            [edge(trigger, "when", branch, "trigger"), edge(branch, "true", yes, "in")],
+        );
+
+        const deadEnd = analysis.issues.find((i) => i.label === "Dead end");
+        expect(deadEnd?.nextStep).toMatch(/“No”/);
+    });
+
+    it("points an empty Quest start at the briefing mail", () => {
+        const claim = node("entry.start");
+        const done = node("entry.complete");
+        const analysis = analyseGraph([claim, done], []);
+
+        expect(analysis.issues.find((i) => i.nodeId === claim.id)?.nextStep).toMatch(/briefing mail/);
+        const completeStep = analysis.issues.find((i) => i.nodeId === done.id)?.nextStep;
+        expect(completeStep).toMatch(/On quest complete/);
+        expect(completeStep).not.toMatch(/briefing mail/);
+    });
+
+    it("points a stranded node at the Quest start chain", () => {
+        const claim = node("entry.start");
+        const stranded = node("fx.notify");
+        const analysis = analyseGraph([claim, stranded], []);
+
+        expect(analysis.issues.find((i) => i.nodeId === stranded.id)?.nextStep).toMatch(/Quest start/);
+    });
 });
 
 describe("layeredLayout", () => {

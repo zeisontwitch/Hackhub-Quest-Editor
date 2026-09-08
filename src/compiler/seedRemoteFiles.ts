@@ -38,7 +38,7 @@ import type { NodeDoc } from "@/schema/nodes";
 import type { QuestDoc } from "@/schema/project";
 
 /** A `world.files` node's data, in the shape this module cares about. */
-interface SeedFilesData {
+export interface SeedFilesData {
     target?: string;
     ip?: string;
     parentPath?: string;
@@ -46,7 +46,7 @@ interface SeedFilesData {
 }
 
 /** A `world.network` / `world.wifi` node's data. */
-interface NetworkData {
+export interface NetworkData {
     device?: NetworkDevice;
     ipMode?: string;
 }
@@ -144,6 +144,50 @@ export interface SeedResult {
 }
 
 /**
+ * Where a seed node's files would land — shared by the compiler and the
+ * live field warnings, so the inspector flags exactly what export would drop
+ * (r124). One implementation, no drift: `seedRemoteFiles` and
+ * `analysis/fields.ts` both call `placementFor`.
+ */
+export type SeedPlacement =
+    | { ok: true; device: NetworkDevice; owner: NetworkUser; addresses: string[] }
+    | { ok: false; device: NetworkDevice | null; reason: string; addresses: string[] };
+
+/**
+ * The device (and owning user) a seed node resolves to, or why it cannot be
+ * placed. `addresses` lists every non-empty device address in the quest, for
+ * "did you mean" next steps.
+ */
+export function placementFor(
+    seed: SeedFilesData,
+    networks: { data: NetworkData }[],
+): SeedPlacement {
+    const all = networks.flatMap((n) => flatten(n.data.device));
+    const addresses = [...new Set(all.map((d) => String(d.ip ?? "").trim()).filter(Boolean))];
+    const device = deviceFor(seed, networks);
+    if (!device) {
+        return {
+            ok: false,
+            device: null,
+            reason: networks.length === 0
+                ? "this quest does not create a network, so there is no device to put the files on"
+                : "no device matches that address",
+            addresses,
+        };
+    }
+    const owner = ownerFor(device);
+    if (!owner) {
+        return {
+            ok: false,
+            device,
+            reason: "that device has no user account, and files mount under a user's home directory",
+            addresses,
+        };
+    }
+    return { ok: true, device, owner, addresses };
+}
+
+/**
  * Move device-targeted seed files onto their devices.
  *
  * Mutates the quest's device definitions, and reports which nodes were
@@ -166,27 +210,13 @@ export function seedRemoteFiles(quest: QuestDoc): SeedResult {
             continue;
         }
 
-        const device = deviceFor(data, networks);
-        if (!device) {
-            unplaced.push({
-                node,
-                reason: networks.length === 0
-                    ? "this quest does not create a network, so there is no device to put the files on"
-                    : "no device matches that address",
-            });
+        const placement = placementFor(data, networks);
+        if (!placement.ok) {
+            unplaced.push({ node, reason: placement.reason });
             continue;
         }
 
-        const owner = ownerFor(device);
-        if (!owner) {
-            unplaced.push({
-                node,
-                reason: "that device has no user account, and files mount under a user's home directory",
-            });
-            continue;
-        }
-
-        owner.files = [...(owner.files ?? []), ...nest(data.parentPath, data.files)];
+        placement.owner.files = [...(placement.owner.files ?? []), ...nest(data.parentPath, data.files)];
         absorbed.add(node.id);
     }
 

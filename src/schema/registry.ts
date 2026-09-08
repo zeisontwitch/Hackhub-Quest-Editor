@@ -99,15 +99,20 @@ export type FieldDef =
           mono?: boolean;
           /** Offer the token menu in the custom box. */
           tokens?: boolean;
-          /** Fixed choices. Anything else falls through to the custom box. */
-          options: readonly { value: string; label: string }[];
+          /**
+           * Fixed choices. Anything else falls through to the custom box.
+           * `meaning` explains a choice's stored value in words, for when the
+           * author meets it as free text (a custom box holding `*`).
+           */
+          options: readonly { value: string; label: string; meaning?: string }[];
           /**
            * An extra "same as …" choice that copies another field's current
            * value — a snapshot, not a live link. `fromKey` starting with
            * "/" reads from the node root (e.g. "/ip"); otherwise the row is
-           * tried first, then the root.
+           * tried first, then the root. While the other field is empty the
+           * choice is disabled, showing `emptyHint`.
            */
-          sameAs?: { label: string; fromKey: string };
+          sameAs?: { label: string; fromKey: string; emptyHint?: string };
           showWhen?: FieldShowWhen;
       }
     | { kind: "tables"; key: string; label: string; hint?: string }
@@ -237,7 +242,7 @@ function firewallRuleFields(sameAsProtected: boolean): FieldDef[] {
             hint: "Which machines the rule applies to: anywhere on the internet, or one machine you name.",
             mono: true,
             placeholder: "45.33.32.156",
-            options: [{ value: "*", label: "Anywhere" }],
+            options: [{ value: "*", label: "Anywhere", meaning: "matches every machine on the internet" }],
         },
         ...(sameAsProtected
             ? [
@@ -249,7 +254,11 @@ function firewallRuleFields(sameAsProtected: boolean): FieldDef[] {
                       mono: true,
                       placeholder: "45.33.32.156",
                       options: [],
-                      sameAs: { label: "Same as the protected IP", fromKey: "/ip" },
+                      sameAs: {
+                          label: "Same as the protected IP",
+                          fromKey: "/ip",
+                          emptyHint: "Same as the protected IP (set it first)",
+                      },
                   } as const,
               ]
             : [
@@ -376,7 +385,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         type: "entry.complete",
         category: "entry",
         label: "On quest complete",
-        blurb: "Runs once every objective is done. Rewards go here.",
+        blurb: "Only runs if the quest completes — with auto-complete off and no Complete button (the default) that never happens. End the story from the last objective instead.",
         icon: "check",
         targets: [],
         sources: [outFlow],
@@ -527,7 +536,13 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                 mono: true,
                 tokens: true,
                 placeholder: "45.33.32.156",
-                options: [{ value: TARGET_IP_TOKEN, label: "Random — the quest's network" }],
+                options: [
+                    {
+                        value: TARGET_IP_TOKEN,
+                        label: "Random — the quest's network",
+                        meaning: "the address the game gave your network",
+                    },
+                ],
             },
             {
                 kind: "section",
@@ -538,9 +553,11 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
             { kind: "toggle", key: "removeOnComplete", hint: "Drop the firewall when the quest ends so the machine is reachable afterwards.", label: "Remove when the quest ends" },
         ],
         create: () =>
+            /* Fresh nodes arrive working: the quest's own network, protected
+               from anywhere, with the destination already matching. */
             seed(FirewallNodeDataSchema, {
-                ip: "",
-                rule: { id: nanoid(8), allowed: false, port: 22, source: "*" },
+                ip: TARGET_IP_TOKEN,
+                rule: { id: nanoid(8), allowed: false, port: 22, source: "*", destination: TARGET_IP_TOKEN },
             }),
     },
 

@@ -1154,7 +1154,7 @@ describe("seeding files", () => {
  * flow features through shipped content.
  */
 describe("the dirhunter template runs", () => {
-    it("plays its closing scene in order once the file is taken", async () => {
+    it("plays its closing scene in order once the file is sent", async () => {
         const calls: string[] = [];
         const listeners: [string, (d: unknown) => void][] = [];
         const sdk = stubSdk(calls, listeners) as any;
@@ -1171,11 +1171,20 @@ describe("the dirhunter template runs", () => {
         q.OnObjectivesStart();
         await settle();
 
-        // Nothing has happened yet: the scene waits for the download.
+        // Nothing has happened yet: the scene waits for the delivery.
         expect(calls.some((c) => c.startsWith("pay:"))).toBe(false);
 
         for (const [event, cb] of listeners) {
             if (event === "Files.Transfer") cb({ type: "DOWNLOAD", file: { id: "f1", name: "abort-report.pdf" } });
+        }
+        await settle();
+
+        // Taking the file is not enough: she confirms receipt only once the
+        // player actually sends it.
+        expect(calls.some((c) => c.startsWith("pay:"))).toBe(false);
+
+        for (const [event, cb] of listeners) {
+            if (event === "Mail.Sent") cb({ to: "m.oyelaran@bcc-desk.net", subject: "the report" });
         }
         await settle();
 
@@ -1255,6 +1264,7 @@ describe("world nodes that used to be notes", () => {
         sdk.Database = {
             create: (def: { host: string; tables: Record<string, unknown[]> }) => {
                 calls.push(`db:${def.host}:${Object.keys(def.tables).join("+")}`);
+                calls.push(`db-cells:${JSON.stringify(def.tables)}`);
                 return "db-1";
             },
             remove: (id: string) => calls.push(`db-gone:${id}`),
@@ -1383,6 +1393,11 @@ describe("world nodes that used to be notes", () => {
             },
         ]);
         expect(calls).toContain("db:db.meridian-capital.net:employees+payments");
+        // Authors write plain values; the engine's cell shape is { value, type }.
+        const cells = calls.find((c) => c.startsWith("db-cells:"))!;
+        expect(JSON.parse(cells.slice("db-cells:".length)).employees).toEqual([
+            { name: { value: "A. Ritter", type: "string" }, role: { value: "compliance", type: "string" } },
+        ]);
         q.OnComplete();
         expect(calls).toContain("db-gone:db-1");
     });

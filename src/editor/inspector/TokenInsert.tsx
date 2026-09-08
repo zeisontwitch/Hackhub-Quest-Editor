@@ -8,6 +8,10 @@
  * into seconds under jsdom. A fixed panel in a portal, a backdrop for
  * outside-clicks, Escape to close — everything this picker needs, nothing
  * that spins.
+ *
+ * Scrolling never closes it: wheel-scrolls inside the panel just scroll the
+ * list, and page scrolls re-seat the panel under its button. Closing on
+ * scroll made the picker unusable the moment its list overflowed.
  */
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -38,16 +42,44 @@ export function TokenTextInput({
 }) {
     const ref = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
     const buttonRef = useRef<HTMLButtonElement | null>(null);
+    const panelRef = useRef<HTMLDivElement | null>(null);
     const [open, setOpen] = useState(false);
     const [panelPos, setPanelPos] = useState({ top: 0, right: 0 });
 
-    // Escape closes; any scroll re-seats a stale panel by closing it.
+    const seatPanel = () => {
+        if (!buttonRef.current) return;
+        const rect = buttonRef.current.getBoundingClientRect();
+        setPanelPos({
+            top: rect.bottom + 4,
+            right: Math.max(8, window.innerWidth - rect.right),
+        });
+    };
+
+    // Escape closes. Scrolls inside the panel are the list scrolling —
+    // ignore them. Anything else re-seats the panel under its button, so it
+    // follows the inspector instead of floating away from it.
     useEffect(() => {
         if (!open) return;
         const onKey = (e: KeyboardEvent) => {
             if (e.key === "Escape") setOpen(false);
         };
-        const onScroll = () => setOpen(false);
+        let queued = false;
+        const onScroll = (e: Event) => {
+            if (panelRef.current && e.target instanceof Node && panelRef.current.contains(e.target)) {
+                return;
+            }
+            if (queued) return;
+            queued = true;
+            if (typeof requestAnimationFrame !== "undefined") {
+                requestAnimationFrame(() => {
+                    queued = false;
+                    seatPanel();
+                });
+            } else {
+                queued = false;
+                seatPanel();
+            }
+        };
         document.addEventListener("keydown", onKey);
         document.addEventListener("scroll", onScroll, true);
         return () => {
@@ -57,13 +89,7 @@ export function TokenTextInput({
     }, [open ]);
 
     const toggle = () => {
-        if (!open && buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
-            setPanelPos({
-                top: rect.bottom + 4,
-                right: Math.max(8, window.innerWidth - rect.right),
-            });
-        }
+        if (!open) seatPanel();
         setOpen((o) => !o);
     };
 
@@ -134,6 +160,7 @@ export function TokenTextInput({
                             aria-hidden="true"
                         />
                         <div
+                            ref={panelRef}
                             role="group"
                             aria-label="Tags you can insert"
                             className="fixed z-50 max-h-72 w-72 overflow-y-auto rounded-md border border-line bg-surface p-1 shadow-panel"

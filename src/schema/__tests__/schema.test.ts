@@ -21,6 +21,7 @@ import {
     SDK_VERSION,
 } from "@/schema/events";
 import { NODE_TYPES, NodeSchema, type NodeDoc, type NodeType } from "@/schema/nodes";
+import { EVENT_DOCS, eventDoc } from "@/schema/eventDocs";
 import {
     CATEGORIES,
     nodeTypeDef,
@@ -412,6 +413,38 @@ describe("choice-or-custom fields", () => {
         >;
         expect(destination.kind).toBe("selectOrCustom");
         expect(destination.sameAs?.fromKey).toBe("/ip");
+    });
+
+    it("starts a firewall rule already aimed at the quest's network", () => {
+        const created = nodeTypeDef("world.firewall").create() as {
+            ip: string;
+            rule: { source: string; destination: string };
+        };
+        expect(created.ip).toBe("{{data.targetIp}}");
+        expect(created.rule.source).toBe("*");
+        expect(created.rule.destination).toBe("{{data.targetIp}}");
+    });
+
+    it("explains every game event in plain language", () => {
+        // The picker shows field names ("command, args") that mean nothing
+        // without knowing what the event IS — so every catalogue event needs
+        // its explanation, and the next SDK regen breaks this until the new
+        // events get theirs.
+        const missing = EVENTS.filter((e) => !eventDoc(e.name));
+        expect(missing.map((e) => e.name), "events with no explanation").toEqual([]);
+        const extra = Object.keys(EVENT_DOCS).filter((name) => !isKnownEvent(name));
+        expect(extra, "explanations for events that do not exist").toEqual([]);
+        for (const [name, doc] of Object.entries(EVENT_DOCS)) {
+            expect(doc.length, name).toBeGreaterThan(20);
+            expect(doc.length, name).toBeLessThan(400);
+            expect(/[.!?]$/.test(doc), name).toBe(true);
+        }
+        // The motivating example: Terminal.Command must say what it is and
+        // what its two fields carry.
+        const command = eventDoc("Terminal.Command")!;
+        expect(command).toMatch(/runs a command/);
+        expect(command).toContain("command");
+        expect(command).toContain("args");
     });
 
     it("numbers sequence outputs instead of naming them", () => {

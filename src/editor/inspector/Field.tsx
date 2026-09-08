@@ -299,6 +299,7 @@ export function Field({
                         options={def.options}
                         sameAsLabel={def.sameAs?.label}
                         sameAsValue={sameValue}
+                        sameAsEmptyHint={def.sameAs?.emptyHint}
                         placeholder={def.placeholder}
                         mono={def.mono}
                         tokenSuggestions={def.tokens ? listTokenSuggestions(quest, nodeId) : undefined}

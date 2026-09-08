@@ -28,9 +28,9 @@ export const TEMPLATES: Template[] = [
     {
         id: "blank",
         name: "Blank quest",
-        description: "The four lifecycle entry points and an explanatory note. Start from scratch.",
+        description: "The lifecycle entry points that can actually run, and an explanatory note. Start from scratch.",
         difficulty: "Beginner",
-        nodeCount: 5,
+        nodeCount: 4,
         build: buildBlank,
     },
     {
@@ -39,7 +39,7 @@ export const TEMPLATES: Template[] = [
         description:
             "The whole spine in miniature: a brief, one objective (a person lookup), a payment and a closing line. No hacking — just the shape of a quest.",
         difficulty: "Beginner",
-        nodeCount: 9,
+        nodeCount: 8,
         build: buildFirstContact,
     },
     {
@@ -48,7 +48,7 @@ export const TEMPLATES: Template[] = [
         description:
             "A website clue in plain sight: read an article, spot the byline, and look the writer up. No break-in, nothing hidden.",
         difficulty: "Beginner",
-        nodeCount: 12,
+        nodeCount: 11,
         build: buildByline,
     },
     {
@@ -75,7 +75,7 @@ export const TEMPLATES: Template[] = [
         description:
             "A public agency site, a portal that refuses you, and an unlisted page dirhunter can find. The password is assembled from two pages the agency published itself — the classic web-recon loop, with a real website in the box.",
         difficulty: "Advanced",
-        nodeCount: 21,
+        nodeCount: 23,
         build: buildHelpDeskLeak,
     },
     {
@@ -93,7 +93,7 @@ export const TEMPLATES: Template[] = [
         description:
             "The long route into one company: scan the box, recover the edge passphrase, land a session on the storage server, and read the ledger straight out of the database. Every objective waits on a real game event the runtime actually emits.",
         difficulty: "Expert",
-        nodeCount: 22,
+        nodeCount: 20,
         build: buildColdStorage,
     },
     {

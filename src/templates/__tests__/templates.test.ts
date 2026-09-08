@@ -226,6 +226,93 @@ describe("template registry", () => {
     });
 });
 
+/**
+ * Round 125. The template audit read every template as a player would play
+ * it and found stories that could not end: payments and closings wired to an
+ * "On quest complete" that never fires, a database with no tables for its own
+ * trigger to match, and a client confirming receipt of a file nobody sent.
+ * These pins hold the fixes.
+ */
+describe("template audit pins", () => {
+    it("no template wires On quest complete — it never fires with the defaults", () => {
+        // contract-hack still has the old wiring; Zeis deferred that one.
+        const wired: string[] = [];
+        for (const t of TEMPLATES.filter((x) => x.id !== "reference" && x.id !== "contract-hack")) {
+            for (const q of t.build().quests) {
+                const completers = new Set(
+                    q.graph.nodes.filter((n) => n.type === "entry.complete").map((n) => n.id),
+                );
+                for (const e of q.graph.edges) {
+                    if (completers.has(e.source)) wired.push(`${t.id}: ${e.source}`);
+                }
+            }
+        }
+        expect(wired).toEqual([]);
+    });
+
+    it("cold-storage ships the table its read-ledger trigger waits on", () => {
+        const quest = getTemplate("cold-storage")!.build().quests[0];
+        const db = quest.graph.nodes.find((n) => n.type === "world.database")!;
+        const tables = (db.data as { tables: { name: string; rows: unknown[] }[] }).tables;
+        const ledger = tables.find((t) => t.name.includes("ledger"))!;
+        expect(ledger, "the read-ledger trigger matches tableName contains “ledger”").toBeDefined();
+        expect(ledger.rows.length).toBeGreaterThan(0);
+        const trigger = quest.graph.nodes.find(
+            (n) =>
+                n.type === "trigger.event" &&
+                (n.data as { event: string }).event === "Sqlmap.DumpTable",
+        )!;
+        const conditions = (trigger.data as { conditions: { field: string; value: string }[] }).conditions;
+        expect(conditions.some((c) => c.field === "tableName" && ledger.name.includes(c.value))).toBe(true);
+    });
+
+    it("cold-storage's database vendor and port agree with each other", () => {
+        const quest = getTemplate("cold-storage")!.build().quests[0];
+        const firewall = quest.graph.nodes.find((n) => n.type === "world.firewall")!;
+        const port = (firewall.data as { rule: { port: number } }).rule.port;
+        // postgres listens on 5432; 3306 is MySQL. The template names postgres
+        // in the scan output and the system log, so the blocked port is 5432.
+        expect(port).toBe(5432);
+    });
+
+    it("the-help-desk-leak closes the loop by mail before the closing scene", () => {
+        const quest = getTemplate("the-help-desk-leak")!.build().quests[0];
+        const send = quest.graph.nodes.find(
+            (n) => n.type === "objective" && (n.data as { name: string }).name === "send-report",
+        )!;
+        expect(send, "the client cannot confirm a file the player never sent").toBeDefined();
+        const trigger = quest.graph.nodes.find(
+            (n) =>
+                n.type === "trigger.event" &&
+                (n.data as { event: string }).event === "Mail.Sent" &&
+                JSON.stringify((n.data as { conditions: unknown }).conditions).includes("oyelaran"),
+        )!;
+        expect(trigger).toBeDefined();
+        const scene = quest.graph.nodes.find((n) => n.type === "flow.sequence")!;
+        const playsScene = quest.graph.edges.some(
+            (e) => e.source === send.id && e.sourceHandle === "done" && e.target === scene.id,
+        );
+        expect(playsScene, "sending the file plays the closing scene").toBe(true);
+    });
+
+    it("the-help-desk-leak teaches the ssh form the handbook documents", () => {
+        const quest = getTemplate("the-help-desk-leak")!.build().quests[0];
+        const shell = quest.graph.nodes.find(
+            (n) => n.type === "objective" && (n.data as { name: string }).name === "log-in",
+        )!;
+        expect((shell.data as { terminalCommand: string }).terminalCommand).toContain("ssh -h");
+    });
+
+    it("cold-call says the answer's name in the chat itself", () => {
+        const quest = getTemplate("cold-call")!.build().quests[0];
+        const chat = quest.graph.nodes.find(
+            (n) => n.type === "comms.dialogue" && (n.data as { kind: string }).kind === "kisscord",
+        )!;
+        const messages = (chat.data as { kisscord: { messages: { content: string }[] } }).kisscord.messages;
+        expect(messages.map((m) => m.content).join("\n")).toContain("Zara");
+    });
+});
+
 describe("node summaries", () => {
     it.each(TEMPLATES)("%s: summarises every node without throwing", (template) => {
         for (const quest of template.build().quests) {

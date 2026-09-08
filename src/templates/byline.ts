@@ -29,7 +29,8 @@ export function buildByline(): ProjectDocument {
     });
 
     const claim = makeNode("entry.start", { x: 0, y: 0 });
-    const complete = makeNode("entry.complete", { x: 0, y: 480 });
+    /* No entry.complete: with auto-complete off and no Complete button (the
+       default) it never fires — the story already ends from the objective. */
 
     const lynxResp = makeNode("world.toolResponse", { x: 320, y: 0 }, {
         command: "lynx",
@@ -111,7 +112,7 @@ export function buildByline(): ProjectDocument {
     });
 
     quest.graph = {
-        nodes: [claim, complete, lynxResp, brief, oRead, oAuthor, tRead.trigger, tAuthor.trigger, reach, pay, closing, note],
+        nodes: [claim, lynxResp, brief, oRead, oAuthor, tRead.trigger, tAuthor.trigger, reach, pay, closing, note],
         edges: [
             makeEdge(claim, "out", lynxResp, "in"),
             makeEdge(lynxResp, "out", brief, "in"),
@@ -119,7 +120,6 @@ export function buildByline(): ProjectDocument {
             makeEdge(oAuthor, "done", reach, "in"),
             makeEdge(reach, "out", pay, "in"),
             makeEdge(pay, "out", closing, "in"),
-            makeEdge(complete, "out", closing, "in"),
             tRead.edge,
             tAuthor.edge,
         ],

@@ -147,14 +147,21 @@ export function buildHelpDeskLeak(): ProjectDocument {
     const oShell = makeNode("objective", { x: 2220, y: 0 }, {
         name: "log-in",
         description: "Log in to the help-desk machine",
-        hint: "The rule plus the directory's employee ID make one password. The public directory lists both.",
-        terminalCommand: `ssh ${USER}@${BOX_IP}`,
+        hint: "The rule plus the directory's employee ID make one password — the help-desk page states the rule, the public directory lists the ID.",
+        terminalCommand: `ssh -h ${USER}@${BOX_IP}`,
     });
     const oGrab = makeNode("objective", { x: 2540, y: 0 }, {
         name: "take-report",
         description: `Download ${FILE}.pdf`,
         hint: "It is in the home directory of the account you logged in as.",
         terminalCommand: `download ${FILE}.pdf`,
+    });
+    /* The loop is not closed until the client holds the file: without this
+       she confirms receipt of something the player never sent. */
+    const oSend = makeNode("objective", { x: 2860, y: 0 }, {
+        name: "send-report",
+        description: "Send the report to the client",
+        hint: "Attach it to a mail to m.oyelaran@bcc-desk.net.",
     });
 
     const t1 = triggerFor(oSite, "Browser.WebsiteOpened", [{ field: "url", op: "contains", value: HOST }], { x: 940, y: 200 });
@@ -166,22 +173,23 @@ export function buildHelpDeskLeak(): ProjectDocument {
         { field: "type", op: "equals", value: "DOWNLOAD" },
         { field: "file.name", op: "contains", value: FILE },
     ], { x: 2540, y: 200 });
+    const t7 = triggerFor(oSend, "Mail.Sent", [{ field: "to", op: "contains", value: "m.oyelaran@bcc-desk.net" }], { x: 2860, y: 200 });
 
     /* ── the pay-off, played as a small scene ───────────────────────────── */
 
-    const scene = makeNode("flow.sequence", { x: 2860, y: 0 }, {
+    const scene = makeNode("flow.sequence", { x: 3180, y: 0 }, {
         steps: [
             { id: "s1", label: "Confirm receipt", delayMs: 0 },
             { id: "s2", label: "She reads it", delayMs: 3500 },
             { id: "s3", label: "Payment", delayMs: 2000 },
         ],
     });
-    const gotIt = makeNode("fx.notify", { x: 3180, y: -160 }, {
+    const gotIt = makeNode("fx.notify", { x: 3500, y: -160 }, {
         message: "Upload complete.",
         variant: "toast",
         tone: "success",
     });
-    const chat = makeNode("comms.dialogue", { x: 3180, y: 0 }, {
+    const chat = makeNode("comms.dialogue", { x: 3500, y: 0 }, {
         kind: "kisscord",
         /* Timed into the story: the messages arrive when the flow reaches this
            node, on the Sequence's second beat, rather than sitting in the chat
@@ -196,7 +204,7 @@ export function buildHelpDeskLeak(): ProjectDocument {
             ],
         },
     });
-    const pay = makeNode("fx.pay", { x: 3180, y: 200 }, {
+    const pay = makeNode("fx.pay", { x: 3500, y: 200 }, {
         amount: 3200,
         description: "Abort review",
         fromName: "M. Oyelaran",
@@ -217,8 +225,8 @@ export function buildHelpDeskLeak(): ProjectDocument {
         nodes: [
             claim, load,
             network, brief,
-            oSite, oPortal, oHunt, oRead, oShell, oGrab,
-            t1.trigger, t2.trigger, t3.trigger, t4.trigger, t5.trigger, t6.trigger,
+            oSite, oPortal, oHunt, oRead, oShell, oGrab, oSend,
+            t1.trigger, t2.trigger, t3.trigger, t4.trigger, t5.trigger, t6.trigger, t7.trigger,
             scene, gotIt, chat, pay, note,
         ],
         edges: [
@@ -229,9 +237,10 @@ export function buildHelpDeskLeak(): ProjectDocument {
             makeEdge(oHunt, "unlock", oRead, "unlocked-by"),
             makeEdge(oRead, "unlock", oShell, "unlocked-by"),
             makeEdge(oShell, "unlock", oGrab, "unlocked-by"),
-            t1.edge, t2.edge, t3.edge, t4.edge, t5.edge, t6.edge,
-            // taking the file plays the closing scene
-            makeEdge(oGrab, "done", scene, "in"),
+            makeEdge(oGrab, "unlock", oSend, "unlocked-by"),
+            t1.edge, t2.edge, t3.edge, t4.edge, t5.edge, t6.edge, t7.edge,
+            // sending the file plays the closing scene
+            makeEdge(oSend, "done", scene, "in"),
             makeEdge(scene, "step-s1", gotIt, "in"),
             makeEdge(scene, "step-s2", chat, "in"),
             makeEdge(scene, "step-s3", pay, "in"),

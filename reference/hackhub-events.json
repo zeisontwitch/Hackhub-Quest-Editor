@@ -397,7 +397,7 @@
       "name": "Terminal.SSH.Disconnected",
       "group": "access",
       "payload": "string",
-      "doc": "Payload is the connected server IP as a plain string (e.g. \"10.40.0.12\"). */ \"Terminal.SSH.Connected\": string; /** Payload is the disconnected server IP as a plain string."
+      "doc": "Payload is the disconnected server IP as a plain string."
     },
     {
       "name": "Terminal.SSH.FileDownload",

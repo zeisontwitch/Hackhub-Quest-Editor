@@ -41,7 +41,8 @@ export function buildColdStorage(): ProjectDocument {
     });
 
     const claim = makeNode("entry.start", { x: 0, y: 0 });
-    const complete = makeNode("entry.complete", { x: 0, y: 400 });
+    /* No entry.complete: with auto-complete off and no Complete button (the
+       default) it never fires — the story ends from the last objective. */
 
     /* ── the world the player will explore ──────────────────────────────── */
 
@@ -115,7 +116,7 @@ export function buildColdStorage(): ProjectDocument {
                                     name: "sys",
                                     extension: "log",
                                     isFolder: false,
-                                    data: "boot: ok\nsshd: listening on 22\npostgres: listening on 3306",
+                                    data: "boot: ok\nsshd: listening on 22\npostgres: listening on 5432",
                                 },
                             ],
                         },
@@ -127,27 +128,34 @@ export function buildColdStorage(): ProjectDocument {
         },
     });
 
-    /* Bring the storage server forward through the edge so the player can reach
-       it. Runs on quest start. */
-    const port = makeNode("world.port", { x: 640, y: 0 }, {
-        ip: EDGE_IP,
-        action: "open",
-        port: { id: "p1", external: 22, internal: 22, active: true, service: "ssh" },
-        restoreOnComplete: true,
-    });
-
     /* The database port is firewalled direct — the player has to get in a
        different way (through the shell), which is the point. */
     const firewall = makeNode("world.firewall", { x: 960, y: 0 }, {
         ip: DB_HOST,
         removeOnComplete: true,
-        rule: { id: "r1", allowed: false, port: 3306, source: "*", destination: "*" },
+        rule: { id: "r1", allowed: false, port: 5432, source: "*", destination: "*" },
     });
 
+    /* The prize. The read-ledger objective waits on a dump of the lead_ledger
+       table, so the table has to exist — an empty database would leave the
+       quest stuck with no way forward. Four routes, matching the client's
+       thank-you mail. */
     const database = makeNode("world.database", { x: 1280, y: 0 }, {
         host: DB_HOST,
         user: DB_USER,
         password: DB_PASS,
+        tables: [
+            {
+                id: "t-ledger",
+                name: "lead_ledger",
+                rows: [
+                    { route: "NP-0117", cargo: "machine parts", declared: "no" },
+                    { route: "NP-0121", cargo: "frozen fish", declared: "no" },
+                    { route: "NP-0124", cargo: "machine parts", declared: "no" },
+                    { route: "NP-0130", cargo: "textiles", declared: "no" },
+                ],
+            },
+        ],
         removeOnComplete: true,
     });
 
@@ -160,7 +168,7 @@ export function buildColdStorage(): ProjectDocument {
             "Host is up (0.0021s latency).",
             "PORT     STATE SERVICE  VERSION",
             "22/tcp   open   ssh      OpenSSH 8.4.0",
-            "3306/tcp closed postgresql",
+            "5432/tcp closed postgresql",
             "",
             "Nmap done: 1 IP address (1 host up) scanned in 1.84 seconds",
         ].join("\n"),
@@ -200,7 +208,7 @@ export function buildColdStorage(): ProjectDocument {
         name: "get-a-shell",
         description: "Land a session on the storage server",
         hint: "The server answers on 22 behind the router. metasploit has a module for it — the version the scan reported is the one to set.",
-        info: "The router forwards the SSH port, so the box is reachable through the edge.",
+        info: "Point metasploit straight at the address the brief names. The server answers on 22.",
         terminalCommand: "msfconsole",
     });
     const oDb = makeNode("objective", { x: 1280, y: 220 }, {
@@ -267,7 +275,7 @@ export function buildColdStorage(): ProjectDocument {
 
     quest.graph = {
         nodes: [
-            claim, complete, network, port, firewall, database, osint, brief,
+            claim, network, firewall, database, osint, brief,
             oScan, oPass, oAccess, oDb, oSend,
             tScan.trigger, tPass.trigger, tAccess.trigger, tDb.trigger, tSend.trigger,
             thanks, pay, closing, note,
@@ -275,8 +283,7 @@ export function buildColdStorage(): ProjectDocument {
         edges: [
             /* world setup, in order, on claim */
             makeEdge(claim, "out", network, "in"),
-            makeEdge(network, "out", port, "in"),
-            makeEdge(port, "out", firewall, "in"),
+            makeEdge(network, "out", firewall, "in"),
             makeEdge(firewall, "out", database, "in"),
             makeEdge(database, "out", osint, "in"),
             makeEdge(osint, "out", brief, "in"),
@@ -290,7 +297,7 @@ export function buildColdStorage(): ProjectDocument {
             /* the pay-off */
             makeEdge(oSend, "done", thanks, "in"),
             makeEdge(thanks, "out", pay, "in"),
-            makeEdge(complete, "out", closing, "in"),
+            makeEdge(pay, "out", closing, "in"),
         ],
     };
 

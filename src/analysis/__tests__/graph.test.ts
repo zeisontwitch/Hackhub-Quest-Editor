@@ -118,6 +118,43 @@ describe("analyseGraph", () => {
         expect(deadEnd?.detail).toMatch(/“Wrong” outcome goes nowhere/);
     });
 
+    it("does not claim a wrong answer stalls the quest", () => {
+        const claim = node("entry.start");
+        const input = node("reply.input");
+        const ok = node("fx.notify");
+
+        const analysis = analyseGraph(
+            [claim, input, ok],
+            [edge(claim, "out", input, "in"), edge(input, "success", ok, "in")],
+        );
+
+        const deadEnd = analysis.issues.find((i) => i.label === "Dead end");
+        expect(deadEnd?.detail).toMatch(/tries again/);
+        expect(deadEnd?.detail).not.toMatch(/stalls/);
+        expect(deadEnd?.nextStep).toMatch(/retrying/);
+    });
+
+    it("flags a wired On quest complete as completion-gated", () => {
+        const done = node("entry.complete");
+        const pay = node("fx.pay");
+
+        const analysis = analyseGraph([done, pay], [edge(done, "out", pay, "in")]);
+
+        const gated = analysis.issues.find((i) => i.nodeId === done.id);
+        expect(gated?.label).toBe("Only runs on completion");
+        expect(gated?.severity).toBe("warn");
+        expect(gated?.nextStep).toMatch(/last objective/);
+    });
+
+    it("leaves an unwired On quest complete to the Empty rule", () => {
+        const done = node("entry.complete");
+
+        const analysis = analyseGraph([done], []);
+
+        const labels = analysis.issues.filter((i) => i.nodeId === done.id).map((i) => i.label);
+        expect(labels).toEqual(["Empty"]);
+    });
+
     it("notes an unused lifecycle entry point without calling it broken", () => {
         const claim = node("entry.start");
         const analysis = analyseGraph([claim], []);

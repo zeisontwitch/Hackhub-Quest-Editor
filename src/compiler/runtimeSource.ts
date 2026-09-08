@@ -1130,9 +1130,20 @@ function __qeRegisterProject(sdk, PROJECT) {
                 }
                 case "world.database": {
                     if (sdk.Database && sdk.Database.create && d.host) {
+                        /* Authors write plain values; the engine's cell shape
+                           is { value, type }. Shape them here, so what ships
+                           matches DatabaseCellDefinition either way. */
                         var tables = {};
                         (d.tables || []).forEach(function (t) {
-                            if (t.name) tables[t.name] = t.rows || [];
+                            if (!t.name) return;
+                            tables[t.name] = (t.rows || []).map(function (row) {
+                                var shaped = {};
+                                Object.keys(row || {}).forEach(function (col) {
+                                    var v = row[col];
+                                    shaped[col] = { value: v, type: typeof v === "number" ? "number" : "string" };
+                                });
+                                return shaped;
+                            });
                         });
                         var dbId = sdk.Database.create({
                             host: __QE.fill(d.host, scope),

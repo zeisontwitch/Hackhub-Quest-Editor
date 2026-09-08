@@ -68,6 +68,28 @@ describe("tag picker", () => {
         expect(screen.getByText("{{player.username}}")).toBeInTheDocument();
     });
 
+    it("stays open while the list is scrolled", () => {
+        render(
+            <TokenTextInput ariaLabel="Command" value="" onChange={() => {}} suggestions={SUGGESTIONS} />,
+        );
+        fireEvent.click(screen.getByRole("button", { name: "Insert a tag" }));
+        const panel = screen.getByRole("group", { name: "Tags you can insert" });
+        fireEvent.scroll(panel);
+        expect(screen.getByRole("group", { name: "Tags you can insert" })).toBeInTheDocument();
+        expect(screen.getByText("{{player.username}}")).toBeInTheDocument();
+    });
+
+    it("stays open when the page behind it scrolls, and still closes on Escape", () => {
+        render(
+            <TokenTextInput ariaLabel="Command" value="" onChange={() => {}} suggestions={SUGGESTIONS} />,
+        );
+        fireEvent.click(screen.getByRole("button", { name: "Insert a tag" }));
+        fireEvent.scroll(document);
+        expect(screen.getByRole("group", { name: "Tags you can insert" })).toBeInTheDocument();
+        fireEvent.keyDown(document, { key: "Escape" });
+        expect(screen.queryByRole("group", { name: "Tags you can insert" })).not.toBeInTheDocument();
+    });
+
     it("points at Set quest data when nothing is saved yet", () => {
         render(
             <TokenTextInput

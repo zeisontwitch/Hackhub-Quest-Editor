@@ -273,7 +273,7 @@ export function SelectInput({
 }: {
     value: string;
     onChange: (value: string) => void;
-    options: readonly { value: string; label: string; hint?: string }[];
+    options: readonly { value: string; label: string; hint?: string; disabled?: boolean }[];
     id?: string;
     ariaLabel?: string;
 }) {
@@ -287,7 +287,7 @@ export function SelectInput({
                 className="field-input appearance-none pr-7"
             >
                 {options.map((o) => (
-                    <option key={o.value} value={o.value}>
+                    <option key={o.value} value={o.value} disabled={o.disabled}>
                         {o.label}
                     </option>
                 ))}

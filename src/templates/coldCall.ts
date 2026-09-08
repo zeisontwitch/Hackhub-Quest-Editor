@@ -32,7 +32,7 @@ export function buildColdCall(): ProjectDocument {
             messages: [
                 {
                     id: "k1",
-                    content: "You're the new contractor? Don't ask how I found the number. The harbour answers to nobody.",
+                    content: "You're the new contractor? Zara here — don't ask how I found the number. The harbour answers to nobody.",
                     isMine: false, delayMs: 0, playerAction: "none", playerText: "", unlocksAfter: [],
                 },
                 {

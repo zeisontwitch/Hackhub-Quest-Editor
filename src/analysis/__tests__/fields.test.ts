@@ -70,6 +70,9 @@ describe("fieldWarnings", () => {
         const warning = fieldWarnings(quest, firewall).find((w) => w.path === "ip");
         expect(warning).toBeDefined();
         expect(warning!.detail).toMatch(/No machine set/);
+        // The firewall offers Random as a choice, so the step says "pick",
+        // not "type".
+        expect(warning!.nextStep).toMatch(/Pick.*Random/);
     });
 
     it("flags device-targeted Place files with no network as blocking", () => {

@@ -16,8 +16,10 @@ import {
     getEvent,
     groupedEvents,
     isKnownEvent,
+    isPrimitivePayload,
     payloadFields,
 } from "@/schema/events";
+import { eventDoc } from "@/schema/eventDocs";
 
 export function EventPicker({
     value,
@@ -166,23 +168,36 @@ export function EventPicker({
                     </code>
                 </p>
             )}
-            {selected && (
-                <p className="field-hint">
-                    {payloadFields(selected.payload).length > 0 ? (
-                        <>
-                            This event tells you:{" "}
-                            <code
-                                className="font-mono text-[10px] text-ink-3"
-                                title={selected.payload}
-                            >
-                                {payloadFields(selected.payload).join(", ")}
-                            </code>
-                        </>
-                    ) : (
-                        "This event doesn't carry any extra details to test against."
-                    )}
-                </p>
-            )}
+            {selected && <EventExplanation name={selected.name} payload={selected.payload} />}
         </Popover.Root>
+    );
+}
+
+/**
+ * What the chosen event is, then what can be matched on it. Primitive
+ * payloads (a bare string, not an object) are matched as a whole — the
+ * condition builder offers no field for them, so neither does this.
+ */
+export function EventExplanation({ name, payload }: { name: string; payload: string }) {
+    const fields = payloadFields(payload);
+    const primitive = isPrimitivePayload(name);
+    return (
+        <>
+            {eventDoc(name) && <p className="field-hint">{eventDoc(name)}</p>}
+            <p className="field-hint">
+                {primitive ? (
+                    "Match it as a whole — it carries one value, not named details."
+                ) : fields.length > 0 ? (
+                    <>
+                        Narrow it down with:{" "}
+                        <code className="font-mono text-[10px] text-ink-3" title={payload}>
+                            {fields.join(", ")}
+                        </code>
+                    </>
+                ) : (
+                    "It carries no details to test against."
+                )}
+            </p>
+        </>
     );
 }

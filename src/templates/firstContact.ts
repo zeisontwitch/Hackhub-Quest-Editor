@@ -29,7 +29,8 @@ export function buildFirstContact(): ProjectDocument {
     });
 
     const claim = makeNode("entry.start", { x: 0, y: 0 });
-    const complete = makeNode("entry.complete", { x: 0, y: 600 });
+    /* No entry.complete: quests ship with auto-complete off and no Complete
+       button, so it never fires — the story ends from the last objective. */
 
     const brief = makeNode("comms.dialogue", { x: 320, y: 0 }, {
         kind: "mail",
@@ -98,14 +99,14 @@ export function buildFirstContact(): ProjectDocument {
     });
 
     quest.graph = {
-        nodes: [claim, complete, brief, osint, oFind, tFind.trigger, pay, closing, note],
+        nodes: [claim, brief, osint, oFind, tFind.trigger, pay, closing, note],
         edges: [
             makeEdge(claim, "out", brief, "in"),
             makeEdge(brief, "out", osint, "in"),
             makeEdge(osint, "out", oFind, "in"),
-            // the objective completing is the answer; the quest completing pays
-            makeEdge(oFind, "done", closing, "in"),
-            makeEdge(complete, "out", pay, "in"),
+            // finding her is the end of the job: pay, then the closing line
+            makeEdge(oFind, "done", pay, "in"),
+            makeEdge(pay, "out", closing, "in"),
             tFind.edge,
         ],
     };

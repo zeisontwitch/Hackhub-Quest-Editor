@@ -67,7 +67,9 @@ export function fieldWarnings(quest: QuestDoc | undefined, node: NodeDoc): Field
                 severity: "warn",
                 detail: "No machine set — this node does nothing until it points at one.",
                 nextStep:
-                    `Type ${TARGET_IP_TOKEN} to aim it at the machine your network created.`,
+                    node.type === "world.firewall"
+                        ? "Pick “Random — the quest's network” to aim it at the machine your network created."
+                        : `Type ${TARGET_IP_TOKEN} to aim it at the machine your network created.`,
             });
         } else if (!hasNetworkNode(quest)) {
             // Only when a value is given but nothing in the quest can take it —

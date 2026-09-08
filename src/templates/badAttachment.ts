@@ -68,7 +68,7 @@ export function buildBadAttachment(): ProjectDocument {
             content:
                 "You reached me at a busy time, but I do not ignore a supplier who knows the dock.\n\n" +
                 "The detail is this: the harbour pays in three strings — the yard, the stevedore and the pilot. A good agent keeps them separate and charges to join them.\n\n" +
-                "Proof I am who I say I am: yard-list-7. Set the subject line of your next mail to that string and I will treat you as family. Do not put it on paper.",
+                "Proof I am who I say I am: yard-list-7. Keep it between us — do not put it on paper.",
             replyable: false,
         },
     });

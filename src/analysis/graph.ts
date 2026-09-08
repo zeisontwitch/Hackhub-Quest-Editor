@@ -119,12 +119,14 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
                     detail:
                         node.type === "flow.sequence"
                             ? `The “${names}” output goes nowhere, so that step of the sequence does nothing. Wire it up or remove the output.`
-                            : `The “${names}” outcome goes nowhere, so the quest stalls if the player takes it.`,
+                            : node.type === "reply.input"
+                              ? `The “${names}” outcome goes nowhere, so a wrong answer just shows the failure message and the player tries again. That retry loop is the usual design — wire it only if a wrong answer should do something more.`
+                              : `The “${names}” outcome goes nowhere, so the quest stalls if the player takes it.`,
                     nextStep:
                         node.type === "flow.sequence"
                             ? `Wire the “${names}” step to the node that should run at that point, or remove the step.`
                             : node.type === "reply.input"
-                              ? `Wire the “${names}” answer to the node that should run next.`
+                              ? `Leave it if retrying is the design, or wire the “${names}” answer to the node that should run on a wrong answer.`
                               : `Wire the “${names}” outcome to the node that should run down that path.`,
                     severity: "warn",
                 });
@@ -148,6 +150,23 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
         // inputs). It could never fire: a non-root only becomes reachable by
         // following an edge that targets it, so it always has an input.
         // Removed in r124 rather than kept as a guard no test can exercise.
+
+        /* A wired "On quest complete" that can never run. Quests ship with
+           auto-complete off and no Complete button, so completion never
+           happens and everything downstream is dead — four shipped templates
+           fell into this before the audit caught it. The copy stays accurate
+           for quests that do turn completion on: the condition is the point. */
+        if (node.type === "entry.complete" && wiredOut > 0) {
+            issues.push({
+                nodeId: node.id,
+                label: "Only runs on completion",
+                detail:
+                    "This is wired, but it only runs if the quest completes — with auto-complete off and no Complete button (the default) that never happens. End the story from the last objective's “done” instead.",
+                nextStep:
+                    "Move these nodes onto the last objective's “done” socket, or turn completion on in the quest's Behaviour settings if you mean it.",
+                severity: "warn",
+            });
+        }
 
         // A lifecycle entry point with nothing after it is dead weight.
         if (ENTRY_TYPES.has(node.type) && wiredOut === 0) {

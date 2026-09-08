@@ -122,7 +122,7 @@ describe("editor shell", () => {
 
         const quest = selectActiveQuest(useEditor.getState())!;
         expect(quest.name).toBe("FirstContact");
-        expect(quest.graph.nodes).toHaveLength(9);
+        expect(quest.graph.nodes).toHaveLength(8);
     });
 
     it("offers Save and Load on the top bar, in addition to the template dialog's buttons", async () => {

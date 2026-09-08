@@ -342,7 +342,7 @@ blockquote{margin:26px 0;padding:4px 0 4px 18px;border-left:3px solid #ff6719;fo
 <main>
   <h1>The night shift doesn't log what it unloads</h1>
   <div class="meta">Aug 21, 2026 · 6 min read · by R. Calloway</div>
-  <p>There is a hour at the harbour when the paperwork sleeps. The manifest system shows nothing between 02:00 and 04:00, every night, like a held breath. But the cranes move. My reader counts trucks from a parking garage on Voss Strasse, and his tally never matches the port's public dashboard.</p>
+  <p>There is an hour at the harbour when the paperwork sleeps. The manifest system shows nothing between 02:00 and 04:00, every night, like a held breath. But the cranes move. My reader counts trucks from a parking garage on Voss Strasse, and his tally never matches the port's public dashboard.</p>
   <p>Last Tuesday the difference was nine trucks. All of them tarped. All of them in, none of them out.</p>
   <blockquote>“The manifests go quiet, but the cranes don't.”</blockquote>
   <p>The harbour authority says the gap is “a scheduled maintenance window”. It is remarkable how much maintenance a port needs at exactly the hours nobody is watching.</p>
@@ -632,7 +632,7 @@ ol.steps li::before{content:counter(s);position:absolute;left:0;top:2px;width:30
         id: "agency-helpdesk",
         label: "Agency internal helpdesk",
         blurb: "An unlisted internal IT page listing temp-password rules — made to be found by dirhunter, not by the menu.",
-        make: () => ({ title: "IT Help Desk (internal)", path: "/it/helpdesk", seo: true, content: nazaHelpdesk }),
+        make: () => ({ title: "IT Help Desk (internal)", path: "/it/helpdesk", seo: false, content: nazaHelpdesk }),
     },
 ];
 

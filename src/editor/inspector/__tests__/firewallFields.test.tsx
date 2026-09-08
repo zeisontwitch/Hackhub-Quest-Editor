@@ -94,6 +94,18 @@ describe("firewall guided addresses", () => {
         expect((storedData(fw.id).rule as Record<string, unknown>).source).toBe("*");
     });
 
+    it("explains a choice's value when it lands in the custom box", () => {
+        const fw = firewallNode({ ip: "", rule: { id: "r", allowed: false, port: 22, source: "*" } });
+        loadWith([fw]);
+        render(<Field def={sourceDef} nodeId={fw.id} basePath="rule" />);
+        fireEvent.change(screen.getByLabelText("Source"), { target: { value: "__custom__" } });
+        expect(screen.getByText(/matches every machine on the internet/)).toBeInTheDocument();
+        // …with a way back to the choice it came from.
+        fireEvent.click(screen.getByRole("button", { name: "Use Anywhere instead" }));
+        expect((screen.getByLabelText("Source") as HTMLSelectElement).value).toBe("*");
+        expect(screen.queryByLabelText("Source (custom)")).not.toBeInTheDocument();
+    });
+
     it("copies the protected IP into Destination as a snapshot", () => {
         const fw = firewallNode({
             ip: "10.0.0.5",
@@ -105,6 +117,22 @@ describe("firewall guided addresses", () => {
             target: { value: "__same__" },
         });
         expect((storedData(fw.id).rule as Record<string, unknown>).destination).toBe("10.0.0.5");
+    });
+
+    it("disables Same-as while the protected IP is empty, saying what to fill", () => {
+        const fw = firewallNode({
+            ip: "",
+            rule: { id: "r", allowed: false, port: 22, source: "*", destination: "" },
+        });
+        loadWith([fw]);
+        render(<Field def={destinationDef} nodeId={fw.id} basePath="rule" />);
+        const select = screen.getByLabelText("Destination") as HTMLSelectElement;
+        const same = [...select.options].find((o) => o.value === "__same__")!;
+        expect(same.disabled).toBe(true);
+        expect(same.label).toMatch(/set it first/);
+        // Even a forced pick writes nothing.
+        fireEvent.change(select, { target: { value: "__same__" } });
+        expect((storedData(fw.id).rule as Record<string, unknown>).destination).toBe("");
     });
 
     it("recognises a destination equalling the protected IP as same-as", () => {

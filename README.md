@@ -27,7 +27,7 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 
 | # | Item | Notes |
 |---|---|---|
-| 1 | **Waiting on the game developer** | The consolidated bug report is with him ([`docs/05-bug-report-for-hotbunny.md`](docs/05-bug-report-for-hotbunny.md)). The blocker is that HackHub 1.1.2 freezes whenever it finishes a mod-defined quest, so generated quests end their story without formally completing. |
+| 1 | **Waiting on the game patch** | The developer has replied to the consolidated report ([`docs/05-bug-report-for-hotbunny.md`](docs/05-bug-report-for-hotbunny.md)): almost all reported bugs were reproduced (two weren't), fixes are promised in an upcoming patch, and SMS is to be exposed to the SDK. The reply will be filed in `docs/` **fenced**: evidence of what is coming, not license to build early. Until a pinned SDK/game build ships it and is verified in-game, nothing implements it and no workaround is removed (end-from-last-objective, the `ssh -h` form, the wired-`entry.complete` warning all stay). |
 | 2 | Website pages: `description` + `search[]` | The SDK's `WebsitePageDefinition` supports both and the reference mod uses both; we emit only `path`/`title`/`html`/`seo`. Affects in-game search. |
 | 3 | Old quest mail is never cleaned up | Mail sent by an uninstalled mod stays in the inbox. The `Mail` namespace has no delete, so there may be nothing we can do — question 9 in the bug report. |
 | 4 | **Date deprecation warning (`moment` RFC2822)** | Only appears with a quest-editor mod installed, 30–90s after a mail is sent, when a browser or app screen is opened. The stack is the game's own date formatting and we never set a date on anything — question 10 in the bug report. |
@@ -38,7 +38,8 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 |---|---|---|
 | 5 | **Settings page** | The wire-physics dials currently live in the debug panel, which is a developer tool. They — and the snap/animation/physics toggles — deserve a proper home an author can find. |
 | 6 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
-| 7 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. |
+| 7 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. The official Cryptographer Hunt (a phone social-engineering scene with a fail route on the wrong choice) is the strongest argument for it — see [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). |
+| 8 | Official-quest technique template | The hydra crack → `ssh -h` → act spine — the official quests' most common grammar; `hydra`/`ftp` are in the registry tool list but in zero templates. Proposed in [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md), awaiting Zeis's go (three in-game questions first). |
 
 ### Known limitations (not bugs)
 
@@ -51,8 +52,6 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 
 ### Done recently
 
-| Round | Item |
-|---|---|
 | Round | Item |
 |---|---|
 | r126 | **Template audit: three quests had stories that could not end.** First Contact never paid — its payment was wired to "On quest complete", which never fires with the defaults — and Byline/Cold Storage lost their closings the same way; all rewired to end from the last objective. Cold Storage's database had no tables for its own read-ledger trigger (seeded `lead_ledger`). Help Desk's client confirmed a file nobody sent (new `send-report` objective). Help Desk taught `ssh user@ip`; the handbook says `ssh -h user@ip`. New guards: a wired On-complete warns, and database rows are shaped as `{value, type}` for the engine. (Ledger has the same dead wiring — deferred per Zeis.) |
@@ -96,6 +95,8 @@ against `@hotbunny/hackhub-content-sdk@0.21.0`.
 | [`docs/05-bug-report-for-hotbunny.md`](docs/05-bug-report-for-hotbunny.md) | The consolidated report sent to the game's developer. |
 | [`docs/plans/`](docs/plans/) | Per-round working notes: the evidence behind specific fixes. |
 | [`docs/In-Game-Handbook.md`](docs/In-Game-Handbook.md) | Zeis's transcription of the game's handbook — the top authority for how a player acts. |
+| [`reference/Official-Quest/`](reference/Official-Quest/) | Zeis's transcriptions of the official quests (7 so far; "Journalist's Sister" pending) — how real quests flow, cross-checked in [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). |
+| [`.github/agents/clean-code-architect.md`](.github/agents/clean-code-architect.md) | The clean-code & architecture agent brief — the code-quality rulebook LLM sessions work by. |
 | [`docs/archive/`](docs/archive/) | Retired roadmap history (rounds 100–115). |
 
 ---
@@ -217,6 +218,7 @@ docs/
 reference/
   generate-event-catalogue.mjs      # parses the SDK's index.d.ts → event palette data
   hackhub-events.json               # all 92 events with verified payloads (generated)
+  Official-Quest/                   # Zeis's transcriptions of the game's official quests
 scripts/
   build-naza-pages.mjs              # regenerates the "public agency" site template
 src/

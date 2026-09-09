@@ -334,7 +334,7 @@ objective-led chain as unreachable.
 The last one is worth naming: a script that edits 140 places in a 990-line file by line
 surgery corrupted the file twice before it worked. The version that shipped does one
 provably-local thing — insert after a field's own `key:` — and is idempotent. See
-`reference/add-hints.py`.
+`docs/archive/add-hints-r123.py` (retired there in r127; its output is live registry content).
 
 ---
 

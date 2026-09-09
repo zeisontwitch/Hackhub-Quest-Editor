@@ -1,5 +1,11 @@
 """Add a `hint` to every inspector field in src/schema/registry.ts.
 
+RETIRED (r127): one-shot r123 tool, kept for the record; moved here from
+`reference/` because its output is now the live registry content and the
+`HINTS` dict below would drift out of sync with it. Do not re-run it; hints
+are edited in `registry.ts` directly now (and the hint-coverage test keeps
+them honest).
+
 Hints are what a non-coder actually reads, so this is content work, not
 formatting: each one says what the game does with the value, not what the field
 is called.

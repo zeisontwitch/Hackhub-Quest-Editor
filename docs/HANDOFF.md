@@ -1,19 +1,32 @@
-# Handoff — r126
+# Handoff — r127
 
-The template audit is complete. Every playable template was read as a player
-would play it; the stories that could not end now can (payments rewired off
-`entry.complete`, Cold Storage's database seeded, Help Desk's missing
-send-report objective added, ssh taught with `-h`), with analysis + runtime
-guards and audit pins holding the fixes. The Ledger Contract keeps its old
-completion wiring — Zeis deferred that one.
+A docs round: the seven official quests Zeis transcribed
+([`reference/Official-Quest/`](../reference/Official-Quest/) — "Journalist's
+Sister" still pending) are read against the editor's templates, the handbook
+and the SDK event catalogue. Outcome: one wrong theory corrected (template
+tool responses are parse-input, the game renders its own output), every
+official-quest ending mapped to a declared SDK event, and two proposals
+queued for Zeis — a hydra crack → `ssh -h` → act template, and an
+author-facing "official quest techniques" handbook article. No code changed.
+
+The developer has **replied** to the bug report: almost all reported bugs
+were reproduced (two weren't), fixes are promised in an upcoming patch, and
+SMS is to be exposed to the SDK. The reply is **fenced** until the patch
+actually ships a pinned SDK/game build that Zeis verified in-game: nothing
+implements it, no workaround is removed, no doc rewritten (see the README's
+"Waiting on the game patch" and the dev-promise hazard in
+[`.github/agents/clean-code-architect.md`](../.github/agents/clean-code-architect.md)).
+The r126 template audit it responds to lives in
+[`docs/plans/r126-template-audit.md`](plans/r126-template-audit.md).
 
 ## Where things stand
 
-- **HEAD:** `d3ef479` on `arena/01a08174-hackhub-quest-editor`, committed and
+- **HEAD:** `548595a` on `arena/01a08809-hackhub-quest-editor`, committed and
   pushed.
 - **1,166 tests green** across 55 files, typecheck clean. The only noise is
   the 4 pre-existing d3-drag jsdom teardown errors, unrelated to this work.
-- **Editor build stamp:** `2026-09-08.r126`.
+- **Editor build stamp:** `2026-09-08.r126` — unchanged in r127; no compiled
+  output was touched.
 - Shared graph helpers extracted to `src/templates/kit.ts`; each template is its
   own module (`blank.ts`, `firstContact.ts`, `byline.ts`, `coldCall.ts`,
   `harbourManifest.ts`, `helpDeskLeak.ts`, `badAttachment.ts`, `coldStorage.ts`,
@@ -30,10 +43,16 @@ completion wiring — Zeis deferred that one.
    authority for how a player is expected to act.** The SDK says what a mod can
    *call*; the handbook says what the game *teaches*. The previous session got
    three things wrong by consulting only the SDK.
-3. **[`docs/plans/r126-template-audit.md`](plans/r126-template-audit.md)** —
+3. **[`reference/Official-Quest/`](../reference/Official-Quest/)** — Zeis's
+   transcriptions of the quests the game itself ships. The strongest cross-check
+   for how real quests flow; read with
+   [`docs/plans/r127-official-quest-comparison.md`](plans/r127-official-quest-comparison.md).
+4. **[`docs/plans/r127-official-quest-comparison.md`](plans/r127-official-quest-comparison.md)**
+   — the r127 findings and the two open proposals.
+5. **[`docs/plans/r126-template-audit.md`](plans/r126-template-audit.md)** —
    what the audit found in the templates, what it fixed, and the in-game
    questions still open.
-4. **[`docs/plans/r119-handbook-gap-analysis.md`](plans/r119-handbook-gap-analysis.md)**
+6. **[`docs/plans/r119-handbook-gap-analysis.md`](plans/r119-handbook-gap-analysis.md)**
    — what the handbook settled, and where the editor still cannot express what
    it teaches.
 
@@ -156,19 +175,32 @@ wants the *specific action* named.
 
 ## Queued next
 
-1. **A settings page** (roadmap item 5) — the wire-physics dials live in the
+1. **r127 proposals, awaiting Zeis's go** ([plan](plans/r127-official-quest-comparison.md)):
+   the hydra crack → connect → act template (§6 — three in-game questions to
+   settle first) and the author-facing "official quest techniques" handbook
+   article (§7).
+2. **When the developer's patch lands, lift the fence in this order:** pin the
+   new SDK version → `npm ci` → `npm run gen:events` → diff
+   `reference/hackhub-events.json` → read the new `d.ts` → Zeis verifies
+   in-game → *then* plan the round (SMS editor; formal quest completion per
+   `docs/04`, which would touch every template's ending and the Ledger
+   deferral). Before that: nothing implements, nothing is removed.
+3. **A settings page** (roadmap item 5) — the wire-physics dials live in the
    debug panel, which is a developer tool. Those and the snap/animation/physics
    toggles deserve a home an author can find. Also outstanding: the **fade-ms
    slider in the debug panel does nothing** (the fade runs inside the
    retraction, so `ghostMs` only feeds a safety backstop) — cosmetic, but a
    real inconsistency to resolve when the settings page lands.
-2. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
-   template, not yet built.
-3. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
+4. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
+   template, not yet built. r127 note: Cryptographer Hunt's fail-choice phone
+   scene is the in-game proof this shape matters.
+5. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
    banners + ports 25/110/143; Apache metasploit module for 2.4.49/50 or
    flavour?; Handbook screenshot (titles + categories) + the id=title jump
    test; eyes on the preview. Plus the r126 in-game questions: ssh `-h` to a
-   10.x box, Cold Storage's nmap/msf/sqlmap route, Cold Call's chat display.
+   10.x box, Cold Storage's nmap/msf/sqlmap route, Cold Call's chat display —
+   and r127's three (plan §6): hydra tool-response rendering, `Terminal.SSH.Shutdown`
+   on mod machines, `Database.DataUpdate` from Database-Manager edits.
 
 Done and off the queue: the editor UX check (r125), actionable hookup
 warnings (r124), the template rebuild (r122), the template audit (r126).

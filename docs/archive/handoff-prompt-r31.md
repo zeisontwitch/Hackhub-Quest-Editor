@@ -1,5 +1,16 @@
 # HANDOFF PROMPT — HackHub Quest Mod Editor
 
+> **RETIRED (r127).** This is the round-31 handoff prompt, kept as history.
+> It is 95 rounds stale: 387 tests (now 1,166), 31 node types (now 32), the
+> arena branch and build stamp it names are long gone. **Do not paste this
+> into a new session** — [`docs/HANDOFF.md`](../HANDOFF.md) is the live
+> handoff, and the clean-code/architecture agent brief now lives at
+> [`.github/agents/clean-code-architect.md`](../../.github/agents/clean-code-architect.md).
+> Its *pitfalls* section (section 9) was mined into `docs/06-how-it-works-today.md`
+> at retirement; nothing here is otherwise load-bearing. The Twotter evidence
+> (section 4) is the one still-cited record — the summary lives in the README's
+> "Settled decisions".
+
 > **How to use this:** paste everything below the line as the first message to a
 > fresh agent instance working in this repository. It is written to that
 > instance. It was verified against the repo at the time of writing (round 31) —

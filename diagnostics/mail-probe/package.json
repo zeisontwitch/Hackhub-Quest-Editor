@@ -1,7 +1,0 @@
-{
-    "name": "qe-mail-probe",
-    "version": "1.0.0",
-    "private": true,
-    "description": "Diagnostic mod: which mail delivery path works in this build of HackHub.",
-    "main": "dist/mod.js"
-}

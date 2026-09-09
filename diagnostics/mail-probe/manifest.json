@@ -1,9 +1,0 @@
-{
-    "id": "qe-mail-probe",
-    "name": "QE Mail Probe",
-    "version": "1.0.0",
-    "author": "Quest Mod Editor",
-    "description": "Diagnostic: finds out which mail-delivery path actually works in this build of HackHub. Writes everything it learns to the game log. Safe to delete afterwards.",
-    "apiVersion": 1,
-    "permissions": ["mail", "ui", "events", "shell", "network"]
-}

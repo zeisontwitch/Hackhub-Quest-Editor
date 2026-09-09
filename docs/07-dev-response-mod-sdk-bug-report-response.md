@@ -25,9 +25,9 @@ you whether a given fix is present — do not use it as evidence.
 
 Two items are explicitly NOT fixed in this patch (Part 3): scripted outgoing
 mail (Q1) and Suspicion/log-forensics participation (Q5). Per Zeis, the
-developer has also verbally agreed to expose SMS to the SDK; the written
-response does not mention it — treat it as promised, same fence, until it
-appears in a pinned SDK.
+developer has ALSO verbally agreed — on Discord, after this document was
+sent, which is why it appears nowhere above; no timeline given — to expose
+SMS to the SDK. Same fence: it does not exist until a pinned SDK declares it.
 
 -->
 

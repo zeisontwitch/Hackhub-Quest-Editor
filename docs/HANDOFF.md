@@ -15,9 +15,8 @@ The r126 audit it responds to: [`plans/r126-template-audit.md`](plans/r126-templ
 
 ## Where things stand
 
-- **HEAD:** `cf0652b` on `arena/01a08809-hackhub-quest-editor`, committed and
-  pushed (r128's own hash is recorded in its follow-up commit, the same way
-  r127 did — `git log --oneline -3` is the truth).
+- **HEAD:** `e3ff472` on `arena/01a08809-hackhub-quest-editor`, committed and
+  pushed.
 - **1,197 tests green** across 55 files, typecheck clean. The only noise is
   the 4 pre-existing d3-drag jsdom teardown errors, unrelated to this work.
 - **Editor build stamp:** `2026-09-09.r128`.

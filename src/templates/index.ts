@@ -18,9 +18,11 @@ import { buildColdCall } from "@/templates/coldCall";
 import { buildDataGrab } from "@/templates/harbourManifest";
 import { buildHelpDeskLeak } from "@/templates/helpDeskLeak";
 import { buildBadAttachment } from "@/templates/badAttachment";
+import { buildSixTries } from "@/templates/sixTries";
 import { buildColdStorage } from "@/templates/coldStorage";
 import { buildContractHack } from "@/templates/ledgerContract";
 import { buildReference } from "@/templates/reference";
+import { buildCookbook } from "@/templates/cookbook";
 
 export { type Template } from "@/templates/kit";
 
@@ -88,6 +90,15 @@ export const TEMPLATES: Template[] = [
         build: buildBadAttachment,
     },
     {
+        id: "six-tries",
+        name: "Six Tries",
+        description:
+            "The official quests' favourite route, and the step no other template teaches: hydra. Recon finds the box, hydra cracks the login, an objective reads the cracked credential out of Terminal.Hydra, and ssh -h walks it in. Scan, crack, connect, read, report.",
+        difficulty: "Advanced",
+        nodeCount: 23,
+        build: buildSixTries,
+    },
+    {
         id: "cold-storage",
         name: "Cold Storage",
         description:
@@ -113,6 +124,15 @@ export const TEMPLATES: Template[] = [
         difficulty: "Reference",
         nodeCount: 40,
         build: buildReference,
+    },
+    {
+        id: "cookbook",
+        name: "Quest Cookbook",
+        description:
+            "How the quests the game itself ships with are built, technique by technique — and which nodes express each one here. Read-only reference sheet; the companion to the Node Reference.",
+        difficulty: "Reference",
+        nodeCount: 12,
+        build: buildCookbook,
     },
 ];
 

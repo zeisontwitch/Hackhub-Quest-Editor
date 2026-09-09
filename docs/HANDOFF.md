@@ -1,37 +1,32 @@
-# Handoff — r127
+# Handoff — r128
 
-A docs round: the seven official quests Zeis transcribed
-([`reference/Official-Quest/`](../reference/Official-Quest/) — "Journalist's
-Sister" still pending) are read against the editor's templates, the handbook
-and the SDK event catalogue. Outcome: one wrong theory corrected (template
-tool responses are parse-input, the game renders its own output), every
-official-quest ending mapped to a declared SDK event, and two proposals
-queued for Zeis — a hydra crack → `ssh -h` → act template, and an
-author-facing "official quest techniques" handbook article. No code changed.
-
-The developer has **replied** to the bug report: almost all reported bugs
-were reproduced (two weren't), fixes are promised in an upcoming patch, and
-SMS is to be exposed to the SDK. The reply is **fenced** until the patch
-actually ships a pinned SDK/game build that Zeis verified in-game: nothing
-implements it, no workaround is removed, no doc rewritten (see the README's
-"Waiting on the game patch" and the dev-promise hazard in
-[`.github/agents/clean-code-architect.md`](../.github/agents/clean-code-architect.md)).
-The r126 template audit it responds to lives in
-[`docs/plans/r126-template-audit.md`](plans/r126-template-audit.md).
+r127 compared the seven official quests Zeis transcribed
+([`reference/Official-Quest/`](../reference/Official-Quest/)) against our
+templates; r128 built both approved proposals: **Six Tries** (the hydra
+crack → `ssh -h` route no template taught) and the **Quest Cookbook** (a
+Reference sheet mapping every official-quest technique to the nodes that
+express it — including the honest "engine-only" ones). The developer's reply
+to our bug report arrived and is filed verbatim as
+[`docs/07`](07-dev-response-mod-sdk-bug-report-response.md), **under a
+fence**: it promises fixes in an upcoming patch, none of the new surface is
+in the pinned SDK yet, so nothing implements it and no workaround comes off.
+Read the banner at the top of docs/07 before acting on anything it says.
+The r126 audit it responds to: [`plans/r126-template-audit.md`](plans/r126-template-audit.md).
 
 ## Where things stand
 
-- **HEAD:** `1d3e086` on `arena/01a08809-hackhub-quest-editor`, committed and
-  pushed.
-- **1,166 tests green** across 55 files, typecheck clean. The only noise is
+- **HEAD:** `cf0652b` on `arena/01a08809-hackhub-quest-editor`, committed and
+  pushed (r128's own hash is recorded in its follow-up commit, the same way
+  r127 did — `git log --oneline -3` is the truth).
+- **1,197 tests green** across 55 files, typecheck clean. The only noise is
   the 4 pre-existing d3-drag jsdom teardown errors, unrelated to this work.
-- **Editor build stamp:** `2026-09-08.r126` — unchanged in r127; no compiled
-  output was touched.
+- **Editor build stamp:** `2026-09-09.r128`.
 - Shared graph helpers extracted to `src/templates/kit.ts`; each template is its
   own module (`blank.ts`, `firstContact.ts`, `byline.ts`, `coldCall.ts`,
-  `harbourManifest.ts`, `helpDeskLeak.ts`, `badAttachment.ts`, `coldStorage.ts`,
-  `ledgerContract.ts`, `reference.ts`). `src/templates/index.ts` is a thin
-  registry. `Template.difficulty` is `Beginner | Advanced | Expert | Reference`.
+  `harbourManifest.ts`, `helpDeskLeak.ts`, `badAttachment.ts`, `sixTries.ts`,
+  `coldStorage.ts`, `ledgerContract.ts`, `reference.ts`, `cookbook.ts`).
+  `src/templates/index.ts` is a thin registry. `Template.difficulty` is
+  `Beginner | Advanced | Expert | Reference`.
 
 ## Read these first, in this order
 
@@ -47,14 +42,17 @@ The r126 template audit it responds to lives in
    transcriptions of the quests the game itself ships. The strongest cross-check
    for how real quests flow; read with
    [`docs/plans/r127-official-quest-comparison.md`](plans/r127-official-quest-comparison.md).
-4. **[`docs/plans/r127-official-quest-comparison.md`](plans/r127-official-quest-comparison.md)**
-   — the r127 findings and the two open proposals.
-5. **[`docs/plans/r126-template-audit.md`](plans/r126-template-audit.md)** —
+4. **[`docs/07-dev-response-mod-sdk-bug-report-response.md`](07-dev-response-mod-sdk-bug-report-response.md)**
+   — the developer's answer to our bug report: engine facts true today (Q3
+   exploitability, Q4 version format, Q6 dual file events) next to patch
+   promises that are **not in the pinned SDK**. Fence banner on top; also the
+   fence-lift procedure in the queue below.
+5. **[`docs/plans/r128-six-tries-and-cookbook.md`](plans/r128-six-tries-and-cookbook.md)**
+   — what r128 built and why Proposal B changed surface.
+6. **[`docs/plans/r126-template-audit.md`](plans/r126-template-audit.md)** —
    what the audit found in the templates, what it fixed, and the in-game
-   questions still open.
-6. **[`docs/plans/r119-handbook-gap-analysis.md`](plans/r119-handbook-gap-analysis.md)**
-   — what the handbook settled, and where the editor still cannot express what
-   it teaches.
+   questions still open. (r127's comparison plan remains the source behind
+   the cookbook.)
 
 ## The world.wifi node: hidden from authors, kept in the engine
 
@@ -92,9 +90,11 @@ how hard the hack is.
 | The Harbour Manifest | Advanced | The standard contract — the only template proven end-to-end in-game |
 | The Help Desk Leak | Advanced | **Website #2:** the site *hides* something — `dirhunter` an unlisted page, credentials inside |
 | Bad Attachment | Advanced | Phishing: a lure goes out, the reply carries the credential. All mail, no shell |
+| Six Tries | Advanced | **The crack:** lynx → nmap → `hydra` → `ssh -h` with the cracked login → `cat` → report. The official quests' most common route; new in r128 |
 | The Ledger Contract | Expert | Long route, privilege escalation (old completion wiring kept — Zeis deferred it) |
 | Cold Storage | Expert | scan edge → fern passphrase → shell → sqlmap a database |
 | Node Reference | — | Every node type, annotated |
+| Quest Cookbook | — | Official-quest techniques → the nodes that express them here; read-only, new in r128 |
 
 Zeis's steers, verbatim in spirit:
 - **Cold Call** stays, specifically to show that a non-hacking quest is possible.
@@ -156,6 +156,26 @@ should have: read the objective literally → OSINT/recon (`lynx`, `whois`,
 preserve evidence → if it does not tick, re-read the wording, because the game
 wants the *specific action* named.
 
+### Corrections from the developer's response (docs/07 — engine facts true today)
+
+- **`/logs/accounts.log` is on the PLAYER's own machine**, not the target
+  (Q5). Shell forensics reads `sys.log` on the compromised host. The handbook
+  transcription itself may be ambiguous — it is a transcription; this note is
+  the correction.
+- **`acceptReverseTCP` is not checked by port exploits at all** — it only
+  matters for reverse-TCP payload paths (phishing macro, mail listener). A
+  guest is not required either: one user with `online: true` suffices (Q3).
+  Our exploitability guard is stricter than the engine requires; that is fine
+  and stays — but do not "fix" templates down to the minimum.
+- **Metasploit versions**: `x.y.z`, first segment nonzero, must equal the
+  banner's numeric segment exactly; nmap prints the full banner (Q4).
+- **A pulled file raises TWO events** — `Terminal.SSH.FileDownload` (ssh)
+  and `Files.Transfer` (download command/transfer window); quests that
+  listened to only one stranded players (Q6). Listen to both.
+- **`scp` does not exist in the game.** (The Harbour Manifest hint predates
+  this answer from the dev — its `scp` terminalCommand is a cosmetic
+  suggestion the game does not have; noted for the next Harbour round.)
+
 ## Rules any new template must follow
 
 1. **Exploitability**, enforced by `src/templates/__tests__/exploitable.test.ts`
@@ -171,20 +191,29 @@ wants the *specific action* named.
 5. **Distinctive domains** — they are global and a generic one may collide.
 6. Every quest **ends without formally completing** (engine bug, see
    `docs/04-engine-bug-quest-completion.md`) and leaves a closing line.
+   (The developer's reply promises a fix and `this.complete()` — fence: build
+   to what ships, not what's promised.)
 7. Each template states its tier and what it teaches in a sticky note.
 
 ## Queued next
 
-1. **r127 proposals, awaiting Zeis's go** ([plan](plans/r127-official-quest-comparison.md)):
-   the hydra crack → connect → act template (§6 — three in-game questions to
-   settle first) and the author-facing "official quest techniques" handbook
-   article (§7).
-2. **When the developer's patch lands, lift the fence in this order:** pin the
+1. **When the developer's patch lands, lift the fence in this order:** pin the
    new SDK version → `npm ci` → `npm run gen:events` → diff
    `reference/hackhub-events.json` → read the new `d.ts` → Zeis verifies
-   in-game → *then* plan the round (SMS editor; formal quest completion per
-   `docs/04`, which would touch every template's ending and the Ledger
-   deferral). Before that: nothing implements, nothing is removed.
+   in-game → *then* plan the round (formal quest completion per `docs/04`
+   — which would touch every template's ending and the Ledger deferral —
+   Twotter's return with `removeUser` cleanup in `OnModPackageUnloaded`,
+   SMS if/when it actually appears in a pinned SDK). The dev also asked for:
+   retest of the completion path + Twotter on the patched build, and a minimal
+   mail repro if BUG 1 persists. Before all of that: nothing implements,
+   nothing is removed.
+2. **Zeis's in-game QA of the two new templates** (nothing else blocks on
+   these): does the hydra tool response render as a real hydra run and fire
+   `Terminal.Hydra` with credentials filled; does `Terminal.SSH.Connected`
+   fire for `ssh -h` into a mod machine; does `Terminal.Cat` fire for the
+   remote `cat`. Plus the carried-over questions: ssh `-h` to a 10.x box,
+   Cold Storage's route, Cold Call's chat display, `Terminal.SSH.Shutdown`
+   on mod machines, `Database.DataUpdate` from Database-Manager edits.
 3. **A settings page** (roadmap item 5) — the wire-physics dials live in the
    debug panel, which is a developer tool. Those and the snap/animation/physics
    toggles deserve a home an author can find. Also outstanding: the **fade-ms
@@ -192,25 +221,25 @@ wants the *specific action* named.
    retraction, so `ghostMs` only feeds a safety backstop) — cosmetic, but a
    real inconsistency to resolve when the settings page lands.
 4. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
-   template, not yet built. r127 note: Cryptographer Hunt's fail-choice phone
-   scene is the in-game proof this shape matters.
+   template, not yet built. Cryptographer Hunt's fail-choice phone scene is
+   the in-game proof this shape matters.
 5. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
    banners + ports 25/110/143; Apache metasploit module for 2.4.49/50 or
    flavour?; Handbook screenshot (titles + categories) + the id=title jump
-   test; eyes on the preview. Plus the r126 in-game questions: ssh `-h` to a
-   10.x box, Cold Storage's nmap/msf/sqlmap route, Cold Call's chat display —
-   and r127's three (plan §6): hydra tool-response rendering, `Terminal.SSH.Shutdown`
-   on mod machines, `Database.DataUpdate` from Database-Manager edits.
+   test; eyes on the preview. Plus the Harbour `scp` hint fix noted above.
 
-Done and off the queue: the editor UX check (r125), actionable hookup
-warnings (r124), the template rebuild (r122), the template audit (r126).
+Done and off the queue: the r127 proposals (both built, r128), the editor UX
+check (r125), actionable hookup warnings (r124), the template rebuild (r122),
+the template audit (r126).
 
 ## Working habits Zeis expects
 
 These are standing instructions, not preferences:
 
-- **Never guess. Check the SDK, the handbook, or the Nemesis reference mod.**
-  Test hypotheses before implementing.
+- **Never guess. Check the SDK, the handbook, the official quest
+  transcriptions, or the Nemesis reference mod.** Test hypotheses before
+  implementing. Evidence order: SDK d.ts → handbook → Official-Quest →
+  shipped/QA (each wins in its own domain).
 - **Plan first, then execute** — write the plan down, audit it, then build.
 - **Falsify every guard**: revert the fix and confirm the matching test fails.
   A test that cannot fail is worse than none, and several have shipped green
@@ -221,6 +250,6 @@ These are standing instructions, not preferences:
 - **Admit wrong theories plainly, with evidence.** Corrections belong in the
   docs, not quietly edited out.
 - **Be concise.** Expand only where the detail is load-bearing.
-- Always `git fetch` and compare against the remote before committing — the
-  sandbox has rolled local history back to r74 several times, and the remote is
-  authoritative.
+- Always `git fetch` and compare against the remote before committing — Zeis
+  commits to this branch too (docs/07 arrived that way in r128), and the
+  remote is authoritative.

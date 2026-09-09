@@ -24,9 +24,11 @@ describe("template registry", () => {
             "data-grab",
             "the-help-desk-leak",
             "bad-attachment",
+            "six-tries",
             "cold-storage",
             "contract-hack",
             "reference",
+            "cookbook",
         ]);
         expect(getTemplate("reference")?.difficulty).toBe("Reference");
         // Both contract templates ship the website their trail leads to — a
@@ -59,7 +61,9 @@ describe("template registry", () => {
      * for the player to claim any of them. A template that cannot be played is
      * not a template.
      */
-    it.each(TEMPLATES.filter((t) => t.id !== "reference"))("%s: can actually be started", (template) => {
+    /* The two Reference sheets (Node Reference, Quest Cookbook) are read-only
+       canvases, not playable quests — everything else must be startable. */
+    it.each(TEMPLATES.filter((t) => t.difficulty !== "Reference"))("%s: can actually be started", (template) => {
         for (const quest of template.build().quests) {
             expect(
                 quest.autoStart || quest.hackhubPost != null,
@@ -68,7 +72,7 @@ describe("template registry", () => {
         }
     });
 
-    it.each(TEMPLATES.filter((t) => t.id !== "reference"))("%s: exports without an unplayable warning", (template) => {
+    it.each(TEMPLATES.filter((t) => t.difficulty !== "Reference"))("%s: exports without an unplayable warning", (template) => {
         const warnings = computeWarnings(template.build());
         expect(warnings.filter((w) => /nothing can start this quest/.test(w))).toEqual([]);
     });
@@ -310,6 +314,45 @@ describe("template audit pins", () => {
         )!;
         const messages = (chat.data as { kisscord: { messages: { content: string }[] } }).kisscord.messages;
         expect(messages.map((m) => m.content).join("\n")).toContain("Zara");
+    });
+
+    /* Six Tries (r128) is the cracking route: these pins hold the three
+       details that make it the hydra teacher. */
+    describe("six-tries is the crack-and-log-in template", () => {
+        const quest = () => getTemplate("six-tries")!.build().quests[0];
+
+        it("keys the hydra response by user and target, not a single input", () => {
+            const hydra = quest().graph.nodes.find(
+                (n) => n.type === "world.toolResponse" && (n.data as { command: string }).command === "hydra",
+            )!;
+            const data = hydra.data as { input?: string; inputUser?: string; inputTarget?: string };
+            expect(data.inputUser).toBe("guest");
+            expect(data.inputTarget).toBe("{{data.targetIp}}");
+            /* The registry is explicit: hydra/ssh/ftp read the user+target
+               pair, so a single `input` here would key the answer to nothing.
+               (create() defaults it to "" — it must stay empty.) */
+            expect(data.input || "").toBe("");
+        });
+
+        it("completes the crack on the credential the event carries, not on the attempt", () => {
+            const trigger = quest().graph.nodes
+                .filter((n) => n.type === "trigger.event")
+                .find((n) => (n.data as { event: string }).event === "Terminal.Hydra")!;
+            const conditions = (trigger.data as { conditions: { field: string; op: string; value: string }[] })
+                .conditions;
+            expect(conditions).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({ field: "credentials.username", op: "equals", value: "guest" }),
+                ]),
+            );
+        });
+
+        it("teaches the handbook's ssh form, with the cracked user", () => {
+            const login = quest().graph.nodes.find(
+                (n) => n.type === "objective" && (n.data as { name: string }).name === "get-in",
+            )!;
+            expect((login.data as { terminalCommand: string }).terminalCommand).toContain("ssh -h guest@");
+        });
     });
 });
 
@@ -834,9 +877,9 @@ describe("no template ships a node that does nothing", () => {
     const FURNITURE = ["flow.note", "layout.group", "flow.beat"];
 
     for (const t of TEMPLATES) {
-        // The reference sheet is a field catalogue: every node, deliberately
-        // unwired. The blank template is empty by definition.
-        if (t.id === "reference" || t.id === "blank") continue;
+        // The reference sheets are field/technique catalogues: every card,
+        // deliberately unwired. The blank template is empty by definition.
+        if (t.difficulty === "Reference" || t.id === "blank") continue;
 
         it(`${t.id}: every node is wired into the quest`, () => {
             const stranded: string[] = [];

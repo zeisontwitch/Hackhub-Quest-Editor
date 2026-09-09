@@ -1,3 +1,36 @@
+<!--
+FENCE, added r128 — read before acting on anything in this document.
+
+Everything below is the game developer's OWN WORDS, filed verbatim as the
+response to docs/05-bug-report-for-hotbunny.md. It describes fixes that ship
+in an UPCOMING PATCH. It is evidence of what is coming — not license to
+implement, not permission to remove a workaround, and not a reason to rewrite
+the docs as if the patch had landed.
+
+Status against our pinned SDK (@hotbunny/hackhub-content-sdk 0.21.0): NONE of
+the new surface below exists in it yet — no this.complete(), no this.retire(),
+no Quest.unclaim, no Twotter.updateUser/removeUser, no Mail.remove, no
+MailDefinition.replyable on Mail.send, no deleteable, no Terminal.DnsHistory.
+Verify with: pin the new SDK version, npm ci, npm run gen:events, diff
+reference/hackhub-events.json, read the new d.ts, then Zeis verifies in-game.
+Only then does a round plan lift individual fences.
+
+Until then, standing workarounds stay exactly as they are: end every quest
+from its last objective (never entry.complete), keep replyable off in
+templates, keep Twotter dropped, keep randomIp()/removeCommandData (harmless),
+keep the declarative+imperative dual trigger emission.
+
+Note the version-string trap the developer describes: "1.1.2" does NOT tell
+you whether a given fix is present — do not use it as evidence.
+
+Two items are explicitly NOT fixed in this patch (Part 3): scripted outgoing
+mail (Q1) and Suspicion/log-forensics participation (Q5). Per Zeis, the
+developer has also verbally agreed to expose SMS to the SDK; the written
+response does not mention it — treat it as promised, same fence, until it
+appears in a pinned SDK.
+
+-->
+
 # Response to the quest-editor bug report
 
 Thanks for this. It is the most useful report we have had from a mod author: every

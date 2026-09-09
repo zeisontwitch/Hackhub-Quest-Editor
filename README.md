@@ -27,7 +27,7 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 
 | # | Item | Notes |
 |---|---|---|
-| 1 | **Waiting on the game patch** | The developer has replied to the consolidated report ([`docs/05-bug-report-for-hotbunny.md`](docs/05-bug-report-for-hotbunny.md)): almost all reported bugs were reproduced (two weren't), fixes are promised in an upcoming patch, and SMS is to be exposed to the SDK. The reply will be filed in `docs/` **fenced**: evidence of what is coming, not license to build early. Until a pinned SDK/game build ships it and is verified in-game, nothing implements it and no workaround is removed (end-from-last-objective, the `ssh -h` form, the wired-`entry.complete` warning all stay). |
+| 1 | **Waiting on the game patch** | The developer has replied ([`docs/07-dev-response-mod-sdk-bug-report-response.md`](docs/07-dev-response-mod-sdk-bug-report-response.md), **fenced — read the banner first**): every reported item was reproduced, three were misdiagnosed (declarative triggers always worked — payload types were the lie), fixes ship in an upcoming patch. New surface (`this.complete()`, `Twotter.removeUser`, `Mail.remove`, …) is **not in the pinned SDK yet**: nothing implements it, no workaround comes off. Per Zeis the dev also verbally agreed to expose SMS; the written response doesn't mention it — same fence. |
 | 2 | Website pages: `description` + `search[]` | The SDK's `WebsitePageDefinition` supports both and the reference mod uses both; we emit only `path`/`title`/`html`/`seo`. Affects in-game search. |
 | 3 | Old quest mail is never cleaned up | Mail sent by an uninstalled mod stays in the inbox. The `Mail` namespace has no delete, so there may be nothing we can do — question 9 in the bug report. |
 | 4 | **Date deprecation warning (`moment` RFC2822)** | Only appears with a quest-editor mod installed, 30–90s after a mail is sent, when a browser or app screen is opened. The stack is the game's own date formatting and we never set a date on anything — question 10 in the bug report. |
@@ -39,7 +39,6 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 | 5 | **Settings page** | The wire-physics dials currently live in the debug panel, which is a developer tool. They — and the snap/animation/physics toggles — deserve a proper home an author can find. |
 | 6 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
 | 7 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. The official Cryptographer Hunt (a phone social-engineering scene with a fail route on the wrong choice) is the strongest argument for it — see [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). |
-| 8 | Official-quest technique template | The hydra crack → `ssh -h` → act spine — the official quests' most common grammar; `hydra`/`ftp` are in the registry tool list but in zero templates. Proposed in [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md), awaiting Zeis's go (three in-game questions first). |
 
 ### Known limitations (not bugs)
 
@@ -54,6 +53,7 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 
 | Round | Item |
 |---|---|
+| r128 | **Both r127 proposals built, and the developer's reply filed under a fence.** [`docs/07`](docs/07-dev-response-mod-sdk-bug-report-response.md) is verbatim with a status banner: nothing in it is in the pinned SDK yet, so nothing implements and no workaround comes off. **Six Tries** (Advanced) is the official quests' crack-and-log-in route — hydra tool response keyed user+target, an objective reading the cracked credential off `Terminal.Hydra`, then `ssh -h` (three pins guard exactly that; falsified). **Quest Cookbook** (Reference sheet) maps each official-quest technique to the nodes that express it — including the honest "engine-only" ones. r127's Proposal B was re-surfaced: `handbookArticles.ts` is the in-game Handbook's jump list, not editor guidance, so the cookbook is canvas furniture like the Node Reference. Stamp `2026-09-09.r128`. |
 | r126 | **Template audit: three quests had stories that could not end.** First Contact never paid — its payment was wired to "On quest complete", which never fires with the defaults — and Byline/Cold Storage lost their closings the same way; all rewired to end from the last objective. Cold Storage's database had no tables for its own read-ledger trigger (seeded `lead_ledger`). Help Desk's client confirmed a file nobody sent (new `send-report` objective). Help Desk taught `ssh user@ip`; the handbook says `ssh -h user@ip`. New guards: a wired On-complete warns, and database rows are shaped as `{value, type}` for the engine. (Ledger has the same dead wiring — deferred per Zeis.) |
 | r125 | **Zeis's 14-item UX check, end to end** ([plan](docs/plans/r125-zeis-ux-check-fixes.md)): human event names with explanations, port presets, guided firewall addresses, Place-files rename, tag picker on every tag-taking box, database table editor, a working Open-handbook node, numbered sequence outputs, silent story beats. Fixed en route: the firewall rule was a list field over single-object data, so fresh nodes showed "None yet" for a rule they had. |
 | r124 | **Hookup warnings say which nodes to put where** ([plan](docs/plans/r124-actionable-hookup-warnings.md)). Every node issue carries a `nextStep`, shown in the inspector header and both canvas tooltips; field warnings gained empty-IP and seed-files placement checks. |
@@ -77,9 +77,9 @@ rules the code now follows.
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-08.r126`: **1,166 tests** across 55
+Counted from the code at build `2026-09-09.r128`: **1,197 tests** across 55
 files, **32 node types** in 9 categories (31 in the palette — Wi-Fi is hidden),
-**10 templates**, **92 game events**,
+**12 templates** (10 playable + 2 reference sheets), **92 game events**,
 against `@hotbunny/hackhub-content-sdk@0.21.0`.
 
 ### Documentation
@@ -93,6 +93,7 @@ against `@hotbunny/hackhub-content-sdk@0.21.0`.
 | [`docs/03-questions-for-the-developers.md`](docs/03-questions-for-the-developers.md) | Open questions about the game and SDK. |
 | [`docs/04-engine-bug-quest-completion.md`](docs/04-engine-bug-quest-completion.md) | The engine bug that stops a mod quest completing. |
 | [`docs/05-bug-report-for-hotbunny.md`](docs/05-bug-report-for-hotbunny.md) | The consolidated report sent to the game's developer. |
+| [`docs/07-dev-response-mod-sdk-bug-report-response.md`](docs/07-dev-response-mod-sdk-bug-report-response.md) | The developer's reply — **fenced**: promised, not shipped. Read the banner before acting on it. |
 | [`docs/plans/`](docs/plans/) | Per-round working notes: the evidence behind specific fixes. |
 | [`docs/In-Game-Handbook.md`](docs/In-Game-Handbook.md) | Zeis's transcription of the game's handbook — the top authority for how a player acts. |
 | [`reference/Official-Quest/`](reference/Official-Quest/) | Zeis's transcriptions of the official quests (7 so far; "Journalist's Sister" pending) — how real quests flow, cross-checked in [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). |
@@ -127,7 +128,7 @@ Only relevant to coders, if you just want to use the tool you can ignore this.
 
 ```bash
 npm run typecheck    # tsc --noEmit
-npm test             # 1,166 tests (vitest)
+npm test             # 1,197 tests (vitest)
 npm run build        # typecheck + vite build → dist/
 ```
 

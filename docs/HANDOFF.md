@@ -21,7 +21,7 @@ The r126 template audit it responds to lives in
 
 ## Where things stand
 
-- **HEAD:** `548595a` on `arena/01a08809-hackhub-quest-editor`, committed and
+- **HEAD:** `1d3e086` on `arena/01a08809-hackhub-quest-editor`, committed and
   pushed.
 - **1,166 tests green** across 55 files, typecheck clean. The only noise is
   the 4 pre-existing d3-drag jsdom teardown errors, unrelated to this work.

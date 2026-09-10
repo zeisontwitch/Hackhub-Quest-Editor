@@ -23,6 +23,7 @@ import {
 } from "./pageDoc";
 import { LlmPromptDialog } from "./LlmPromptDialog";
 import { CodePageEditor, VisualPageEditor } from "./pageEditor";
+import type { TargetingState } from "./pageEditor";
 
 export function WebsiteBuilderDialog({
     open,
@@ -54,6 +55,10 @@ export function WebsiteBuilderDialog({
     const [searchDraft, setSearchDraft] = useState<string | null>(null);
     useEffect(() => setSearchDraft(null), [pageId]);
     const [llmOpen, setLlmOpen] = useState(false);
+    /** Armed point-to-link: which page is being linked and which sidebar
+        socket the noodle hangs from. Lives here so the sidebar sockets and
+        the visual editor's picker share one gesture. */
+    const [targeting, setTargeting] = useState<TargetingState | null>(null);
     const htmlFileRef = useRef<HTMLInputElement>(null);
     const toast = useEditor((s) => s.toast);
 
@@ -370,6 +375,22 @@ export function WebsiteBuilderDialog({
                                             <div className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center gap-0.5 rounded-md border border-line bg-surface-2 p-0.5 opacity-0 shadow transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                                                 <button
                                                     type="button"
+                                                    className="btn-icon text-accent"
+                                                    title="Pick-whip: then click the text on the page that should link to this page (Esc cancels)"
+                                                    aria-label={`Point at the text on the page to link it to ${p.path}`}
+                                                    onClick={(e) => {
+                                                        const r = e.currentTarget.getBoundingClientRect();
+                                                        setMode("visual");
+                                                        setTargeting({
+                                                            path: p.path,
+                                                            origin: { x: r.left + r.width / 2, y: r.top + r.height / 2 },
+                                                        });
+                                                    }}
+                                                >
+                                                    🎯
+                                                </button>
+                                                <button
+                                                    type="button"
                                                     className="btn-icon"
                                                     title="Duplicate page"
                                                     aria-label={`Duplicate page ${p.path}`}
@@ -415,7 +436,10 @@ export function WebsiteBuilderDialog({
                                                     <button
                                                         key={m}
                                                         type="button"
-                                                        onClick={() => setMode(m)}
+                                                        onClick={() => {
+                                                    setTargeting(null);
+                                                    setMode(m);
+                                                }}
                                                         className={cn(
                                                             "rounded px-2.5 py-1 text-[11px] capitalize",
                                                             mode === m ? "bg-accent-soft text-accent" : "text-ink-4 hover:text-ink",
@@ -674,6 +698,8 @@ export function WebsiteBuilderDialog({
                                                     key={`${page.id}:${outsideRev}`}
                                                     doc={page.content}
                                                     pages={pages.map((p) => ({ path: p.path, title: p.title }))}
+                                                    targeting={targeting}
+                                                    onTargetingChange={setTargeting}
                                                     onChange={(content) => updatePage(site.id, page.id, { content })}
                                                     ariaLabel={`Visual editor for ${page.path}`}
                                                 />

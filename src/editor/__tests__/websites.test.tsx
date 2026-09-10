@@ -592,3 +592,30 @@ describe("r132 audit fixes", () => {
         expect(screen.getByText(/1 more comment/)).toBeInTheDocument();
     });
 });
+
+describe("r133 pick-whip sockets", () => {
+    it("sidebar page sockets arm point-to-link, noodle and hint bar together", () => {
+        const site = createWebsite({
+            pages: [createPage({ path: "/", title: "Home" }), createPage({ path: "/contact", title: "Contact" })],
+        });
+        act(() => useEditor.getState().addWebsite(site));
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+
+        // No noodle while idle.
+        expect(document.body.querySelector("svg.link-noodle")).toBeNull();
+
+        // Arming from the sidebar socket shows the hint bar and renders the
+        // noodle portal (jsdom has no cursor, so the line itself stays
+        // hidden; the overlay is the observable part).
+        fireEvent.click(
+            screen.getByRole("button", { name: "Point at the text on the page to link it to /contact" }),
+        );
+        expect(screen.getByText(/Click the text on the page that should link to/)).toBeInTheDocument();
+        expect(document.body.querySelector("svg.link-noodle")).not.toBeNull();
+
+        // Cancel disarms and the noodle goes away with it.
+        fireEvent.click(screen.getByRole("button", { name: "Cancel point-to-link" }));
+        expect(screen.queryByText(/Click the text on the page that should link to/)).not.toBeInTheDocument();
+        expect(document.body.querySelector("svg.link-noodle")).toBeNull();
+    });
+});

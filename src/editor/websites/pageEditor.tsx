@@ -9,7 +9,8 @@
  * Code: the full document as text, for copy-pasting html/css/js or loading
  * LLM-written sites.
  */
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { UIEvent } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import Prism from "prismjs";
@@ -30,17 +31,31 @@ const BLOCKS = [
     { cmd: "formatBlock", arg: "blockquote", label: "❝", title: "Quote" },
 ] as const;
 
+/** An armed point-to-link: the path being linked and where the noodle
+    starts (the socket the author armed it from, in client coordinates). */
+export interface TargetingState {
+    path: string;
+    origin: { x: number; y: number };
+}
+
 export function VisualPageEditor({
     doc,
     onChange,
     ariaLabel,
     pages = [],
+    targeting,
+    onTargetingChange,
 }: {
     doc: string;
     onChange: (fullDocument: string) => void;
     ariaLabel: string;
     /** The site's pages — the link picker's rows and point-to-link targets. */
     pages?: { path: string; title: string }[];
+    /** Controlled point-to-link state. The builder passes this so the
+        sidebar's page sockets and the picker's 🎯 share one armed link. */
+    targeting?: TargetingState | null;
+    /** Called on arm, place, Esc and Cancel. Omit for uncontrolled use. */
+    onTargetingChange?: (t: TargetingState | null) => void;
 }) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const fileRef = useRef<HTMLInputElement>(null);
@@ -48,13 +63,27 @@ export function VisualPageEditor({
         click handler attached once at iframe load always reads the current
         arm without re-attaching listeners. */
     const armedRef = useRef<string | null>(null);
-    const [targeting, setTargeting] = useState<string | null>(null);
+    const [internalTargeting, setInternalTargeting] = useState<TargetingState | null>(null);
+    /** Where the noodle's tip is. Window mousemove covers the builder chrome;
+        a same-origin forwarder from the page document covers the iframe —
+        its mousemoves never reach the parent document on their own. */
+    const cursorRef = useRef<{ x: number; y: number } | null>(null);
+    const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
+    /** The noodle's ghost: after place/Escape it fades out where it stood. */
+    const [ghost, setGhost] = useState<{ from: { x: number; y: number }; to: { x: number; y: number } } | null>(null);
+    const [ghostOut, setGhostOut] = useState(false);
     const [linkOpen, setLinkOpen] = useState(false);
     const [linkPath, setLinkPath] = useState("/");
 
+    const t = onTargetingChange ? (targeting ?? null) : internalTargeting;
+    const updateTargeting = (nt: TargetingState | null) => {
+        if (onTargetingChange) onTargetingChange(nt);
+        else setInternalTargeting(nt);
+    };
+
     const disarm = () => {
         armedRef.current = null;
-        setTargeting(null);
+        updateTargeting(null);
     };
     // Fixed at mount: the parent remounts us (key) whenever content changes
     // from outside, so the caret never resets mid-typing.
@@ -73,6 +102,55 @@ export function VisualPageEditor({
             ? parts.head.replace(/<head[^>]*>/i, (m) => `${m}\n${csp}`) + parts.body + parts.tail
             : `<!doctype html><html><head>${csp}</head><body>${parts.isFull ? parts.body : doc}</body></html>`;
     }, [doc, parts]);
+
+    // Keep the armed ref in lockstep with the (controlled or internal)
+    // targeting state; the once-attached iframe handlers read the ref.
+    useEffect(() => {
+        armedRef.current = t?.path ?? null;
+    }, [t?.path]);
+
+    // The noodle's tip follows the pointer over the builder chrome…
+    useEffect(() => {
+        if (!t) return;
+        const onMove = (e: MouseEvent) => {
+            cursorRef.current = { x: e.clientX, y: e.clientY };
+            setCursor(cursorRef.current);
+        };
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") disarm();
+        };
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("keydown", onKey);
+        return () => {
+            window.removeEventListener("mousemove", onMove);
+            window.removeEventListener("keydown", onKey);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [t?.path]);
+
+    // …and when the link is placed or cancelled, the noodle ghost-fades
+    // where it stood (Zeis's r133 spec: ghost-fade on click and on Esc).
+    const prevT = useRef<TargetingState | null>(null);
+    useEffect(() => {
+        if (t) {
+            setGhost(null);
+            setGhostOut(false);
+            prevT.current = t;
+            return;
+        }
+        const prev = prevT.current;
+        const to = cursorRef.current;
+        prevT.current = null;
+        if (!prev || !to) return;
+        setGhost({ from: prev.origin, to });
+        setGhostOut(false);
+        const raf = requestAnimationFrame(() => setGhostOut(true));
+        const timer = setTimeout(() => setGhost(null), 340);
+        return () => {
+            cancelAnimationFrame(raf);
+            clearTimeout(timer);
+        };
+    }, [t]);
 
     const emit = () => {
         const body = iframeRef.current?.contentDocument?.body;
@@ -102,6 +180,16 @@ export function VisualPageEditor({
         d.addEventListener("keydown", (e) => {
             if (e.key === "Escape") disarm();
         });
+        // Forward pointer moves to the parent: while the noodle is armed its
+        // tip must keep following the cursor across the iframe (same-origin,
+        // so this listener is ours). Coordinates are iframe-viewport-relative.
+        d.addEventListener("mousemove", (e) => {
+            if (!armedRef.current) return;
+            const rect = iframeRef.current?.getBoundingClientRect();
+            if (!rect) return;
+            cursorRef.current = { x: e.clientX + rect.left, y: e.clientY + rect.top };
+            setCursor(cursorRef.current);
+        });
     };
 
     const exec = (cmd: string, arg?: string) => {
@@ -128,12 +216,17 @@ export function VisualPageEditor({
         setLinkPath("/");
     };
 
-    /** Arm point-to-link: the next click inside the page becomes the link. */
-    const arm = (path: string) => {
+    /** Arm point-to-link: the next click inside the page becomes the link.
+        The socket the author armed from anchors the noodle's other end. */
+    const arm = (path: string, socket: HTMLElement) => {
+        const r = socket.getBoundingClientRect();
         armedRef.current = path;
-        setTargeting(path);
         setLinkOpen(false);
         setLinkPath("/");
+        updateTargeting({
+            path,
+            origin: { x: r.left + r.width / 2, y: r.top + r.height / 2 },
+        });
     };
 
     const onImageFile = (file: File | undefined) => {
@@ -240,7 +333,7 @@ export function VisualPageEditor({
                                                 className="btn-icon shrink-0"
                                                 title="Point at the text on the page instead — then click the text that should become this link"
                                                 aria-label={`Point at the text on the page to link it to ${pg.path}`}
-                                                onClick={() => arm(pg.path)}
+                                                onClick={(e) => arm(pg.path, e.currentTarget)}
                                             >
                                                 🎯
                                             </button>
@@ -294,11 +387,11 @@ export function VisualPageEditor({
                     images are embedded — the game's web views have no internet
                 </span>
             </div>
-            {targeting && (
+            {t && (
                 <div className="flex items-center justify-between gap-2 border-b border-accent/40 bg-accent-soft px-3 py-1.5 text-[10.5px] text-accent">
                     <span>
                         Click the text on the page that should link to{" "}
-                        <code className="font-mono">{targeting}</code> — Esc cancels.
+                        <code className="font-mono">{t.path}</code> — Esc cancels.
                     </span>
                     <button type="button" className="btn-default shrink-0" aria-label="Cancel point-to-link" onClick={disarm}>
                         Cancel
@@ -312,6 +405,43 @@ export function VisualPageEditor({
                 onLoad={onLoad}
                 className="block h-[48vh] w-full border-0 bg-white"
             />
+            {(() => {
+                const line = t ? { from: t.origin, to: cursor ?? t.origin } : ghost;
+                if (!line) return null;
+                const dx = line.to.x - line.from.x;
+                return createPortal(
+                    <svg
+                        aria-hidden
+                        className="link-noodle pointer-events-none fixed inset-0 z-[90] h-full w-full"
+                    >
+                        <g
+                            style={{
+                                opacity: t ? 1 : ghostOut ? 0 : 1,
+                                transition: "opacity 300ms ease-out",
+                            }}
+                        >
+                            <path
+                                d={`M ${line.from.x} ${line.from.y} C ${line.from.x + dx * 0.5} ${line.from.y}, ${line.to.x - dx * 0.5} ${line.to.y}, ${line.to.x} ${line.to.y}`}
+                                fill="none"
+                                className="stroke-accent"
+                                strokeWidth={2}
+                                strokeLinecap="round"
+                                opacity={0.85}
+                            />
+                            <circle cx={line.from.x} cy={line.from.y} r={3.5} className="fill-accent" />
+                            <circle
+                                cx={line.to.x}
+                                cy={line.to.y}
+                                r={6}
+                                className="fill-surface stroke-accent"
+                                strokeWidth={1.5}
+                            />
+                            <circle cx={line.to.x} cy={line.to.y} r={2.25} className="fill-accent" />
+                        </g>
+                    </svg>,
+                    document.body,
+                );
+            })()}
         </div>
     );
 }

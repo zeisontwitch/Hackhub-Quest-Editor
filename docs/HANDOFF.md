@@ -1,12 +1,14 @@
 # Handoff — r133
 
 r133 built **linking without touching HTML** ([plan](plans/r133-page-linking.md)):
-Zeis's After Effects pick-whip idea (drag a wire from the sidebar page onto
-the text that should link to it), verdict "right instinct, wrong physics for
-an iframe", shipped as click-click — the 🔗 button is a popover of the site's
-pages (link the selection or insert the path bare) and the 🎯 beside each
-page arms point-to-link: the next click inside the page becomes the link;
-existing links retarget. r132 was the **website builder audit** (roadmap item 9,
+Zeis's After Effects pick-whip idea, verdict "right instinct, wrong physics
+for a drag", shipped as click-click *with the noodle kept*: the 🔗 button is
+a popover of the site's pages, every sidebar page row has a 🎯 socket, and
+arming renders a wire from the socket to the cursor — reroute-nodule tip,
+follows across the iframe, ghost-fades on place/Cancel/Esc — until the next
+click inside the page becomes the link (existing links retarget). His
+screenshot also caught that the first cut hid the targets inside the
+popover; the sockets now live on the rows where you look. r132 was the **website builder audit** (roadmap item 9,
 [plan](plans/r132-website-builder-audit.md)): the whole builder surface read
 end to end, three real defects fixed — the visual editor silently *ran page
 scripts* while editing (now CSP-blocked in the editing copy, scripts kept in
@@ -246,9 +248,7 @@ wants the *specific action* named.
    **preview navigation** (mini address bar; the preview follows in-site
    links so an author walks the site like a player) and **multi-file
    import** (the AI flow returns one .html per page — import in one go,
-   pages created from filenames, `news.html` → `/news`). Small round; also
-   hands-on time with r133's 🎯 — if the pick-whip spirit is missed, a drag
-   version (same-origin event forwarding) is sketched in the r133 plan.
+   pages created from filenames, `news.html` → `/news`). Small round.
 3. **r131's proposals, approved by Zeis** (roadmap item 10): the **campaign template** (multi-quest chain via `fx.claimQuest`,
    one world-owner per campaign — see the analysis §4 for the
    whose-world-is-it design question), the **Kisscord contact lifecycle**

@@ -79,3 +79,41 @@ tests (1,229 total across 57 files), typecheck clean, build clean, stamp
 `2026-09-11.r133`. The remaining approved website work is the two queue
 items above; the r131 builds (campaign template, Kisscord contact lifecycle,
 cookbook card) stay queued behind them per Zeis's approvals.
+
+## Follow-up (same round): sockets where you look, and the noodle, after all
+
+Zeis's screenshot of the builder caught the discoverability hole: the 🎯s
+lived only inside the 🔗 popover, and the natural place to look is the page
+row in the sidebar. "Am I missing something or are the targets not
+displayed?" — neither; they were somewhere nobody would look. His follow-up
+proposal: keep the picker but *fake the wire* — render a noodle from the
+destination page in the sidebar to the mouse cursor, ghost-fade on place and
+on Esc, with a reroute-nodule-style element riding the cursor.
+
+Agreed and shipped — this was always the good part of the pick-whip. The
+original objection was to drag *physics* (cross-iframe drag events,
+ambiguous drop targets), and a rendered noodle has none of those problems:
+arming is still a click, placing is still a click, and everything in between
+is paint. What shipped:
+
+- **Sockets on the sidebar rows**: every page row's hover actions now lead
+  with an accent 🎯 ("Pick-whip: then click the text on the page that should
+  link to this page"). Arming from a row switches to the Visual tab if
+  needed — the gesture works from anywhere in the builder.
+- **The noodle**: an accent bezier from the arming socket to the cursor
+  (React Flow-style control points), with a reroute-nodule twin-circle at
+  the tip. It renders the moment the gesture is armed (tip curled at the
+  socket until the first pointer move), follows the cursor across the
+  builder chrome *and* across the page iframe — same-origin mousemove
+  forwarder, since iframe pointer events never reach the parent document on
+  their own — and **ghost-fades where it stood** on place, Cancel and Esc
+  (300 ms).
+- The picker's 🎯 arms the same gesture (the noodle hangs from the popover
+  row's socket), so both entry points are one flow.
+- Manual switches to the Code/Preview tabs drop an armed noodle.
+
+Point-to-link state is now shared (controlled) between the builder and the
+visual editor (`TargetingState` — path + socket origin); the isolation tests
+exercise the uncontrolled fallback. 1,230 tests green; the new test pins the
+sidebar socket end to end: idle → arm (hint bar + noodle portal) → Cancel
+(gone).

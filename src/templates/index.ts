@@ -131,7 +131,7 @@ export const TEMPLATES: Template[] = [
         description:
             "How the quests the game itself ships with are built, technique by technique — and which nodes express each one here. Read-only reference sheet; the companion to the Node Reference.",
         difficulty: "Reference",
-        nodeCount: 12,
+        nodeCount: 14,
         build: buildCookbook,
     },
 ];

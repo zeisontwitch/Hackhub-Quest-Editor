@@ -221,6 +221,16 @@ export function TopBar() {
                 <span className="hidden lg:inline">Dialogues</span>
             </button>
 
+            <button
+                type="button"
+                className="btn-default"
+                onClick={() => setUi({ modal: "simulator" })}
+                title="Walk through the quest as the exported mod would run it"
+            >
+                <Icon name="play" size={13} />
+                <span className="hidden lg:inline">Dry run</span>
+            </button>
+
             <button type="button" className="btn-default" onClick={() => setUi({ modal: "websites" })}>
                 <Icon name="globe" size={13} />
                 <span className="hidden lg:inline">Websites</span>

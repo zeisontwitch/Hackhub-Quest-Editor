@@ -11,6 +11,7 @@ import { downloadProject, parseProjectFile, projectFileName } from "@/templates/
 import { clearDraft } from "@/store/autosave";
 import { WebsiteBuilderDialog } from "@/editor/websites/WebsiteBuilder";
 import { DialoguesDialog } from "./DialoguesDialog";
+import { SimulatorDialog } from "@/editor/simulator/SimulatorDialog";
 import { ExportDialog } from "./ExportDialog";
 import { EVENT_COUNT, SDK_VERSION } from "@/schema/events";
 
@@ -335,6 +336,7 @@ export function Overlays() {
             <WebsiteBuilderDialog open={modal === "websites"} onOpenChange={(o) => setUi({ modal: o ? "websites" : null })} />
             <DialoguesDialog open={modal === "dialogues"} onOpenChange={(o) => setUi({ modal: o ? "dialogues" : null })} />
             <ExportDialog open={modal === "mod"} onOpenChange={(o) => setUi({ modal: o ? "mod" : null })} />
+            <SimulatorDialog open={modal === "simulator"} onOpenChange={(o) => setUi({ modal: o ? "simulator" : null })} />
         </>
     );
 }

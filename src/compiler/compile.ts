@@ -107,7 +107,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-10.r129";
+export const EDITOR_BUILD = "2026-09-11.r130";
 
 export interface CompiledFile {
     path: string;
@@ -421,6 +421,23 @@ export function computeWarnings(project: ProjectDocument): string[] {
         if (hidden.length) {
             warnings.push(
                 `${w.host}: ${hidden.length} unlisted page${hidden.length > 1 ? "s" : ""} (${hidden.map((p) => p.path).join(", ")}). Nothing links to ${hidden.length > 1 ? "them" : "it"} and the in-game search will not show ${hidden.length > 1 ? "them" : "it"}, so the player reaches ${hidden.length > 1 ? "them" : "it"} only by typing the address or by running dirhunter on the host — which is exactly what makes a good hiding place for a clue. If you meant ${hidden.length > 1 ? "these" : "this"} to be findable normally, turn on “Listed in search” for the page.`,
+            );
+        }
+    }
+    /* Domains are global in the game (docs/03, template rule 5): two sites on
+       one host fight over who answers, and a placeholder host ships as a real
+       site any player can find. Both are authoring mistakes worth a warning. */
+    const hosts = new Map<string, number>();
+    for (const w of project.websites) hosts.set(w.host, (hosts.get(w.host) ?? 0) + 1);
+    for (const [host, count] of hosts) {
+        if (count > 1) {
+            warnings.push(
+                `${host} is the host of ${count} websites in this mod. Domains are global — two sites on one host will fight over which one answers. Give each site its own distinctive host.`,
+            );
+        }
+        if (/^(www\.)?(example\.(com|net|org)|test\.com|localhost)$/i.test(host)) {
+            warnings.push(
+                `${host} is a placeholder domain, but the export ships it as a real site any player can find (and another mod may already use it). Pick a distinctive host — read it like a domain you would type yourself.`,
             );
         }
     }

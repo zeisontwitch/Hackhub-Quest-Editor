@@ -281,6 +281,25 @@ describe("compile", () => {
         expect("search" in secret).toBe(false);
     });
 
+    it("warns when two websites share a host, and on placeholder hosts", () => {
+        const project = scenarioProject();
+        project.websites.push({
+            id: "w2",
+            host: "target.net",
+            name: "Target Two",
+            pages: [{ id: "p3", path: "/", title: "Home", seo: true, content: "<html></html>" }],
+        });
+        const dup = computeWarnings(project).filter((w) => w.includes("target.net") && w.includes("fight"));
+        expect(dup).toHaveLength(1);
+
+        const placeholder = scenarioProject();
+        placeholder.websites[0].host = "example.net";
+        expect(computeWarnings(placeholder).some((w) => w.includes("placeholder domain"))).toBe(true);
+
+        // Distinct, real hosts stay silent.
+        expect(computeWarnings(scenarioProject()).filter((w) => w.includes("fight") || w.includes("placeholder"))).toEqual([]);
+    });
+
     it("the export dialog shows the compile summary and packs a zip", async () => {
         const { buildModZip } = await import("@/editor/shell/ExportDialog");
         const result = compileProject(scenarioProject());

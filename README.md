@@ -38,7 +38,6 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 | 5 | **Settings page** | The wire-physics dials currently live in the debug panel, which is a developer tool. They — and the snap/animation/physics toggles — deserve a proper home an author can find. |
 | 6 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
 | 7 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. The official Cryptographer Hunt (a phone social-engineering scene with a fail route on the wrong choice) is the strongest argument for it — see [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). |
-| 8 | **Quest Simulator** (r130, queued — awaiting Zeis's go) | A dry-run overlay: instantiate the emitted `dist/mod.js` against a stub SDK and walk the author's quest — which nodes fire, in what order, which trigger matches, where the story dead-ends. Reuses the compile-test machinery; simulates *our* runtime, not the game, and is labelled that way. Plus Cookbook riders: a port-forwarding card, the metasploit payload/handler line, a **Pacing** card (what waits for real vs. what has no node), and a shared-domain analysis warning. |
 | 9 | **Website builder audit** | The builder has been essentially untouched since its first implementation — one bug fix in 100+ revisions. Clean-code + UX audit in the r123/r125 style (`WebsiteBuilder`/`pageEditor`/`pageDoc`, site+page templates, HTML import, the LLM prompt dialog). Folds in the `WebsiteDefinition.popular` self-test ([`docs/03` question 12](docs/03-questions-for-the-developers.md)) and an in-game check of the r129 search metadata. |
 
 ### Known limitations (not bugs)
@@ -54,6 +53,7 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 
 | Round | Item |
 |---|---|
+| r130 | **The Dry run** ([plan](docs/plans/r130-quest-simulator.md)): a top-bar button compiles the project, evaluates the real emitted `dist/mod.js` against a recording stub SDK and walks every quest — the trace of what fires, how each objective completes, and a probe that fires the runtime's own trigger listeners with a payload shaped the way the conditions expect ("would tick / would never tick"). Cookbook gained Port forwarding and **Pacing** cards and the payload/handler line; `computeWarnings` now flags shared and placeholder hosts. Simulates the editor's runtime, and says so in the dialog. |
 | r129 | **Website pages emit `description` + `search[]`** ([plan](docs/plans/r129-website-search-metadata.md)) — roadmap item 2 closed. The SDK supported both all along; our runtime page mapping dropped them. The site builder's page settings gain a search-result description and extra search words; pages that don't use the fields export byte-identically to before. In-game presentation of the two fields still awaits Zeis's eyes (4 questions in the plan); also asked the developer what `WebsiteDefinition.popular` does. |
 | r128 | **Both r127 proposals built, and the developer's reply filed under a fence.** [`docs/07`](docs/07-dev-response-mod-sdk-bug-report-response.md) is verbatim with a status banner: nothing in it is in the pinned SDK yet, so nothing implements and no workaround comes off. **Six Tries** (Advanced) is the official quests' crack-and-log-in route — hydra tool response keyed user+target, an objective reading the cracked credential off `Terminal.Hydra`, then `ssh -h` (three pins guard exactly that; falsified). **Quest Cookbook** (Reference sheet) maps each official-quest technique to the nodes that express it — including the honest "engine-only" ones. r127's Proposal B was re-surfaced: `handbookArticles.ts` is the in-game Handbook's jump list, not editor guidance, so the cookbook is canvas furniture like the Node Reference. Stamp `2026-09-09.r128`. |
 | r126 | **Template audit: three quests had stories that could not end.** First Contact never paid — its payment was wired to "On quest complete", which never fires with the defaults — and Byline/Cold Storage lost their closings the same way; all rewired to end from the last objective. Cold Storage's database had no tables for its own read-ledger trigger (seeded `lead_ledger`). Help Desk's client confirmed a file nobody sent (new `send-report` objective). Help Desk taught `ssh user@ip`; the handbook says `ssh -h user@ip`. New guards: a wired On-complete warns, and database rows are shaped as `{value, type}` for the engine. (Ledger has the same dead wiring — deferred per Zeis.) |
@@ -79,7 +79,7 @@ rules the code now follows.
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-10.r129`: **1,200 tests** across 55
+Counted from the code at build `2026-09-11.r130`: **1,218 tests** across 57
 files, **32 node types** in 9 categories (31 in the palette — Wi-Fi is hidden),
 **12 templates** (10 playable + 2 reference sheets), **92 game events**,
 against `@hotbunny/hackhub-content-sdk@0.21.0`.
@@ -130,7 +130,7 @@ Only relevant to coders, if you just want to use the tool you can ignore this.
 
 ```bash
 npm run typecheck    # tsc --noEmit
-npm test             # 1,200 tests (vitest)
+npm test             # 1,218 tests (vitest)
 npm run build        # typecheck + vite build → dist/
 ```
 

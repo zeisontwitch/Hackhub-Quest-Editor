@@ -110,6 +110,8 @@ export function buildCookbook(): ProjectDocument {
             "Steal Exam Questions, Cold Storage: nmap -sV shows a version; msf needs it exactly, three numbers (OpenSSH 6.4.0, never 7.2), matching the banner.",
             "",
             "Build it: put the version on the port, and let an objective wait on Metasploit.Meterpreter.Connected. The Harbour Manifest walks the whole thing.",
+            "",
+            "The phishing route adds the payload: the player sets LHOST/LPORT (watch Metasploit.SetOption if the story should react), forwards the listener port on the router, and runs handler — a reverse shell needs that port open.",
         ].join("\n"),
         width: 340,
     });
@@ -147,6 +149,28 @@ export function buildCookbook(): ProjectDocument {
         width: 340,
     });
 
+    const forwarding = makeNode("flow.note", CARD(0, 6), {
+        text: [
+            "Port forwarding",
+            "",
+            "The handbook treats forwarding as a rule on the ROUTER: external port → internal IP → internal port, plus an enabled flag. A rule that exists but is disabled does nothing — and the firewall sits in FRONT of the router, which is why a connection can fail after \"opening the port\".",
+            "",
+            "Build it: the network editor's port rows already carry external and internal numbers (the preset dropdown fills common services). Add the world.firewall node for the layer in front. The r125 defaults pre-fill the random-machine token for you.",
+        ].join("\n"),
+        width: 340,
+    });
+
+    const pacing = makeNode("flow.note", CARD(1, 6), {
+        text: [
+            "Pacing",
+            "",
+            "Waits are real. A Wait node pauses the story on the game's own timer (Random.sleep); a Sequence fires its outputs one after another with per-step pauses; a timed chat plays message by message with its own delays.",
+            "",
+            "A delay blocks only its own branch — parallel storylines run on their own clocks. What has NO node: cancellable timers, background tickers, \"in 30 seconds unless the player does X\" — the SDK has no scheduler. Anchor on events instead: trigger → Wait → follow-up.",
+        ].join("\n"),
+        width: 340,
+    });
+
     const endings = makeNode("flow.note", CARD(0, 5), {
         text: [
             "Endings",
@@ -170,7 +194,7 @@ export function buildCookbook(): ProjectDocument {
     });
 
     quest.graph = {
-        nodes: [intro, briefs, social, phishing, cracking, ftp, metasploit, mapping, database, tracks, endings, handoff],
+        nodes: [intro, briefs, social, phishing, cracking, ftp, metasploit, mapping, database, tracks, forwarding, pacing, endings, handoff],
         edges: [],
     };
 

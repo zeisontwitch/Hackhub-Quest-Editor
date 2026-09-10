@@ -211,13 +211,19 @@ wants the *specific action* named.
    page); are `search[]` terms matched (case-insensitively? alongside page
    text?); do they matter for `seo:false` pages. Carried: ssh `-h` to a 10.x
    box, Cold Storage's route, Cold Call's chat, `Terminal.SSH.Shutdown` on
-   mod machines, `Database.DataUpdate` from Database-Manager edits.
+   mod machines, `Database.DataUpdate` from Database-Manager edits. New
+   from r131: does a created Kisscord contact render a proper card (the
+   proposal-B surface)? does quest 1's world persist into quest 2 of a
+   two-quest mod (the campaign world-owner check, analysis §4)? does
+   `hasCompleteButton`'s click formally complete the quest (docs/04
+   territory — the flag ships today, the completion path is the engine
+   bug)?
 2. **Website-builder audit** (roadmap item 9): the builder is essentially
    untouched since its first implementation. r123/r125-style pass plus the
    `WebsiteDefinition.popular` self-test ([`docs/03` question 12](03-questions-for-the-developers.md)
    — hypothesis: boosts a site to the top of results; two identical sites,
    one flagged) and an in-game check of the r129 search metadata.
-3. **r131's proposals, awaiting Zeis's go** (roadmap item 10, behind the
+3. **r131's proposals, approved by Zeis** (roadmap item 10, behind the
    audit): the **campaign template** (multi-quest chain via `fx.claimQuest`,
    one world-owner per campaign — see the analysis §4 for the
    whose-world-is-it design question), the **Kisscord contact lifecycle**

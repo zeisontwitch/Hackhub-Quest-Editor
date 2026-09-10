@@ -7,7 +7,7 @@ transcription of all (r127 §9) — the one quest line with **hardcoded names**,
 i.e. the closest the game comes to doing what *mods* do. That prediction held,
 and the line exposes one genuine node-shaped gap in the editor that the SDK
 already supports **today**. Docs-only round: findings first, three proposals
-awaiting Zeis's go. No code changed, `EDITOR_BUILD` unchanged
+since approved by Zeis. No code changed, `EDITOR_BUILD` unchanged
 (`2026-09-11.r130`).
 
 ## 1. The shape of the thing
@@ -30,7 +30,11 @@ completes as the story moves on; the line leans on:
   its own quest with its own ending.
 - **A "Complete" button on the objective** appears for the first time in
   Part 11 and again at both endings — base-game quests *do* formally complete
-  (relevant to `docs/04`; for mods still fenced behind the patch).
+  (relevant to `docs/04`). For mods the **flag** ships today:
+  `hasCompleteButton` is in the pinned SDK and wired end-to-end in the
+  editor (inspector checkbox → compiler → runtime). Whether the click
+  *formally completes* is the docs/04 engine-bug question — QA item;
+  templates pin it `false` deliberately.
 - Time skips ("1 Day Later" fades), a paid contact ($100 bank transfer to
   Victor), a fake-news task, a $1M social-engineering heist, and an
   Interpol infiltration through a 25-host network with **Firewall → Router →
@@ -82,7 +86,7 @@ Everything from the r127 method applies; the new findings against it:
 | `wiglenet.py`, `net_tree.py` (GUI network maps) | Engine python scripts. `CommandDataMap` has no `python3` entry, so tool responses can't script their output; substitute: `world.customCommand` (the SDK: "your own mod commands fall back to permissive input/data"), or an NPC handout. |
 | bcc.com article rotation between parts | The site is game-owned. Mod substitute: the mod's own site + `Browser.WebsiteOpened` triggers per page, with a "new edition" page revealed when the story moves on. |
 | Suspicion / log cleaning / explorer GUI / Twotter clues | Engine-only, as r127 concluded. Note Twotter is load-bearing *again* repeatedly (three separate clue sources) — when the patch lands with `Twotter.removeUser`, its return to the editor gains real weight. |
-| "Complete" button late in the line | Base-game quests formally complete; for mods fenced until the patch ships (docs/07). |
+| "Complete" button late in the line | The **flag** ships today: `hasCompleteButton` is pinned-SDK and wired end-to-end in our editor. Whether the click *formally completes* is the docs/04 engine bug — QA item; templates pin it `false`. |
 
 **Correction to r127's table, in passing:** r127 said quest 2's
 Database-Manager ending hinged on `Database.DataUpdate` being "an in-game
@@ -92,22 +96,44 @@ online-state. No change to our stance; both stay in the QA list.
 
 ## 4. The design question a campaign must answer: whose world is it?
 
-In the official line, one world serves 13 quests. In a mod, **each quest gets
-its own `CreateData()`** — so quest 2's `{{data.targetIp}}` is a *fresh*
-random address, not quest 1's hotel. The chain machinery exists; the shared
-world does not, yet. Honest options:
+First, what is **not** open — the flow. Journalist's Sister 1 ending and
+Journalist's Sister 2 beginning is the shipped, verified part: a mod is a
+`quests` array, the TopBar's **Add Quest** button creates siblings today,
+and the compiler emits the full gate set — `autoStart` (start without
+player action), `questsToComplete` + `hackhubPost` (the SDK's own chaining
+idiom: the quest's Hackhub feed post appears once its prerequisites are
+met, like the built-in side quests), and `Quest.claim(name)` for
+programmatic starts from triggers or website buttons (`compile.ts:501–510`,
+d.ts ~1501). Chaining was never the doubt.
 
-1. **(Recommended, YAGNI-compliant) One world-owner**: quest 1 creates the
-   world; later quests never allocate — they only observe events and tell
-   story. The campaign template teaches exactly this discipline, and it
-   covers the official line's actual pattern (the *story* moves; the *world*
-   was built once).
-2. A shared-world feature (e.g. SaveStorage-backed tokens crossing quests) —
-   a real design, only worth it if authors genuinely hit the wall of 1.
+The open question is one level deeper: **the stage, not the script**. Each
+quest class carries its own `CreateData()` ("Populated at runtime by the
+game engine", d.ts 1457/1486) — and the SDK does not say whether quest 1's
+creations (its networks, hosts, files) are still there when quest 2
+begins. In the official line the world clearly persists (the hotel network
+from Part 2 is the target in Part 10) — but that line is hardcoded engine
+code, so it proves nothing about what SDK mods get. The failure mode for
+an author who assumes wrong: quest 2's `CreateData()` builds and
+re-randomizes — two half-worlds, and `{{data.targetIp}}` pointing somewhere
+new. Honest options:
+
+1. **(Recommended) One world-owner**: quest 1 creates the world; later
+   quests never allocate — they only observe events and tell story. The
+   campaign template teaches exactly this discipline, and it covers the
+   official line's actual pattern (the *story* moves; the *world* was
+   built once). Note the discipline is the correct authoring model either
+   way; what it cannot conjure is persistence if the engine drops quest
+   1's world — which is why the in-game check below exists.
+2. A shared-world feature (e.g. SaveStorage-backed tokens crossing quests —
+   the SDK itself suggests SaveStorage for "per-playthrough mod progress",
+   d.ts 2178) — a real design, only worth it if authors genuinely hit the
+   wall of 1, or if the in-game check comes back badly.
 
 Any campaign template starts with 1 and says so in its sticky note.
+**In-game check for Zeis's QA list:** in a two-quest mod, once quest 2 has
+started, is quest 1's network still reachable (ping / browser), or gone?
 
-## 5. Proposals (awaiting Zeis's go — nothing built this round)
+## 5. Proposals (approved by Zeis — build queued after the r132 audit)
 
 - **A. The campaign template** (Advanced/Expert): three linked quests in one
   mod — Act I ends with `fx.claimQuest` into Act II, a new Kisscord contact
@@ -133,6 +159,6 @@ Any campaign template starts with 1 and says so in its sticky note.
 
 ---
 
-**Status:** analysis + three proposals, awaiting Zeis. Gates at time of
+**Status:** analysis + three proposals, approved by Zeis. Gates at time of
 writing: docs-only; typecheck clean; 1,219 tests green (last full run,
 r130 + the reroute pin).

@@ -14,11 +14,13 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** `423569f` (r130) on `arena/01a08809-hackhub-quest-editor`,
-  committed and pushed. (A sandbox reset rolled local history back to
+- **HEAD:** r131 (docs-only analysis round) on
+  `arena/01a08809-hackhub-quest-editor`, committed and pushed. Previous code
+  round: `423569f` (r130). (A sandbox reset rolled local history back to
   `c0e511f` mid-r129; recovered from the remote tip per the standing
   fetch-first rule — the remote is authoritative.)
-- **1,218 tests green** across 57 files, typecheck clean. The only noise is
+- **1,219 tests green** across 57 files (last full run, r130 + the reroute
+  pin; r131 changed no code), typecheck clean. The only noise is
   the 4 pre-existing d3-drag jsdom teardown errors, unrelated to this work.
 - **Editor build stamp:** `2026-09-11.r130`.
 - Shared graph helpers extracted to `src/templates/kit.ts`; each template is its
@@ -39,9 +41,11 @@ banner before acting on any of it.
    *call*; the handbook says what the game *teaches*. The previous session got
    three things wrong by consulting only the SDK.
 3. **[`reference/Official-Quest/`](../reference/Official-Quest/)** — Zeis's
-   transcriptions of the quests the game itself ships. The strongest cross-check
-   for how real quests flow; read with
-   [`docs/plans/r127-official-quest-comparison.md`](plans/r127-official-quest-comparison.md).
+   transcriptions of the quests the game itself ships (the complete official
+   set, 8 files). The strongest cross-check for how real quests flow; read
+   with [`docs/plans/r127-official-quest-comparison.md`](plans/r127-official-quest-comparison.md)
+   and the Journalist's Sister deep-dive
+   [`docs/plans/r131-journalists-sister-analysis.md`](plans/r131-journalists-sister-analysis.md).
 4. **[`docs/07-dev-response-mod-sdk-bug-report-response.md`](07-dev-response-mod-sdk-bug-report-response.md)**
    — the developer's answer to our bug report: engine facts true today (Q3
    exploitability, Q4 version format, Q6 dual file events) next to patch
@@ -52,7 +56,7 @@ banner before acting on any of it.
 6. **[`docs/plans/r129-website-search-metadata.md`](plans/r129-website-search-metadata.md)**
    — the search-metadata round: ground truth, the one-line drop point, the
    four in-game questions (and the `popular` question for the developer).
-6. **[`docs/plans/r126-template-audit.md`](plans/r126-template-audit.md)** —
+7. **[`docs/plans/r126-template-audit.md`](plans/r126-template-audit.md)** —
    what the audit found in the templates, what it fixed, and the in-game
    questions still open. (r127's comparison plan remains the source behind
    the cookbook.)
@@ -213,7 +217,15 @@ wants the *specific action* named.
    `WebsiteDefinition.popular` self-test ([`docs/03` question 12](03-questions-for-the-developers.md)
    — hypothesis: boosts a site to the top of results; two identical sites,
    one flagged) and an in-game check of the r129 search metadata.
-3. **When the developer's patch lands, lift the fence in this order:** pin the
+3. **r131's proposals, awaiting Zeis's go** (roadmap item 10, behind the
+   audit): the **campaign template** (multi-quest chain via `fx.claimQuest`,
+   one world-owner per campaign — see the analysis §4 for the
+   whose-world-is-it design question), the **Kisscord contact lifecycle**
+   (`createUser`/`addUser`/`addFriend`/`changeStatus` — declared in the
+   pinned SDK, unmodeled; likely inspector fields around the dialogue node,
+   exact surface decided in the round's plan; in-game check: does a created
+   contact render a proper card?), and a **Campaign cookbook card**.
+4. **When the developer's patch lands, lift the fence in this order:** pin the
    new SDK version → `npm ci` → `npm run gen:events` → diff
    `reference/hackhub-events.json` → read the new `d.ts` → Zeis verifies
    in-game → *then* plan the round (formal quest completion per `docs/04`
@@ -223,16 +235,16 @@ wants the *specific action* named.
    retest of the completion path + Twotter on the patched build, and a minimal
    mail repro if BUG 1 persists. Before all of that: nothing implements,
    nothing is removed.
-4. **A settings page** (roadmap item 5) — the wire-physics dials live in the
+5. **A settings page** (roadmap item 5) — the wire-physics dials live in the
    debug panel, which is a developer tool. Those and the snap/animation/physics
    toggles deserve a home an author can find. Also outstanding: the **fade-ms
    slider in the debug panel does nothing** (the fade runs inside the
    retraction, so `ghostMs` only feeds a safety backstop) — cosmetic, but a
    real inconsistency to resolve when the settings page lands.
-5. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
+6. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
    template, not yet built. Cryptographer Hunt's fail-choice phone scene is
    the in-game proof this shape matters.
-6. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
+7. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
    banners + ports 25/110/143; Apache metasploit module for 2.4.49/50 or
    flavour?; Handbook screenshot (titles + categories) + the id=title jump
    test; eyes on the preview. Plus the Harbour `scp` hint fix noted above.

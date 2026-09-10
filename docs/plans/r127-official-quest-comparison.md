@@ -216,6 +216,13 @@ of all: the one quest line with hardcoded names, i.e. the closest to how
 *mods* must work. Read it against the multi-quest-per-mod support
 (`entry.load`, quest chains) the moment it lands.
 
+**→ Done in r131** (1,845 lines, 13 quests): one node-shaped gap found
+(the Kisscord contact lifecycle — `createUser`/`addFriend`/`changeStatus`,
+all declared in the pinned SDK today), plus the chain-of-quests structure
+proof. Three proposals staged (campaign template, contact lifecycle,
+campaign cookbook card) — awaiting Zeis. Full analysis:
+[`docs/plans/r131-journalists-sister-analysis.md`](./r131-journalists-sister-analysis.md).
+
 ---
 
 **Status:** findings + two proposals, awaiting Zeis. Gates at time of

@@ -98,7 +98,7 @@ against `@hotbunny/hackhub-content-sdk@0.21.0`.
 | [`docs/07-dev-response-mod-sdk-bug-report-response.md`](docs/07-dev-response-mod-sdk-bug-report-response.md) | The developer's reply — **fenced**: promised, not shipped. Read the banner before acting on it. |
 | [`docs/plans/`](docs/plans/) | Per-round working notes: the evidence behind specific fixes. |
 | [`docs/In-Game-Handbook.md`](docs/In-Game-Handbook.md) | Zeis's transcription of the game's handbook — the top authority for how a player acts. |
-| [`reference/Official-Quest/`](reference/Official-Quest/) | Zeis's transcriptions of the official quests (7 so far; "Journalist's Sister" pending) — how real quests flow, cross-checked in [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). |
+| [`reference/Official-Quest/`](reference/Official-Quest/) | Zeis's transcriptions of the official quests (8 — the complete official set) — how real quests flow, cross-checked in [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md); the hardcoded Journalist's Sister line (13 quests) analyzed in [`docs/plans/r131-journalists-sister-analysis.md`](docs/plans/r131-journalists-sister-analysis.md). |
 | [`.github/agents/clean-code-architect.md`](.github/agents/clean-code-architect.md) | The clean-code & architecture agent brief — the code-quality rulebook LLM sessions work by. |
 | [`docs/archive/`](docs/archive/) | Retired roadmap history (rounds 100–115). |
 

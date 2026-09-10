@@ -213,11 +213,15 @@ wants the *specific action* named.
    box, Cold Storage's route, Cold Call's chat, `Terminal.SSH.Shutdown` on
    mod machines, `Database.DataUpdate` from Database-Manager edits. New
    from r131: does a created Kisscord contact render a proper card (the
-   proposal-B surface)? does quest 1's world persist into quest 2 of a
-   two-quest mod (the campaign world-owner check, analysis §4)? does
-   `hasCompleteButton`'s click formally complete the quest (docs/04
-   territory — the flag ships today, the completion path is the engine
-   bug)?
+   proposal-B surface)? the campaign world checks, two parts (analysis
+   §4): **mid-line** — with quest 2 active, is quest 1's network still
+   reachable, or did quest 2's start replace/clear the world? **line-end**
+   — when the final quest of a line is run through, is the world torn
+   down? (Zeis's untested model, r131: quests are standalone, the world
+   accumulates through the line so a player can backtrack, and the whole
+   thing goes when the line ends.) And: does `hasCompleteButton`'s click
+   formally complete the quest (docs/04 territory — the flag ships today,
+   the completion path is the engine bug)?
 2. **Website-builder audit** (roadmap item 9): the builder is essentially
    untouched since its first implementation. r123/r125-style pass plus the
    `WebsiteDefinition.popular` self-test ([`docs/03` question 12](03-questions-for-the-developers.md)

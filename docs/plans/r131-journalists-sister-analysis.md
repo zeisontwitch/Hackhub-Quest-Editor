@@ -130,8 +130,37 @@ new. Honest options:
    wall of 1, or if the in-game check comes back badly.
 
 Any campaign template starts with 1 and says so in its sticky note.
-**In-game check for Zeis's QA list:** in a two-quest mod, once quest 2 has
-started, is quest 1's network still reachable (ping / browser), or gone?
+
+**Zeis's working model (r131, untested — "I haven't tested it, but I have a
+feeling"):** each quest is standalone; the only special thing is that the
+end of one functions as the trigger to start the next; and the world gets
+destroyed once the final quest of the entire line is finished — "that way a
+player can backtrack if they need to, but when the quest line is over, it's
+over." Note what this model actually claims: the world **accumulates
+through** the line (backtracking works) and is torn down **at line end** —
+which is exactly the case option 1 needs. His model, if it verifies, makes
+the world-owner discipline the natural fit and explains the official
+line's behavior for free.
+
+**Decision rule for the campaign template.** The two-part in-game check
+below decides:
+
+- **Mid-line check says "persists"** → build the campaign world-owner
+  style (option 1). Elegant, matches the official line.
+- **Mid-line check says "replaced/cleared"** → every quest builds its own
+  stage in its own `CreateData()` and references only what it built. This
+  fallback is robust under *either* model; its only cost is that earlier
+  stages linger as clutter if worlds actually accumulate.
+- **Line-end teardown** is informational either way: the SDK has no
+  line-end API, so there is nothing for a mod to do about it (and the
+  mod's own cleanup hook, `OnModPackageUnloaded`, is an *uninstall* event
+  — a different thing entirely; don't conflate them).
+
+**In-game check for Zeis's QA list (two parts):** (A) mid-line — in a
+two-quest mod, once quest 2 has started, is quest 1's network still
+reachable (ping / browser), or gone? (B) line-end — once the final quest
+of a multi-quest mod has run through, is the world torn down ("when the
+quest line is over, it's over")?
 
 ## 5. Proposals (approved by Zeis — build queued after the r132 audit)
 

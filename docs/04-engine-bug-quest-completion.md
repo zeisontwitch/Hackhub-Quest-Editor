@@ -1,6 +1,12 @@
 # Engine bug: completing a mod-defined quest freezes the game
 
-**Status:** reproduced minimally, not worked around yet
+**Status:** reproduced minimally. Shipping quests work around it by never
+formally completing (see *Impact on this editor* below) — Zeis, r131: the
+whole "never complete a quest, let it vanish after the player runs through
+it" convention exists **because every completion path the SDK ships with
+crashes the game** in the current build; the workaround is slated for
+removal once the developer's patch lands and formal completion verifies
+in-game (fence-lift queue item).
 **Game version:** HackHub 1.1.2 (win32, x64)
 **SDK:** `@hotbunny/hackhub-content-sdk@0.21.0`
 **Found:** 2026-09-04, over 10 in-game test runs

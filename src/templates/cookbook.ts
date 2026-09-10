@@ -33,7 +33,7 @@ export function buildCookbook(): ProjectDocument {
         employer: { firstName: "The", lastName: "Editor", email: "" },
     });
 
-    /* Two columns, six rows — spacing keeps every card clear of its
+    /* Two columns, eight rows — spacing keeps every card clear of its
        neighbours (240×120 is the generous card box the layout test uses). */
     const CARD = (col: 0 | 1, row: number) => ({ x: col * 420, y: row * 220 });
 
@@ -195,8 +195,19 @@ export function buildCookbook(): ProjectDocument {
         width: 340,
     });
 
+    const community = makeNode("flow.note", CARD(0, 7), {
+        text: [
+            "Community tools (Recon-NG & friends)",
+            "",
+            "Tool mods other authors ship — Recon-NG, Spiderfoot — add terminal frameworks any quest can use. Their contract is YOUR TARGET: recon-ng matches a module against live network state, reading the port's service and version and the domain's vulnerabilities. Use canonical service names on ports (http, ftp, ssh, database — a port with service \"nginx\" never matches an http module; write version \"nginx 1.18.0\" instead), and put vulnerabilities on the domain (seven types: RCE, LFI, RFI, SSRF, CORS, XSS, SQL_INJECTION).",
+            "",
+            "Build it: stand the target with your normal network nodes, then let an objective wait on the tool's own events — a trigger.event on ReconNg.Breach.FileDownloaded with a condition on path completes an objective the moment the player pulls the quest file out of the breached box. The event field takes any name; the Dry run will show third-party events as unknown (it simulates this editor's runtime, honestly). And say in your quest description that the player needs the tool mod installed.",
+        ].join("\n"),
+        width: 340,
+    });
+
     quest.graph = {
-        nodes: [intro, briefs, social, phishing, cracking, ftp, metasploit, mapping, database, tracks, forwarding, pacing, endings, handoff],
+        nodes: [intro, briefs, social, phishing, cracking, ftp, metasploit, mapping, database, tracks, forwarding, pacing, endings, handoff, community],
         edges: [],
     };
 

@@ -2075,6 +2075,69 @@ describe("objectives the player completes by playing", () => {
 });
 
 /**
+ * Third-party event contracts (r135 investigation). The trigger node's event
+ * field is free-form by design ("a key of the SDK's ModEventMap, or a custom
+ * event name") — community tool mods like Recon-NG emit their own events
+ * (ReconNg.Breach.*), and a quest must be able to complete objectives from
+ * them without the editor knowing the vocabulary. Pinned end to end with
+ * recon-ng's documented payload shapes.
+ */
+describe("objectives driven by third-party (community tool) events", () => {
+    function questWithCustomTrigger() {
+        const p = createProject();
+        const q = p.quests[0];
+        q.autoStart = true;
+        const obj = node("objective", { name: "recover-config", description: "Recover the config" });
+        const trig = node("trigger.event", {
+            event: "ReconNg.Breach.FileDownloaded",
+            conditions: [{ id: "c1", join: "and", field: "path", op: "contains", value: "config.env" }],
+        });
+        q.graph.nodes = [obj, trig];
+        q.graph.edges = [edge(trig.id, obj.id, "condition")];
+        return compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content;
+    }
+
+    it("completes an objective from a ReconNg.Breach.* event", async () => {
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        runMod(questWithCustomTrigger(), sdk);
+        const listeners: Record<string, ((d: unknown) => void)[]> = {};
+        const q = new (registered0(sdk).quests[0])();
+        q.Events = {
+            on: (ev: string, fn: (d: unknown) => void) => {
+                (listeners[ev] ??= []).push(fn);
+            },
+        };
+        q.completeObjective = (name: string) => calls.push(`completeObjective:${name}`);
+        q.OnObjectivesStart();
+
+        // recon-ng's documented payload shape (its own docs' quest example).
+        listeners["ReconNg.Breach.FileDownloaded"]!.forEach((f) =>
+            f({ sessionId: "s1", ip: "203.0.113.50", host: "demo-target.example", path: "/var/www/config.env", name: "config.env", localPath: "config.env" }),
+        );
+        await settle();
+        expect(calls).toContain("completeObjective:recover-config");
+
+        // A download that is not the quest file ticks nothing.
+        calls.length = 0;
+        listeners["ReconNg.Breach.FileDownloaded"]!.forEach((f) =>
+            f({ sessionId: "s2", ip: "203.0.113.50", host: "demo-target.example", path: "/etc/hostname", name: "hostname" }),
+        );
+        await settle();
+        expect(calls.filter((c) => c.startsWith("completeObjective"))).toEqual([]);
+    });
+
+    it("declares the third-party event verbatim on the objective trigger", () => {
+        const sdk = stubSdk([], []) as any;
+        runMod(questWithCustomTrigger(), sdk);
+        const q = new (registered0(sdk).quests[0])();
+        expect(q.Objectives[0].trigger.event).toBe("ReconNg.Breach.FileDownloaded");
+        expect(q.Objectives[0].trigger.condition({ path: "/var/www/config.env" })).toBe(true);
+        expect(q.Objectives[0].trigger.condition({ path: "/etc/hostname" })).toBe(false);
+    });
+});
+
+/**
  * QA, round 40 — audit against Nemesis.
  *
  * The SDK's device definition is a discriminated union: `children` belongs to

@@ -263,13 +263,16 @@ wants the *specific action* named.
    pinned SDK, unmodeled; likely inspector fields around the dialogue node,
    exact surface decided in the round's plan; in-game check: does a created
    contact render a proper card? — already on the QA list above), and a **Campaign cookbook card**.
-3. **Tool packs** (roadmap row 12, awaiting go on the
-   [`r135 design`](plans/r135-tool-packs-design.md)): declarative
-   `toolpack.json` folders load as palette nodes — fields to inspector,
-   answers through the `world.toolResponse`/`addCommandData` rail, the
-   requires-game-mod warning as the design's spine, projects portable
-   (pack-less reopen degrades to a stub, never breaks). Spec doc +
-   example pack ride along. Behind website polish and the r131 builds.
+3. **Tool packs & Editor Mods** (roadmap row 12, awaiting go on the
+   [`r135 design v2`](plans/r135-tool-packs-design.md)): the zero-code half
+   shipped in r135 — free-form trigger events pinned end-to-end against a
+   community tool's documented payloads (a quest objective completes on
+   `ReconNg.Breach.FileDownloaded`), and the Community tools Cookbook card.
+   The pack format is reshaped around the validated rails — events /
+   SharedStorage contracts / target-rule lints / command data — and capped
+   by Zeis's Editor Mods vision: community-authored nodes in their own
+   palette category with their own colours, declarative emission templates
+   only, pack-less reopens degrade to stubs. Behind the r131 builds.
 4. **When the developer's patch lands, lift the fence in this order:** pin the
    new SDK version → `npm ci` → `npm run gen:events` → diff
    `reference/hackhub-events.json` → read the new `d.ts` → Zeis verifies

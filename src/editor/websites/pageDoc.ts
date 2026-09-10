@@ -154,3 +154,53 @@ export function normalizePath(path: string): string {
     if (!t) return "/";
     return t.startsWith("/") ? t : `/${t}`;
 }
+
+/* ── linking ──────────────────────────────────────────────────────────────
+   The link picker and point-to-link mode (r133) both land here: pure DOM
+   operations on the page's own document, testable without the editor
+   iframe. Zeis's pick-whip instinct — page and target visible at once, no
+   dialog — is kept as click-click (click 🎯 on a page row, then click the
+   text); a literal drag cannot cross the iframe boundary without forwarding
+   every drag event by hand, and a text drop target is ambiguous mid-drag. */
+
+/** Elements a point-to-link click may sensibly target, nearest first. */
+const LINKABLE_SELECTOR = "p,h1,h2,h3,h4,h5,h6,li,dt,dd,blockquote,button,span,div";
+
+/**
+ * Link `range` to `path`. Works across element boundaries (extract/insert,
+ * not surround). A collapsed range inserts the path as the link text — a
+ * link with nothing visible in it is a link that is lost.
+ */
+export function linkRange(doc: Document, range: Range, path: string): void {
+    const a = doc.createElement("a");
+    a.setAttribute("href", path);
+    if (range.collapsed) {
+        a.appendChild(doc.createTextNode(path));
+        range.insertNode(a);
+        return;
+    }
+    a.appendChild(range.extractContents());
+    range.insertNode(a);
+}
+
+/**
+ * Point-to-link: turn the element the author clicked into a link to `path`.
+ * An existing link is retargeted (pointing at a link re-points it); anything
+ * else has its whole content wrapped — the natural unit for the menu items,
+ * buttons and headings authors actually point at. Returns the changed
+ * element, or null when the click had no sensible target.
+ */
+export function linkElement(el: Element, path: string): Element | null {
+    const host = (el.closest("a") ?? el.closest(LINKABLE_SELECTOR) ?? el) as Element;
+    if (host.tagName === "A") {
+        host.setAttribute("href", path);
+        return host;
+    }
+    const doc = host.ownerDocument;
+    if (!doc) return null;
+    const a = doc.createElement("a");
+    a.setAttribute("href", path);
+    while (host.firstChild) a.appendChild(host.firstChild);
+    host.appendChild(a);
+    return host;
+}

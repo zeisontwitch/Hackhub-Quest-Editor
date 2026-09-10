@@ -673,6 +673,7 @@ export function WebsiteBuilderDialog({
                                                 <VisualPageEditor
                                                     key={`${page.id}:${outsideRev}`}
                                                     doc={page.content}
+                                                    pages={pages.map((p) => ({ path: p.path, title: p.title }))}
                                                     onChange={(content) => updatePage(site.id, page.id, { content })}
                                                     ariaLabel={`Visual editor for ${page.path}`}
                                                 />

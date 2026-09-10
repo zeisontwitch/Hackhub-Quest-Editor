@@ -4,12 +4,14 @@
  */
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CodePageEditor, VisualPageEditor } from "@/editor/websites/pageEditor";
 import {
     isFullDocument,
     joinDocument,
+    linkElement,
+    linkRange,
     normalizeHost,
     normalizePath,
     parseSearchTerms,
@@ -92,6 +94,40 @@ describe("page documents", () => {
         expect(normalizePath("  /already/fine ")).toBe("/already/fine");
         expect(normalizePath("")).toBe("/");
         expect(normalizePath("/")).toBe("/");
+    });
+
+    it("links a selected range or a pointed-at element without touching the rest", () => {
+        const host = document.createElement("div");
+        host.innerHTML = `<h2>Contact us</h2><p>Call <a href="/old">the desk</a> today</p>`;
+
+        // Point-to-link: the clicked heading's whole text becomes the link —
+        // the natural unit for menu items, buttons and headings.
+        linkElement(host.querySelector("h2")!, "/contact");
+        expect(host.querySelector("h2")!.innerHTML).toBe(`<a href="/contact">Contact us</a>`);
+
+        // Pointing at an existing link retargets it instead of nesting.
+        const retargeted = linkElement(host.querySelector("p a")!, "/helpdesk");
+        expect(retargeted!.getAttribute("href")).toBe("/helpdesk");
+        expect(host.querySelectorAll("a")).toHaveLength(2);
+
+        // Range link across element boundaries: everything selected lands
+        // inside the one new link.
+        const p = host.querySelector("p")!;
+        const range = document.createRange();
+        range.selectNodeContents(p);
+        linkRange(document, range, "/hours");
+        expect(p.querySelector('a[href="/hours"]')!.textContent).toContain("today");
+
+        // A collapsed selection still produces a visible link (the path as
+        // its text) — a link with nothing in it is a link that is lost.
+        const p2 = document.createElement("p");
+        const t = document.createTextNode("ab");
+        p2.appendChild(t);
+        const r2 = document.createRange();
+        r2.setStart(t, 1);
+        r2.collapse(true);
+        linkRange(document, r2, "/x");
+        expect(p2.querySelector('a[href="/x"]')!.textContent).toBe("/x");
     });
 });
 
@@ -423,6 +459,35 @@ describe("visual and code editors in isolation", () => {
         expect(screen.getByRole("button", { name: "Bold" })).toBeInTheDocument();
         expect(screen.getByLabelText("Image file to insert")).toBeInTheDocument();
         expect(screen.getByText(/images are embedded/)).toBeInTheDocument();
+    });
+
+    it("the link picker lists the site's pages and arms point-to-link", () => {
+        /* fireEvent, not userEvent: Radix's popover mounts its content
+           mid-click and userEvent's pointer sequence hangs on it in jsdom. */
+        render(
+            <VisualPageEditor
+                doc="<p>hi</p>"
+                onChange={() => {}}
+                ariaLabel="Visual editor for /"
+                pages={[{ path: "/contact", title: "Contact" }]}
+            />,
+        );
+        fireEvent.click(screen.getByRole("button", { name: "Insert link" }));
+
+        // The picker offers the site's pages by title and path.
+        expect(screen.getByText("Contact")).toBeInTheDocument();
+        expect(screen.getByText("/contact")).toBeInTheDocument();
+
+        // The target icon arms point-to-link: the picker closes and the hint
+        // bar names the path…
+        fireEvent.click(
+            screen.getByRole("button", { name: "Point at the text on the page to link it to /contact" }),
+        );
+        expect(screen.getByText(/Click the text on the page that should link to/)).toBeInTheDocument();
+
+        // …and Cancel disarms.
+        fireEvent.click(screen.getByRole("button", { name: "Cancel point-to-link" }));
+        expect(screen.queryByText(/Click the text on the page that should link to/)).not.toBeInTheDocument();
     });
 
     it("visual editor blocks page scripts while editing but keeps them in the document", () => {

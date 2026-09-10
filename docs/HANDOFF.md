@@ -1,6 +1,12 @@
-# Handoff — r132
+# Handoff — r133
 
-r132 was the **website builder audit** (roadmap item 9,
+r133 built **linking without touching HTML** ([plan](plans/r133-page-linking.md)):
+Zeis's After Effects pick-whip idea (drag a wire from the sidebar page onto
+the text that should link to it), verdict "right instinct, wrong physics for
+an iframe", shipped as click-click — the 🔗 button is a popover of the site's
+pages (link the selection or insert the path bare) and the 🎯 beside each
+page arms point-to-link: the next click inside the page becomes the link;
+existing links retarget. r132 was the **website builder audit** (roadmap item 9,
 [plan](plans/r132-website-builder-audit.md)): the whole builder surface read
 end to end, three real defects fixed — the visual editor silently *ran page
 scripts* while editing (now CSP-blocked in the editing copy, scripts kept in
@@ -24,15 +30,14 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r132 (website-builder audit) on
+- **HEAD:** r133 (page linking) on
   `arena/01a08809-hackhub-quest-editor`, committed and pushed. Previous
   rounds: r131 (docs-only analysis), `423569f` (r130). (A sandbox reset
   rolled local history back to `c0e511f` mid-r129; recovered from the remote
   tip per the standing fetch-first rule — the remote is authoritative.)
-- **1,227 tests green** across 57 files (8 added by the audit), typecheck
-  clean, build clean. The only noise is the 4 pre-existing d3-drag jsdom
+- **1,229 tests green** across 57 files, typecheck clean, build clean. The only noise is the 4 pre-existing d3-drag jsdom
   teardown errors, unrelated to this work.
-- **Editor build stamp:** `2026-09-11.r132`.
+- **Editor build stamp:** `2026-09-11.r133`.
 - Shared graph helpers extracted to `src/templates/kit.ts`; each template is its
   own module (`blank.ts`, `firstContact.ts`, `byline.ts`, `coldCall.ts`,
   `harbourManifest.ts`, `helpDeskLeak.ts`, `badAttachment.ts`, `sixTries.ts`,
@@ -237,14 +242,21 @@ wants the *specific action* named.
    ranking); and eyes on an **iconless site** — generated sites ship
    `Icon = ""` (Nemesis precedent) — does the in-game browser or Goagle
    results show an ugly blank where an icon belongs?
-2. **r131's proposals, approved by Zeis** (roadmap item 10): the **campaign template** (multi-quest chain via `fx.claimQuest`,
+2. **Website-builder polish** (roadmap item 11, approved r132 proposals):
+   **preview navigation** (mini address bar; the preview follows in-site
+   links so an author walks the site like a player) and **multi-file
+   import** (the AI flow returns one .html per page — import in one go,
+   pages created from filenames, `news.html` → `/news`). Small round; also
+   hands-on time with r133's 🎯 — if the pick-whip spirit is missed, a drag
+   version (same-origin event forwarding) is sketched in the r133 plan.
+3. **r131's proposals, approved by Zeis** (roadmap item 10): the **campaign template** (multi-quest chain via `fx.claimQuest`,
    one world-owner per campaign — see the analysis §4 for the
    whose-world-is-it design question), the **Kisscord contact lifecycle**
    (`createUser`/`addUser`/`addFriend`/`changeStatus` — declared in the
    pinned SDK, unmodeled; likely inspector fields around the dialogue node,
    exact surface decided in the round's plan; in-game check: does a created
    contact render a proper card? — already on the QA list above), and a **Campaign cookbook card**.
-3. **When the developer's patch lands, lift the fence in this order:** pin the
+4. **When the developer's patch lands, lift the fence in this order:** pin the
    new SDK version → `npm ci` → `npm run gen:events` → diff
    `reference/hackhub-events.json` → read the new `d.ts` → Zeis verifies
    in-game → *then* plan the round (formal quest completion per `docs/04`
@@ -254,16 +266,16 @@ wants the *specific action* named.
    retest of the completion path + Twotter on the patched build, and a minimal
    mail repro if BUG 1 persists. Before all of that: nothing implements,
    nothing is removed.
-4. **A settings page** (roadmap item 5) — the wire-physics dials live in the
+5. **A settings page** (roadmap item 5) — the wire-physics dials live in the
    debug panel, which is a developer tool. Those and the snap/animation/physics
    toggles deserve a home an author can find. Also outstanding: the **fade-ms
    slider in the debug panel does nothing** (the fade runs inside the
    retraction, so `ghostMs` only feeds a safety backstop) — cosmetic, but a
    real inconsistency to resolve when the settings page lands.
-5. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
+6. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
    template, not yet built. Cryptographer Hunt's fail-choice phone scene is
    the in-game proof this shape matters.
-6. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
+7. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
    banners + ports 25/110/143; Apache metasploit module for 2.4.49/50 or
    flavour?; Handbook screenshot (titles + categories) + the id=title jump
    test; eyes on the preview. Plus the Harbour `scp` hint fix noted above.

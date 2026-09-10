@@ -206,8 +206,21 @@ export function buildCookbook(): ProjectDocument {
         width: 340,
     });
 
+    const campaign = makeNode("flow.note", CARD(1, 7), {
+        text: [
+            "The Campaign",
+            "",
+            "Three acts in one mod — that is The Long Game, and it needs only two moves. Chain acts: the last wire of each act runs 'Claim another quest' with the NEXT act's name (only act 1 has Start automatically on; the others are claimed, and the editor understands the chain — no dead-end warnings).",
+            "",
+            "Each act builds its own stage. Every quest rolls fresh {{data.*}} tokens, so a sequel quest can never address act 1's random IP — cross-act references go by DOMAIN name. Act 3 shows the choice shape: a reply prompt whose two wires are two different endings (its 'failure' wire is the other decision, not a mistake).",
+            "",
+            "Keep each act one sitting long, end every act from its own last beat, and say in the description that it is a series.",
+        ].join("\n"),
+        width: 340,
+    });
+
     quest.graph = {
-        nodes: [intro, briefs, social, phishing, cracking, ftp, metasploit, mapping, database, tracks, forwarding, pacing, endings, handoff, community],
+        nodes: [intro, briefs, social, phishing, cracking, ftp, metasploit, mapping, database, tracks, forwarding, pacing, endings, handoff, community, campaign],
         edges: [],
     };
 

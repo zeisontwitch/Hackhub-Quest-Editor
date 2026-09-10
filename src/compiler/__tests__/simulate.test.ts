@@ -34,7 +34,7 @@ describe("simulateProject", () => {
             exercised += waiting.length;
         }
         expect(exercised, "the template set should exercise external event triggers at all").toBeGreaterThan(0);
-    });
+    }, 30000); /* the sweep simulates every template; the registry outgrew the default 5s */
 
     it("dry-runs the Harbour Manifest end to end", async () => {
         const report = await simulateProject(getTemplate("data-grab")!.build());

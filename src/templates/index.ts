@@ -23,6 +23,7 @@ import { buildColdStorage } from "@/templates/coldStorage";
 import { buildContractHack } from "@/templates/ledgerContract";
 import { buildReference } from "@/templates/reference";
 import { buildCookbook } from "@/templates/cookbook";
+import { buildLongGame } from "@/templates/longGame";
 
 export { type Template } from "@/templates/kit";
 
@@ -117,6 +118,15 @@ export const TEMPLATES: Template[] = [
         build: buildContractHack,
     },
     {
+        id: "long-game",
+        name: "The Long Game",
+        description:
+            "A three-act campaign in one mod: a public trail (act I) earns the break-in (act II), and act III ends in a typed verdict with two different endings. Teaches the 'Claim another quest' chain, per-act stages, and the choice shape.",
+        difficulty: "Expert",
+        nodeCount: 36,
+        build: buildLongGame,
+    },
+    {
         id: "reference",
         name: "Node Reference",
         description:
@@ -131,7 +141,7 @@ export const TEMPLATES: Template[] = [
         description:
             "How the quests the game itself ships with are built, technique by technique — and which nodes express each one here. Read-only reference sheet; the companion to the Node Reference.",
         difficulty: "Reference",
-        nodeCount: 15,
+        nodeCount: 16,
         build: buildCookbook,
     },
 ];

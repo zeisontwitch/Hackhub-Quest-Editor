@@ -1,6 +1,15 @@
-# Handoff — r134
+# Handoff — r136
 
-r134 was the **website polish** ([plan](plans/r134-website-polish.md)): the
+r136 shipped **The Long Game** ([plan](plans/r136-campaign-template.md)), the
+campaign template: three acts in one mod chained by the "Claim another quest"
+node — a public trail, a small break-in, and a typed verdict whose two wires
+are two different endings. It forced two product fixes: claimed quests now
+count as a start route (the warning and the template tests), and
+`createProject` points new multi-quest projects at their first quest instead
+of a discarded default. Cookbook card 16 rides along ("The Campaign"). Note:
+a smaller game patch shipped 2026-09-12 **without patch notes and without an
+SDK update** — the docs/07 fence stands exactly where it was; the fence-lift
+procedure still waits for the pinned SDK to move. r134 was the **website polish** ([plan](plans/r134-website-polish.md)): the
 preview is now a walkable site — an address bar plus internal-link
 navigation (the sandboxed iframe posts internal link clicks out; the builder
 serves the linked page, or a friendly not-found) — and **Import folder**
@@ -38,7 +47,7 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r134 (website polish) on
+- **HEAD:** r136 (campaign template) on
   `arena/01a08809-hackhub-quest-editor`, committed and pushed. Previous
   rounds: r131 (docs-only analysis), `423569f` (r130). (A sandbox reset
   rolled local history back to `c0e511f` mid-r129, and again mid-r134 —
@@ -46,9 +55,9 @@ banner before acting on any of it.
   remote tip per the standing fetch-first rule (mid-r134 addendum: rescue
   the round's uncommitted files with plain copies BEFORE `reset --hard`),
   then `npm ci`. The remote is authoritative.)
-- **1,233 tests green** across 57 files, typecheck clean, build clean. The only noise is the 4 pre-existing d3-drag jsdom
+- **1,255 tests green** across 57 files, typecheck clean, build clean. The only noise is the 4 pre-existing d3-drag jsdom
   teardown errors, unrelated to this work.
-- **Editor build stamp:** `2026-09-11.r134`.
+- **Editor build stamp:** `2026-09-12.r136`.
 - Shared graph helpers extracted to `src/templates/kit.ts`; each template is its
   own module (`blank.ts`, `firstContact.ts`, `byline.ts`, `coldCall.ts`,
   `harbourManifest.ts`, `helpDeskLeak.ts`, `badAttachment.ts`, `sixTries.ts`,
@@ -256,24 +265,18 @@ wants the *specific action* named.
    gate (r135 design): does `addCommandData` placed for a mod-registered
    command surface when the player runs it (the tool mod reads its own
    command's data)? Five-minute ask for any tool-mod author.
-2. **r131's proposals, approved by Zeis** (roadmap item 10): the **campaign template** (multi-quest chain via `fx.claimQuest`,
-   one world-owner per campaign — see the analysis §4 for the
-   whose-world-is-it design question), the **Kisscord contact lifecycle**
-   (`createUser`/`addUser`/`addFriend`/`changeStatus` — declared in the
-   pinned SDK, unmodeled; likely inspector fields around the dialogue node,
-   exact surface decided in the round's plan; in-game check: does a created
-   contact render a proper card? — already on the QA list above), and a **Campaign cookbook card**.
-3. **Tool packs & Editor Mods** (roadmap row 12, awaiting go on the
-   [`r135 design v2`](plans/r135-tool-packs-design.md)): the zero-code half
-   shipped in r135 — free-form trigger events pinned end-to-end against a
-   community tool's documented payloads (a quest objective completes on
-   a third-party tool event), and the Community tools Cookbook card.
-   The pack format is reshaped around the validated rails — events /
-   SharedStorage contracts / target-rule lints / command data — and capped
-   by Zeis's Editor Mods vision: community-authored nodes in their own
-   palette category with their own colours, declarative emission templates
-   only, pack-less reopens degrade to stubs. Behind the r131 builds.
-4. **When the developer's patch lands, lift the fence in this order:** pin the
+2. **Zeis's build order: tool packs → editor mods** (roadmap row 12, the
+   [`r135 design v2.1`](plans/r135-tool-packs-design.md) has his go-in-
+   principle): pack schema, folder loader with plain-language validation,
+   community events in the trigger picker, SharedStorage contract forms,
+   target-rule lints — the no-code rule throughout — then Editor Mods
+   (community nodes with their own palette category and colours,
+   declarative emission templates only, starter pack + format spec). The
+   campaign template and the Campaign card are DONE (r136). The **Kisscord
+   contact lifecycle is parked until the SDK moves** (the 2026-09-12 patch
+   shipped none).
+
+3. **When the developer's patch lands, lift the fence in this order:** pin the
    new SDK version → `npm ci` → `npm run gen:events` → diff
    `reference/hackhub-events.json` → read the new `d.ts` → Zeis verifies
    in-game → *then* plan the round (formal quest completion per `docs/04`
@@ -283,16 +286,16 @@ wants the *specific action* named.
    retest of the completion path + Twotter on the patched build, and a minimal
    mail repro if BUG 1 persists. Before all of that: nothing implements,
    nothing is removed.
-5. **A settings page** (roadmap item 5) — the wire-physics dials live in the
+4. **A settings page** (roadmap item 5) — the wire-physics dials live in the
    debug panel, which is a developer tool. Those and the snap/animation/physics
    toggles deserve a home an author can find. Also outstanding: the **fade-ms
    slider in the debug panel does nothing** (the fade runs inside the
    retraction, so `ghostMs` only feeds a safety backstop) — cosmetic, but a
    real inconsistency to resolve when the settings page lands.
-6. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
+5. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
    template, not yet built. Cryptographer Hunt's fail-choice phone scene is
    the in-game proof this shape matters.
-7. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
+6. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
    banners + ports 25/110/143; Apache metasploit module for 2.4.49/50 or
    flavour?; Handbook screenshot (titles + categories) + the id=title jump
    test; eyes on the preview. Plus the Harbour `scp` hint fix noted above.

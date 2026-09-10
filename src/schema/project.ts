@@ -210,10 +210,19 @@ export function createQuest(partial: Partial<QuestDoc> = {}): QuestDoc {
 
 export function createProject(partial: Partial<ProjectDocument> = {}): ProjectDocument {
     const quest = createQuest({ name: "FirstQuest", title: "First Quest" });
-    return ProjectSchema.parse({
+    const project = ProjectSchema.parse({
         mod: {},
         quests: [quest],
         editor: { activeQuestId: quest.id, viewports: {} },
         ...partial,
     });
+    /* A multi-quest caller replaces the quests array wholesale — the default
+       quest (and its id in activeQuestId) is gone. Point the editor at the
+       first quest that actually ships, so multi-quest projects open on their
+       first act instead of a quest that does not exist (and so templates stay
+       byte-deterministic across builds). */
+    if (!partial.editor && project.quests[0]) {
+        project.editor.activeQuestId = project.quests[0].id;
+    }
+    return project;
 }

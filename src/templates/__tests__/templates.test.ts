@@ -27,6 +27,7 @@ describe("template registry", () => {
             "six-tries",
             "cold-storage",
             "contract-hack",
+            "long-game",
             "reference",
             "cookbook",
         ]);
@@ -63,11 +64,42 @@ describe("template registry", () => {
      */
     /* The two Reference sheets (Node Reference, Quest Cookbook) are read-only
        canvases, not playable quests — everything else must be startable. */
+    it("chains the campaign's acts: one autoStart, the rest claimed in order", () => {
+        const project = getTemplate("long-game")!.build();
+        const [act1, act2, act3] = project.quests;
+        expect(act1.autoStart).toBe(true);
+        expect(act2.autoStart).toBe(false);
+        expect(act3.autoStart).toBe(false);
+        const claimedBy = (q: (typeof project.quests)[number]) =>
+            (q.graph.nodes as { type: string; data: { questName?: string } }[])
+                .filter((n) => n.type === "fx.claimQuest")
+                .map((n) => n.data.questName as string);
+        expect(claimedBy(act1)).toEqual(["LongGameAct2"]);
+        expect(claimedBy(act2)).toEqual(["LongGameAct3"]);
+        expect(claimedBy(act3)).toEqual([]);
+        // And the names it claims are the quests that actually ship.
+        const names = new Set(project.quests.map((q) => q.name));
+        for (const claimed of [...claimedBy(act1), ...claimedBy(act2)]) {
+            expect(names.has(claimed), `${claimed} is claimed but does not exist`).toBe(true);
+        }
+    });
+
     it.each(TEMPLATES.filter((t) => t.difficulty !== "Reference"))("%s: can actually be started", (template) => {
-        for (const quest of template.build().quests) {
+        const project = template.build();
+        /* A quest another quest claims by name (fx.claimQuest, the campaign
+           chain) has a way in even without autoStart or a feed post. */
+        const claimed = new Set(
+            project.quests.flatMap((q) =>
+                q.graph.nodes
+                    .filter((n) => n.type === "fx.claimQuest")
+                    .map((n) => (n.data as { questName?: string }).questName)
+                    .filter((n): n is string => !!n),
+            ),
+        );
+        for (const quest of project.quests) {
             expect(
-                quest.autoStart || quest.hackhubPost != null,
-                `${quest.name} has no way in: turn on autoStart or advertise it with a Hackhub feed post`,
+                quest.autoStart || quest.hackhubPost != null || claimed.has(quest.name),
+                `${quest.name} has no way in: turn on autoStart, advertise it with a Hackhub feed post, or claim it from another quest`,
             ).toBe(true);
         }
     });

@@ -107,7 +107,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-11.r135";
+export const EDITOR_BUILD = "2026-09-12.r136";
 
 export interface CompiledFile {
     path: string;
@@ -200,11 +200,24 @@ export function computePermissions(project: ProjectDocument): string[] {
 
 export function computeWarnings(project: ProjectDocument): string[] {
     const warnings: string[] = [];
+    /* A quest is startable when something CLAIMS it: any "Claim another
+       quest" node anywhere in the mod naming it (Quest.claim at runtime).
+       Campaigns chain acts exactly this way — only act 1 auto-starts. */
+    const claimed = new Set<string>();
     for (const q of project.quests) {
-        if (!q.autoStart) {
-            /* Without auto-start, the only way in is the Hackhub feed post that
-               advertises the quest. With neither, the quest is in the mod and
-               unreachable — worth saying outright rather than as a nicety. */
+        for (const n of q.graph.nodes) {
+            if (n.type === "fx.claimQuest") {
+                const name = (n.data as { questName?: string }).questName;
+                if (name) claimed.add(name);
+            }
+        }
+    }
+    for (const q of project.quests) {
+        if (!q.autoStart && !claimed.has(q.name)) {
+            /* Without auto-start, the only other ways in are a Hackhub feed
+               post that advertises the quest, or another quest claiming it by
+               name. With neither, the quest is in the mod and unreachable —
+               worth saying outright rather than as a nicety. */
             warnings.push(
                 q.hackhubPost
                     ? `${q.title || q.name}: the player claims this one from its Hackhub feed post — nothing in it runs until they do. Turn on “Start automatically” in the quest's Behaviour settings if it should begin the moment the mod loads.`

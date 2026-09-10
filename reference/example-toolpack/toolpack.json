@@ -1,0 +1,55 @@
+{
+  "format": 2,
+  "id": "example-tools",
+  "name": "Example Tools",
+  "author": "The Quest Editor",
+  "version": "1.0.0",
+  "docsUrl": "",
+  "gameMod": {
+    "name": "Example Tools",
+    "note": "The in-game mod that registers these commands and events. Quests that use this pack need it installed on the player's machine — say so in the quest description."
+  },
+  "events": [
+    {
+      "name": "ExampleTools.Breach.FileDownloaded",
+      "label": "A file was downloaded from a breached machine",
+      "docs": "Fires when the player saves a file out of a remote session on a machine they breached. Match the file by its path or name, or the machine by host or IP.",
+      "fields": ["sessionId", "ip", "host", "path", "name"]
+    },
+    {
+      "name": "ExampleTools.Scan.Completed",
+      "label": "A scan of a target finished",
+      "docs": "Fires when the player's scan of a target completes. Match on the target that was scanned.",
+      "fields": ["target", "results"]
+    }
+  ],
+  "storage": [
+    {
+      "id": "loot",
+      "label": "Plant loot on a machine",
+      "key": "exampletools.loot",
+      "docs": "Adds a file to the machine's remote session: when the player breaches the target, the file is there to find and download.",
+      "merge": "replace",
+      "mergeBy": "target",
+      "fields": [
+        { "key": "target", "label": "Host or IP", "type": "string", "hint": "The machine the loot waits on. A domain name works." },
+        { "key": "path", "label": "File path", "type": "string", "hint": "Where the file sits in the remote session, like /opt/case/evidence.txt." },
+        { "key": "data", "label": "File contents", "type": "text", "hint": "What the file says — this is where your clue goes." }
+      ],
+      "entry": {
+        "target": "{{target}}",
+        "files": [
+          { "path": "{{path}}", "data": "{{data}}\n", "readable": true, "downloadable": true, "deletable": false }
+        ]
+      }
+    }
+  ],
+  "targetRules": {
+    "services": ["http", "ftp", "ssh", "database", "redis", "smb", "smtp"],
+    "versionOnPorts": true,
+    "vulnsOnDomain": false,
+    "vulnTypes": ["RCE", "LFI", "RFI", "SSRF", "CORS", "XSS", "SQL_INJECTION"]
+  },
+  "commandData": [],
+  "nodes": []
+}

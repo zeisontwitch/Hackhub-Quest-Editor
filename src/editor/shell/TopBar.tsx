@@ -214,6 +214,16 @@ export function TopBar() {
             <button
                 type="button"
                 className="btn-default"
+                onClick={() => setUi({ modal: "toolpacks" })}
+                title="Load community tool packs — extra events and data shapes from game mods"
+            >
+                <Icon name="package" size={13} />
+                <span className="hidden lg:inline">Tools</span>
+            </button>
+
+            <button
+                type="button"
+                className="btn-default"
                 onClick={() => setUi({ modal: "dialogues" })}
                 title="Write the quest's phone conversations"
             >

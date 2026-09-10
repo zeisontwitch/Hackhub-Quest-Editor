@@ -1184,6 +1184,67 @@ function __qeRegisterProject(sdk, PROJECT) {
                     }
                     return next();
                 }
+                case "world.packData": {
+                    /* Community data (r137): one SharedStorage write declared
+                       by a tool pack. The pack's entry template travels IN the
+                       node (snapshotted at authoring time), so this works even
+                       where the pack itself is not loaded. Contract fields are
+                       substituted first (JSON-safe: text becomes a string,
+                       numbers and booleans land raw), then __QE.fill resolves
+                       any story tokens ({{data.targetIp}}) left in the values,
+                       and only then is the JSON parsed - so a malformed
+                       template fails here, inside our own try, instead of
+                       taking the quest down. String holes are spliced with
+                       JSON escaping but NO surrounding quotes: in the
+                       template the hole already sits inside a JSON string,
+                       alone ("{{target}}") or embedded ("{{data}}\\n"). */
+                    if (sdk.SharedStorage && sdk.SharedStorage.set && d.storageKey) {
+                        __QE.safe(function () {
+                            var json = JSON.stringify(d.entry == null ? {} : d.entry);
+                            (d.fields || []).forEach(function (f) {
+                                var v = (d.values || {})[f.key];
+                                if (v === undefined || v === null) return;
+                                var out;
+                                var hole = "{{" + f.key + "}}";
+                                if (f.type === "number") {
+                                    out = String(Number(v));
+                                    if (out === "NaN") out = "0";
+                                } else if (f.type === "boolean") {
+                                    out = v === "true" ? "true" : "false";
+                                } else {
+                                    out = JSON.stringify(String(v)).slice(1, -1);
+                                }
+                                if (f.type !== "string" && f.type !== "text") {
+                                    /* A number or boolean fills its hole raw - but
+                                       only when the hole IS the whole value; the
+                                       template's quotes would turn "8080" into a
+                                       string. Embedded holes splice as text. */
+                                    var whole = JSON.stringify(hole);
+                                    if (json.indexOf(whole) !== -1) json = json.split(whole).join(out);
+                                    else json = json.split(hole).join(out);
+                                } else {
+                                    json = json.split(hole).join(out);
+                                }
+                            });
+                            var entry = JSON.parse(__QE.fill(json, scope));
+                            if (d.merge === "overwrite") {
+                                sdk.SharedStorage.set(d.storageKey, entry);
+                            } else {
+                                var cur = sdk.SharedStorage.get ? sdk.SharedStorage.get(d.storageKey) : null;
+                                var list = Array.isArray(cur) ? cur.slice() : [];
+                                if (d.mergeBy) {
+                                    list = list.filter(function (x) {
+                                        return !x || x[d.mergeBy] !== entry[d.mergeBy];
+                                    });
+                                }
+                                list.push(entry);
+                                sdk.SharedStorage.set(d.storageKey, list);
+                            }
+                            __QE.log("Community data set: " + d.storageKey);
+                        });
+                    }
+                    return next();
+                }
                 case "comms.dialogue": {
                     /* Timed chat → play it here, message by message, so a
                        conversation can land on a Sequence beat. */

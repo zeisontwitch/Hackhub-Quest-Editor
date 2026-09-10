@@ -1,4 +1,27 @@
-# Handoff — r136
+# Handoff — r137
+
+r137 shipped the **first rail of Tool Packs** (design:
+[plans/r135-tool-packs-design.md](plans/r135-tool-packs-design.md), spec:
+[ToolPack-Format.md](ToolPack-Format.md), starter pack:
+[`reference/example-toolpack/`](../reference/example-toolpack/toolpack.json)).
+A pack is one `toolpack.json` of **pure data** — the events a game mod emits,
+the SharedStorage data shapes it reads, the target conventions its tools
+match. The **Tools** button opens the pack manager (load with plain-language
+errors — a wrong format number is caught before anything else; two-step
+remove; machine-local persistence). Loaded packs surface in three places:
+**Community tools** events in the trigger picker (with a pack-authored label
+and an honesty note that quests waiting on the event need the game mod);
+**Community data** nodes ("Hand quest data to a community tool mod") whose
+dropdowns and inputs come straight from the pack — the entry template is
+**snapshotted into the project** at authoring time, so quests keep working
+where the pack was never loaded, and numbers/booleans land raw in the JSON
+while strings splice in with escaping; and the **export README**, which now
+lists every pack used and says the player must install its game mod. A new
+teal **Community** palette category carries the node. Validation errors are
+written for the modder ("id: the pack id is lowercase letters, numbers and
+dashes"), never a zod dump. **Still open from the design: Editor Mods** —
+pack-authored nodes in the palette (`nodes[]` is reserved in the format),
+declarative emitters, pack-driven target-rule surfaces.
 
 r136 shipped **The Long Game** ([plan](plans/r136-campaign-template.md)), the
 campaign template: three acts in one mod chained by the "Claim another quest"
@@ -47,17 +70,25 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r136 (campaign template) on
+- **HEAD:** r137 (tool packs, first rail) on
   `arena/01a08809-hackhub-quest-editor`, committed and pushed. Previous
-  rounds: r131 (docs-only analysis), `423569f` (r130). (A sandbox reset
-  rolled local history back to `c0e511f` mid-r129, and again mid-r134 —
-  that time taking node_modules with it; recovered both times from the
-  remote tip per the standing fetch-first rule (mid-r134 addendum: rescue
-  the round's uncommitted files with plain copies BEFORE `reset --hard`),
-  then `npm ci`. The remote is authoritative.)
-- **1,255 tests green** across 57 files, typecheck clean, build clean. The only noise is the 4 pre-existing d3-drag jsdom
-  teardown errors, unrelated to this work.
-- **Editor build stamp:** `2026-09-12.r136`.
+  rounds: r136 (campaign template), r131 (docs-only analysis), `423569f`
+  (r130). (A sandbox reset rolled local history back to `c0e511f` mid-r129,
+  and again mid-r134 — that time taking node_modules with it; recovered both
+  times from the remote tip per the standing fetch-first rule (mid-r134
+  addendum: rescue the round's uncommitted files with plain copies BEFORE
+  `reset --hard`), then `npm ci`. The remote is authoritative.)
+- **1,301 tests green** across 61 files, typecheck clean, build clean. The
+  only noise is the 4 pre-existing d3-drag jsdom teardown errors
+  (reproduced on the r136 base — not r137 fallout).
+- **Editor build stamp:** `2026-09-12.r137`.
+- Tool-pack modules: `src/toolpacks/schema.ts` (format 2 + plain-language
+  `parseToolPack`), `src/store/packs.ts` (machine-local zustand store, own
+  localStorage key `hackhub-quest-editor:packs:v1` — NOT in the project doc),
+  `src/toolpacks/ToolPackManagerDialog.tsx`, the `world.packData` node with
+  its dedicated editor `src/editor/inspector/sims/PackDataEditor.tsx`, and
+  the emission case in `src/compiler/runtimeSource.ts`. Pack-driven surfaces
+  feed `EventPicker`/`ConditionsEditor` via `packEvents`/`packEventByName`.
 - Shared graph helpers extracted to `src/templates/kit.ts`; each template is its
   own module (`blank.ts`, `firstContact.ts`, `byline.ts`, `coldCall.ts`,
   `harbourManifest.ts`, `helpDeskLeak.ts`, `badAttachment.ts`, `sixTries.ts`,
@@ -267,14 +298,16 @@ wants the *specific action* named.
    command's data)? Five-minute ask for any tool-mod author.
 2. **Zeis's build order: tool packs → editor mods** (roadmap row 12, the
    [`r135 design v2.1`](plans/r135-tool-packs-design.md) has his go-in-
-   principle): pack schema, folder loader with plain-language validation,
-   community events in the trigger picker, SharedStorage contract forms,
-   target-rule lints — the no-code rule throughout — then Editor Mods
-   (community nodes with their own palette category and colours,
-   declarative emission templates only, starter pack + format spec). The
-   campaign template and the Campaign card are DONE (r136). The **Kisscord
-   contact lifecycle is parked until the SDK moves** (the 2026-09-12 patch
-   shipped none).
+   principle). **DONE in r137:** pack schema (format 2), loader with
+   plain-language validation, community events in the trigger picker,
+   SharedStorage contract forms, starter pack + format spec. **Remaining:
+   Editor Mods** — community nodes with their own palette category and
+   colours (the format's `nodes[]` section is reserved for exactly this),
+   declarative emission templates only; plus the pack-driven target-rule
+   surfaces (`targetRules` is parsed and carried; no quest-facing editor
+   surface reads it yet). The campaign template and the Campaign card are
+   DONE (r136). The **Kisscord contact lifecycle is parked until the SDK
+   moves** (the 2026-09-12 patch shipped none).
 
 3. **When the developer's patch lands, lift the fence in this order:** pin the
    new SDK version → `npm ci` → `npm run gen:events` → diff

@@ -13,6 +13,7 @@ import { WebsiteBuilderDialog } from "@/editor/websites/WebsiteBuilder";
 import { DialoguesDialog } from "./DialoguesDialog";
 import { SimulatorDialog } from "@/editor/simulator/SimulatorDialog";
 import { ExportDialog } from "./ExportDialog";
+import { ToolPackManagerDialog } from "@/toolpacks/ToolPackManagerDialog";
 import { EVENT_COUNT, SDK_VERSION } from "@/schema/events";
 
 /* ── Toast ───────────────────────────────────────────────────────────────── */
@@ -337,6 +338,7 @@ export function Overlays() {
             <DialoguesDialog open={modal === "dialogues"} onOpenChange={(o) => setUi({ modal: o ? "dialogues" : null })} />
             <ExportDialog open={modal === "mod"} onOpenChange={(o) => setUi({ modal: o ? "mod" : null })} />
             <SimulatorDialog open={modal === "simulator"} onOpenChange={(o) => setUi({ modal: o ? "simulator" : null })} />
+            <ToolPackManagerDialog open={modal === "toolpacks"} onOpenChange={(o) => setUi({ modal: o ? "toolpacks" : null })} />
         </>
     );
 }

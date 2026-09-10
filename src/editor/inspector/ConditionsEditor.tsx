@@ -13,6 +13,7 @@ import { Icon } from "@/components/Icon";
 import { CONDITION_OPS, CONDITION_OP_LABELS, UNARY_OPS, type ConditionClause } from "@/schema/nodes";
 import { RUNTIME_TOKENS } from "@/schema/common";
 import { eventFields, isPrimitivePayload } from "@/schema/events";
+import { packEventByName, usePacks } from "@/store/packs";
 import { SelectInput, TextInput } from "./primitives";
 
 const OP_OPTIONS = CONDITION_OPS.map((op) => ({ value: op, label: CONDITION_OP_LABELS[op] }));
@@ -26,8 +27,10 @@ export function ConditionsEditor({
     onChange: (next: ConditionClause[]) => void;
     eventName?: string;
 }) {
-    const fields = eventName ? eventFields(eventName) : [];
-    const primitive = eventName ? isPrimitivePayload(eventName) : false;
+    const packs = usePacks((s) => s.packs);
+    const packEv = eventName ? packEventByName(packs, eventName) : undefined;
+    const fields = packEv ? packEv.fields : eventName ? eventFields(eventName) : [];
+    const primitive = eventName && !packEv ? isPrimitivePayload(eventName) : false;
 
     const update = (index: number, patch: Partial<ConditionClause>) =>
         onChange(value.map((c, i) => (i === index ? { ...c, ...patch } : c)));

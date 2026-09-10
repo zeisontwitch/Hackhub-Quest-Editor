@@ -20,6 +20,7 @@ import {
     payloadFields,
 } from "@/schema/events";
 import { eventDoc } from "@/schema/eventDocs";
+import { packEventByName, packEvents, usePacks } from "@/store/packs";
 
 export function EventPicker({
     value,
@@ -30,10 +31,25 @@ export function EventPicker({
 }) {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState("");
+    const packs = usePacks((s) => s.packs);
+    const community = packEvents(packs);
+    const packLabel = new Map(community.map((e) => [e.name, `${e.label} — ${e.packName}`]));
 
     const groups = useMemo(() => {
         const q = query.trim().toLowerCase();
-        const all = groupedEvents();
+        const builtin = groupedEvents();
+        const all = [
+            ...builtin,
+            ...(community.length
+                ? [
+                      {
+                          group: "community",
+                          label: `Community tools (${community.length})`,
+                          events: community.map((e) => ({ name: e.name, payload: e.payload, group: "community" })),
+                      },
+                  ]
+                : []),
+        ];
         if (!q) return all;
         return all
             .map((g) => ({
@@ -42,14 +58,16 @@ export function EventPicker({
                     (e) =>
                         e.name.toLowerCase().includes(q) ||
                         humanEventName(e.name).toLowerCase().includes(q) ||
-                        e.payload.toLowerCase().includes(q),
+                        e.payload.toLowerCase().includes(q) ||
+                        (packLabel.get(e.name) ?? "").toLowerCase().includes(q),
                 ),
             }))
             .filter((g) => g.events.length > 0);
-    }, [query]);
+    }, [query, community]);
 
     const selected = value ? getEvent(value) : undefined;
-    const isCustom = value !== "" && !isKnownEvent(value);
+    const packEv = value ? packEventByName(packs, value) : undefined;
+    const isCustom = value !== "" && !isKnownEvent(value) && !packEv;
 
     return (
         <Popover.Root open={open} onOpenChange={setOpen}>
@@ -129,7 +147,7 @@ export function EventPicker({
                                         )}
                                     >
                                         <span className="block truncate text-[12px] text-ink">
-                                            {humanEventName(event.name)}
+                                            {packLabel.get(event.name) ?? humanEventName(event.name)}
                                         </span>
                                         <span className="block truncate font-mono text-[10.5px] text-ink-4">
                                             {event.name}
@@ -168,8 +186,44 @@ export function EventPicker({
                     </code>
                 </p>
             )}
-            {selected && <EventExplanation name={selected.name} payload={selected.payload} />}
+            {packEv ? (
+                <EventPackExplanation ev={packEv} />
+            ) : (
+                selected && <EventExplanation name={selected.name} payload={selected.payload} />
+            )}
         </Popover.Root>
+    );
+}
+
+/**
+ * The explanation for a community event: same shape as the catalogue one,
+ * but honest about where the event comes from — a tool pack, and the game
+ * mod its quests need on the player's machine.
+ */
+function EventPackExplanation({
+    ev,
+}: {
+    ev: { label: string; docs: string; fields: string[]; packName: string; gameModName: string };
+}) {
+    return (
+        <>
+            {ev.docs && <p className="field-hint">{ev.docs}</p>}
+            <p className="field-hint">
+                Fired by the <strong>{ev.packName}</strong> tool mod. A quest that waits on this
+                event needs <strong>{ev.gameModName}</strong> installed on the player&apos;s
+                machine — say so in the quest description.
+            </p>
+            <p className="field-hint">
+                {ev.fields.length > 0 ? (
+                    <>
+                        Narrow it down with:{" "}
+                        <code className="font-mono text-[10px] text-ink-3">{ev.fields.join(", ")}</code>
+                    </>
+                ) : (
+                    "It carries no details to test against."
+                )}
+            </p>
+        </>
     );
 }
 

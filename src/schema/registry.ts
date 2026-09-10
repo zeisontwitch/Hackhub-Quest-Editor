@@ -42,6 +42,7 @@ WifiNodeDataSchema,
     StoryBeatNodeDataSchema,
     RerouteNodeDataSchema,
     LayoutGroupNodeDataSchema,
+    PackDataNodeDataSchema,
     type NodeDoc,
     type NodeType,
 } from "./nodes";
@@ -157,6 +158,7 @@ export const CATEGORIES = [
     { id: "comms", label: "Communication", color: "var(--color-cat-comms)", hex: "#f472b6", icon: "message" },
     { id: "reply", label: "Player replies", color: "var(--color-cat-reply)", hex: "#fb923c", icon: "keyboard" },
     { id: "effect", label: "Effects", color: "var(--color-cat-effect)", hex: "#60a5fa", icon: "sparkle" },
+    { id: "community", label: "Community tools", color: "var(--color-cat-community)", hex: "#2dd4bf", icon: "package" },
     { id: "flow", label: "Flow control", color: "var(--color-cat-flow)", hex: "#94a3b8", icon: "branch" },
     { id: "layout", label: "Layout", color: "var(--color-cat-layout)", hex: "#64748b", icon: "layers" },
 ] as const;
@@ -172,6 +174,7 @@ export const CATEGORY_HEX: Record<CategoryId, string> = {
     objective: "#fbbf24",
     trigger: "#22d3ee",
     world: "#34d399",
+    community: "#2dd4bf",
     comms: "#f472b6",
     reply: "#fb923c",
     effect: "#60a5fa",
@@ -672,6 +675,21 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
             },
         ],
         create: () => seed(FilesNodeDataSchema),
+    },
+
+    "world.packData": {
+        type: "world.packData",
+        category: "community",
+        label: "Community data",
+        blurb: "Hand quest data to a community tool mod",
+        icon: "package",
+        ...io,
+        hook: "onStart",
+        /* No registry fields: this node is edited by its own editor
+           (NODE_SIM_EDITORS), because its dropdowns come from the loaded
+           tool packs, not from a static list. */
+        fields: [],
+        create: () => seed(PackDataNodeDataSchema),
     },
 
     "world.toolResponse": {

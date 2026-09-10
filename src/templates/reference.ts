@@ -102,6 +102,23 @@ export const EXAMPLES: Partial<Record<NodeType, Record<string, unknown>>> = {
             "Starting Nmap 7.94 ( https://nmap.org )\nNmap scan report for 10.0.0.14\nHost is up (0.0021s latency).\nPORT   STATE SERVICE VERSION\n22/tcp open  ssh     OpenSSH 8.9\n80/tcp open  http    Apache 2.4.41\n\nNmap done: 1 IP address (1 host up) scanned in 1.84 seconds",
         removeOnComplete: true,
     },
+    "world.packData": {
+        packId: "example-tools",
+        packName: "Example Tools",
+        gameModName: "Example Tools",
+        contractId: "loot",
+        contractLabel: "Plant loot on a machine",
+        storageKey: "exampletools.loot",
+        merge: "replace",
+        mergeBy: "target",
+        entry: { target: "{{target}}", files: [{ path: "{{path}}", data: "{{data}}\n" }] },
+        fields: [
+            { key: "target", label: "Host or IP", type: "string" },
+            { key: "path", label: "File path", type: "string" },
+            { key: "data", label: "File contents", type: "text" },
+        ],
+        values: { target: "10.0.0.14", path: "/var/log/manifest-14.txt", data: "CONTAINER MSKU-4471 — 14th, 02:40 — sealed, unsigned." },
+    },
     "comms.dialogue": {
         kind: "kisscord",
         kisscord: {
@@ -195,6 +212,7 @@ export function buildReference(): ProjectDocument {
         { id: "comms", title: "Communication" },
         { id: "reply", title: "Player replies" },
         { id: "effect", title: "Effects" },
+        { id: "community", title: "Community tools" },
         { id: "flow", title: "Flow control" },
         { id: "layout", title: "Layout" },
     ];

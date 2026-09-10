@@ -252,6 +252,15 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
             ];
         }
 
+        case "world.packData": {
+            const lines: string[] = [];
+            if (d.contractLabel) lines.push(d.contractLabel);
+            if (d.storageKey) lines.push(d.storageKey);
+            const filled = Object.values((d.values as Record<string, string>) ?? {}).filter((v) => v);
+            if (filled.length) lines.push(`${filled.length} value${filled.length === 1 ? "" : "s"} filled in`);
+            return lines.length ? lines : ["Not set up yet — pick a pack and a data shape"];
+        }
+
         case "flow.note":
             return d.text ? [clip(String(d.text), 120)] : ["Empty note"];
 

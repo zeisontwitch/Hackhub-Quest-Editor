@@ -215,6 +215,16 @@ function recordingSdk(entries: TraceEntry[]) {
                 number: (min = 0) => min,
                 pick: (list: unknown[]) => list?.[0],
             },
+            SharedStorage: {
+                /* Community packs hand data over through this cross-mod
+                   key-value store. The stub serves nothing on read (a first
+                   merge starts from an empty list, as in-game) and records
+                   what was written. */
+                get: () => undefined,
+                set: (key: string, value: unknown) => {
+                    log("data", `Community data handed over: ${key} = ${JSON.stringify(value)}`);
+                },
+            },
             SaveStorage: {
                 get: (k: string) => store[k],
                 set: (k: string, v: unknown) => {

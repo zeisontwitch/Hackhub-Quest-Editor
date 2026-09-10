@@ -107,7 +107,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-12.r136";
+export const EDITOR_BUILD = "2026-09-12.r137";
 
 export interface CompiledFile {
     path: string;
@@ -196,6 +196,23 @@ export function computePermissions(project: ProjectDocument): string[] {
     }
     if (project.quests.some((q) => q.dialog.some((b) => b.lines.some((l) => l.input)))) perms.add("shell");
     return [...perms];
+}
+
+/** The community packs this project hands data to: pack name -> the game
+    mod its quests require on the player's machine. Shared by the warnings
+    and the export stamp. */
+export function packModsUsed(project: ProjectDocument): Map<string, string> {
+    const packMods = new Map<string, string>();
+    for (const q of project.quests) {
+        for (const n of q.graph.nodes) {
+            if (n.type !== "world.packData") continue;
+            const d = n.data as { packName?: string; gameModName?: string; storageKey?: string };
+            if (d.storageKey && d.packName && d.gameModName && !packMods.has(d.packName)) {
+                packMods.set(d.packName, d.gameModName);
+            }
+        }
+    }
+    return packMods;
 }
 
 export function computeWarnings(project: ProjectDocument): string[] {
@@ -459,6 +476,27 @@ export function computeWarnings(project: ProjectDocument): string[] {
             }
         }
     }
+    /* Community data (r137): a pack node that was never set up compiles to
+       nothing — say so. And every pack used is an honesty line: quests that
+       hand data to a community tool mod only work while that mod is
+       installed on the player's machine. */
+    for (const q of project.quests) {
+        for (const n of q.graph.nodes) {
+            if (n.type !== "world.packData") continue;
+            const d = n.data as { packName?: string; storageKey?: string };
+            if (!d.storageKey) {
+                warnings.push(
+                    `${q.title || q.name}: a Community data node is not set up yet${d.packName ? ` (${d.packName})` : ""} — open the node and pick the pack and the data shape, or delete it. As it stands it does nothing.`,
+                );
+            }
+        }
+    }
+    for (const [packName, gameModName] of packModsUsed(project)) {
+        warnings.push(
+            `${packName} community data is used in this quest. It needs the ${gameModName} game mod installed on the player's machine — say so in your quest description, or the player will not know why it does nothing.`,
+        );
+    }
+
     /* Domains are global in the game (docs/03, template rule 5): two sites on
        one host fight over who answers, and a placeholder host ships as a real
        site any player can find. Both are authoring mistakes worth a warning. */
@@ -644,6 +682,9 @@ export function compileProject(project: ProjectDocument): CompileResult {
         "",
         `- Quests: ${project.quests.map((q) => q.name).join(", ") || "none"}`,
         `- Websites: ${project.websites.map((w) => w.host).join(", ") || "none"}`,
+        ...(packModsUsed(project).size
+            ? [`- Community tools: ${[...packModsUsed(project).keys()].join(", ")} — requires those game mods installed on the player's machine.`]
+            : []),
         `- Permissions requested: ${permissions.join(", ") || "none"}`,
         "",
         "## Notes",

@@ -429,6 +429,31 @@ export const ClaimQuestNodeDataSchema = z.object({
     questName: IdentifierSchema.optional().or(z.literal("")),
 });
 
+/**
+ * Community data (r137): one SharedStorage write driven by a tool pack's
+ * declared contract. The pack's entry template and the author's values are
+ * snapshotted INTO the node, so the project stays self-contained — it
+ * compiles (and the game mod reads its key) even where the pack is not
+ * loaded. See docs/ToolPack-Format.md.
+ */
+export const PackDataNodeDataSchema = z.object({
+    packId: z.string().default(""),
+    packName: z.string().default(""),
+    /** The in-game mod players must have installed — the honesty line. */
+    gameModName: z.string().default(""),
+    contractId: z.string().default(""),
+    contractLabel: z.string().default(""),
+    storageKey: z.string().default(""),
+    merge: z.enum(["overwrite", "replace"]).default("replace"),
+    mergeBy: z.string().optional(),
+    /** The pack's entry template (JSON with "{{fieldKey}}" holes). */
+    entry: z.unknown().optional(),
+    /** The contract's field definitions, snapshotted for the inspector. */
+    fields: z.array(z.record(z.string(), z.unknown())).default([]),
+    /** The author's answers, keyed by field key (stored as strings). */
+    values: z.record(z.string(), z.string()).default({}),
+});
+
 export const ShellExecNodeDataSchema = z.object({
     command: z.string().default(""),
 });
@@ -558,6 +583,7 @@ export const NodeSchema = z.discriminatedUnion("type", [
     node("world.database", DatabaseNodeDataSchema),
     node("world.files", FilesNodeDataSchema),
     node("world.toolResponse", ToolResponseNodeDataSchema),
+    node("world.packData", PackDataNodeDataSchema),
     node("comms.dialogue", DialogueNodeDataSchema),
     node("reply.input", ManualInputNodeDataSchema),
     node("fx.pay", PayNodeDataSchema),

@@ -148,6 +148,70 @@ export function normalizeHost(host: string): string {
         .replace(/\/+$/, "");
 }
 
+/* ── preview navigation (r134) ───────────────────────────────────────────
+   The preview iframe is sandboxed (unique origin), so nothing inside it can
+   be read — but scripts may run and postMessage to the parent. The preview
+   serves every page with a tiny interceptor injected: clicks on internal
+   links (href="/…") are forwarded to the builder instead of dying on the
+   sandbox, and the builder serves the linked page — so an author can walk
+   the whole site like a player. */
+
+const PREVIEW_NAV_SCRIPT = `<script>(function(){document.addEventListener("click",function(e){var t=e.target;if(!t||!t.closest)return;var a=t.closest("a[href]");if(!a)return;var h=a.getAttribute("href")||"";if(h.charAt(0)==="/"){e.preventDefault();e.stopPropagation();try{window.parent.postMessage({source:"qe-preview",path:h.split("?")[0].split("#")[0]||"/"},"*")}catch(err){}}},true);})();</` + `script>`;
+
+/** Inject the preview's link interceptor (before </body> when the document
+    has one, appended when it does not). Idempotent enough: a page that
+    already carries the marker is returned untouched. */
+export function injectPreviewNav(html: string): string {
+    if (html.includes("qe-preview")) return html;
+    return /<\/body>/i.test(html)
+        ? html.replace(/<\/body>/i, `${PREVIEW_NAV_SCRIPT}</body>`)
+        : html + PREVIEW_NAV_SCRIPT;
+}
+
+const escapeHtml = (t: string) =>
+    t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/** Served for preview paths that no page of the site answers — with the
+    hint that hidden pages count as destinations too. */
+export function notFoundDoc(host: string, path: string): string {
+    const h = escapeHtml(host);
+    const p = escapeHtml(path);
+    return `<!doctype html><html><head><meta charset="utf-8"><title>Not found</title><style>body{font:15px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:#f4f6f9;color:#232a36;display:grid;place-items:center;height:100vh;margin:0}div{text-align:center;max-width:42ch}code{background:#e9ecf1;padding:2px 6px;border-radius:4px}p{color:#5c6b7a}</style></head><body><div><h1 style="font-size:22px;margin-bottom:8px">No page at <code>${p}</code></h1><p>Nothing on <strong>${h}</strong> answers here yet. Add a page with this path in the Pages list — unlisted (hidden) pages count as destinations too.</p></div></body></html>`;
+}
+
+/** Derive a page path from an imported file's relative path: the top folder
+    is stripped, `index` files become their directory, extensions vanish.
+    "site/news.html" -> "/news", "site/sub/index.html" -> "/sub". */
+export function importPath(relPath: string): string | null {
+    const parts = relPath.split("/");
+    const inner = parts.length > 1 ? parts.slice(1).join("/") : parts[0];
+    if (!/\.(html?|htm)$/i.test(inner)) return null;
+    const segs = inner.replace(/\.html?$/i, "").split("/").filter(Boolean);
+    if (segs.length && segs[segs.length - 1].toLowerCase() === "index") segs.pop();
+    return normalizePath("/" + segs.join("/"));
+}
+
+/** Read a File as text via FileReader — File.text() is not available in all
+    environments (jsdom among them), and Load HTML already runs on FileReader. */
+export function readFileText(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result ?? ""));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(file);
+    });
+}
+
+/** A human title for an imported page: the <title> when the document has
+    one, else the file's base name with separators spaced out. */
+export function importTitle(fileName: string, html: string): string {
+    const m = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+    const fromDoc = m?.[1]?.trim();
+    if (fromDoc) return fromDoc;
+    const base = fileName.replace(/\.html?$/i, "").replace(/[-_]+/g, " ").trim();
+    return base ? base.charAt(0).toUpperCase() + base.slice(1) : "Imported page";
+}
+
 /** Trim a page path and ensure the leading slash ("/" and "" stay "/"). */
 export function normalizePath(path: string): string {
     const t = path.trim();

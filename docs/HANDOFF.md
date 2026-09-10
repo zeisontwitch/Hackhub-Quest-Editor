@@ -1,6 +1,12 @@
-# Handoff — r133
+# Handoff — r134
 
-r133 built **linking without touching HTML** ([plan](plans/r133-page-linking.md)):
+r134 was the **website polish** ([plan](plans/r134-website-polish.md)): the
+preview is now a walkable site — an address bar plus internal-link
+navigation (the sandboxed iframe posts internal link clicks out; the builder
+serves the linked page, or a friendly not-found) — and **Import folder**
+turns a folder of AI-written .html files into pages in one go (filenames
+become paths, `<title>`s become titles, existing paths are skipped). r133
+built **linking without touching HTML** ([plan](plans/r133-page-linking.md)):
 Zeis's After Effects pick-whip idea, verdict "right instinct, wrong physics
 for a drag", shipped as click-click *with the noodle kept*: the 🔗 button is
 a popover of the site's pages, every sidebar page row has a 🎯 socket, and
@@ -32,14 +38,17 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r133 (page linking) on
+- **HEAD:** r134 (website polish) on
   `arena/01a08809-hackhub-quest-editor`, committed and pushed. Previous
   rounds: r131 (docs-only analysis), `423569f` (r130). (A sandbox reset
-  rolled local history back to `c0e511f` mid-r129; recovered from the remote
-  tip per the standing fetch-first rule — the remote is authoritative.)
-- **1,229 tests green** across 57 files, typecheck clean, build clean. The only noise is the 4 pre-existing d3-drag jsdom
+  rolled local history back to `c0e511f` mid-r129, and again mid-r134 —
+  that time taking node_modules with it; recovered both times from the
+  remote tip per the standing fetch-first rule (mid-r134 addendum: rescue
+  the round's uncommitted files with plain copies BEFORE `reset --hard`),
+  then `npm ci`. The remote is authoritative.)
+- **1,233 tests green** across 57 files, typecheck clean, build clean. The only noise is the 4 pre-existing d3-drag jsdom
   teardown errors, unrelated to this work.
-- **Editor build stamp:** `2026-09-11.r133`.
+- **Editor build stamp:** `2026-09-11.r134`.
 - Shared graph helpers extracted to `src/templates/kit.ts`; each template is its
   own module (`blank.ts`, `firstContact.ts`, `byline.ts`, `coldCall.ts`,
   `harbourManifest.ts`, `helpDeskLeak.ts`, `badAttachment.ts`, `sixTries.ts`,
@@ -243,19 +252,24 @@ wants the *specific action* named.
    checkbox now: build two identical sites, flag one, compare their search
    ranking); and eyes on an **iconless site** — generated sites ship
    `Icon = ""` (Nemesis precedent) — does the in-game browser or Goagle
-   results show an ugly blank where an icon belongs?
-2. **Website-builder polish** (roadmap item 11, approved r132 proposals):
-   **preview navigation** (mini address bar; the preview follows in-site
-   links so an author walks the site like a player) and **multi-file
-   import** (the AI flow returns one .html per page — import in one go,
-   pages created from filenames, `news.html` → `/news`). Small round.
-3. **r131's proposals, approved by Zeis** (roadmap item 10): the **campaign template** (multi-quest chain via `fx.claimQuest`,
+   results show an ugly blank where an icon belongs? And the tool-pack
+   gate (r135 design): does `addCommandData` placed for a mod-registered
+   command surface when the player runs it (the tool mod reads its own
+   command's data)? Five-minute ask for any tool-mod author.
+2. **r131's proposals, approved by Zeis** (roadmap item 10): the **campaign template** (multi-quest chain via `fx.claimQuest`,
    one world-owner per campaign — see the analysis §4 for the
    whose-world-is-it design question), the **Kisscord contact lifecycle**
    (`createUser`/`addUser`/`addFriend`/`changeStatus` — declared in the
    pinned SDK, unmodeled; likely inspector fields around the dialogue node,
    exact surface decided in the round's plan; in-game check: does a created
    contact render a proper card? — already on the QA list above), and a **Campaign cookbook card**.
+3. **Tool packs** (roadmap row 12, awaiting go on the
+   [`r135 design`](plans/r135-tool-packs-design.md)): declarative
+   `toolpack.json` folders load as palette nodes — fields to inspector,
+   answers through the `world.toolResponse`/`addCommandData` rail, the
+   requires-game-mod warning as the design's spine, projects portable
+   (pack-less reopen degrades to a stub, never breaks). Spec doc +
+   example pack ride along. Behind website polish and the r131 builds.
 4. **When the developer's patch lands, lift the fence in this order:** pin the
    new SDK version → `npm ci` → `npm run gen:events` → diff
    `reference/hackhub-events.json` → read the new `d.ts` → Zeis verifies

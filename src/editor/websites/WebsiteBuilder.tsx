@@ -11,13 +11,19 @@ import { cn } from "@/lib/cn";
 import { Icon } from "@/components/Icon";
 import { FieldShell, TextInput, Toggle } from "@/editor/inspector/primitives";
 import { createPage, createWebsite } from "@/schema/project";
+import type { WebPageDoc } from "@/schema/project";
 import { useEditor } from "@/store/editor";
 import { PAGE_TEMPLATES, SITE_TEMPLATES } from "@/templates/pages";
 import {
+    importPath,
+    importTitle,
+    injectPreviewNav,
     isFullDocument,
     normalizeHost,
     normalizePath,
+    notFoundDoc,
     parseSearchTerms,
+    readFileText,
     scanDocument,
     wrapFragment,
 } from "./pageDoc";
@@ -60,6 +66,7 @@ export function WebsiteBuilderDialog({
         the visual editor's picker share one gesture. */
     const [targeting, setTargeting] = useState<TargetingState | null>(null);
     const htmlFileRef = useRef<HTMLInputElement>(null);
+    const dirFileRef = useRef<HTMLInputElement>(null);
     const toast = useEditor((s) => s.toast);
 
     const site = websites.find((w) => w.id === siteId) ?? websites[0];
@@ -478,6 +485,61 @@ export function WebsiteBuilderDialog({
                                             <button
                                                 type="button"
                                                 className="btn-default"
+                                                title="Import a folder of .html files (say, your AI assistant's output) — filenames become paths: news.html becomes /news, sub/index.html becomes /sub"
+                                                onClick={() => dirFileRef.current?.click()}
+                                            >
+                                                <Icon name="folder" size={11} />
+                                                Import folder
+                                            </button>
+                                            <input
+                                                ref={dirFileRef}
+                                                type="file"
+                                                multiple
+                                                aria-label="Import pages folder"
+                                                className="hidden"
+                                                onChange={(e) => {
+                                                    const files = Array.from(e.target.files ?? []);
+                                                    e.target.value = "";
+                                                    if (!files.length) return;
+                                                    void (async () => {
+                                                        let made = 0;
+                                                        let skipped = 0;
+                                                        let folder = "";
+                                                        for (const f of files) {
+                                                            const rel = f.webkitRelativePath || f.name;
+                                                            if (!folder) folder = rel.split("/")[0] || "folder";
+                                                            const p = importPath(rel);
+                                                            if (!p) continue;
+                                                            if (site.pages.some((pg) => pg.path === p)) {
+                                                                skipped++;
+                                                                continue;
+                                                            }
+                                                            const html = await readFileText(f);
+                                                            const title = importTitle(f.name, html);
+                                                            const content = isFullDocument(html)
+                                                                ? html
+                                                                : wrapFragment(html, title);
+                                                            addPage(site.id, createPage({ path: p, title, content }));
+                                                            made++;
+                                                        }
+                                                        if (!made && !skipped) {
+                                                            toast("No .html files found in that folder.", "warn");
+                                                            return;
+                                                        }
+                                                        const bits = [
+                                                            `Imported ${made} page${made === 1 ? "" : "s"} from ${folder}.`,
+                                                        ];
+                                                        if (skipped)
+                                                            bits.push(
+                                                                `${skipped} skipped — a page with that path already exists.`,
+                                                            );
+                                                        toast(bits.join(" "), made ? "ok" : "warn");
+                                                    })();
+                                                }}
+                                            />
+                                            <button
+                                                type="button"
+                                                className="btn-default"
                                                 title="Get a copy-paste prompt that makes ChatGPT or Claude build a game-ready website for you"
                                                 onClick={() => setLlmOpen(true)}
                                             >
@@ -717,9 +779,8 @@ export function WebsiteBuilderDialog({
                                             {mode === "preview" && (
                                                 <BrowserPreview
                                                     host={site.host}
-                                                    path={page.path}
-                                                    seo={page.seo}
-                                                    content={page.content}
+                                                    page={page}
+                                                    pages={pages}
                                                 />
                                             )}
                                         </div>
@@ -806,18 +867,46 @@ export function WebsiteBuilderDialog({
     );
 }
 
-/** The player's-eye view: a little in-game browser window. */
+/** The player's-eye view: a little in-game browser window. Internal links
+    clicked inside the preview navigate it — the builder serves whatever page
+    lives at that path (or a friendly not-found) — so an author can walk the
+    whole site like a player. The address bar takes paths directly. */
 function BrowserPreview({
     host,
-    path,
-    seo,
-    content,
+    page,
+    pages,
 }: {
     host: string;
-    path: string;
-    seo: boolean;
-    content: string;
+    page: WebPageDoc;
+    pages: WebPageDoc[];
 }) {
+    const [viewPath, setViewPath] = useState(page.path);
+    const [draft, setDraft] = useState(page.path);
+    // Following the author's page switch, both bars snap back to it.
+    useEffect(() => {
+        setViewPath(page.path);
+        setDraft(page.path);
+    }, [page.id, page.path]);
+
+    useEffect(() => {
+        const onMsg = (e: MessageEvent) => {
+            const d = e.data as { source?: string; path?: string } | null;
+            if (d?.source !== "qe-preview") return;
+            const p = normalizePath(String(d.path ?? "/"));
+            setViewPath(p);
+            setDraft(p);
+        };
+        window.addEventListener("message", onMsg);
+        return () => window.removeEventListener("message", onMsg);
+    }, []);
+
+    const viewed = pages.find((p) => p.path === viewPath) ?? null;
+    const body = viewed
+        ? viewed.content.trim()
+            ? injectPreviewNav(viewed.content)
+            : "<p><em>Empty page.</em></p>"
+        : notFoundDoc(host, viewPath);
+
     return (
         <div className="overflow-hidden rounded-lg border border-line">
             <div className="flex items-center gap-2 border-b border-line bg-surface-2 px-3 py-1.5">
@@ -826,12 +915,38 @@ function BrowserPreview({
                     <i className="size-2 rounded-full bg-warn/70" />
                     <i className="size-2 rounded-full bg-ok/70" />
                 </span>
-                <span className="flex-1 truncate rounded-md border border-line bg-surface px-2.5 py-1 font-mono text-[10.5px] text-ink-3">
-                    http://{host}
-                    {path}
-                </span>
+                <form
+                    className="flex min-w-0 flex-1 items-center"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        const p = normalizePath(draft);
+                        setViewPath(p);
+                        setDraft(p);
+                    }}
+                >
+                    <input
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        aria-label="Preview address"
+                        className="min-w-0 flex-1 rounded-md border border-line bg-surface px-2.5 py-1 font-mono text-[10.5px] text-ink-3 focus:border-accent focus:outline-none"
+                    />
+                </form>
+                {viewPath !== page.path && (
+                    <button
+                        type="button"
+                        className="btn-icon shrink-0"
+                        title={`Back to the page you are editing (${page.path})`}
+                        aria-label="Back to the page you are editing"
+                        onClick={() => {
+                            setViewPath(page.path);
+                            setDraft(page.path);
+                        }}
+                    >
+                        <Icon name="x" size={12} />
+                    </button>
+                )}
             </div>
-            {!seo && (
+            {viewed && !viewed.seo && (
                 <p className="flex items-center gap-1.5 border-b border-warn/30 bg-warn/10 px-3 py-1.5 text-[10.5px] text-warn">
                     <Icon name="lock" size={11} />
                     Not in search results — only a direct URL (or dirhunter) leads here.
@@ -839,7 +954,7 @@ function BrowserPreview({
             )}
             <iframe
                 title="Page preview"
-                srcDoc={content || "<p><em>Empty page.</em></p>"}
+                srcDoc={body}
                 sandbox="allow-scripts"
                 className="block h-[52vh] w-full border-0 bg-white"
             />

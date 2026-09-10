@@ -8,12 +8,16 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import { CodePageEditor, VisualPageEditor } from "@/editor/websites/pageEditor";
 import {
+    importPath,
+    importTitle,
+    injectPreviewNav,
     isFullDocument,
     joinDocument,
     linkElement,
     linkRange,
     normalizeHost,
     normalizePath,
+    notFoundDoc,
     parseSearchTerms,
     splitDocument,
     wrapFragment,
@@ -129,6 +133,29 @@ describe("page documents", () => {
         linkRange(document, r2, "/x");
         expect(p2.querySelector('a[href="/x"]')!.textContent).toBe("/x");
     });
+
+    it("serves preview navigation: interceptor injection, import paths and titles", () => {
+        const full = `<!doctype html><html><body><a href="/news">n</a></body></html>`;
+        const injected = injectPreviewNav(full);
+        expect(injected).toContain("qe-preview");
+        expect(injected.indexOf("qe-preview")).toBeLessThan(injected.indexOf("</body>"));
+        // fragments get the interceptor appended, marked documents pass through
+        expect(injectPreviewNav("<p>x</p>")).toContain("qe-preview");
+        expect(injectPreviewNav(injected)).toBe(injected);
+
+        expect(importPath("site/news.html")).toBe("/news");
+        expect(importPath("site/index.html")).toBe("/");
+        expect(importPath("site/sub/index.html")).toBe("/sub");
+        expect(importPath("site/deep/a/b.html")).toBe("/deep/a/b");
+        expect(importPath("plain.html")).toBe("/plain");
+        expect(importPath("site/readme.txt")).toBeNull();
+
+        expect(importTitle("bakery-news.html", "<title>Fresh bread</title>")).toBe("Fresh bread");
+        expect(importTitle("bakery-news.html", "<p>no title</p>")).toBe("Bakery news");
+
+        expect(notFoundDoc("bank.example", "/vault")).toContain("No page at");
+        expect(notFoundDoc("bank.example", "/v<img>")).not.toContain("<img>");
+    });
 });
 
 describe("template quality", () => {
@@ -184,7 +211,9 @@ describe("website builder dialog", () => {
         // The preview shows the in-game browser with the hidden-page banner.
         await user.click(screen.getByRole("button", { name: "preview" }));
         expect(screen.getByText(/not in search results/i)).toBeInTheDocument();
-        expect(screen.getAllByText(/example\.net\/files\/internal\/q3-audit/).length).toBeGreaterThan(0);
+        expect((screen.getByLabelText("Preview address") as HTMLInputElement).value).toBe(
+            "/files/internal/q3-audit",
+        );
         const preview = screen.getByTitle("Page preview");
         expect(preview.getAttribute("srcdoc")).toContain("router 10.9.4.2");
 
@@ -590,6 +619,93 @@ describe("r132 audit fixes", () => {
 
         expect(await screen.findByText(/2 hidden elements/)).toBeInTheDocument();
         expect(screen.getByText(/1 more comment/)).toBeInTheDocument();
+    });
+});
+
+describe("r134 website polish", () => {
+    it("imports a folder of .html files as pages, paths from filenames", async () => {
+        const user = userEvent.setup();
+        const site = createWebsite();
+        act(() => useEditor.getState().addWebsite(site));
+        act(() => useEditor.getState().addPage(site.id, createPage({ path: "/dupe", title: "Dupe" })));
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+
+        const mk = (name: string, rel: string, body: string) => {
+            const f = new File([body], name, { type: "text/html" });
+            Object.defineProperty(f, "webkitRelativePath", { value: rel });
+            return f;
+        };
+        const files = [
+            mk("index.html", "assistant/index.html", "<!doctype html><html><body><h1>home</h1></body></html>"),
+            mk("news.html", "assistant/news.html", "<!doctype html><html><head><title>News</title></head><body><p>n</p></body></html>"),
+            mk("team.html", "assistant/about/team.html", "<p>t</p>"),
+            mk("dupe.html", "assistant/dupe.html", "<p>d</p>"),
+        ];
+        await user.upload(screen.getByLabelText("Import pages folder"), files);
+        await waitFor(() => {
+            const paths = useEditor.getState().project.websites[0].pages.map((p) => p.path);
+            expect(paths).toContain("/news");
+            expect(paths).toContain("/about/team");
+        });
+
+        const pages = useEditor.getState().project.websites[0].pages;
+        // index.html maps to "/" which already existed — skipped, not duplicated
+        expect(pages.filter((p) => p.path === "/")).toHaveLength(1);
+        // the existing /dupe page was skipped, not clobbered or duplicated
+        expect(pages.filter((p) => p.path === "/dupe")).toHaveLength(1);
+        expect(pages.find((p) => p.path === "/dupe")!.title).toBe("Dupe");
+        // the AI's <title> wins, fragments are wrapped into full documents
+        expect(pages.find((p) => p.path === "/news")!.title).toBe("News");
+        const team = pages.find((p) => p.path === "/about/team")!;
+        expect(team.title).toBe("Team");
+        expect(team.content).toContain("<!doctype html>");
+        expect(team.content).toContain("<p>t</p>");
+    });
+
+    it("preview navigates: internal links walk the site via postMessage", async () => {
+        const user = userEvent.setup();
+        const site = createWebsite({
+            pages: [
+                createPage({
+                    path: "/",
+                    title: "Home",
+                    content: `<!doctype html><html><body><a href="/contact">Contact</a></body></html>`,
+                }),
+                createPage({
+                    path: "/contact",
+                    title: "Contact",
+                    seo: false,
+                    content: `<!doctype html><html><body><p>reach us</p></body></html>`,
+                }),
+            ],
+        });
+        act(() => useEditor.getState().addWebsite(site));
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+
+        await user.click(screen.getByRole("button", { name: "preview" }));
+        const preview = () => screen.getByTitle("Page preview") as HTMLIFrameElement;
+        // the interceptor rides along with the served page
+        expect(preview().getAttribute("srcdoc")).toContain("qe-preview");
+
+        // an internal link click inside the sandboxed iframe posts out; the
+        // builder serves the linked page and the address bar follows
+        act(() => {
+            window.dispatchEvent(
+                new MessageEvent("message", { data: { source: "qe-preview", path: "/contact" } }),
+            );
+        });
+        expect((screen.getByLabelText("Preview address") as HTMLInputElement).value).toBe("/contact");
+        expect(preview().getAttribute("srcdoc")).toContain("reach us");
+        // the hidden-page banner reflects the page being VIEWED
+        expect(screen.getByText(/Not in search results/)).toBeInTheDocument();
+
+        // a path nobody answers gets the not-found page
+        act(() => {
+            window.dispatchEvent(
+                new MessageEvent("message", { data: { source: "qe-preview", path: "/nope" } }),
+            );
+        });
+        expect(preview().getAttribute("srcdoc")).toContain("No page at");
     });
 });
 

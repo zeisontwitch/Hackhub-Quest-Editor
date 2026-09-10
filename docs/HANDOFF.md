@@ -14,7 +14,7 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** `674239a` (r129) on `arena/01a08809-hackhub-quest-editor`,
+- **HEAD:** `423569f` (r130) on `arena/01a08809-hackhub-quest-editor`,
   committed and pushed. (A sandbox reset rolled local history back to
   `c0e511f` mid-r129; recovered from the remote tip per the standing
   fetch-first rule — the remote is authoritative.)

@@ -14,9 +14,10 @@ Simulator plus Cookbook riders.
 
 ## Where things stand
 
-- **HEAD:** `e3ff472` (r128) + the r129 round commit on
-  `arena/01a08809-hackhub-quest-editor`, committed and pushed — `git log
-  --oneline -3` is the truth.
+- **HEAD:** `674239a` (r129) on `arena/01a08809-hackhub-quest-editor`,
+  committed and pushed. (A sandbox reset rolled local history back to
+  `c0e511f` mid-r129; recovered from the remote tip per the standing
+  fetch-first rule — the remote is authoritative.)
 - **1,200 tests green** across 55 files, typecheck clean. The only noise is
   the 4 pre-existing d3-drag jsdom teardown errors, unrelated to this work.
 - **Editor build stamp:** `2026-09-10.r129`.

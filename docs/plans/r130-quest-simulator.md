@@ -103,3 +103,15 @@ Both falsifiable in the usual way.
 - The sweep passing across all twelve templates is itself a finding: every
   shipped trigger's conditions are sound against the catalogue's declared
   shapes, including Six Tries' `Terminal.Hydra` credential match.
+- **Zeis's reroute question, answered by the code and pinned.** The reroute
+  has no runtime case of its own — `next()` follows all flow wires through
+  `__QE.seq`, which is **serial, deep-first, in wire order** (it only pays for
+  a promise when a branch really is async). With wait-free branches that is
+  indistinguishable from "all at once"; but a Wait or timed chat on an early
+  wire delays every later wire. Proven in the dry run (delay-branch fired
+  before the instant branch when wired first), pinned as a test whose
+  assertion is order-sensitive (falsified by swapping the wires), and the
+  Pacing card now says: Sequence for deliberate pacing, reroute to tidy
+  wait-free wires. Cycles are bounded the same in-game and in the sim
+  (`depth > 200`).
+

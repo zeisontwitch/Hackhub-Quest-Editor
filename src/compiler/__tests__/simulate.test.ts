@@ -7,7 +7,10 @@
 import { describe, expect, it } from "vitest";
 import { simulateProject } from "@/compiler/simulate";
 import { getTemplate, TEMPLATES } from "@/templates";
+import { nodeTypeDef } from "@/schema/registry";
 import type { ProjectDocument } from "@/schema/project";
+import type { NodeDoc } from "@/schema/nodes";
+import type { EdgeDoc } from "@/schema/edges";
 
 /** Every template dry-runs clean: the emitted code registers, starts and
  *  settles without throwing, whatever else the report says. */
@@ -62,6 +65,34 @@ describe("simulateProject", () => {
         const whois = report.quests[0].objectives.find((o) => o.event === "Terminal.Whois")!;
         expect(whois.probe).toBe("no-match");
         expect(whois.probeNote).toBeTruthy();
+    });
+
+    it("a reroute fan-out fires every branch, deep-first in wire order", async () => {
+        // The reroute has no runtime case of its own: next() follows all flow
+        // wires through __QE.seq — serially, only waiting when a branch really
+        // is async. Pin the consequence: a Wait in wire 1 completes (the sim
+        // collapses the wait itself) before wire 2 fires. That order is the
+        // in-game behaviour too — a pause in an early wire delays later wires.
+        const mk = (type: Parameters<typeof nodeTypeDef>[0], patch: Record<string, unknown>, id: string) =>
+            ({ id, type, position: { x: 0, y: 0 }, data: { ...(nodeTypeDef(type).create() as object), ...patch } }) as NodeDoc;
+        const entry = mk("entry.start", {}, "e");
+        const reroute = mk("flow.reroute", {}, "r");
+        const delay = mk("flow.delay", { seconds: 30 }, "d");
+        const notifyLate = mk("fx.notify", { message: "LATER-BRANCH" }, "nl");
+        const notifyNow = mk("fx.notify", { message: "NOW-BRANCH" }, "nn");
+        const e = (s: NodeDoc, t: NodeDoc): EdgeDoc =>
+            ({ id: `e${s.id}-${t.id}`, source: s.id, sourceHandle: "out", target: t.id, targetHandle: "in", kind: "flow" });
+        const project: ProjectDocument = getTemplate("blank")!.build();
+        project.quests[0].autoStart = true;
+        project.quests[0].graph.nodes = [entry, reroute, delay, notifyLate, notifyNow];
+        project.quests[0].graph.edges = [e(entry, reroute), e(reroute, delay), e(delay, notifyLate), e(reroute, notifyNow)];
+
+        const report = await simulateProject(project);
+        expect(report.errors).toEqual([]);
+        const lines = report.quests[0].trace.map((t) => t.text).join("\n");
+        expect(lines).toContain("LATER-BRANCH");
+        expect(lines).toContain("NOW-BRANCH");
+        expect(lines.indexOf("LATER-BRANCH")).toBeLessThan(lines.indexOf("NOW-BRANCH"));
     });
 
     it("blanks stay blank: an empty quest simulates to an empty report", async () => {

@@ -166,7 +166,9 @@ export function buildCookbook(): ProjectDocument {
             "",
             "Waits are real. A Wait node pauses the story on the game's own timer (Random.sleep); a Sequence fires its outputs one after another with per-step pauses; a timed chat plays message by message with its own delays.",
             "",
-            "A delay blocks only its own branch — parallel storylines run on their own clocks. What has NO node: cancellable timers, background tickers, \"in 30 seconds unless the player does X\" — the SDK has no scheduler. Anchor on events instead: trigger → Wait → follow-up.",
+            "A delay blocks only its own branch — parallel storylines run on their own clocks. Watch the reroute dot, though: its branches fire in wire order, one after another — a Wait on an early wire delays every later wire. Sequence is the node for deliberate pacing; use the reroute just to tidy wires whose branches never wait.",
+            "",
+            "What has NO node: cancellable timers, background tickers, \"in 30 seconds unless the player does X\" — the SDK has no scheduler. Anchor on events instead: trigger → Wait → follow-up.",
         ].join("\n"),
         width: 340,
     });

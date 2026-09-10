@@ -7,7 +7,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CodePageEditor, VisualPageEditor } from "@/editor/websites/pageEditor";
-import { isFullDocument, joinDocument, splitDocument, wrapFragment } from "@/editor/websites/pageDoc";
+import {
+    isFullDocument,
+    joinDocument,
+    parseSearchTerms,
+    splitDocument,
+    wrapFragment,
+} from "@/editor/websites/pageDoc";
 import { WebsiteBuilderDialog } from "@/editor/websites/WebsiteBuilder";
 import { createPage, createProject, createWebsite } from "@/schema/project";
 import { PAGE_TEMPLATES, SITE_TEMPLATES } from "@/templates/pages";
@@ -65,6 +71,15 @@ describe("page documents", () => {
         expect(wrapped).toContain("<title>Clue</title>");
         expect(wrapped).toContain("<p>clue</p>");
         expect(splitDocument(wrapped).body).toContain("<p>clue</p>");
+    });
+
+    it("parses the extra-search-words input into a clean term list", () => {
+        expect(parseSearchTerms("lcb, meridian bank,  ,banking")).toEqual(["lcb", "meridian bank", "banking"]);
+        expect(parseSearchTerms("solo")).toEqual(["solo"]);
+        // Dedupe is exact-match; the author's casing is kept (the engine may
+        // match case-insensitively — that is its call, not ours).
+        expect(parseSearchTerms("dup, dup, DUP")).toEqual(["dup", "DUP"]);
+        expect(parseSearchTerms("   ")).toEqual([]);
     });
 });
 
@@ -200,6 +215,19 @@ describe("website builder dialog", () => {
         await user.clear(screen.getByLabelText("Page path"));
         await user.type(screen.getByLabelText("Page path"), "/about");
         expect(useEditor.getState().project.websites[0].pages[0].path).toBe("/about");
+    });
+
+    it("edits the search metadata fields", async () => {
+        const user = userEvent.setup();
+        const site = createWebsite();
+        act(() => useEditor.getState().addWebsite(site));
+
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+        await user.type(screen.getByLabelText("Search result description"), "The bank's public front page");
+        await user.type(screen.getByLabelText("Extra search words"), "lcb, meridian bank, , banking");
+        const page = useEditor.getState().project.websites[0].pages[0];
+        expect(page.description).toBe("The bank's public front page");
+        expect(page.search).toEqual(["lcb", "meridian bank", "banking"]);
     });
 
     it("code view exposes the full document for copy-paste", async () => {

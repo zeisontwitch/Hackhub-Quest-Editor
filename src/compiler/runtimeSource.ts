@@ -2147,7 +2147,14 @@ function __qeRegisterProject(sdk, PROJECT) {
     /* ── websites ──────────────────────────────────────────────────────── */
     function registerWebsite(w, extraPages) {
         var pages = (w.pages || []).map(function (p) {
-            return { path: p.path, title: p.title, html: p.content, seo: !!p.seo };
+            /* The SDK's WebsitePageDefinition also takes a search-result
+               description and extra search terms (r129). Emit them only when
+               the author set them, so a page that does not use the fields
+               produces exactly the same export as before. */
+            var page = { path: p.path, title: p.title, html: p.content, seo: !!p.seo };
+            if (p.description) page.description = p.description;
+            if (p.search && p.search.length) page.search = p.search;
+            return page;
         });
         (extraPages || []).forEach(function (p) { pages.push(p); });
         var cls = class extends sdk.Website {

@@ -4,7 +4,7 @@
  * the dirhunter hiding places — the builder says so plainly instead of making
  * authors learn `seo:false`.
  */
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import * as Dialog from "@radix-ui/react-dialog";
 import { cn } from "@/lib/cn";
@@ -13,7 +13,7 @@ import { FieldShell, TextInput, Toggle } from "@/editor/inspector/primitives";
 import { createPage, createWebsite } from "@/schema/project";
 import { useEditor } from "@/store/editor";
 import { PAGE_TEMPLATES, SITE_TEMPLATES } from "@/templates/pages";
-import { isFullDocument, scanDocument, wrapFragment } from "./pageDoc";
+import { isFullDocument, parseSearchTerms, scanDocument, wrapFragment } from "./pageDoc";
 import { LlmPromptDialog } from "./LlmPromptDialog";
 import { CodePageEditor, VisualPageEditor } from "./pageEditor";
 
@@ -40,6 +40,10 @@ export function WebsiteBuilderDialog({
     /** Bumped when content changes outside the visual editor, so it remounts fresh. */
     const [outsideRev, setOutsideRev] = useState(0);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    /** The words input keeps the author's raw text (commas and all) while
+        they type; null = display the stored terms instead. */
+    const [searchDraft, setSearchDraft] = useState<string | null>(null);
+    useEffect(() => setSearchDraft(null), [pageId]);
     const [llmOpen, setLlmOpen] = useState(false);
     const htmlFileRef = useRef<HTMLInputElement>(null);
     const toast = useEditor((s) => s.toast);
@@ -479,6 +483,39 @@ export function WebsiteBuilderDialog({
                                             checked={page.seo}
                                             onChange={(seo) => updatePage(site.id, page.id, { seo })}
                                         />
+
+                                        <div className="grid gap-2 border-b border-line px-3 py-2">
+                                            <FieldShell
+                                                label="Search result description"
+                                                hint="A short line the in-game search can show under this page's result, like the snippet under a web result. Leave blank and the game decides what to show."
+                                            >
+                                                <TextInput
+                                                    ariaLabel="Search result description"
+                                                    value={page.description ?? ""}
+                                                    onChange={(description) =>
+                                                        updatePage(site.id, page.id, { description: description || undefined })
+                                                    }
+                                                    placeholder="Custom sets for every budget"
+                                                />
+                                            </FieldShell>
+                                            <FieldShell
+                                                label="Extra search words"
+                                                hint="Words this page should also be found by, besides what is written on it — a codename, a product name, a misspelling a player might try. Separate them with commas."
+                                            >
+                                                <TextInput
+                                                    ariaLabel="Extra search words"
+                                                    value={searchDraft ?? (page.search ?? []).join(", ")}
+                                                    onChange={(text) => {
+                                                        /* Keep the author's raw text (commas and all)
+                                                           while they type; parseSearchTerms only feeds
+                                                           the stored page. */
+                                                        setSearchDraft(text);
+                                                        updatePage(site.id, page.id, { search: parseSearchTerms(text) });
+                                                    }}
+                                                    placeholder="budget, cheap rigs, custom pc"
+                                                />
+                                            </FieldShell>
+                                        </div>
 
                                         {scan && (
                                             <div className="border-b border-line px-3 py-2">

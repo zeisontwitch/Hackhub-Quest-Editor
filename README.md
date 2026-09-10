@@ -28,9 +28,8 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 | # | Item | Notes |
 |---|---|---|
 | 1 | **Waiting on the game patch** | The developer has replied ([`docs/07-dev-response-mod-sdk-bug-report-response.md`](docs/07-dev-response-mod-sdk-bug-report-response.md), **fenced — read the banner first**): every reported item was reproduced, three were misdiagnosed (declarative triggers always worked — payload types were the lie), fixes ship in an upcoming patch. New surface (`this.complete()`, `Twotter.removeUser`, `Mail.remove`, …) is **not in the pinned SDK yet**: nothing implements it, no workaround comes off. Per Zeis the dev also verbally agreed on Discord (after the document, no timeline) to expose SMS; it appears nowhere in the written response — same fence. |
-| 2 | Website pages: `description` + `search[]` | The SDK's `WebsitePageDefinition` supports both and the reference mod uses both; we emit only `path`/`title`/`html`/`seo`. Affects in-game search. |
-| 3 | Old quest mail is never cleaned up | Mail sent by an uninstalled mod stays in the inbox. The `Mail` namespace has no delete, so there may be nothing we can do — question 9 in the bug report. |
-| 4 | **Date deprecation warning (`moment` RFC2822)** | Only appears with a quest-editor mod installed, 30–90s after a mail is sent, when a browser or app screen is opened. The stack is the game's own date formatting and we never set a date on anything — question 10 in the bug report. |
+| 2 | Old quest mail is never cleaned up | Mail sent by an uninstalled mod stays in the inbox. The `Mail` namespace has no delete, so there may be nothing we can do — question 9 in the bug report. |
+| 3 | **Date deprecation warning (`moment` RFC2822)** | Only appears with a quest-editor mod installed, 30–90s after a mail is sent, when a browser or app screen is opened. The stack is the game's own date formatting and we never set a date on anything — question 10 in the bug report. |
 
 ### Next up
 
@@ -53,6 +52,7 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 
 | Round | Item |
 |---|---|
+| r129 | **Website pages emit `description` + `search[]`** ([plan](docs/plans/r129-website-search-metadata.md)) — roadmap item 2 closed. The SDK supported both all along; our runtime page mapping dropped them. The site builder's page settings gain a search-result description and extra search words; pages that don't use the fields export byte-identically to before. In-game presentation of the two fields still awaits Zeis's eyes (4 questions in the plan); also asked the developer what `WebsiteDefinition.popular` does. |
 | r128 | **Both r127 proposals built, and the developer's reply filed under a fence.** [`docs/07`](docs/07-dev-response-mod-sdk-bug-report-response.md) is verbatim with a status banner: nothing in it is in the pinned SDK yet, so nothing implements and no workaround comes off. **Six Tries** (Advanced) is the official quests' crack-and-log-in route — hydra tool response keyed user+target, an objective reading the cracked credential off `Terminal.Hydra`, then `ssh -h` (three pins guard exactly that; falsified). **Quest Cookbook** (Reference sheet) maps each official-quest technique to the nodes that express it — including the honest "engine-only" ones. r127's Proposal B was re-surfaced: `handbookArticles.ts` is the in-game Handbook's jump list, not editor guidance, so the cookbook is canvas furniture like the Node Reference. Stamp `2026-09-09.r128`. |
 | r126 | **Template audit: three quests had stories that could not end.** First Contact never paid — its payment was wired to "On quest complete", which never fires with the defaults — and Byline/Cold Storage lost their closings the same way; all rewired to end from the last objective. Cold Storage's database had no tables for its own read-ledger trigger (seeded `lead_ledger`). Help Desk's client confirmed a file nobody sent (new `send-report` objective). Help Desk taught `ssh user@ip`; the handbook says `ssh -h user@ip`. New guards: a wired On-complete warns, and database rows are shaped as `{value, type}` for the engine. (Ledger has the same dead wiring — deferred per Zeis.) |
 | r125 | **Zeis's 14-item UX check, end to end** ([plan](docs/plans/r125-zeis-ux-check-fixes.md)): human event names with explanations, port presets, guided firewall addresses, Place-files rename, tag picker on every tag-taking box, database table editor, a working Open-handbook node, numbered sequence outputs, silent story beats. Fixed en route: the firewall rule was a list field over single-object data, so fresh nodes showed "None yet" for a rule they had. |
@@ -77,7 +77,7 @@ rules the code now follows.
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-09.r128`: **1,197 tests** across 55
+Counted from the code at build `2026-09-10.r129`: **1,200 tests** across 55
 files, **32 node types** in 9 categories (31 in the palette — Wi-Fi is hidden),
 **12 templates** (10 playable + 2 reference sheets), **92 game events**,
 against `@hotbunny/hackhub-content-sdk@0.21.0`.
@@ -128,7 +128,7 @@ Only relevant to coders, if you just want to use the tool you can ignore this.
 
 ```bash
 npm run typecheck    # tsc --noEmit
-npm test             # 1,197 tests (vitest)
+npm test             # 1,200 tests (vitest)
 npm run build        # typecheck + vite build → dist/
 ```
 

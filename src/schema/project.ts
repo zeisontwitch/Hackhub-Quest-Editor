@@ -58,6 +58,17 @@ export const WebPageSchema = z.object({
      * search while keeping it reachable by URL (what `dirhunter` brute-forces).
      */
     seo: z.boolean().default(true),
+    /**
+     * Short line the in-game search can show under this page's result, like
+     * the snippet under a web result. Optional; left out of the export when
+     * unset so pages that don't use it compile exactly as before.
+     */
+    description: z.string().optional(),
+    /**
+     * Extra words the in-game search can match this page by, besides what is
+     * written on it. Optional; left out of the export when empty.
+     */
+    search: z.array(z.string()).optional(),
     /** Which ready-made template the page started from, for provenance. */
     template: z.string().optional(),
     /** WYSIWYG body, stored as HTML. */

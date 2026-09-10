@@ -261,6 +261,26 @@ describe("compile", () => {
         expect(secret.html).toContain("clue");
     });
 
+    it("websites carry the search metadata the SDK supports, and nothing else when unset", () => {
+        const calls: string[] = [];
+        const listeners: [string, (d: unknown) => void][] = [];
+        const sdk = stubSdk(calls, listeners);
+        const project = scenarioProject();
+        project.websites[0].pages[0].description = "Home of the target";
+        project.websites[0].pages[0].search = ["target", "heist crew"];
+        const { files } = compileProject(project);
+        runMod(files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const site = new (sdk as any).__registered.websites[0]();
+        const home = site.Pages.find((p: { path: string }) => p.path === "/");
+        expect(home.description).toBe("Home of the target");
+        expect(home.search).toEqual(["target", "heist crew"]);
+        /* A page that does not use the fields exports without the keys at
+           all — clean output, byte-stable with pre-r129 exports. */
+        const secret = site.Pages.find((p: { path: string }) => p.path === "/secret");
+        expect("description" in secret).toBe(false);
+        expect("search" in secret).toBe(false);
+    });
+
     it("the export dialog shows the compile summary and packs a zip", async () => {
         const { buildModZip } = await import("@/editor/shell/ExportDialog");
         const result = compileProject(scenarioProject());

@@ -1,25 +1,25 @@
-# Handoff — r128
+# Handoff — r129
 
-r127 compared the seven official quests Zeis transcribed
-([`reference/Official-Quest/`](../reference/Official-Quest/)) against our
-templates; r128 built both approved proposals: **Six Tries** (the hydra
-crack → `ssh -h` route no template taught) and the **Quest Cookbook** (a
-Reference sheet mapping every official-quest technique to the nodes that
-express it — including the honest "engine-only" ones). The developer's reply
-to our bug report arrived and is filed verbatim as
-[`docs/07`](07-dev-response-mod-sdk-bug-report-response.md), **under a
-fence**: it promises fixes in an upcoming patch, none of the new surface is
-in the pinned SDK yet, so nothing implements it and no workaround comes off.
-Read the banner at the top of docs/07 before acting on anything it says.
-The r126 audit it responds to: [`plans/r126-template-audit.md`](plans/r126-template-audit.md).
+r128 built both r127 proposals (**Six Tries** — the hydra crack → `ssh -h`
+route — and the **Quest Cookbook** Reference sheet) and filed the developer's
+bug-report reply as [`docs/07`](07-dev-response-mod-sdk-bug-report-response.md),
+**under a fence**: it promises fixes in an upcoming patch, none of the new
+surface is in the pinned SDK yet, so nothing implements it and no workaround
+comes off. Read the banner at the top of docs/07 before acting on anything it
+says. r129 closed roadmap item 2: website pages now emit `description` +
+`search[]`, with builder fields and pins
+([plan](plans/r129-website-search-metadata.md)); how the game *presents* those
+fields is still an in-game question for Zeis. r130 is queued: the Quest
+Simulator plus Cookbook riders.
 
 ## Where things stand
 
-- **HEAD:** `e3ff472` on `arena/01a08809-hackhub-quest-editor`, committed and
-  pushed.
-- **1,197 tests green** across 55 files, typecheck clean. The only noise is
+- **HEAD:** `e3ff472` (r128) + the r129 round commit on
+  `arena/01a08809-hackhub-quest-editor`, committed and pushed — `git log
+  --oneline -3` is the truth.
+- **1,200 tests green** across 55 files, typecheck clean. The only noise is
   the 4 pre-existing d3-drag jsdom teardown errors, unrelated to this work.
-- **Editor build stamp:** `2026-09-09.r128`.
+- **Editor build stamp:** `2026-09-10.r129`.
 - Shared graph helpers extracted to `src/templates/kit.ts`; each template is its
   own module (`blank.ts`, `firstContact.ts`, `byline.ts`, `coldCall.ts`,
   `harbourManifest.ts`, `helpDeskLeak.ts`, `badAttachment.ts`, `sixTries.ts`,
@@ -48,6 +48,9 @@ The r126 audit it responds to: [`plans/r126-template-audit.md`](plans/r126-templ
    fence-lift procedure in the queue below.
 5. **[`docs/plans/r128-six-tries-and-cookbook.md`](plans/r128-six-tries-and-cookbook.md)**
    — what r128 built and why Proposal B changed surface.
+6. **[`docs/plans/r129-website-search-metadata.md`](plans/r129-website-search-metadata.md)**
+   — the search-metadata round: ground truth, the one-line drop point, the
+   four in-game questions (and the `popular` question for the developer).
 6. **[`docs/plans/r126-template-audit.md`](plans/r126-template-audit.md)** —
    what the audit found in the templates, what it fixed, and the in-game
    questions still open. (r127's comparison plan remains the source behind
@@ -196,7 +199,25 @@ wants the *specific action* named.
 
 ## Queued next
 
-1. **When the developer's patch lands, lift the fence in this order:** pin the
+1. **r130 — the Quest Simulator plus Cookbook riders** (planned when it
+   starts): a dry-run overlay that instantiates the emitted `dist/mod.js`
+   against a stub SDK and walks the author's quest (which nodes fire, which
+   trigger matches, where the story dead-ends) — reusing the compile-test
+   machinery, labelled honestly as simulating OUR runtime, not the game;
+   plus three Cookbook cards (port forwarding, the metasploit payload/
+   handler line, and a **Pacing** card — what waits for real: Wait, Sequence
+   steps, timed chats via the game's own `Random.sleep`; what has no node:
+   cancellable timers, periodic checks) and a shared-domain analysis warning.
+   Awaiting Zeis's go.
+2. **Zeis's in-game QA list.** New templates: hydra rendering + `Terminal.Hydra`
+   credentials, `SSH.Connected` for `ssh -h`, `Terminal.Cat` remotely. r129:
+   does `description` render as the result snippet; are `search[]` terms
+   matched (case-insensitively? alongside page text?); do they matter for
+   `seo:false` pages. Carried: ssh `-h` to a 10.x box, Cold Storage's route,
+   Cold Call's chat, `Terminal.SSH.Shutdown` on mod machines,
+   `Database.DataUpdate` from Database-Manager edits. For the developer via
+   Zeis: what does `WebsiteDefinition.popular?: boolean` do (we don't model it)?
+3. **When the developer's patch lands, lift the fence in this order:** pin the
    new SDK version → `npm ci` → `npm run gen:events` → diff
    `reference/hackhub-events.json` → read the new `d.ts` → Zeis verifies
    in-game → *then* plan the round (formal quest completion per `docs/04`
@@ -206,28 +227,21 @@ wants the *specific action* named.
    retest of the completion path + Twotter on the patched build, and a minimal
    mail repro if BUG 1 persists. Before all of that: nothing implements,
    nothing is removed.
-2. **Zeis's in-game QA of the two new templates** (nothing else blocks on
-   these): does the hydra tool response render as a real hydra run and fire
-   `Terminal.Hydra` with credentials filled; does `Terminal.SSH.Connected`
-   fire for `ssh -h` into a mod machine; does `Terminal.Cat` fire for the
-   remote `cat`. Plus the carried-over questions: ssh `-h` to a 10.x box,
-   Cold Storage's route, Cold Call's chat display, `Terminal.SSH.Shutdown`
-   on mod machines, `Database.DataUpdate` from Database-Manager edits.
-3. **A settings page** (roadmap item 5) — the wire-physics dials live in the
+4. **A settings page** (roadmap item 5) — the wire-physics dials live in the
    debug panel, which is a developer tool. Those and the snap/animation/physics
    toggles deserve a home an author can find. Also outstanding: the **fade-ms
    slider in the debug panel does nothing** (the fade runs inside the
    retraction, so `ghostMs` only feeds a safety backstop) — cosmetic, but a
    real inconsistency to resolve when the settings page lands.
-4. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
+5. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
    template, not yet built. Cryptographer Hunt's fail-choice phone scene is
    the in-game proof this shape matters.
-5. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
+6. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
    banners + ports 25/110/143; Apache metasploit module for 2.4.49/50 or
    flavour?; Handbook screenshot (titles + categories) + the id=title jump
    test; eyes on the preview. Plus the Harbour `scp` hint fix noted above.
 
-Done and off the queue: the r127 proposals (both built, r128), the editor UX
+Done and off the queue: website description + search (r129), the r127 proposals (both built, r128), the editor UX
 check (r125), actionable hookup warnings (r124), the template rebuild (r122),
 the template audit (r126).
 

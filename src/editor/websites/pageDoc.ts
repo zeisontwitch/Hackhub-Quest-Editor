@@ -119,3 +119,17 @@ export function scanDocument(html: string): PageScan {
         hiddenBits: (html.match(/type\s*=\s*"hidden"|\shidden(?=[\s>/])|display\s*:\s*none/gi) ?? []).length,
     };
 }
+
+/**
+ * Parse the "extra search words" input into a page's search-term list:
+ * split on commas, trim each term, drop empties and duplicates. The one
+ * place the site builder turns free text into `WebPageDoc.search`.
+ */
+export function parseSearchTerms(text: string): string[] {
+    const seen = new Set<string>();
+    for (const raw of text.split(",")) {
+        const term = raw.trim();
+        if (term) seen.add(term);
+    }
+    return [...seen];
+}

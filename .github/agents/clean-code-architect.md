@@ -283,7 +283,7 @@ C# member — this project uses TSDoc-style block comments, and much more select
 
 | # | Rule |
 |---|------|
-| FM1–FM3 | **Delegate to the tooling.** Indentation, line width, and most vertical/horizontal formatting are Prettier's and ESLint's job (`npm run format`, `npm run lint`) — don't hand-format against what they'd produce, and don't flag a formatting nit the tooling would already fix. |
+| FM1–FM3 | **Formatting is house convention, not a tool.** Match the surrounding style: 4-space indent, double quotes, semicolons, lines kept readable. The repo deliberately ships **no ESLint and no repo-wide Prettier pass** — both scripts were removed in r129 as traps (ESLint was never installed; a Prettier run with defaults would reformat the whole tree). Typecheck and the test suite are the mechanical gates. (Prettier *is* a product dependency: the website builder's code view formats page HTML with `prettier/standalone` — that is its only role.) Don't flag formatting nits a mechanical pass wouldn't fix anyway, and don't introduce a formatter config without a dedicated round. |
 | FM4 | **Keep related concepts close** — functions that call each other stay near each other vertically; this is a structural judgment the formatter can't make for you. |
 
 ### 8. Tests

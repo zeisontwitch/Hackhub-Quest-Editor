@@ -12,8 +12,6 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint .",
-    "format": "prettier --write .",
     "gen:events": "node reference/generate-event-catalogue.mjs"
   },
   "dependencies": {

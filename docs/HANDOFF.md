@@ -212,13 +212,18 @@ wants the *specific action* named.
    Awaiting Zeis's go.
 2. **Zeis's in-game QA list.** New templates: hydra rendering + `Terminal.Hydra`
    credentials, `SSH.Connected` for `ssh -h`, `Terminal.Cat` remotely. r129:
-   does `description` render as the result snippet; are `search[]` terms
-   matched (case-insensitively? alongside page text?); do they matter for
-   `seo:false` pages. Carried: ssh `-h` to a 10.x box, Cold Storage's route,
-   Cold Call's chat, `Terminal.SSH.Shutdown` on mod machines,
-   `Database.DataUpdate` from Database-Manager edits. For the developer via
-   Zeis: what does `WebsiteDefinition.popular?: boolean` do (we don't model it)?
-3. **When the developer's patch lands, lift the fence in this order:** pin the
+   does `description` render as the result snippet (strongly supported by
+   Zeis's Goagle screenshot — title → host → snippet —; confirm with a mod
+   page); are `search[]` terms matched (case-insensitively? alongside page
+   text?); do they matter for `seo:false` pages. Carried: ssh `-h` to a 10.x
+   box, Cold Storage's route, Cold Call's chat, `Terminal.SSH.Shutdown` on
+   mod machines, `Database.DataUpdate` from Database-Manager edits.
+3. **Website-builder audit** (roadmap item 9): the builder is essentially
+   untouched since its first implementation. r123/r125-style pass plus the
+   `WebsiteDefinition.popular` self-test ([`docs/03` question 12](03-questions-for-the-developers.md)
+   — hypothesis: boosts a site to the top of results; two identical sites,
+   one flagged) and an in-game check of the r129 search metadata.
+4. **When the developer's patch lands, lift the fence in this order:** pin the
    new SDK version → `npm ci` → `npm run gen:events` → diff
    `reference/hackhub-events.json` → read the new `d.ts` → Zeis verifies
    in-game → *then* plan the round (formal quest completion per `docs/04`
@@ -228,19 +233,27 @@ wants the *specific action* named.
    retest of the completion path + Twotter on the patched build, and a minimal
    mail repro if BUG 1 persists. Before all of that: nothing implements,
    nothing is removed.
-4. **A settings page** (roadmap item 5) — the wire-physics dials live in the
+5. **A settings page** (roadmap item 5) — the wire-physics dials live in the
    debug panel, which is a developer tool. Those and the snap/animation/physics
    toggles deserve a home an author can find. Also outstanding: the **fade-ms
    slider in the debug panel does nothing** (the fade runs inside the
    retraction, so `ghostMs` only feeds a safety backstop) — cosmetic, but a
    real inconsistency to resolve when the settings page lands.
-5. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
+6. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
    template, not yet built. Cryptographer Hunt's fail-choice phone scene is
    the in-game proof this shape matters.
-6. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
+7. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
    banners + ports 25/110/143; Apache metasploit module for 2.4.49/50 or
    flavour?; Handbook screenshot (titles + categories) + the id=title jump
    test; eyes on the preview. Plus the Harbour `scp` hint fix noted above.
+
+Tooling note (r129): the `lint` and `format` npm scripts are gone. ESLint
+was never installed (`npm run lint` failed with "not found"); a repo-wide
+Prettier pass would have reformatted the whole tree to defaults — neither
+ever gated anything, so both were removed rather than adopted (Zeis's call).
+Formatting is house convention; the mechanical gates are typecheck + tests +
+build. Prettier the *dependency* stays: the website builder's code view uses
+`prettier/standalone` to format page HTML.
 
 Done and off the queue: website description + search (r129), the r127 proposals (both built, r128), the editor UX
 check (r125), actionable hookup warnings (r124), the template rebuild (r122),

@@ -74,11 +74,18 @@ fails; with the schema fields reverted, everything fails to compile.
 ## In-game questions for Zeis (nothing blocks on these)
 
 1. Does `description` render as the snippet under the page's search result?
+   **Strongly supported already** by Zeis's Goagle screenshot (r129): each
+   result is page title → host URL → a two-line snippet, and the base-game
+   sites' snippets read like authored descriptions. Confirm with a *mod* page
+   (set a description, search a term only that page matches).
 2. Are `search[]` terms matched, and case-insensitively? Alongside the page's
    own text, or instead of it?
 3. Do the fields matter at all for `seo: false` pages (assumed: no)?
-4. New question for the developer via Zeis: what does
-   `WebsiteDefinition.popular?: boolean` do? (We don't model it.)
+4. `WebsiteDefinition.popular?: boolean` — **we test this ourselves** in the
+   website-builder audit round (two identical sites, one flagged; hypothesis:
+   boosts a site to the top of results). The question is recorded in
+   `docs/03` (question 12) so it rides along in the next developer contact
+   if more accumulate — no dedicated ping to the developer for one boolean.
 
 ## Deliberately out of scope
 

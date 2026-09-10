@@ -7,6 +7,13 @@ quickly and we can tell straight away whether an answer changes anything.
 
 Ordered by how much a clear answer would be worth.
 
+**Update (r129):** the developer answered questions 1–11 in
+[`docs/07-dev-response-mod-sdk-bug-report-response.md`](07-dev-response-mod-sdk-bug-report-response.md)
+(**fenced** — read its banner: the answers describe the *upcoming patch*;
+until a pinned SDK ships it, the workarounds recorded under each question
+stay). This file is kept as the record of what we asked and why. Question 12
+is new and deliberately ours to test first.
+
 ---
 
 ## 1. Do mod-created networks persist in the save, and how should a mod replace one?
@@ -261,6 +268,23 @@ game's own date formatting. We never set a date on anything: neither
 
 **What we would like to know.** Which field is being parsed? Is there something
 a mod supplies that should be a timestamp and is not?
+
+---
+
+## 12. What does `WebsiteDefinition.popular?: boolean` do?
+
+**What we see.** The SDK declares `popular?` on `WebsiteDefinition`; the
+editor does not model it and we have never set it. Zeis's Goagle screenshots
+show base-game results as title → host → snippet, ordered by relevance, with
+no visible "popular" section to learn from.
+
+**Our hypothesis.** It may boost a flagged site to the top of search results
+for matching terms. Unverified.
+
+**Where we landed.** We test it ourselves in the website-builder audit round
+(two identical sites, one flagged) rather than spend a developer question on
+a boolean. Recorded here so it rides along in the next developer contact if
+more accumulate.
 
 ---
 

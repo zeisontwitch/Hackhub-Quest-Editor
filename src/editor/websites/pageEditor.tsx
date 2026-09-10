@@ -44,6 +44,19 @@ export function VisualPageEditor({
     // from outside, so the caret never resets mid-typing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const parts = useMemo(() => splitDocument(doc), []);
+    // Scripts stay OFF while editing (the Preview tab runs them). We cannot
+    // `sandbox` the iframe — emit() needs same-origin access to the body —
+    // so instead the *editing copy* gets a CSP that blocks script execution
+    // while keeping the <script> nodes in the DOM (they must survive into
+    // the emitted document, and body.innerHTML is what we emit). Pages with
+    // no script keep their document byte-identical.
+    const editingDoc = useMemo(() => {
+        if (!/<script[\s>]/i.test(doc)) return doc;
+        const csp = `<meta http-equiv="Content-Security-Policy" content="script-src 'none'">`;
+        return parts.isFull && /<head[^>]*>/i.test(parts.head)
+            ? parts.head.replace(/<head[^>]*>/i, (m) => `${m}\n${csp}`) + parts.body + parts.tail
+            : `<!doctype html><html><head>${csp}</head><body>${parts.isFull ? parts.body : doc}</body></html>`;
+    }, [doc, parts]);
 
     const emit = () => {
         const body = iframeRef.current?.contentDocument?.body;
@@ -160,7 +173,7 @@ export function VisualPageEditor({
             <iframe
                 ref={iframeRef}
                 title={ariaLabel}
-                srcDoc={doc}
+                srcDoc={editingDoc}
                 onLoad={onLoad}
                 className="block h-[48vh] w-full border-0 bg-white"
             />

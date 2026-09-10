@@ -81,6 +81,13 @@ export const WebsiteSchema = z.object({
     /** The host players type into the in-game browser, e.g. `meridian-capital.net`. */
     host: z.string().default("example.net"),
     name: z.string().default(""),
+    /**
+     * `WebsiteDefinition.popular` in the SDK — declared, purpose unverified.
+     * docs/03 Q12: our self-test is two identical sites, one flagged, compare
+     * search ranking in-game. Emitted only when set, so sites that don't use
+     * it compile exactly as before.
+     */
+    popular: z.boolean().optional(),
     pages: z.array(WebPageSchema).default([]),
 });
 export type WebsiteDoc = z.infer<typeof WebsiteSchema>;

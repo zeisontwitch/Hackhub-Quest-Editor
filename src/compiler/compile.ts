@@ -107,7 +107,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-11.r130";
+export const EDITOR_BUILD = "2026-09-11.r132";
 
 export interface CompiledFile {
     path: string;
@@ -422,6 +422,28 @@ export function computeWarnings(project: ProjectDocument): string[] {
             warnings.push(
                 `${w.host}: ${hidden.length} unlisted page${hidden.length > 1 ? "s" : ""} (${hidden.map((p) => p.path).join(", ")}). Nothing links to ${hidden.length > 1 ? "them" : "it"} and the in-game search will not show ${hidden.length > 1 ? "them" : "it"}, so the player reaches ${hidden.length > 1 ? "them" : "it"} only by typing the address or by running dirhunter on the host — which is exactly what makes a good hiding place for a clue. If you meant ${hidden.length > 1 ? "these" : "this"} to be findable normally, turn on “Listed in search” for the page.`,
             );
+        }
+        /* Two pages at one path ship as two definitions of the same address —
+           which one the in-game browser serves is the engine's call, not ours.
+           And a path without its leading slash is addressed relative to
+           nothing: the browser expects `/news`, not `news`. */
+        const seenPaths = new Map<string, number>();
+        for (const p of w.pages) {
+            seenPaths.set(p.path, (seenPaths.get(p.path) ?? 0) + 1);
+        }
+        for (const [path, count] of seenPaths) {
+            if (count > 1) {
+                warnings.push(
+                    `${w.host} has ${count} pages at the path ${path}. They ship as two definitions of the same address — give one of them a different path.`,
+                );
+            }
+        }
+        for (const p of w.pages) {
+            if (p.path && !p.path.startsWith("/")) {
+                warnings.push(
+                    `${w.host}: the page “${p.title || p.path}” has the path ${p.path}, but paths start at the host root — it should be /${p.path}. The in-game browser and dirhunter address pages from the root.`,
+                );
+            }
         }
     }
     /* Domains are global in the game (docs/03, template rule 5): two sites on

@@ -169,6 +169,7 @@ export function TextInput({
     ariaLabel,
     disabled,
     inputRef,
+    onBlur,
 }: {
     value: string;
     onChange: (value: string) => void;
@@ -180,6 +181,9 @@ export function TextInput({
     disabled?: boolean;
     /** Receives the element, so the token picker can insert at the caret. */
     inputRef?: (el: HTMLInputElement | HTMLTextAreaElement | null) => void;
+    /** Fires when the field loses focus — where the website builder
+        normalizes hosts and paths (never mid-keystroke). */
+    onBlur?: () => void;
 }) {
     return (
         <input
@@ -190,6 +194,7 @@ export function TextInput({
             disabled={disabled}
             ref={inputRef as (el: HTMLInputElement | null) => void}
             onChange={(e) => onChange(e.target.value)}
+            onBlur={onBlur}
             className={cn("field-input", mono && "font-mono text-[12px]", disabled && "cursor-not-allowed opacity-60")}
         />
     );

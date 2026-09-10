@@ -2168,6 +2168,11 @@ function __qeRegisterProject(sdk, PROJECT) {
                    - and an absent abstract member is precisely the kind of
                    thing this build ignores without complaint. */
                 this.Icon = w.icon || "";
+                /* popular is declared on WebsiteDefinition (docs/03 Q12 —
+                   purpose unverified; our self-test compares search ranking
+                   with one site flagged). Emitted only when set, so sites
+                   that don't use it compile exactly as before (r129 rule). */
+                if (w.popular) this.Popular = true;
                 this.Pages = pages;
             }
         };

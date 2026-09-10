@@ -120,11 +120,9 @@ export function scanDocument(html: string): PageScan {
     };
 }
 
-/**
- * Parse the "extra search words" input into a page's search-term list:
- * split on commas, trim each term, drop empties and duplicates. The one
- * place the site builder turns free text into `WebPageDoc.search`.
- */
+/** Parse the "extra search words" input into a page's search-term list:
+    split on commas, trim each term, drop empties and duplicates. The one
+    place the site builder turns free text into `WebPageDoc.search`. */
 export function parseSearchTerms(text: string): string[] {
     const seen = new Set<string>();
     for (const raw of text.split(",")) {
@@ -132,4 +130,27 @@ export function parseSearchTerms(text: string): string[] {
         if (term) seen.add(term);
     }
     return [...seen];
+}
+
+/* ── host/path hygiene ────────────────────────────────────────────────────
+   Hosts and paths reach the game verbatim — the compiler never cleans them —
+   and two slips are common: pasting `https://` into the host, and typing a
+   path without its leading slash (the in-game browser then sees
+   `http://https://…` and `hostnews`, and the page scan cannot cross-link
+   the page). Both are normalized on blur, never mid-keystroke, so typing is
+   never fought. */
+
+/** Trim a host, strip a leading `http(s)://` and any trailing slashes. */
+export function normalizeHost(host: string): string {
+    return host
+        .trim()
+        .replace(/^https?:\/\//i, "")
+        .replace(/\/+$/, "");
+}
+
+/** Trim a page path and ensure the leading slash ("/" and "" stay "/"). */
+export function normalizePath(path: string): string {
+    const t = path.trim();
+    if (!t) return "/";
+    return t.startsWith("/") ? t : `/${t}`;
 }

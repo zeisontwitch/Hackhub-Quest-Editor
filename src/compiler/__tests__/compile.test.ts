@@ -478,6 +478,65 @@ describe("quest behaviour toggles", () => {
         expect(note).toContain("dirhunter");
         expect(note).toContain("Listed in search");
     });
+
+    it("flags duplicate page paths and slash-less paths within a site (r132)", () => {
+        const p = createProject();
+        p.websites.push({
+            id: "w1",
+            host: "dup.example",
+            name: "Dup",
+            pages: [
+                { id: "p1", path: "/news", title: "News", seo: true, content: "<html></html>" },
+                { id: "p2", path: "/news", title: "News Two", seo: true, content: "<html></html>" },
+                { id: "p3", path: "misplaced", title: "Misplaced", seo: true, content: "<html></html>" },
+            ],
+        });
+        const warnings = compileProject(p).warnings;
+        expect(warnings.some((w) => w.includes("2 pages at the path /news"))).toBe(true);
+        expect(warnings.some((w) => w.includes("should be /misplaced"))).toBe(true);
+
+        // Clean sites stay silent.
+        const clean = createProject();
+        clean.websites.push({
+            id: "w2",
+            host: "clean.example",
+            name: "Clean",
+            pages: [
+                { id: "p4", path: "/", title: "Home", seo: true, content: "<html></html>" },
+                { id: "p5", path: "/about", title: "About", seo: true, content: "<html></html>" },
+            ],
+        });
+        expect(
+            compileProject(clean).warnings.filter((w) => w.includes("clean.example")),
+        ).toEqual([]);
+    });
+
+    it("emits Popular only when the site sets it (docs/03 Q12 self-test)", async () => {
+        /* The guarded line is part of the static runtime text, so parity is
+           behavioral: build both mods, register their website classes against
+           the stub SDK, construct them, and compare the member. */
+        const build = async (popular?: boolean) => {
+            const p = createProject();
+            p.websites.push({
+                id: "w1",
+                host: "probe.example",
+                name: "Probe",
+                ...(popular ? { popular } : {}),
+                pages: [{ id: "p1", path: "/", title: "Home", seo: true, content: "<html></html>" }],
+            });
+            const result = compileProject(p);
+            const calls: string[] = [];
+            const listeners: [string, (d: unknown) => void][] = [];
+            const sdk = stubSdk(calls, listeners);
+            runMod(result.files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+            const reg = (sdk as any).__registered;
+            expect(reg.websites).toHaveLength(1);
+            return new reg.websites[0]() as any;
+        };
+
+        expect((await build(true)).Popular).toBe(true);
+        expect((await build()).Popular).toBeUndefined();
+    });
 });
 
 describe("reference template through the compiler", () => {

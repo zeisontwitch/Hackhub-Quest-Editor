@@ -13,7 +13,14 @@ import { FieldShell, TextInput, Toggle } from "@/editor/inspector/primitives";
 import { createPage, createWebsite } from "@/schema/project";
 import { useEditor } from "@/store/editor";
 import { PAGE_TEMPLATES, SITE_TEMPLATES } from "@/templates/pages";
-import { isFullDocument, parseSearchTerms, scanDocument, wrapFragment } from "./pageDoc";
+import {
+    isFullDocument,
+    normalizeHost,
+    normalizePath,
+    parseSearchTerms,
+    scanDocument,
+    wrapFragment,
+} from "./pageDoc";
 import { LlmPromptDialog } from "./LlmPromptDialog";
 import { CodePageEditor, VisualPageEditor } from "./pageEditor";
 
@@ -40,6 +47,8 @@ export function WebsiteBuilderDialog({
     /** Bumped when content changes outside the visual editor, so it remounts fresh. */
     const [outsideRev, setOutsideRev] = useState(0);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    /** Site pending deletion — the confirm dialog's open flag. */
+    const [siteDeleteOpen, setSiteDeleteOpen] = useState(false);
     /** The words input keeps the author's raw text (commas and all) while
         they type; null = display the stored terms instead. */
     const [searchDraft, setSearchDraft] = useState<string | null>(null);
@@ -242,11 +251,8 @@ export function WebsiteBuilderDialog({
                                     <button
                                         type="button"
                                         className="btn-default w-full justify-center text-danger"
-                                        onClick={() => {
-                                            removeWebsite(site.id);
-                                            setSiteId(null);
-                                            setPageId(null);
-                                        }}
+                                        title="Deletes the site and every page on it — asks first"
+                                        onClick={() => setSiteDeleteOpen(true)}
                                     >
                                         <Icon name="trash" size={12} />
                                         Delete site
@@ -257,11 +263,15 @@ export function WebsiteBuilderDialog({
                             {/* pages */}
                             <div className="flex min-h-0 flex-col border-r border-line">
                                 <div className="grid gap-2 border-b border-line p-2.5">
-                                    <FieldShell label="Host">
+                                    <FieldShell
+                                        label="Host"
+                                        hint="The address players type in the in-game browser, like meridian-capital.net. Pasted URLs are cleaned up when you click away."
+                                    >
                                         <TextInput
                                             ariaLabel="Site host"
                                             value={site.host}
                                             onChange={(host) => updateWebsite(site.id, { host })}
+                                            onBlur={() => updateWebsite(site.id, { host: normalizeHost(site.host) })}
                                             mono
                                         />
                                     </FieldShell>
@@ -273,6 +283,13 @@ export function WebsiteBuilderDialog({
                                             placeholder="For your own reference"
                                         />
                                     </FieldShell>
+                                    <Toggle
+                                        id="site-popular-toggle"
+                                        label="Popular site"
+                                        hint="Declared by the game's SDK, but what it does in-game is not verified yet — our test is two identical sites, one flagged, comparing search ranking. Leave off unless you are running that experiment."
+                                        checked={!!site.popular}
+                                        onChange={(popular) => updateWebsite(site.id, { popular: popular || undefined })}
+                                    />
                                 </div>
                                 <div className="flex items-center justify-between gap-2 px-3 py-2">
                                     <span className="text-[10px] font-semibold tracking-wider text-ink-3 uppercase">
@@ -420,6 +437,23 @@ export function WebsiteBuilderDialog({
                                             <button
                                                 type="button"
                                                 className="btn-default"
+                                                title="Download this page as a .html file — hand it back to your AI assistant to iterate on it"
+                                                onClick={() => {
+                                                    const blob = new Blob([page.content], { type: "text/html" });
+                                                    const a = document.createElement("a");
+                                                    a.href = URL.createObjectURL(blob);
+                                                    a.download = `${page.path === "/" ? "index" : page.path.replace(/^\//, "").replace(/\//g, "-") || "page"}.html`;
+                                                    a.click();
+                                                    URL.revokeObjectURL(a.href);
+                                                    toast(`Saved ${a.download}.`, "ok");
+                                                }}
+                                            >
+                                                <Icon name="download" size={11} />
+                                                Save HTML
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn-default"
                                                 title="Get a copy-paste prompt that makes ChatGPT or Claude build a game-ready website for you"
                                                 onClick={() => setLlmOpen(true)}
                                             >
@@ -459,12 +493,13 @@ export function WebsiteBuilderDialog({
                                         <div className="grid grid-cols-2 gap-2 border-b border-line px-3 py-2">
                                             <FieldShell
                                                 label="Path"
-                                                hint="Where the page lives on the host. Sub-directories are fine — deep paths make good hiding spots."
+                                                hint="Where the page lives on the host, starting at the root — /about/team. Sub-directories are fine; deep paths make good hiding spots. A missing leading / is added when you click away."
                                             >
                                                 <TextInput
                                                     ariaLabel="Page path"
                                                     value={page.path}
                                                     onChange={(path) => updatePage(site.id, page.id, { path })}
+                                                    onBlur={() => updatePage(site.id, page.id, { path: normalizePath(page.path) })}
                                                     mono
                                                     placeholder="/about/team"
                                                 />
@@ -478,6 +513,7 @@ export function WebsiteBuilderDialog({
                                             </FieldShell>
                                         </div>
                                         <Toggle
+                                            id="page-search-listed-toggle"
                                             label="Listed in the in-game search"
                                             hint="Turn off to hide this page from search results while keeping it reachable by URL. Hidden pages are what dirhunter brute-forces — perfect for clues."
                                             checked={page.seo}
@@ -588,6 +624,24 @@ export function WebsiteBuilderDialog({
                                                                 {scan.comments[0].slice(0, 120)}
                                                                 {scan.comments[0].length > 120 ? "…" : ""}
                                                             </code>
+                                                            {scan.comments.length > 1 && (
+                                                                <span className="text-ink-4">
+                                                                    {" "}
+                                                                    …and {scan.comments.length - 1} more comment
+                                                                    {scan.comments.length === 2 ? "" : "s"} in the
+                                                                    code.
+                                                                </span>
+                                                            )}
+                                                        </p>
+                                                    )}
+                                                    {scan.hiddenBits > 0 && (
+                                                        <p>
+                                                            🫥 {scan.hiddenBits} hidden element
+                                                            {scan.hiddenBits === 1 ? "" : "s"} in the code (hidden
+                                                            inputs, display:none blocks). Players never see{" "}
+                                                            {scan.hiddenBits === 1 ? "it" : "them"} on the page —
+                                                            but anyone who views the source does. Another good
+                                                            clue spot.
                                                         </p>
                                                     )}
                                                     {(scan.scripts > 0 || scan.forms > 0) && (
@@ -602,6 +656,7 @@ export function WebsiteBuilderDialog({
                                                     {missingPaths.length === 0 &&
                                                         scan.anchors.length === 0 &&
                                                         scan.comments.length === 0 &&
+                                                        scan.hiddenBits === 0 &&
                                                         scan.scripts === 0 &&
                                                         scan.forms === 0 && (
                                                             <p className="text-ink-4">
@@ -682,6 +737,37 @@ export function WebsiteBuilderDialog({
                             }}
                         >
                             Delete page
+                        </AlertDialog.Action>
+                    </div>
+                </AlertDialog.Content>
+            </AlertDialog.Portal>
+        </AlertDialog.Root>
+
+        <AlertDialog.Root open={siteDeleteOpen} onOpenChange={setSiteDeleteOpen}>
+            <AlertDialog.Portal>
+                <AlertDialog.Overlay className="fixed inset-0 z-[60] bg-void/70 backdrop-blur-[2px]" />
+                <AlertDialog.Content className="fixed top-1/2 left-1/2 z-[70] w-[min(400px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-line bg-surface p-4 shadow-panel">
+                    <AlertDialog.Title className="text-[13px] font-semibold text-ink">
+                        Do you really want to delete this site?
+                    </AlertDialog.Title>
+                    <AlertDialog.Description className="mt-1 text-[11.5px] leading-relaxed text-ink-3">
+                        <span className="font-mono text-ink-2">{site?.host}</span> and its{" "}
+                        {site?.pages.length ?? 0} page{(site?.pages.length ?? 0) === 1 ? "" : "s"} will be
+                        removed from the mod. This can be undone with the editor's undo.
+                    </AlertDialog.Description>
+                    <div className="mt-4 flex justify-end gap-2">
+                        <AlertDialog.Cancel className="btn-default">Cancel</AlertDialog.Cancel>
+                        <AlertDialog.Action
+                            className="btn-danger"
+                            onClick={() => {
+                                if (site) {
+                                    removeWebsite(site.id);
+                                    setSiteId(null);
+                                    setPageId(null);
+                                }
+                            }}
+                        >
+                            Delete site
                         </AlertDialog.Action>
                     </div>
                 </AlertDialog.Content>

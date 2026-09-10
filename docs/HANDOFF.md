@@ -1,28 +1,38 @@
-# Handoff — r130
+# Handoff — r132
 
-r129 closed roadmap item 2 (website pages emit `description` + `search[]`;
-[plan](plans/r129-website-search-metadata.md) — how the game *presents* those
-fields is still an in-game question for Zeis). r130 shipped the **Dry run**
-([plan](plans/r130-quest-simulator.md)): a top-bar button that compiles the
-project, runs the real emitted `dist/mod.js` against a recording stub SDK and
-reports the trace, every objective's completion route, and a probe proving
-each trigger would really tick — plus the Cookbook's Port forwarding and
-Pacing cards, and shared/placeholder-host warnings. The developer's bug-report
-reply remains filed as [`docs/07`](07-dev-response-mod-sdk-bug-report-response.md),
+r132 was the **website builder audit** (roadmap item 9,
+[plan](plans/r132-website-builder-audit.md)): the whole builder surface read
+end to end, three real defects fixed — the visual editor silently *ran page
+scripts* while editing (now CSP-blocked in the editing copy, scripts kept in
+the emitted document), "Delete site" had no confirmation, hosts/paths shipped
+verbatim (now normalized on blur) — plus `WebsiteDefinition.popular` exposed
+end to end with an honest "unverified" hint (the docs/03 Q12 self-test is
+buildable; the in-game ranking check is Zeis's), `hiddenBits` surfaced in the
+page scan, duplicate/slash-less path warnings, and a Save HTML export.
+r131 read Zeis's transcription of the hardcoded Journalist's Sister questline
+(13 quests, 1,845 lines) and staged three proposals — **approved** — awaiting
+their build round ([plan](plans/r131-journalists-sister-analysis.md)); the
+headline: the SDK's Kisscord contact lifecycle
+(`createUser`/`addFriend`/`changeStatus`) is declared and unused; the "new
+contact appears mid-story" move is unbuildable today. r129 closed roadmap
+item 2 (website pages emit `description` + `search[]`); r130 shipped the
+**Dry run** ([plan](plans/r130-quest-simulator.md)). The developer's
+bug-report reply remains filed as
+[`docs/07`](07-dev-response-mod-sdk-bug-report-response.md),
 **under a fence**: nothing it promises is in the pinned SDK yet; read the
 banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r131 (docs-only analysis round) on
-  `arena/01a08809-hackhub-quest-editor`, committed and pushed. Previous code
-  round: `423569f` (r130). (A sandbox reset rolled local history back to
-  `c0e511f` mid-r129; recovered from the remote tip per the standing
-  fetch-first rule — the remote is authoritative.)
-- **1,219 tests green** across 57 files (last full run, r130 + the reroute
-  pin; r131 changed no code), typecheck clean. The only noise is
-  the 4 pre-existing d3-drag jsdom teardown errors, unrelated to this work.
-- **Editor build stamp:** `2026-09-11.r130`.
+- **HEAD:** r132 (website-builder audit) on
+  `arena/01a08809-hackhub-quest-editor`, committed and pushed. Previous
+  rounds: r131 (docs-only analysis), `423569f` (r130). (A sandbox reset
+  rolled local history back to `c0e511f` mid-r129; recovered from the remote
+  tip per the standing fetch-first rule — the remote is authoritative.)
+- **1,227 tests green** across 57 files (8 added by the audit), typecheck
+  clean, build clean. The only noise is the 4 pre-existing d3-drag jsdom
+  teardown errors, unrelated to this work.
+- **Editor build stamp:** `2026-09-11.r132`.
 - Shared graph helpers extracted to `src/templates/kit.ts`; each template is its
   own module (`blank.ts`, `firstContact.ts`, `byline.ts`, `coldCall.ts`,
   `harbourManifest.ts`, `helpDeskLeak.ts`, `badAttachment.ts`, `sixTries.ts`,
@@ -221,21 +231,20 @@ wants the *specific action* named.
    accumulates through the line so a player can backtrack, and the whole
    thing goes when the line ends.) And: does `hasCompleteButton`'s click
    formally complete the quest (docs/04 territory — the flag ships today,
-   the completion path is the engine bug)?
-2. **Website-builder audit** (roadmap item 9): the builder is essentially
-   untouched since its first implementation. r123/r125-style pass plus the
-   `WebsiteDefinition.popular` self-test ([`docs/03` question 12](03-questions-for-the-developers.md)
-   — hypothesis: boosts a site to the top of results; two identical sites,
-   one flagged) and an in-game check of the r129 search metadata.
-3. **r131's proposals, approved by Zeis** (roadmap item 10, behind the
-   audit): the **campaign template** (multi-quest chain via `fx.claimQuest`,
+   the completion path is the engine bug)? Plus the website-audit in-game
+   halves: the **`popular` self-test** (docs/03 Q12 — the flag is a builder
+   checkbox now: build two identical sites, flag one, compare their search
+   ranking); and eyes on an **iconless site** — generated sites ship
+   `Icon = ""` (Nemesis precedent) — does the in-game browser or Goagle
+   results show an ugly blank where an icon belongs?
+2. **r131's proposals, approved by Zeis** (roadmap item 10): the **campaign template** (multi-quest chain via `fx.claimQuest`,
    one world-owner per campaign — see the analysis §4 for the
    whose-world-is-it design question), the **Kisscord contact lifecycle**
    (`createUser`/`addUser`/`addFriend`/`changeStatus` — declared in the
    pinned SDK, unmodeled; likely inspector fields around the dialogue node,
    exact surface decided in the round's plan; in-game check: does a created
-   contact render a proper card?), and a **Campaign cookbook card**.
-4. **When the developer's patch lands, lift the fence in this order:** pin the
+   contact render a proper card? — already on the QA list above), and a **Campaign cookbook card**.
+3. **When the developer's patch lands, lift the fence in this order:** pin the
    new SDK version → `npm ci` → `npm run gen:events` → diff
    `reference/hackhub-events.json` → read the new `d.ts` → Zeis verifies
    in-game → *then* plan the round (formal quest completion per `docs/04`
@@ -245,16 +254,16 @@ wants the *specific action* named.
    retest of the completion path + Twotter on the patched build, and a minimal
    mail repro if BUG 1 persists. Before all of that: nothing implements,
    nothing is removed.
-5. **A settings page** (roadmap item 5) — the wire-physics dials live in the
+4. **A settings page** (roadmap item 5) — the wire-physics dials live in the
    debug panel, which is a developer tool. Those and the snap/animation/physics
    toggles deserve a home an author can find. Also outstanding: the **fade-ms
    slider in the debug panel does nothing** (the fade runs inside the
    retraction, so `ghostMs` only feeds a safety backstop) — cosmetic, but a
    real inconsistency to resolve when the settings page lands.
-6. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
+5. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
    template, not yet built. Cryptographer Hunt's fail-choice phone scene is
    the in-game proof this shape matters.
-7. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
+6. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
    banners + ports 25/110/143; Apache metasploit module for 2.4.49/50 or
    flavour?; Handbook screenshot (titles + categories) + the id=title jump
    test; eyes on the preview. Plus the Harbour `scp` hint fix noted above.
@@ -267,7 +276,8 @@ Formatting is house convention; the mechanical gates are typecheck + tests +
 build. Prettier the *dependency* stays: the website builder's code view uses
 `prettier/standalone` to format page HTML.
 
-Done and off the queue: the Dry run + Cookbook riders (r130), website description + search (r129), the r127 proposals (both built, r128), the editor UX
+Done and off the queue: the website-builder audit (r132), the Dry run +
+Cookbook riders (r130), website description + search (r129), the r127 proposals (both built, r128), the editor UX
 check (r125), actionable hookup warnings (r124), the template rebuild (r122),
 the template audit (r126).
 

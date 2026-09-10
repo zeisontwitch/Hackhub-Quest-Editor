@@ -10,6 +10,8 @@ import { CodePageEditor, VisualPageEditor } from "@/editor/websites/pageEditor";
 import {
     isFullDocument,
     joinDocument,
+    normalizeHost,
+    normalizePath,
     parseSearchTerms,
     splitDocument,
     wrapFragment,
@@ -81,6 +83,16 @@ describe("page documents", () => {
         expect(parseSearchTerms("dup, dup, DUP")).toEqual(["dup", "DUP"]);
         expect(parseSearchTerms("   ")).toEqual([]);
     });
+
+    it("normalizes hosts and paths on blur, not mid-typing", () => {
+        expect(normalizeHost("  https://MyBank.com/  ")).toBe("MyBank.com");
+        expect(normalizeHost("http://bank.example")).toBe("bank.example");
+        expect(normalizeHost("plain.example///")).toBe("plain.example");
+        expect(normalizePath("about/team")).toBe("/about/team");
+        expect(normalizePath("  /already/fine ")).toBe("/already/fine");
+        expect(normalizePath("")).toBe("/");
+        expect(normalizePath("/")).toBe("/");
+    });
 });
 
 describe("template quality", () => {
@@ -126,7 +138,7 @@ describe("website builder dialog", () => {
         expect(hidden.seo).toBe(false);
         expect(hidden.template).toBe("hidden-leak");
 
-        const listing = screen.getByRole("switch");
+        const listing = screen.getByRole("switch", { name: "Listed in the in-game search" });
         expect(listing).not.toBeChecked();
 
         // The visual editor is an iframe running the page's own document.
@@ -142,7 +154,7 @@ describe("website builder dialog", () => {
 
         // Flip it listed and the banner goes away.
         await user.click(screen.getByRole("button", { name: "visual" }));
-        await user.click(screen.getByRole("switch"));
+        await user.click(screen.getByRole("switch", { name: "Listed in the in-game search" }));
         expect(useEditor.getState().project.websites[0].pages.find((p) => p.id === hidden.id)!.seo).toBe(true);
     });
 
@@ -413,6 +425,19 @@ describe("visual and code editors in isolation", () => {
         expect(screen.getByText(/images are embedded/)).toBeInTheDocument();
     });
 
+    it("visual editor blocks page scripts while editing but keeps them in the document", () => {
+        const scripted = '<p>hi</p><script>document.title = "pwned"</script>';
+        render(
+            <VisualPageEditor doc={scripted} onChange={() => {}} ariaLabel="Visual editor for /x" />,
+        );
+        const srcdoc = screen.getByTitle("Visual editor for /x").getAttribute("srcdoc")!;
+        // The editing copy carries a CSP that stops the script from running…
+        expect(srcdoc).toContain('content="script-src \'none\'"');
+        // …and the script itself stays in the document, because the emitted
+        // page is rebuilt from the body this iframe holds.
+        expect(srcdoc).toContain("document.title");
+    });
+
     it("code editor is a plain textarea over the document", async () => {
         const user = userEvent.setup();
         function Harness() {
@@ -423,5 +448,82 @@ describe("visual and code editors in isolation", () => {
         const code = screen.getByLabelText("code") as HTMLTextAreaElement;
         await user.type(code, "more");
         expect(code.value).toBe("<p>a</p>more");
+    });
+});
+
+describe("r132 audit fixes", () => {
+    it("deleting a site asks first, and only removes on confirm", async () => {
+        const user = userEvent.setup();
+        const site = createWebsite({ host: "doomed.example" });
+        act(() => useEditor.getState().addWebsite(site));
+
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+        await user.click(screen.getByRole("button", { name: "Delete site" }));
+
+        expect(screen.getByText("Do you really want to delete this site?")).toBeInTheDocument();
+        expect(useEditor.getState().project.websites).toHaveLength(1);
+
+        await user.click(screen.getByRole("button", { name: "Cancel" }));
+        expect(useEditor.getState().project.websites).toHaveLength(1);
+
+        await user.click(screen.getByRole("button", { name: "Delete site" }));
+        // Both the sidebar trigger and the dialog's confirm say "Delete site";
+        // the confirm is the one inside the alert dialog (rendered last).
+        const confirm = screen.getAllByRole("button", { name: "Delete site" }).at(-1)!;
+        await user.click(confirm);
+        expect(useEditor.getState().project.websites).toHaveLength(0);
+    });
+
+    it("normalizes pasted hosts and slash-less paths when the field loses focus", async () => {
+        const user = userEvent.setup();
+        const site = createWebsite();
+        act(() => useEditor.getState().addWebsite(site));
+
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+
+        const host = screen.getByLabelText("Site host");
+        await user.clear(host);
+        await user.type(host, "https://mybank.com/");
+        await user.tab();
+        expect(useEditor.getState().project.websites[0].host).toBe("mybank.com");
+        expect(host).toHaveValue("mybank.com");
+
+        const path = screen.getByLabelText("Page path");
+        await user.clear(path);
+        await user.type(path, "about/team");
+        await user.tab();
+        expect(useEditor.getState().project.websites[0].pages[0].path).toBe("/about/team");
+    });
+
+    it("toggles the popular flag on the site, unset when off", async () => {
+        const user = userEvent.setup();
+        const site = createWebsite();
+        act(() => useEditor.getState().addWebsite(site));
+
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+        const popular = screen.getByRole("switch", { name: "Popular site" });
+        expect(popular).not.toBeChecked();
+
+        await user.click(popular);
+        expect(useEditor.getState().project.websites[0].popular).toBe(true);
+
+        await user.click(popular);
+        expect(useEditor.getState().project.websites[0].popular).toBeUndefined();
+    });
+
+    it("surfaces hidden elements and extra comments in the page scan", async () => {
+        const site = createWebsite();
+        act(() => useEditor.getState().addWebsite(site));
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+
+        act(() =>
+            useEditor.getState().updatePage(site.id, site.pages[0].id, {
+                content:
+                    '<!doctype html><html><body><input type="hidden" value="74"><input type="hidden" value="68"><!-- one --><!-- two --></body></html>',
+            }),
+        );
+
+        expect(await screen.findByText(/2 hidden elements/)).toBeInTheDocument();
+        expect(screen.getByText(/1 more comment/)).toBeInTheDocument();
     });
 });

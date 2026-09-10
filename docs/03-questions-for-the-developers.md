@@ -281,10 +281,13 @@ no visible "popular" section to learn from.
 **Our hypothesis.** It may boost a flagged site to the top of search results
 for matching terms. Unverified.
 
-**Where we landed.** We test it ourselves in the website-builder audit round
-(two identical sites, one flagged) rather than spend a developer question on
-a boolean. Recorded here so it rides along in the next developer contact if
-more accumulate.
+**Where we landed.** We test it ourselves rather than spend a developer
+question on a boolean. r132 shipped the flag end to end — schema field,
+only-when-set emission (r129 rule), and a "Popular site" toggle in the
+builder whose hint says the effect is unverified — so the self-test is now
+buildable in the editor: two identical sites, one flagged, compare search
+ranking in-game (Zeis's QA list). Still rides along in the next developer
+contact if more questions accumulate.
 
 ---
 

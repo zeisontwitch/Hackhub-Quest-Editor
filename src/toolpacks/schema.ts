@@ -65,6 +65,72 @@ export const PackTargetRulesSchema = z.object({
     vulnTypes: z.array(z.string()).default([]),
 });
 
+/**
+ * A pack-authored node (Editor Mods): the palette entry, its form, and one
+ * declarative emitter. No executable code — `emitter` picks one of four
+ * generic runtime behaviours, and every config value is a JSON template with
+ * "{{fieldKey}}" holes (the author's answers) and "{{data.*}}" story tokens
+ * (resolved when the quest runs). "listen" is deliberately absent: the
+ * trigger picker already gives pack events the full clause engine.
+ */
+export const PackNodeSchema = z
+    .object({
+        id: z
+            .string()
+            .min(1, "every node needs an id")
+            .regex(/^[a-z0-9][a-z0-9-]*$/, "node ids are lowercase letters, numbers and dashes (projects name the node with it)"),
+        label: z.string().min(1, "every node needs a label — quest authors pick it from the palette by this text"),
+        blurb: z.string().default(""),
+        docs: z.string().default(""),
+        emitter: z.enum(["sdk", "emit", "storage", "commandData"], {
+            message: "emitter is one of: sdk, emit, storage, commandData",
+        }),
+        /** The form the quest author fills; the labels ARE the interface. */
+        fields: z.array(PackFieldSchema).default([]),
+        /** sdk emitter: the calls to make, in order. */
+        steps: z
+            .array(
+                z.object({
+                    /** "Namespace.method", resolved against the SDK at runtime. */
+                    call: z.string().min(1, "every step needs the SDK call, like \"Events.emit\""),
+                    args: z.array(z.unknown()).default([]),
+                }),
+            )
+            .optional(),
+        /** emit emitter: the pack event to fire. */
+        eventName: z.string().optional(),
+        payload: z.record(z.string(), z.unknown()).optional(),
+        /** storage emitter: the SharedStorage write. */
+        key: z.string().optional(),
+        merge: z.enum(["overwrite", "replace"]).default("replace"),
+        mergeBy: z.string().optional(),
+        entry: z.record(z.string(), z.unknown()).optional(),
+        /** commandData emitter: the scripted tool answer. */
+        command: z.string().optional(),
+        input: z.string().optional(),
+        data: z.record(z.string(), z.unknown()).optional(),
+    })
+    .superRefine((node, issues) => {
+        const missing = (field: string, what: string) =>
+            issues.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: what });
+        if (node.emitter === "sdk" && (!node.steps || node.steps.length === 0))
+            missing("steps", "an sdk node needs at least one step — the SDK call to make, like \"Events.emit\"");
+        if (node.emitter === "emit") {
+            if (!node.eventName) missing("eventName", "an emit node needs the event name to fire");
+            if (node.payload === undefined) missing("payload", "an emit node needs the event's payload template ({} if it carries nothing)");
+        }
+        if (node.emitter === "storage") {
+            if (!node.key) missing("key", "a storage node needs the SharedStorage key the game mod reads");
+            if (node.entry === undefined) missing("entry", "a storage node needs the entry template — the JSON the key should hold");
+        }
+        if (node.emitter === "commandData") {
+            if (!node.command) missing("command", "a commandData node needs the in-game command it answers, like nmap");
+            if (node.data === undefined) missing("data", "a commandData node needs the data shape the tool understands");
+        }
+    });
+
+export type PackNode = z.infer<typeof PackNodeSchema>;
+
 export const ToolPackSchema = z.object({
     format: z.literal(TOOLPACK_FORMAT),
     /** Editor-side id, lowercase-dashed. Node and contract references use it. */
@@ -88,8 +154,8 @@ export const ToolPackSchema = z.object({
     /** Reserved (v1): simple scripted-answer tools work through the editor's
         existing "Tool response" node — this section is documentation-only. */
     commandData: z.array(z.unknown()).default([]),
-    /** Reserved for Editor Mods (the next round): pack-authored nodes. */
-    nodes: z.array(z.unknown()).default([]),
+    /** Editor Mods: pack-authored palette nodes (declarative emitters). */
+    nodes: z.array(PackNodeSchema).default([]),
 });
 
 export type PackField = z.infer<typeof PackFieldSchema>;

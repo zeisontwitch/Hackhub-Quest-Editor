@@ -261,6 +261,23 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
             return lines.length ? lines : ["Not set up yet — pick a pack and a data shape"];
         }
 
+        case "pack.node": {
+            if (!d.nodeId) return ["Not set up yet — add it from the palette's Editor Mods group"];
+            const what =
+                d.emitter === "sdk"
+                    ? `calls ${((d.steps as { call: string }[]) ?? []).map((s) => s.call).join(", ") || "the SDK"}`
+                    : d.emitter === "emit"
+                        ? `fires ${d.eventName || "an event"}`
+                        : d.emitter === "storage"
+                            ? `writes ${d.storageKey || "a storage key"}`
+                            : `answers ${d.command || "a command"}`;
+            const lines = [`${d.nodeLabel || "Community node"} — ${what}`];
+            if (d.packName) lines.push(`from ${d.packName}`);
+            const filled = Object.values((d.values as Record<string, string>) ?? {}).filter((v) => v);
+            if (filled.length) lines.push(`${filled.length} value${filled.length === 1 ? "" : "s"} filled in`);
+            return lines;
+        }
+
         case "flow.note":
             return d.text ? [clip(String(d.text), 120)] : ["Empty note"];
 

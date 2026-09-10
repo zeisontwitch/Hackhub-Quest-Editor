@@ -74,7 +74,7 @@ export interface EditorStore {
     setViewport: (questId: string, viewport: Viewport) => void;
 
     /* nodes */
-    addNode: (type: NodeType, position: Position) => string | null;
+    addNode: (type: NodeType, position: Position, data?: Record<string, unknown>) => string | null;
     updateNodeData: (nodeId: string, patch: Record<string, unknown>) => void;
     setNodePosition: (nodeId: string, position: Position) => void;
     setNodePositions: (positions: Record<string, Position>) => void;
@@ -358,12 +358,17 @@ export const useEditor = create<EditorStore>()((set, get) => {
                 project.editor.viewports[questId] = viewport;
             }, { history: false }),
 
-        addNode: (type, position) => {
+        addNode: (type, position, data) => {
             const quest = activeQuestOf(get().project);
             if (!quest) return null;
             const def = nodeTypeDef(type);
             const id = nanoid(10);
-            const node = { id, type, position, data: def.create() } as unknown as NodeDoc;
+            const node = {
+                id,
+                type,
+                position,
+                data: data ? { ...(def.create() as object), ...data } : def.create(),
+            } as unknown as NodeDoc;
             mutate((project) => {
                 const q = project.quests.find((x) => x.id === quest.id);
                 q?.graph.nodes.push(node);

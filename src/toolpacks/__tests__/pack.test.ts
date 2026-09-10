@@ -53,7 +53,11 @@ describe("pack format", () => {
         expect(result.pack.targetRules?.services).toContain("ssh");
         expect(result.pack.targetRules?.versionOnPorts).toBe(true);
         expect(result.pack.commandData).toEqual([]);
-        expect(result.pack.nodes).toEqual([]);
+        /* Editor Mods (r138): one worked node per emitter kind. */
+        expect(result.pack.nodes.map((n) => n.emitter)).toEqual(["emit", "sdk", "storage", "commandData"]);
+        expect(result.pack.nodes[0].eventName).toBe("ExampleTools.Handover.Done");
+        expect(result.pack.nodes[2].key).toBe("exampletools.wordlists");
+        expect(result.pack.nodes[3].command).toBe("exampletools-scan");
     });
 
     it("checks the format number before anything else, in plain words", () => {
@@ -90,6 +94,19 @@ describe("pack format", () => {
         const segments = error.split(": ").length - 1;
         expect(segments).toBeGreaterThanOrEqual(4);
         expect(segments).toBeLessThanOrEqual(4);
+    });
+
+    it("pack nodes carry per-emitter config, in plain words when missing", () => {
+        expect(expectError(parseToolPack(mutate({ nodes: [{ id: "x", label: "X", emitter: "emit" }] }))))
+            .toContain("an emit node needs the event name to fire");
+        expect(expectError(parseToolPack(mutate({ nodes: [{ id: "x", label: "X", emitter: "storage" }] }))))
+            .toContain("a storage node needs the SharedStorage key");
+        expect(expectError(parseToolPack(mutate({ nodes: [{ id: "x", label: "X", emitter: "sdk", steps: [] }] }))))
+            .toContain("an sdk node needs at least one step");
+        expect(expectError(parseToolPack(mutate({ nodes: [{ id: "x", label: "X", emitter: "commandData" }] }))))
+            .toContain("a commandData node needs the in-game command");
+        expect(expectError(parseToolPack(mutate({ nodes: [{ id: "Bad Id", label: "X", emitter: "sdk", steps: [{ call: "Events.emit" }] }] }))))
+            .toContain("node ids are lowercase letters, numbers and dashes");
     });
 
     it("validates storage entries as JSON templates with field holes", () => {

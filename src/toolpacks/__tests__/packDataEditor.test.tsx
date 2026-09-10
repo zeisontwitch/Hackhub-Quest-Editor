@@ -10,13 +10,17 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PackDataEditor } from "@/editor/inspector/sims/PackDataEditor";
+import { PackNodeEditor } from "@/editor/inspector/sims/PackNodeEditor";
 import { ConditionsEditor } from "@/editor/inspector/ConditionsEditor";
 import { EventPicker } from "@/editor/inspector/EventPicker";
+import { NodePalette } from "@/editor/palette/NodePalette";
+import { ReactFlowProvider } from "@xyflow/react";
 import { useState } from "react";
+import { summarize } from "@/editor/canvas/summarize";
 import { createProject } from "@/schema/project";
 import type { ConditionClause, NodeOfType } from "@/schema/nodes";
 import { useEditor } from "@/store/editor";
-import { usePacks } from "@/store/packs";
+import { packNodeDefs, usePacks } from "@/store/packs";
 
 const exampleRaw = JSON.parse(readFileSync(join(process.cwd(), "reference/example-toolpack/toolpack.json"), "utf8")) as Parameters<
     ReturnType<typeof usePacks.getState>["loadPack"]
@@ -149,6 +153,69 @@ describe("community-data editor", () => {
            anything was lost. */
         expect(screen.getByText(/isn't loaded on this machine/)).toBeInTheDocument();
         expect(screen.getByText(/the node keeps working/)).toBeInTheDocument();
+    });
+});
+
+describe("editor mods: palette and inspector", () => {
+    it("packNodeDefs: one def per pack node, snapshot ready to add", () => {
+        act(() => usePacks.getState().loadPack(exampleRaw));
+        const defs = packNodeDefs(usePacks.getState().packs);
+        expect(defs).toHaveLength(4);
+        expect(defs[0].def.type).toBe("pack.node");
+        expect(defs[0].def.label).toBe("Announce the handover");
+        expect(defs[0].def.blurb).toContain("handover event");
+        expect(defs[0].addData.nodeId).toBe("example-tools/breach-ping");
+        expect(defs[0].addData.gameModName).toBe("Example Tools");
+        expect(defs[0].addData.eventName).toBe("ExampleTools.Handover.Done");
+        expect(defs[2].addData.storageKey).toBe("exampletools.wordlists");
+        expect(defs[2].addData.entry).toEqual({ name: "{{name}}", words: ["alan", "bosun", "core"] });
+    });
+
+    it("the palette grows an Editor Mods group; clicking adds a snapshotted node", () => {
+        act(() => usePacks.getState().loadPack(exampleRaw));
+        render(
+            <ReactFlowProvider>
+                <NodePalette />
+            </ReactFlowProvider>,
+        );
+        expect(screen.getByText("Editor Mods · Example Tools")).toBeInTheDocument();
+        const item = screen.getByRole("button", { name: "Announce the handover" });
+        fireEvent.click(item);
+        const nodes = useEditor.getState().project.quests[0].graph.nodes;
+        const added = nodes.find((n) => n.type === "pack.node");
+        expect(added).toBeDefined();
+        const d = added!.data as NodeOfType<"pack.node">["data"];
+        expect(d.nodeId).toBe("example-tools/breach-ping");
+        expect(d.nodeLabel).toBe("Announce the handover");
+        expect(d.eventName).toBe("ExampleTools.Handover.Done");
+        expect(d.gameModName).toBe("Example Tools");
+        /* The card shows the pack author's label, not "Community node". */
+        expect(summarize(added!, useEditor.getState().project.quests[0])[0]).toContain("Announce the handover");
+    });
+
+    it("the inspector speaks the pack's words and takes the author's values", () => {
+        const node = addPackNode();
+        act(() =>
+            useEditor.getState().updateNodeData(node.id, {
+                packId: "example-tools",
+                packName: "Example Tools",
+                gameModName: "Example Tools",
+                nodeId: "example-tools/breach-ping",
+                nodeLabel: "Announce the handover",
+                emitter: "emit",
+                eventName: "ExampleTools.Handover.Done",
+                payload: { target: "{{target}}" },
+                fields: [{ key: "target", label: "Host or IP", type: "string", hint: "The machine this handover is about." }],
+                values: {},
+            }),
+        );
+        render(<PackNodeEditor node={nodeNow(node.id) as NodeOfType<"pack.node">} />);
+        expect(screen.getByText(/it fires the event ExampleTools.Handover.Done/)).toBeInTheDocument();
+        expect(screen.getByText(/Provided by the Example Tools tool pack/)).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText("Host or IP"), { target: { value: "10.0.0.14" } });
+        const d = nodeNow(node.id).data as NodeOfType<"pack.node">["data"];
+        expect(d.values).toEqual({ target: "10.0.0.14" });
+        expect(screen.getByText(/Players need the Example Tools game mod installed/)).toBeInTheDocument();
     });
 });
 

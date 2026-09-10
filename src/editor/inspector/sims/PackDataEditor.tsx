@@ -138,7 +138,9 @@ export function PackDataEditor({ node }: { node: NodeOfType<"world.packData"> })
     );
 }
 
-function PackFieldInput({
+/** One pack-authored field as a labelled input. Shared with PackNodeEditor:
+    the pack author's label and hint ARE the interface, wherever it renders. */
+export function PackFieldInput({
     field,
     value,
     onChange,

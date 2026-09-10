@@ -13,7 +13,8 @@ import { Icon } from "@/components/Icon";
 import { CATEGORY_HEX, categoryOf } from "@/schema/registry";
 import type { NodeType } from "@/schema/nodes";
 import type { EdgeKind } from "@/schema/edges";
-import { moveHighlight, searchNodeTypes, typesAcceptingWire } from "./nodeSearch";
+import { allNodeTypes, moveHighlight, searchNodeTypes, typesAcceptingWire } from "./nodeSearch";
+import { packNodeDefs, usePacks } from "@/store/packs";
 import {
     POPOVER_INPUT_HEIGHT,
     POPOVER_ROW_HEIGHT,
@@ -30,7 +31,7 @@ export interface NodeSearchPopoverProps {
      * placeholder says so.
      */
     wire?: { kind: EdgeKind; direction: "source" | "target" } | null;
-    onPick: (type: NodeType) => void;
+    onPick: (type: NodeType, data?: Record<string, unknown>) => void;
     onClose: () => void;
 }
 
@@ -46,9 +47,12 @@ export function NodeSearchPopover({ at, wire, onPick, onClose }: NodeSearchPopov
      */
     const pointerMoved = useRef(false);
 
+    /* Pack nodes are addable from search too — same list the palette offers.
+       pack.node takes any flow wire, so they join wire-filtered pools as well. */
+    const packs = usePacks((s) => s.packs);
     const pool = useMemo(
-        () => (wire ? typesAcceptingWire(wire.kind, wire.direction) : undefined),
-        [wire],
+        () => [...(wire ? typesAcceptingWire(wire.kind, wire.direction) : allNodeTypes()), ...packNodeDefs(packs).map((d) => d.def)],
+        [wire, packs],
     );
     const results = useMemo(() => searchNodeTypes(query, pool), [query, pool]);
 
@@ -106,7 +110,7 @@ export function NodeSearchPopover({ at, wire, onPick, onClose }: NodeSearchPopov
 
     const accept = (index: number) => {
         const def = results[index];
-        if (def) onPick(def.type);
+        if (def) onPick(def.type, def.addData);
     };
 
     const onKeyDown = (event: React.KeyboardEvent) => {

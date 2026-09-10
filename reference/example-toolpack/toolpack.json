@@ -14,13 +14,22 @@
       "name": "ExampleTools.Breach.FileDownloaded",
       "label": "A file was downloaded from a breached machine",
       "docs": "Fires when the player saves a file out of a remote session on a machine they breached. Match the file by its path or name, or the machine by host or IP.",
-      "fields": ["sessionId", "ip", "host", "path", "name"]
+      "fields": [
+        "sessionId",
+        "ip",
+        "host",
+        "path",
+        "name"
+      ]
     },
     {
       "name": "ExampleTools.Scan.Completed",
       "label": "A scan of a target finished",
       "docs": "Fires when the player's scan of a target completes. Match on the target that was scanned.",
-      "fields": ["target", "results"]
+      "fields": [
+        "target",
+        "results"
+      ]
     }
   ],
   "storage": [
@@ -32,24 +41,151 @@
       "merge": "replace",
       "mergeBy": "target",
       "fields": [
-        { "key": "target", "label": "Host or IP", "type": "string", "hint": "The machine the loot waits on. A domain name works." },
-        { "key": "path", "label": "File path", "type": "string", "hint": "Where the file sits in the remote session, like /opt/case/evidence.txt." },
-        { "key": "data", "label": "File contents", "type": "text", "hint": "What the file says — this is where your clue goes." }
+        {
+          "key": "target",
+          "label": "Host or IP",
+          "type": "string",
+          "hint": "The machine the loot waits on. A domain name works."
+        },
+        {
+          "key": "path",
+          "label": "File path",
+          "type": "string",
+          "hint": "Where the file sits in the remote session, like /opt/case/evidence.txt."
+        },
+        {
+          "key": "data",
+          "label": "File contents",
+          "type": "text",
+          "hint": "What the file says — this is where your clue goes."
+        }
       ],
       "entry": {
         "target": "{{target}}",
         "files": [
-          { "path": "{{path}}", "data": "{{data}}\n", "readable": true, "downloadable": true, "deletable": false }
+          {
+            "path": "{{path}}",
+            "data": "{{data}}\n",
+            "readable": true,
+            "downloadable": true,
+            "deletable": false
+          }
         ]
       }
     }
   ],
   "targetRules": {
-    "services": ["http", "ftp", "ssh", "database", "redis", "smb", "smtp"],
+    "services": [
+      "http",
+      "ftp",
+      "ssh",
+      "database",
+      "redis",
+      "smb",
+      "smtp"
+    ],
     "versionOnPorts": true,
     "vulnsOnDomain": false,
-    "vulnTypes": ["RCE", "LFI", "RFI", "SSRF", "CORS", "XSS", "SQL_INJECTION"]
+    "vulnTypes": [
+      "RCE",
+      "LFI",
+      "RFI",
+      "SSRF",
+      "CORS",
+      "XSS",
+      "SQL_INJECTION"
+    ]
   },
   "commandData": [],
-  "nodes": []
+  "nodes": [
+    {
+      "id": "breach-ping",
+      "label": "Announce the handover",
+      "blurb": "Fires the pack's own handover event",
+      "docs": "Fires ExampleTools.Handover.Done when the quest reaches this node, so your triggers — and the game mod — know the handover happened.",
+      "emitter": "emit",
+      "fields": [
+        {
+          "key": "target",
+          "label": "Host or IP",
+          "type": "string",
+          "hint": "The machine this handover is about. A domain name works."
+        }
+      ],
+      "eventName": "ExampleTools.Handover.Done",
+      "payload": {
+        "target": "{{target}}"
+      }
+    },
+    {
+      "id": "call-home",
+      "label": "Log the handover",
+      "blurb": "Makes one SDK call with the filled values",
+      "docs": "Fires a plain event with a filled message — a minimal example of an SDK-call node.",
+      "emitter": "sdk",
+      "fields": [
+        {
+          "key": "target",
+          "label": "Host or IP",
+          "type": "string"
+        }
+      ],
+      "steps": [
+        {
+          "call": "Events.emit",
+          "args": [
+            "ExampleTools.Handover.Log",
+            {
+              "message": "Example Tools: handover complete for {{target}}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wordlist",
+      "label": "Give the tool a wordlist",
+      "blurb": "Writes a SharedStorage key the game mod reads",
+      "docs": "Adds a wordlist to the tool's list: when the player runs the tool's scan, these words are in it.",
+      "emitter": "storage",
+      "fields": [
+        {
+          "key": "name",
+          "label": "Wordlist name",
+          "type": "string",
+          "hint": "Shown in the tool's own list, like 'ex-employees'."
+        }
+      ],
+      "key": "exampletools.wordlists",
+      "merge": "replace",
+      "mergeBy": "name",
+      "entry": {
+        "name": "{{name}}",
+        "words": [
+          "alan",
+          "bosun",
+          "core"
+        ]
+      }
+    },
+    {
+      "id": "scan-answer",
+      "label": "Pre-place a scan answer",
+      "blurb": "Scripted output for the pack's own command",
+      "docs": "Places the scripted output the game mod's exampletools-scan command prints for the given input.",
+      "emitter": "commandData",
+      "fields": [
+        {
+          "key": "target",
+          "label": "Host or IP",
+          "type": "string"
+        }
+      ],
+      "command": "exampletools-scan",
+      "input": "{{target}}",
+      "data": {
+        "report": "Example Tools scanned {{target}}: 1 service, version recorded"
+      }
+    }
+  ]
 }

@@ -59,7 +59,7 @@ runs even on a machine where the pack was never loaded.
 | `author`, `version`, `docsUrl` | Shown on the pack's card. |
 | `gameMod.name` | **The honesty line.** The in-game mod this pack drives. Quests that use the pack's data or events need that mod installed on the player's machine — the editor says so to every author who touches it, in the node, in the picker, and in the export's README. `note` is a sentence of extra context shown on the pack card. |
 | `commandData` | **Reserved (format 2).** Simple scripted-answer tools already work through the editor's "Tool response" node; this section is documentation-only for now. |
-| `nodes` | **Reserved for Editor Mods** (the next round): pack-authored nodes in the palette. |
+| `nodes` | **Editor Mods**: pack-authored nodes in the palette — see the next section. |
 
 ## `events[]` — trigger picker entries
 
@@ -123,6 +123,52 @@ to your key when the quest runs.
 The template is **snapshotted into the project** when the author picks the
 shape — so their quest keeps working even after your pack is unloaded, and a
 pack update never silently rewrites shipped quests.
+
+## `nodes[]` — Editor Mods: nodes in the palette
+
+Each entry here becomes a card in the editor's palette under
+**Editor Mods · <your pack name>**, and the add-node search offers it too.
+A quest author drags it in, fills your form, and the editor emits what your
+game mod expects — **declarative templates only, never code**.
+
+```json
+{
+  "id": "breach-ping",
+  "label": "Announce the handover",
+  "blurb": "Fires the pack's own handover event",
+  "docs": "Fires ExampleTools.Handover.Done when the quest reaches this node…",
+  "emitter": "emit",
+  "fields": [{ "key": "target", "label": "Host or IP", "type": "string" }],
+  "eventName": "ExampleTools.Handover.Done",
+  "payload": { "target": "{{target}}" }
+}
+```
+
+| Field | Rules |
+|---|---|
+| `id` | Lowercase letters, numbers, dashes. The project records the node as `<packId>/<id>` — never change it after publishing. |
+| `label`, `blurb`, `docs` | The palette card and its explainer, in plain words. The label is what quest authors search for. |
+| `emitter` | One of `sdk`, `emit`, `storage`, `commandData` — see below. |
+| `fields[]` | The form the quest author fills — same shape as storage `fields[]`. Every hole in your templates is filled from these. |
+
+Every config value may carry `"{{fieldKey}}"` holes (filled with the
+author's answers; strings splice with JSON escaping, numbers and booleans
+land raw when the hole is the whole value) and `{{data.*}}` story tokens
+(resolved when the quest runs, exactly like the rest of the editor).
+
+**The emitters:**
+
+| emitter | what runs when the quest reaches the node | config |
+|---|---|---|
+| `sdk` | calls `sdk.<Namespace>.<method>(…)` in order; an unknown call is skipped with a console note, never a crash | `steps: [{ "call": "Events.emit", "args": [...] }]` |
+| `emit` | fires an event: `Events.emit(name, payload)` | `eventName`, `payload` (template) |
+| `storage` | writes a SharedStorage key, like the storage contracts above | `key`, `merge`, `mergeBy`, `entry` |
+| `commandData` | places a scripted tool answer: `Shell.addCommandData(command, input, data)` — the old answer is cleared first, because answers live in the save | `command`, `input` (template), `data` |
+
+There is deliberately **no "listen" emitter**: waiting on events is the
+trigger node's job, and pack events are already first-class there (with
+conditions on your declared payload fields). A second listening surface
+would only be a worse copy of a thing that exists.
 
 ## `targetRules` — target conventions (documentation for the editor)
 

@@ -946,12 +946,12 @@ function CanvasInner() {
 
     /** Add the chosen type where the popover was opened, then close it. */
     const addFromSearch = useCallback(
-        (type: NodeType) => {
+        (type: NodeType, data?: Record<string, unknown>) => {
             if (!searchAt) return;
             const position = screenToFlowPosition(searchAt);
             // Same nudge as the palette drop, so a searched node and a dragged
             // node land in the same place relative to the pointer.
-            const id = addNode(type, { x: position.x - 20, y: position.y - 24 });
+            const id = addNode(type, { x: position.x - 20, y: position.y - 24 }, data);
 
             /*
              * Opened by dropping a wire? Then finish the gesture the author
@@ -1038,11 +1038,26 @@ function CanvasInner() {
     const onDrop = useCallback(
         (event: React.DragEvent) => {
             event.preventDefault();
-            const type = event.dataTransfer.getData(DND_MIME) as NodeType | "";
+            /* Pack nodes drag a JSON payload ({ type, data }) so the drop
+               lands a fully set-up node; built-ins drag the plain type. */
+            const raw = event.dataTransfer.getData(DND_MIME);
+            let type: NodeType | "" = "";
+            let data: Record<string, unknown> | undefined;
+            if (raw.startsWith("{")) {
+                try {
+                    const parsed = JSON.parse(raw) as { type?: NodeType; data?: Record<string, unknown> };
+                    type = parsed.type ?? "";
+                    data = parsed.data;
+                } catch {
+                    type = "";
+                }
+            } else {
+                type = raw as NodeType | "";
+            }
             if (!type) return;
             const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
             // Nudge left so the pointer lands on the card, not its left socket.
-            addNode(type, { x: position.x - 20, y: position.y - 24 });
+            addNode(type, { x: position.x - 20, y: position.y - 24 }, data);
         },
         [addNode, screenToFlowPosition],
     );

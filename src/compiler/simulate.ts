@@ -157,7 +157,11 @@ function recordingSdk(entries: TraceEntry[]) {
                 removeFirewallRule: () => {},
             },
             Shell: {
-                addCommandData: (c: string) => log("tool", `Tool answer placed: ${c}`),
+                addCommandData: (c: string, input?: string, data?: unknown) =>
+                    log(
+                        "tool",
+                        `Tool answer placed: ${c}${input ? ` (${input})` : ""}${data !== undefined ? ` = ${JSON.stringify(data)}` : ""}`,
+                    ),
                 removeCommandData: () => {},
                 getUsername: () => "player",
                 execute: (cmd: string) => log("terminal", `Terminal runs: ${cmd}`),
@@ -239,7 +243,8 @@ function recordingSdk(entries: TraceEntry[]) {
                 getAll: () => store,
             },
             Events: {
-                emit: (e: string) => log("event", `Event fires: ${e}`),
+                emit: (e: string, payload?: unknown) =>
+                    log("event", `Event fires: ${e}${payload !== undefined ? ` = ${JSON.stringify(payload)}` : ""}`),
                 on: () => {},
             },
         },

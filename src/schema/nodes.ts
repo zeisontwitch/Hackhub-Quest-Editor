@@ -454,6 +454,41 @@ export const PackDataNodeDataSchema = z.object({
     values: z.record(z.string(), z.string()).default({}),
 });
 
+/**
+ * A pack-authored node (Editor Mods, r138). The whole definition is
+ * SNAPSHOTTED at authoring time — pack id/version, the game mod's honesty
+ * line, the node's label, the emitter and its full config, the field
+ * definitions — so the node compiles and runs even where the pack was never
+ * loaded, exactly like world.packData. `values` are the author's form
+ * answers, keyed by field key, always strings.
+ */
+export const PackNodeDataSchema = z.object({
+    packId: z.string().default(""),
+    packName: z.string().default(""),
+    packVersion: z.string().default(""),
+    /** The in-game mod players must have installed — the honesty line. */
+    gameModName: z.string().default(""),
+    nodeId: z.string().default(""),
+    nodeLabel: z.string().default(""),
+    emitter: z.enum(["sdk", "emit", "storage", "commandData"]).default("sdk"),
+    fields: z.array(z.record(z.string(), z.unknown())).default([]),
+    values: z.record(z.string(), z.string()).default({}),
+    /** sdk emitter: the calls to make, in order. */
+    steps: z.array(z.object({ call: z.string().default(""), args: z.array(z.unknown()).default([]) })).default([]),
+    /** emit emitter. */
+    eventName: z.string().default(""),
+    payload: z.unknown().optional(),
+    /** storage emitter. */
+    storageKey: z.string().default(""),
+    merge: z.enum(["overwrite", "replace"]).default("replace"),
+    mergeBy: z.string().optional(),
+    entry: z.unknown().optional(),
+    /** commandData emitter. */
+    command: z.string().default(""),
+    input: z.string().default(""),
+    data: z.unknown().optional(),
+});
+
 export const ShellExecNodeDataSchema = z.object({
     command: z.string().default(""),
 });
@@ -584,6 +619,7 @@ export const NodeSchema = z.discriminatedUnion("type", [
     node("world.files", FilesNodeDataSchema),
     node("world.toolResponse", ToolResponseNodeDataSchema),
     node("world.packData", PackDataNodeDataSchema),
+    node("pack.node", PackNodeDataSchema),
     node("comms.dialogue", DialogueNodeDataSchema),
     node("reply.input", ManualInputNodeDataSchema),
     node("fx.pay", PayNodeDataSchema),

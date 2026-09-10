@@ -30,6 +30,30 @@ const edge = (source: string, target: string): EdgeDoc => ({
     kind: "flow",
 });
 
+/** A quest whose only act is running one pack-authored node. */
+function packNodeProject(data: Record<string, unknown>): ProjectDocument {
+    const project = createProject();
+    const quest = project.quests[0];
+    quest.name = "mod";
+    quest.title = "The Mod";
+    quest.autoStart = true;
+    const entry = node("entry.start");
+    const base = {
+        packId: "example-tools",
+        packName: "Example Tools",
+        packVersion: "1.0.0",
+        gameModName: "Example Tools",
+        nodeId: "example-tools/breach-ping",
+        nodeLabel: "Announce the handover",
+        fields: [{ key: "target", label: "Host or IP", type: "string" }],
+        values: { target: "10.0.0.14" },
+    };
+    const mod = node("pack.node", { ...base, ...data });
+    quest.graph.nodes = [entry, mod];
+    quest.graph.edges = [edge(entry.id, mod.id)];
+    return project;
+}
+
 /** A quest whose only act is handing data to the pack. */
 function packProject(dataPatch: Record<string, unknown> = {}): ProjectDocument {
     const project = createProject();
@@ -60,6 +84,90 @@ function packProject(dataPatch: Record<string, unknown> = {}): ProjectDocument {
     quest.graph.edges = [edge(entry.id, data.id)];
     return project;
 }
+
+describe("pack node emitters", () => {
+    it("emit: fires the pack event with its holes filled", async () => {
+        const report = await simulateProject(
+            packNodeProject({ emitter: "emit", eventName: "ExampleTools.Handover.Done", payload: { target: "{{target}}" } }),
+        );
+        expect(report.errors).toEqual([]);
+        const line = report.trace.find((t) => t.kind === "event");
+        expect(line?.text).toBe('Event fires: ExampleTools.Handover.Done = {"target":"10.0.0.14"}');
+    });
+
+    it("sdk: makes the calls in order, filling string and object args", async () => {
+        const report = await simulateProject(
+            packNodeProject({
+                emitter: "sdk",
+                steps: [
+                    { call: "Events.emit", args: ["ExampleTools.Handover.Log", { message: "done for {{target}}" }] },
+                    { call: "Events.emit", args: ["ExampleTools.Plain"] },
+                ],
+            }),
+        );
+        expect(report.errors).toEqual([]);
+        const events = report.trace.filter((t) => t.kind === "event").map((t) => t.text);
+        expect(events[0]).toBe('Event fires: ExampleTools.Handover.Log = {"message":"done for 10.0.0.14"}');
+        expect(events[1]).toBe("Event fires: ExampleTools.Plain");
+    });
+
+    it("sdk: an unknown call is skipped, not a crash", async () => {
+        const report = await simulateProject(
+            packNodeProject({ emitter: "sdk", steps: [{ call: "Time.Travel.To", args: ["1955"] }] }),
+        );
+        /* The skip note goes to the console log, not the trace; the quest
+           itself must sail through with nothing fired. */
+        expect(report.errors).toEqual([]);
+        expect(report.trace.filter((t) => t.kind === "event")).toHaveLength(0);
+    });
+
+    it("storage: writes the key with its holes filled, replace-by honoured", async () => {
+        const report = await simulateProject(
+            packNodeProject({
+                emitter: "storage",
+                storageKey: "exampletools.wordlists",
+                merge: "replace",
+                mergeBy: "name",
+                entry: { name: "{{name}}", words: ["alan", "bosun"] },
+                fields: [{ key: "name", label: "Wordlist name", type: "string" }],
+                values: { name: "ex-crew" },
+            }),
+        );
+        expect(report.errors).toEqual([]);
+        const line = report.trace.find((t) => t.kind === "data");
+        expect(line?.text).toContain("exampletools.wordlists");
+        expect(line?.text).toContain('"name":"ex-crew"');
+    });
+
+    it("commandData: clears then places the scripted answer", async () => {
+        const mod = compileProject(
+            packNodeProject({
+                emitter: "commandData",
+                command: "exampletools-scan",
+                input: "{{target}}",
+                data: { report: "scanned {{target}}" },
+            }),
+        ).files.find((f) => f.path === "dist/mod.js")!.content;
+        expect(mod).toContain("removeCommandData");
+        expect(mod).toContain("addCommandData");
+        expect(mod).toContain('"report":"scanned {{target}}"');
+    });
+
+    it("the honesty line: pack nodes join packModsUsed and the export readme", () => {
+        const project = packNodeProject({ emitter: "emit", eventName: "E", payload: {} });
+        expect(packModsUsed(project).get("Example Tools")).toBe("Example Tools");
+        const readme = compileProject(project).files.find((f) => f.path === "README.md")!.content;
+        expect(readme).toContain("Community tools: Example Tools");
+    });
+
+    it("a bare pack.node warns that it is not set up", () => {
+        const project = createProject();
+        project.quests[0].title = "Empty mod";
+        project.quests[0].graph.nodes = [node("pack.node", { packName: "Example Tools" })];
+        const warnings = computeWarnings(project);
+        expect(warnings.some((w) => w.includes("Empty mod") && w.includes("Community node is not set up yet"))).toBe(true);
+    });
+});
 
 describe("community-data node", () => {
     it("the empty node says it is not set up yet", () => {
@@ -105,7 +213,7 @@ describe("community-data node", () => {
     it("emits a guarded SharedStorage write with the fill hook", () => {
         const mod = compileProject(packProject()).files.find((f) => f.path === "dist/mod.js")!.content;
         expect(mod).toContain("sdk.SharedStorage && sdk.SharedStorage.set && d.storageKey");
-        expect(mod).toContain("__QE.fill(json, scope)");
+        expect(mod).toContain("__QE.packFill(scope, d.fields, d.values");
         expect(mod).toContain('"Community data set: " + d.storageKey');
         /* The template travels with the node, not with the pack. */
         expect(mod).toContain("{{target}}");

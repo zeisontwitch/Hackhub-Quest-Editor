@@ -9,6 +9,7 @@
  */
 import { create } from "zustand";
 import { parseToolPack, type ToolPack } from "@/toolpacks/schema";
+import type { NodeTypeDef } from "@/schema/registry";
 
 const KEY = "hackhub-quest-editor:packs:v1";
 
@@ -81,6 +82,63 @@ export function packEventByName(
             };
     }
     return undefined;
+}
+
+/** Synthesized palette defs for every pack-authored node.
+    One NodeTypeDef per pack node — all of type "pack.node", each carrying
+    its own label/blurb and the `addData` snapshot the canvas gets when the
+    author adds it. Presented under "Editor Mods · <pack name>". */
+export function packNodeDefs(
+    packs: ToolPack[],
+): { def: NodeTypeDef; addData: Record<string, unknown> }[] {
+    return packs.flatMap((pack) =>
+        pack.nodes.map((n) => {
+            const addData: Record<string, unknown> = {
+                packId: pack.id,
+                packName: pack.name,
+                packVersion: pack.version,
+                gameModName: pack.gameMod?.name ?? "",
+                nodeId: `${pack.id}/${n.id}`,
+                nodeLabel: n.label,
+                emitter: n.emitter,
+                fields: JSON.parse(JSON.stringify(n.fields ?? [])),
+                values: {},
+            };
+            if (n.emitter === "sdk") addData.steps = JSON.parse(JSON.stringify(n.steps ?? []));
+            if (n.emitter === "emit") {
+                addData.eventName = n.eventName ?? "";
+                addData.payload = JSON.parse(JSON.stringify(n.payload ?? {}));
+            }
+            if (n.emitter === "storage") {
+                addData.storageKey = n.key ?? "";
+                addData.merge = n.merge ?? "replace";
+                addData.mergeBy = n.mergeBy;
+                addData.entry = JSON.parse(JSON.stringify(n.entry ?? {}));
+            }
+            if (n.emitter === "commandData") {
+                addData.command = n.command ?? "";
+                addData.input = n.input ?? "";
+                addData.data = JSON.parse(JSON.stringify(n.data ?? {}));
+            }
+            const blurb = n.blurb || (pack.gameMod?.name ? `Needs the ${pack.gameMod.name} game mod` : "From a tool pack");
+            return {
+                def: {
+                    type: "pack.node",
+                    category: "community",
+                    label: n.label,
+                    blurb,
+                    icon: "package",
+                    targets: [],
+                    sources: [],
+                    hook: "onStart",
+                    fields: [],
+                    create: () => ({}) as never,
+                    addData,
+                },
+                addData,
+            };
+        }),
+    );
 }
 
 /** Every event the loaded packs declare, in EventPicker shape. */

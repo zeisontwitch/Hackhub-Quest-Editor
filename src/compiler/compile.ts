@@ -107,7 +107,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-12.r137";
+export const EDITOR_BUILD = "2026-09-13.r138";
 
 export interface CompiledFile {
     path: string;
@@ -205,9 +205,13 @@ export function packModsUsed(project: ProjectDocument): Map<string, string> {
     const packMods = new Map<string, string>();
     for (const q of project.quests) {
         for (const n of q.graph.nodes) {
-            if (n.type !== "world.packData") continue;
-            const d = n.data as { packName?: string; gameModName?: string; storageKey?: string };
-            if (d.storageKey && d.packName && d.gameModName && !packMods.has(d.packName)) {
+            const d = n.data as { packName?: string; gameModName?: string; storageKey?: string; nodeId?: string };
+            if (n.type === "world.packData") {
+                if (d.storageKey && d.packName && d.gameModName && !packMods.has(d.packName)) {
+                    packMods.set(d.packName, d.gameModName);
+                }
+            }
+            if (n.type === "pack.node" && d.nodeId && d.packName && d.gameModName && !packMods.has(d.packName)) {
                 packMods.set(d.packName, d.gameModName);
             }
         }
@@ -482,12 +486,21 @@ export function computeWarnings(project: ProjectDocument): string[] {
        installed on the player's machine. */
     for (const q of project.quests) {
         for (const n of q.graph.nodes) {
-            if (n.type !== "world.packData") continue;
-            const d = n.data as { packName?: string; storageKey?: string };
-            if (!d.storageKey) {
-                warnings.push(
-                    `${q.title || q.name}: a Community data node is not set up yet${d.packName ? ` (${d.packName})` : ""} — open the node and pick the pack and the data shape, or delete it. As it stands it does nothing.`,
-                );
+            if (n.type === "world.packData") {
+                const d = n.data as { packName?: string; storageKey?: string };
+                if (!d.storageKey) {
+                    warnings.push(
+                        `${q.title || q.name}: a Community data node is not set up yet${d.packName ? ` (${d.packName})` : ""} — open the node and pick the pack and the data shape, or delete it. As it stands it does nothing.`,
+                    );
+                }
+            }
+            if (n.type === "pack.node") {
+                const d = n.data as { packName?: string; nodeLabel?: string; nodeId?: string };
+                if (!d.nodeId) {
+                    warnings.push(
+                        `${q.title || q.name}: a Community node is not set up yet${d.packName ? ` (${d.packName})` : ""} — add it again from the palette's Editor Mods group, or delete it. As it stands it does nothing.`,
+                    );
+                }
             }
         }
     }

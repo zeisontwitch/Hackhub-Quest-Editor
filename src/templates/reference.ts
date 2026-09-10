@@ -119,6 +119,19 @@ export const EXAMPLES: Partial<Record<NodeType, Record<string, unknown>>> = {
         ],
         values: { target: "10.0.0.14", path: "/var/log/manifest-14.txt", data: "CONTAINER MSKU-4471 — 14th, 02:40 — sealed, unsigned." },
     },
+    "pack.node": {
+        packId: "example-tools",
+        packName: "Example Tools",
+        packVersion: "1.0.0",
+        gameModName: "Example Tools",
+        nodeId: "example-tools/breach-ping",
+        nodeLabel: "Announce the handover",
+        emitter: "emit",
+        eventName: "ExampleTools.Handover.Done",
+        payload: { target: "{{target}}" },
+        fields: [{ key: "target", label: "Host or IP", type: "string" }],
+        values: { target: "10.0.0.14" },
+    },
     "comms.dialogue": {
         kind: "kisscord",
         kisscord: {

@@ -43,6 +43,7 @@ WifiNodeDataSchema,
     RerouteNodeDataSchema,
     LayoutGroupNodeDataSchema,
     PackDataNodeDataSchema,
+    PackNodeDataSchema,
     type NodeDoc,
     type NodeType,
 } from "./nodes";
@@ -344,6 +345,9 @@ export interface NodeTypeDef {
     hook: "onStart" | "onObjectivesStart" | "onComplete" | "onAbandon" | "declarative";
     fields: FieldDef[];
     create: () => NodeDoc["data"];
+    /** Extra data merged over `create()` when the palette or the add-node
+        search adds this def (pack nodes: the pack snapshot). */
+    addData?: Record<string, unknown>;
 }
 
 /** Parse a seed through a schema so every `.default()` is materialised. */
@@ -690,6 +694,22 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
            tool packs, not from a static list. */
         fields: [],
         create: () => seed(PackDataNodeDataSchema),
+    },
+
+    "pack.node": {
+        type: "pack.node",
+        category: "community",
+        label: "Community node",
+        blurb: "A node a tool pack provides",
+        icon: "package",
+        ...io,
+        hook: "onStart",
+        /* No registry fields: the form comes from the pack (snapshotted in
+           the node's data) and is rendered by PackNodeEditor — the pack
+           author's labels ARE the interface. The palette's copy of this
+           def carries the per-node label and the addData snapshot. */
+        fields: [],
+        create: () => seed(PackNodeDataSchema),
     },
 
     "world.toolResponse": {

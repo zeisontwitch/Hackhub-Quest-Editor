@@ -243,7 +243,49 @@ var __QE = (function () {
         } catch (e) { /* fall through to the timeout below */ }
         return new Promise(function (res) { setTimeout(res, ms); });
     }
-    return { getPath: getPath, fill: fill, htmlToText: htmlToText, matchAll: matchAll, matchInput: matchInput, sleep: sleep, seq: seq, describe: describe, wait: wait, ageStringFromDate: ageStringFromDate, safe: safe, log: log };
+    /* Community packs (r137/r138): substitute a pack template's "{{field}}"
+       holes with the author's form answers, then resolve story tokens, then
+       parse. String holes splice with JSON escaping but NO surrounding quotes
+       (the hole already sits inside a JSON string); a number/boolean hole
+       fills raw when it is the whole value, else as text. */
+    function packText(scope, fields, values, text) {
+        var t = String(text == null ? "" : text);
+        (fields || []).forEach(function (f) {
+            var v = (values || {})[f.key];
+            if (v === undefined || v === null) return;
+            t = t.split("{{" + f.key + "}}").join(String(v));
+        });
+        return fill(t, scope);
+    }
+    function packFill(scope, fields, values, template) {
+        var json = JSON.stringify(template == null ? {} : template);
+        (fields || []).forEach(function (f) {
+            var v = (values || {})[f.key];
+            if (v === undefined || v === null) return;
+            var out;
+            if (f.type === "number") {
+                out = String(Number(v));
+                if (out === "NaN") out = "0";
+            } else if (f.type === "boolean") {
+                out = v === "true" ? "true" : "false";
+            } else {
+                out = JSON.stringify(String(v)).slice(1, -1);
+            }
+            var hole = "{{" + f.key + "}}";
+            if (f.type !== "string" && f.type !== "text") {
+                /* A number or boolean fills its hole raw - but only when the
+                   hole IS the whole value; the template's quotes would turn
+                   "8080" into a string. Embedded holes splice as text. */
+                var whole = JSON.stringify(hole);
+                if (json.indexOf(whole) !== -1) json = json.split(whole).join(out);
+                else json = json.split(hole).join(out);
+            } else {
+                json = json.split(hole).join(out);
+            }
+        });
+        return JSON.parse(fill(json, scope));
+    }
+    return { getPath: getPath, fill: fill, packText: packText, packFill: packFill, htmlToText: htmlToText, matchAll: matchAll, matchInput: matchInput, sleep: sleep, seq: seq, describe: describe, wait: wait, ageStringFromDate: ageStringFromDate, safe: safe, log: log };
 })();
 
 function __qeRegisterProject(sdk, PROJECT) {
@@ -1194,39 +1236,11 @@ function __qeRegisterProject(sdk, PROJECT) {
                        any story tokens ({{data.targetIp}}) left in the values,
                        and only then is the JSON parsed - so a malformed
                        template fails here, inside our own try, instead of
-                       taking the quest down. String holes are spliced with
-                       JSON escaping but NO surrounding quotes: in the
-                       template the hole already sits inside a JSON string,
-                       alone ("{{target}}") or embedded ("{{data}}\\n"). */
+                       taking the quest down. The substitution itself is the
+                       shared __QE.packFill helper (see the QE runtime). */
                     if (sdk.SharedStorage && sdk.SharedStorage.set && d.storageKey) {
                         __QE.safe(function () {
-                            var json = JSON.stringify(d.entry == null ? {} : d.entry);
-                            (d.fields || []).forEach(function (f) {
-                                var v = (d.values || {})[f.key];
-                                if (v === undefined || v === null) return;
-                                var out;
-                                var hole = "{{" + f.key + "}}";
-                                if (f.type === "number") {
-                                    out = String(Number(v));
-                                    if (out === "NaN") out = "0";
-                                } else if (f.type === "boolean") {
-                                    out = v === "true" ? "true" : "false";
-                                } else {
-                                    out = JSON.stringify(String(v)).slice(1, -1);
-                                }
-                                if (f.type !== "string" && f.type !== "text") {
-                                    /* A number or boolean fills its hole raw - but
-                                       only when the hole IS the whole value; the
-                                       template's quotes would turn "8080" into a
-                                       string. Embedded holes splice as text. */
-                                    var whole = JSON.stringify(hole);
-                                    if (json.indexOf(whole) !== -1) json = json.split(whole).join(out);
-                                    else json = json.split(hole).join(out);
-                                } else {
-                                    json = json.split(hole).join(out);
-                                }
-                            });
-                            var entry = JSON.parse(__QE.fill(json, scope));
+                            var entry = __QE.packFill(scope, d.fields, d.values, d.entry == null ? {} : d.entry);
                             if (d.merge === "overwrite") {
                                 sdk.SharedStorage.set(d.storageKey, entry);
                             } else {
@@ -1243,6 +1257,70 @@ function __qeRegisterProject(sdk, PROJECT) {
                             __QE.log("Community data set: " + d.storageKey);
                         });
                     }
+                    return next();
+                }
+                case "pack.node": {
+                    /* Community nodes (r138): a pack-authored node is a
+                       declarative emitter - pure config snapshotted into the
+                       node, interpreted here. Four emitters over one shared
+                       template filler (__QE.packFill / __QE.packText), the
+                       whole thing inside __QE.safe so a malformed template
+                       can never take the quest down. */
+                    __QE.safe(function () {
+                        var flds = d.fields || [];
+                        var vals = d.values || {};
+                        if (d.emitter === "storage" && sdk.SharedStorage && sdk.SharedStorage.set && d.storageKey) {
+                            var pkEntry = __QE.packFill(scope, flds, vals, d.entry == null ? {} : d.entry);
+                            if (d.merge === "overwrite") {
+                                sdk.SharedStorage.set(d.storageKey, pkEntry);
+                            } else {
+                                var pkCur = sdk.SharedStorage.get ? sdk.SharedStorage.get(d.storageKey) : null;
+                                var pkList = Array.isArray(pkCur) ? pkCur.slice() : [];
+                                if (d.mergeBy) {
+                                    pkList = pkList.filter(function (x) {
+                                        return !x || x[d.mergeBy] !== pkEntry[d.mergeBy];
+                                    });
+                                }
+                                pkList.push(pkEntry);
+                                sdk.SharedStorage.set(d.storageKey, pkList);
+                            }
+                            __QE.log("Community data set: " + d.storageKey);
+                        }
+                        if (d.emitter === "emit" && sdk.Events && sdk.Events.emit && d.eventName) {
+                            sdk.Events.emit(
+                                __QE.packText(scope, flds, vals, d.eventName),
+                                __QE.packFill(scope, flds, vals, d.payload == null ? {} : d.payload),
+                            );
+                            __QE.log("Community event fired: " + d.eventName);
+                        }
+                        if (d.emitter === "commandData" && sdk.Shell && sdk.Shell.addCommandData && d.command) {
+                            var pkCmd = __QE.packText(scope, flds, vals, d.command);
+                            var pkInput = __QE.packText(scope, flds, vals, d.input || "");
+                            /* Scripted answers live in the SAVE: clear the old
+                               one first, exactly like world.toolResponse. */
+                            if (sdk.Shell.removeCommandData) sdk.Shell.removeCommandData(pkCmd, pkInput);
+                            sdk.Shell.addCommandData(pkCmd, pkInput, __QE.packFill(scope, flds, vals, d.data == null ? {} : d.data));
+                            __QE.log("Community tool answer placed: " + d.command);
+                        }
+                        if (d.emitter === "sdk" && (d.steps || []).length) {
+                            (d.steps || []).forEach(function (s) {
+                                var parts = String(s.call || "").split(".");
+                                var obj = sdk;
+                                for (var i = 0; i < parts.length - 1 && obj; i++) obj = obj[parts[i]];
+                                var method = obj ? obj[parts[parts.length - 1]] : null;
+                                if (typeof method !== "function") {
+                                    __QE.log("Community node: the SDK has no " + s.call + " - skipped");
+                                    return;
+                                }
+                                var args = (s.args || []).map(function (a) {
+                                    return typeof a === "string"
+                                        ? __QE.packText(scope, flds, vals, a)
+                                        : __QE.packFill(scope, flds, vals, a);
+                                });
+                                method.apply(obj, args);
+                            });
+                        }
+                    });
                     return next();
                 }
                 case "comms.dialogue": {

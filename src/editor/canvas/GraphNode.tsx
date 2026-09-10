@@ -35,6 +35,8 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
     const doc = data.doc;
     const issue = data.issue;
     const def = nodeTypeDef(doc.type);
+    /* Pack nodes carry their own label (the pack author's words). */
+    const nodeLabel = doc.type === "pack.node" ? String((doc.data as { nodeLabel?: string }).nodeLabel ?? "") : "";
     const sources = useMemo(() => sourcesOf(doc), [doc]);
     const category = categoryOf(doc.type);
     const quest = useEditor(selectActiveQuest);
@@ -391,7 +393,7 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
                 </span>
                 <div className="min-w-0 flex-1">
                     <div className="truncate text-[12.5px] leading-tight font-semibold text-ink">
-                        {def.label}
+                        {doc.type === "pack.node" && nodeLabel ? nodeLabel : def.label}
                     </div>
                 </div>
             </div>

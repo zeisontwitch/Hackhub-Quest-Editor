@@ -2077,10 +2077,11 @@ describe("objectives the player completes by playing", () => {
 /**
  * Third-party event contracts (r135 investigation). The trigger node's event
  * field is free-form by design ("a key of the SDK's ModEventMap, or a custom
- * event name") — community tool mods like Recon-NG emit their own events
- * (ReconNg.Breach.*), and a quest must be able to complete objectives from
- * them without the editor knowing the vocabulary. Pinned end to end with
- * recon-ng's documented payload shapes.
+ * event name") — community tool mods (exploitation frameworks, recon suites)
+ * emit their own namespaced events, and a quest must be able to complete
+ * objectives from them without the editor knowing the vocabulary. Pinned end
+ * to end with a payload shaped like the ones such tools document
+ * (sessionId/ip/host/path/...).
  */
 describe("objectives driven by third-party (community tool) events", () => {
     function questWithCustomTrigger() {
@@ -2089,7 +2090,7 @@ describe("objectives driven by third-party (community tool) events", () => {
         q.autoStart = true;
         const obj = node("objective", { name: "recover-config", description: "Recover the config" });
         const trig = node("trigger.event", {
-            event: "ReconNg.Breach.FileDownloaded",
+            event: "Toolkit.Breach.FileDownloaded",
             conditions: [{ id: "c1", join: "and", field: "path", op: "contains", value: "config.env" }],
         });
         q.graph.nodes = [obj, trig];
@@ -2097,7 +2098,7 @@ describe("objectives driven by third-party (community tool) events", () => {
         return compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content;
     }
 
-    it("completes an objective from a ReconNg.Breach.* event", async () => {
+    it("completes an objective from a third-party tool event", async () => {
         const calls: string[] = [];
         const sdk = stubSdk(calls, []) as any;
         runMod(questWithCustomTrigger(), sdk);
@@ -2111,8 +2112,8 @@ describe("objectives driven by third-party (community tool) events", () => {
         q.completeObjective = (name: string) => calls.push(`completeObjective:${name}`);
         q.OnObjectivesStart();
 
-        // recon-ng's documented payload shape (its own docs' quest example).
-        listeners["ReconNg.Breach.FileDownloaded"]!.forEach((f) =>
+        // The tool's documented payload shape (sessionId, host, path, ...).
+        listeners["Toolkit.Breach.FileDownloaded"]!.forEach((f) =>
             f({ sessionId: "s1", ip: "203.0.113.50", host: "demo-target.example", path: "/var/www/config.env", name: "config.env", localPath: "config.env" }),
         );
         await settle();
@@ -2120,7 +2121,7 @@ describe("objectives driven by third-party (community tool) events", () => {
 
         // A download that is not the quest file ticks nothing.
         calls.length = 0;
-        listeners["ReconNg.Breach.FileDownloaded"]!.forEach((f) =>
+        listeners["Toolkit.Breach.FileDownloaded"]!.forEach((f) =>
             f({ sessionId: "s2", ip: "203.0.113.50", host: "demo-target.example", path: "/etc/hostname", name: "hostname" }),
         );
         await settle();
@@ -2131,7 +2132,7 @@ describe("objectives driven by third-party (community tool) events", () => {
         const sdk = stubSdk([], []) as any;
         runMod(questWithCustomTrigger(), sdk);
         const q = new (registered0(sdk).quests[0])();
-        expect(q.Objectives[0].trigger.event).toBe("ReconNg.Breach.FileDownloaded");
+        expect(q.Objectives[0].trigger.event).toBe("Toolkit.Breach.FileDownloaded");
         expect(q.Objectives[0].trigger.condition({ path: "/var/www/config.env" })).toBe(true);
         expect(q.Objectives[0].trigger.condition({ path: "/etc/hostname" })).toBe(false);
     });

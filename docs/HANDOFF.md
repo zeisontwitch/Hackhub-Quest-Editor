@@ -267,7 +267,7 @@ wants the *specific action* named.
    [`r135 design v2`](plans/r135-tool-packs-design.md)): the zero-code half
    shipped in r135 — free-form trigger events pinned end-to-end against a
    community tool's documented payloads (a quest objective completes on
-   `ReconNg.Breach.FileDownloaded`), and the Community tools Cookbook card.
+   a third-party tool event), and the Community tools Cookbook card.
    The pack format is reshaped around the validated rails — events /
    SharedStorage contracts / target-rule lints / command data — and capped
    by Zeis's Editor Mods vision: community-authored nodes in their own

@@ -14,7 +14,8 @@ import { CATEGORY_HEX, categoryOf } from "@/schema/registry";
 import type { NodeType } from "@/schema/nodes";
 import type { EdgeKind } from "@/schema/edges";
 import { allNodeTypes, moveHighlight, searchNodeTypes, typesAcceptingWire } from "./nodeSearch";
-import { packNodeDefs, usePacks } from "@/store/packs";
+import { usePacks } from "@/store/packs";
+import { packNodeDefs, paletteDefKey } from "@/toolpacks/palette";
 import {
     POPOVER_INPUT_HEIGHT,
     POPOVER_ROW_HEIGHT,
@@ -174,9 +175,7 @@ export function NodeSearchPopover({ at, wire, onPick, onClose }: NodeSearchPopov
                     role="combobox"
                     aria-expanded
                     aria-controls="qe-node-search-list"
-                    aria-activedescendant={
-                        results.length > 0 ? `qe-node-option-${highlight}` : undefined
-                    }
+                    aria-activedescendant={results.length > 0 ? `qe-node-option-${highlight}` : undefined}
                     autoComplete="off"
                     spellCheck={false}
                     className="w-full bg-transparent text-[12.5px] text-ink outline-none placeholder:text-ink-4"
@@ -184,9 +183,7 @@ export function NodeSearchPopover({ at, wire, onPick, onClose }: NodeSearchPopov
             </div>
 
             {results.length === 0 ? (
-                <div className="px-3 py-3 text-[12px] text-ink-4">
-                    No nodes match “{query.trim()}”.
-                </div>
+                <div className="px-3 py-3 text-[12px] text-ink-4">No nodes match “{query.trim()}”.</div>
             ) : (
                 <div
                     id="qe-node-search-list"
@@ -201,7 +198,7 @@ export function NodeSearchPopover({ at, wire, onPick, onClose }: NodeSearchPopov
                         const active = i === highlight;
                         return (
                             <button
-                                key={def.type}
+                                key={paletteDefKey(def)}
                                 id={`qe-node-option-${i}`}
                                 data-index={i}
                                 type="button"

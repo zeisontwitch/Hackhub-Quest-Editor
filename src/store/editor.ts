@@ -596,8 +596,8 @@ export const useEditor = create<EditorStore>()((set, get) => {
             );
             set({
                 clipboard: {
-                    nodes: JSON.parse(JSON.stringify(nodes)),
-                    edges: JSON.parse(JSON.stringify(edges)),
+                    nodes: clone(nodes),
+                    edges: clone(edges),
                 },
             });
         },
@@ -619,7 +619,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
                 const id = nanoid(10);
                 idMap.set(n.id, id);
                 return {
-                    ...JSON.parse(JSON.stringify(n)),
+                    ...clone(n),
                     id,
                     position: { x: n.position.x + 32, y: n.position.y + 32 },
                 } as NodeDoc;
@@ -627,7 +627,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
             const edges = clipboard.edges.map(
                 (e) =>
                     ({
-                        ...JSON.parse(JSON.stringify(e)),
+                        ...clone(e),
                         id: nanoid(10),
                         source: idMap.get(e.source)!,
                         target: idMap.get(e.target)!,

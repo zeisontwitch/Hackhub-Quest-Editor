@@ -13,7 +13,8 @@ import { Icon } from "@/components/Icon";
 import { CONDITION_OPS, CONDITION_OP_LABELS, UNARY_OPS, type ConditionClause } from "@/schema/nodes";
 import { RUNTIME_TOKENS } from "@/schema/common";
 import { eventFields, isPrimitivePayload } from "@/schema/events";
-import { packEventByName, usePacks } from "@/store/packs";
+import { usePacks } from "@/store/packs";
+import { packEventByName } from "@/toolpacks/palette";
 import { SelectInput, TextInput } from "./primitives";
 
 const OP_OPTIONS = CONDITION_OPS.map((op) => ({ value: op, label: CONDITION_OP_LABELS[op] }));
@@ -70,10 +71,7 @@ export function ConditionsEditor({
             {value.map((clause, index) => {
                 const unary = UNARY_OPS.includes(clause.op);
                 return (
-                    <div
-                        key={clause.id}
-                        className="rounded-md border border-line bg-surface-2/50 p-2"
-                    >
+                    <div key={clause.id} className="rounded-md border border-line bg-surface-2/50 p-2">
                         <div className="mb-1.5 flex items-center gap-1.5">
                             {index === 0 ? (
                                 <span className="w-[42px] text-[10px] font-semibold tracking-wider text-ink-4 uppercase">
@@ -83,9 +81,7 @@ export function ConditionsEditor({
                                 <select
                                     aria-label={`Join condition ${index + 1}`}
                                     value={clause.join}
-                                    onChange={(e) =>
-                                        update(index, { join: e.target.value as "and" | "or" })
-                                    }
+                                    onChange={(e) => update(index, { join: e.target.value as "and" | "or" })}
                                     className="h-5 w-[42px] rounded border border-line bg-surface-3 px-1 text-[10px] font-semibold tracking-wider text-ink-3 uppercase"
                                 >
                                     <option value="and">and</option>
@@ -141,12 +137,7 @@ export function ConditionsEditor({
                                 />
                             </div>
 
-                            {!unary && (
-                                <ValueInput
-                                    value={clause.value}
-                                    onChange={(v) => update(index, { value: v })}
-                                />
-                            )}
+                            {!unary && <ValueInput value={clause.value} onChange={(v) => update(index, { value: v })} />}
                         </div>
                     </div>
                 );
@@ -176,9 +167,7 @@ function FieldCombobox({
         return (
             <div className="flex items-center gap-1.5 rounded border border-line bg-surface-2 px-2 py-1">
                 <Icon name="info" size={11} className="shrink-0 text-ink-4" />
-                <span className="text-[11px] text-ink-3">
-                    the event value
-                </span>
+                <span className="text-[11px] text-ink-3">the event value</span>
             </div>
         );
     }
@@ -188,13 +177,7 @@ function FieldCombobox({
     return (
         <div className="flex items-center gap-1.5">
             <div className="relative flex-1">
-                <TextInput
-                    ariaLabel="Event detail"
-                    value={value}
-                    onChange={onChange}
-                    placeholder="detail name"
-                    mono
-                />
+                <TextInput ariaLabel="Event detail" value={value} onChange={onChange} placeholder="detail name" mono />
             </div>
             {fields.length > 0 && (
                 <Popover.Root>
@@ -245,13 +228,7 @@ function ValueInput({ value, onChange }: { value: string; onChange: (v: string) 
     return (
         <div className="flex items-start gap-1.5">
             <div className="flex-1">
-                <TextInput
-                    ariaLabel="Value to compare"
-                    value={value}
-                    onChange={onChange}
-                    placeholder="value"
-                    mono
-                />
+                <TextInput ariaLabel="Value to compare" value={value} onChange={onChange} placeholder="value" mono />
             </div>
             <Popover.Root>
                 <Popover.Trigger asChild>

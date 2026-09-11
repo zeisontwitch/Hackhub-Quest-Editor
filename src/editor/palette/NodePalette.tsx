@@ -8,7 +8,8 @@ import { cn } from "@/lib/cn";
 import { Icon } from "@/components/Icon";
 import { paletteGroups, type NodeTypeDef } from "@/schema/registry";
 import { useEditor } from "@/store/editor";
-import { packNodeDefs, usePacks } from "@/store/packs";
+import { usePacks } from "@/store/packs";
+import { packNodeDefs, paletteDefKey } from "@/toolpacks/palette";
 import { DND_MIME } from "@/editor/canvas/QuestCanvas";
 
 const GROUPS = paletteGroups();
@@ -95,23 +96,25 @@ export function NodePalette() {
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
         if (!q) return allGroups;
-        return allGroups.map((g) => ({
-            ...g,
-            types: g.types.filter(
-                (t) =>
-                    t.label.toLowerCase().includes(q) ||
-                    t.blurb.toLowerCase().includes(q) ||
-                    t.type.toLowerCase().includes(q),
-            ),
-        })).filter((g) => g.types.length > 0);
-    }, [query]);
+        return allGroups
+            .map((g) => ({
+                ...g,
+                types: g.types.filter(
+                    (t) =>
+                        t.label.toLowerCase().includes(q) ||
+                        t.blurb.toLowerCase().includes(q) ||
+                        t.type.toLowerCase().includes(q),
+                ),
+            }))
+            .filter((g) => g.types.length > 0);
+    }, [query, allGroups]);
 
     if (collapsed) {
         return (
             <div
-            aria-label="Node library"
-            className="flex w-10 shrink-0 flex-col items-center gap-2 border-r border-line bg-surface py-2"
-        >
+                aria-label="Node library"
+                className="flex w-10 shrink-0 flex-col items-center gap-2 border-r border-line bg-surface py-2"
+            >
                 <button
                     type="button"
                     className="btn-icon"
@@ -132,10 +135,7 @@ export function NodePalette() {
     }
 
     return (
-        <aside
-            aria-label="Node library"
-            className="flex w-60 shrink-0 flex-col border-r border-line bg-surface"
-        >
+        <aside aria-label="Node library" className="flex w-60 shrink-0 flex-col border-r border-line bg-surface">
             <div className="panel-header justify-between">
                 <span>Nodes</span>
                 <button
@@ -168,23 +168,17 @@ export function NodePalette() {
 
             <div className="flex-1 overflow-y-auto px-1.5 py-2">
                 {filtered.length === 0 && (
-                    <p className="px-2 py-6 text-center text-[11.5px] text-ink-4">
-                        Nothing matches “{query}”.
-                    </p>
+                    <p className="px-2 py-6 text-center text-[11.5px] text-ink-4">Nothing matches “{query}”.</p>
                 )}
                 {filtered.map((group) => (
                     <section key={group.category.label} className="mb-3">
                         <h3 className="flex items-center gap-1.5 px-2 pb-1 text-[10px] font-semibold tracking-wider text-ink-4 uppercase">
-                            <span
-                                className="size-1.5 rounded-full"
-                                style={{ background: group.category.color }}
-                                aria-hidden
-                            />
+                            <span className="size-1.5 rounded-full" style={{ background: group.category.color }} aria-hidden />
                             {group.category.label}
                         </h3>
                         <div className="space-y-px">
                             {group.types.map((def) => (
-                                <PaletteItem key={def.type} def={def} />
+                                <PaletteItem key={paletteDefKey(def)} def={def} />
                             ))}
                         </div>
                     </section>

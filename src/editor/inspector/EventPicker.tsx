@@ -20,15 +20,10 @@ import {
     payloadFields,
 } from "@/schema/events";
 import { eventDoc } from "@/schema/eventDocs";
-import { packEventByName, packEvents, usePacks } from "@/store/packs";
+import { usePacks } from "@/store/packs";
+import { packEventByName, packEvents } from "@/toolpacks/palette";
 
-export function EventPicker({
-    value,
-    onChange,
-}: {
-    value: string;
-    onChange: (value: string) => void;
-}) {
+export function EventPicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState("");
     const packs = usePacks((s) => s.packs);
@@ -63,7 +58,7 @@ export function EventPicker({
                 ),
             }))
             .filter((g) => g.events.length > 0);
-    }, [query, community]);
+    }, [query, community, packLabel]);
 
     const selected = value ? getEvent(value) : undefined;
     const packEv = value ? packEventByName(packs, value) : undefined;
@@ -78,12 +73,8 @@ export function EventPicker({
                             <span className="text-ink-4">Choose an event…</span>
                         ) : (
                             <>
-                                <span className="block truncate text-[12px] text-ink">
-                                    {humanEventName(value)}
-                                </span>
-                                <span className="block truncate font-mono text-[10.5px] text-ink-4">
-                                    {value}
-                                </span>
+                                <span className="block truncate text-[12px] text-ink">{humanEventName(value)}</span>
+                                <span className="block truncate font-mono text-[10.5px] text-ink-4">{value}</span>
                             </>
                         )}
                     </span>
@@ -123,9 +114,7 @@ export function EventPicker({
 
                     <div className="max-h-[320px] overflow-y-auto py-1">
                         {groups.length === 0 && (
-                            <p className="px-3 py-6 text-center text-[11.5px] text-ink-4">
-                                No event matches “{query}”.
-                            </p>
+                            <p className="px-3 py-6 text-center text-[11.5px] text-ink-4">No event matches “{query}”.</p>
                         )}
                         {groups.map((group) => (
                             <section key={group.group} className="mb-1">
@@ -149,12 +138,8 @@ export function EventPicker({
                                         <span className="block truncate text-[12px] text-ink">
                                             {packLabel.get(event.name) ?? humanEventName(event.name)}
                                         </span>
-                                        <span className="block truncate font-mono text-[10.5px] text-ink-4">
-                                            {event.name}
-                                        </span>
-                                        <span className="truncate font-mono text-[10px] text-ink-4">
-                                            {event.payload}
-                                        </span>
+                                        <span className="block truncate font-mono text-[10.5px] text-ink-4">{event.name}</span>
+                                        <span className="truncate font-mono text-[10px] text-ink-4">{event.payload}</span>
                                     </button>
                                 ))}
                             </section>
@@ -179,8 +164,8 @@ export function EventPicker({
 
             {isCustom && (
                 <p className="field-hint">
-                    Advanced: a custom event isn't in the game yet — you (or another mod)
-                    must trigger it from a website, app or terminal command with
+                    Advanced: a custom event isn't in the game yet — you (or another mod) must trigger it from a website, app or
+                    terminal command with
                     <code className="mx-1 rounded bg-surface-2 px-1 font-mono text-[10px]">
                         HackhubSDK.Events.emit("{value}")
                     </code>
@@ -209,15 +194,13 @@ function EventPackExplanation({
         <>
             {ev.docs && <p className="field-hint">{ev.docs}</p>}
             <p className="field-hint">
-                Fired by the <strong>{ev.packName}</strong> tool mod. A quest that waits on this
-                event needs <strong>{ev.gameModName}</strong> installed on the player&apos;s
-                machine — say so in the quest description.
+                Fired by the <strong>{ev.packName}</strong> tool mod. A quest that waits on this event needs{" "}
+                <strong>{ev.gameModName}</strong> installed on the player&apos;s machine — say so in the quest description.
             </p>
             <p className="field-hint">
                 {ev.fields.length > 0 ? (
                     <>
-                        Narrow it down with:{" "}
-                        <code className="font-mono text-[10px] text-ink-3">{ev.fields.join(", ")}</code>
+                        Narrow it down with: <code className="font-mono text-[10px] text-ink-3">{ev.fields.join(", ")}</code>
                     </>
                 ) : (
                     "It carries no details to test against."

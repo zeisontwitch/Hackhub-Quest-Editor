@@ -47,8 +47,8 @@ export function PackDataEditor({ node }: { node: NodeOfType<"world.packData"> })
             storageKey: c?.key ?? "",
             merge: c?.merge ?? "replace",
             mergeBy: c?.mergeBy,
-            entry: c?.entry ? JSON.parse(JSON.stringify(c.entry)) : undefined,
-            fields: c?.fields ? JSON.parse(JSON.stringify(c.fields)) : [],
+            entry: c?.entry ? structuredClone(c.entry) : undefined,
+            fields: c?.fields ? structuredClone(c.fields) : [],
             values: {},
         });
     };

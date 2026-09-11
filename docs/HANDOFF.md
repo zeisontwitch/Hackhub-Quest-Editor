@@ -1,4 +1,34 @@
-# Handoff — r138
+# Handoff — r139
+
+r139 is a **Clean Code & Architecture pass** over the rail r137+r138 built
+(plan: [plans/r139-clean-code-architecture.md](plans/r139-clean-code-architecture.md)).
+No new feature — it pays the debt the pack system introduced:
+
+- **Duplicate React keys**: `pack.node` has one `NodeType` for many palette
+  entries. Both the palette and the add-node search used `def.type` as the key,
+  so every pack node shared `pack.node`. Fixed with `paletteDefKey` — pack nodes
+  key by `nodeId` (`<packId>/<nodeId>`), static nodes by type. The vitest
+  warning "Encountered two children with the same key, `pack.node`" is gone.
+- **`computeWarnings` split**: was one 300-line function doing 15 jobs (F1/F2).
+  Now eight focused helpers (`warnUnstartableQuests`, `warnFirewallAndPort`,
+  `warnNetworkStructure`, `warnToolResponse`, `warnHandbook`, `warnWifi`,
+  `warnDialogue`, `warnCommunityNodes`, `warnWebsites`) plus an orchestrator.
+- **Permission map**: `computePermissions` was an ungoverned `switch` (AR3
+  anti-pattern) that missed `pack.node` entirely — a pack node emitting
+  `Events.emit` compiled with no permission (AR17). Now `PERMISSIONS_BY_NODE_TYPE`
+  is the single source of truth, and `permissionsForPackNode` inspects the
+  snapshot's emitter (`emit` → events, `commandData` → shell, `sdk` steps parsed
+  by prefix).
+- **DRY clones**: `JSON.parse(JSON.stringify(...))` appeared four times in
+  `packNodeDefs` and twice in the editor store's clipboard. Replaced with
+  `structuredClone` via `deepClone` / existing `clone` helper (A3).
+- **Module boundaries**: pure pack helpers (`packNodeDefs`, `packEvents`,
+  `packEventByName`, `paletteDefKey`) moved from `store/packs.ts` (persistence)
+  to `toolpacks/palette.ts` (feature folder) — AR5 cut by feature, AR6 explicit
+  boundaries. `store/packs.ts` now only persists and re-exports for compat;
+  UI imports from `toolpacks/palette.ts`.
+
+Gates: typecheck 0, 1,316 tests green, build clean, duplicate-key warning gone.
 
 r138 shipped **Editor Mods** (design:
 [plans/r135-tool-packs-design.md](plans/r135-tool-packs-design.md), plan:
@@ -92,25 +122,28 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r138 (Editor Mods) on
-  `arena/01a08809-hackhub-quest-editor`, committed and pushed. Previous
-  rounds: r137 (tool packs, first rail), r136 (campaign template), `423569f`
-  (r130). (A sandbox reset rolled local history back to `c0e511f` mid-r129,
-  and again mid-r134 — that time taking node_modules with it; recovered both
-  times from the remote tip per the standing fetch-first rule (mid-r134
-  addendum: rescue the round's uncommitted files with plain copies BEFORE
-  `reset --hard`), then `npm ci`. The remote is authoritative.)
+- **HEAD:** r139 (Clean Code & Architecture) on
+  `arena/01a08fa5-hackhub-quest-editor`, not yet pushed. Previous
+  rounds: r138 (Editor Mods), r137 (tool packs, first rail), r136 (campaign
+  template), `423569f` (r130). (A sandbox reset rolled local history back to
+  `c0e511f` mid-r129, and again mid-r134 — that time taking node_modules with
+  it; recovered both times from the remote tip per the standing fetch-first
+  rule (mid-r134 addendum: rescue the round's uncommitted files with plain
+  copies BEFORE `reset --hard`), then `npm ci`. The remote is authoritative.)
 - **1,316 tests green** across 61 files, typecheck clean, build clean, and —
   since the r138 prep rider — **vitest exits 0**: the 4 long-standing
   unhandled d3-drag errors were diagnosed as load-bearing jsdom noise (they
   aborted every canvas drag handler mid-gesture; four selection-gesture
   tests had been passing *because of* the crash) and fixed in
   `vitest.setup.ts` by giving MouseEvents the view a real browser would.
-- **Editor build stamp:** `2026-09-13.r138`.
+  r139 also cleared the `pack.node` duplicate-key React warning.
+- **Editor build stamp:** `2026-09-13.r139`.
 - Tool-pack modules: `src/toolpacks/schema.ts` (format 2 + plain-language
-  `parseToolPack`), `src/store/packs.ts` (machine-local zustand store, own
+  `parseToolPack`), `src/toolpacks/palette.ts` (pure `packNodeDefs`,
+  `packEvents`, `packEventByName`, `paletteDefKey` — the synthesized palette
+  defs, no store), `src/store/packs.ts` (machine-local zustand store, own
   localStorage key `hackhub-quest-editor:packs:v1` — NOT in the project doc;
-  also `packNodeDefs`, the synthesized palette defs),
+  re-exports helpers for compat),
   `src/toolpacks/ToolPackManagerDialog.tsx`, the `world.packData` and
   `pack.node` nodes with their dedicated editors (`PackDataEditor.tsx`,
   `PackNodeEditor.tsx`), and the emission cases in
@@ -331,10 +364,12 @@ wants the *specific action* named.
    plain-language validation, community events in the trigger picker,
    SharedStorage contract forms, **Editor Mods** (pack-authored palette
    nodes with declarative emitters — one generic `pack.node` type, four
-   emitters, snapshot portability), starter pack + format spec. **Remaining:
-   the target-rule surfaces** (`targetRules` is parsed and carried; no
-   quest-facing lint reads it yet — deliberately deferred until a real
-   second pack exists to design against, per the design's "deliberately
+   emitters, snapshot portability), starter pack + format spec. **r139**
+   cleaned up the debt that rail left (duplicate keys, giant warning
+   function, permission gap for pack nodes, clone DRY, module boundaries).
+   **Remaining: the target-rule surfaces** (`targetRules` is parsed and
+   carried; no quest-facing lint reads it yet — deliberately deferred until a
+   real second pack exists to design against, per the design's "deliberately
    open" list). The campaign template and the Campaign card are DONE (r136).
    The **Kisscord contact lifecycle is parked until the SDK moves** (the
    2026-09-12 patch shipped none).

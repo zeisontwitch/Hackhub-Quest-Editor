@@ -15,7 +15,7 @@
 
 const STORAGE_KEY = "qe.uiFont";
 
-export const UI_FONT_IDS = ["system", "readable", "atkinson", "lexend", "jetbrains"] as const;
+export const UI_FONT_IDS = ["system", "readable", "atkinson", "lexend", "jetbrains", "roboto", "roboto-mono"] as const;
 export type UiFontId = (typeof UI_FONT_IDS)[number];
 
 export interface UiFontDef {
@@ -55,6 +55,18 @@ export const UI_FONTS: readonly UiFontDef[] = [
         id: "jetbrains",
         label: "JetBrains Mono",
         hint: "Monospace — pairs naturally with the Phosphor theme for the full terminal feel.",
+        sample: "The quick brown fox jumps over 13 lazy dogs.",
+    },
+    {
+        id: "roboto",
+        label: "Roboto",
+        hint: "The Android/system-UI standard — neutral, compact and familiar.",
+        sample: "The quick brown fox jumps over 13 lazy dogs.",
+    },
+    {
+        id: "roboto-mono",
+        label: "Roboto Mono",
+        hint: "Monospace with Roboto's skeleton — a slightly rounder terminal face than JetBrains Mono.",
         sample: "The quick brown fox jumps over 13 lazy dogs.",
     },
 ];

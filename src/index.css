@@ -260,6 +260,14 @@ html[data-font="jetbrains"] {
     --font-sans: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+html[data-font="roboto"] {
+    --font-sans: "Roboto", ui-sans-serif, system-ui, sans-serif;
+}
+
+html[data-font="roboto-mono"] {
+    --font-sans: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 @font-face {
     font-family: "Atkinson Hyperlegible";
     src: url("/fonts/atkinson-hyperlegible-latin-400-normal.woff2") format("woff2");
@@ -326,6 +334,62 @@ html[data-font="jetbrains"] {
 @font-face {
     font-family: "JetBrains Mono";
     src: url("/fonts/jetbrains-mono-latin-700-normal.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Roboto";
+    src: url("/fonts/roboto-latin-400-normal.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Roboto";
+    src: url("/fonts/roboto-latin-500-normal.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Roboto";
+    src: url("/fonts/roboto-latin-600-normal.woff2") format("woff2");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Roboto";
+    src: url("/fonts/roboto-latin-700-normal.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Roboto Mono";
+    src: url("/fonts/roboto-mono-latin-400-normal.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Roboto Mono";
+    src: url("/fonts/roboto-mono-latin-500-normal.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Roboto Mono";
+    src: url("/fonts/roboto-mono-latin-600-normal.woff2") format("woff2");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Roboto Mono";
+    src: url("/fonts/roboto-mono-latin-700-normal.woff2") format("woff2");
     font-weight: 700;
     font-style: normal;
     font-display: swap;

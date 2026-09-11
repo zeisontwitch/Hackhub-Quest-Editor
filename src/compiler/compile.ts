@@ -117,7 +117,6 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  */
 export const EDITOR_BUILD = "2026-09-13.r139";
 
-/** A file in the compiled mod folder, with its content as text or base64. */
 export interface CompiledFile {
     path: string;
     content: string;
@@ -134,7 +133,6 @@ function imageAsset(dataUrl: string | undefined, name: string): { file: Compiled
     return { file: { path, content: m[2], base64: true }, path };
 }
 
-/** The result of compiling a project: the mod's files, computed permissions, and author-facing warnings. */
 export interface CompileResult {
     files: CompiledFile[];
     permissions: string[];
@@ -226,12 +224,6 @@ function permissionsForDialogueNode(data: {
     return perms;
 }
 
-/**
- * Compute the least-privilege permission set the exported mod needs: tokens
- * the author typed, permissions each node type declares, and per-node-data
- * inference (pack steps, dialogue kinds, dialog input).  Never widened beyond
- * what the graph actually uses (AR17).
- */
 export function computePermissions(project: ProjectDocument): string[] {
     const perms = new Set<string>();
     for (const p of tokenPermissions(project)) perms.add(p);
@@ -337,77 +329,28 @@ type DeviceNode = {
     ports?: { external?: number; active?: boolean; service?: string; version?: string }[];
 };
 
-/** Services the game treats as login-protected (A8). */
-const LOGIN_SERVICES = ["ssh", "ftp", "telnet", "mysql", "rdp", "smb", "vnc"];
-
-/** Walk a device tree collecting structural issues: orphaned children, stray rules, domain names. */
-function walkDeviceStructure(root: DeviceNode): { orphans: string[]; strays: string[]; domains: string[] } {
-    const orphans: string[] = [];
-    const strays: string[] = [];
-    const domains: string[] = [];
-    const walk = (d: DeviceNode) => {
-        const kind = String(d.type ?? "").toUpperCase();
-        const holds = kind === "ROUTER" || kind === "SPLITTER";
-        const label = d.name || d.ip || "a device";
-        if (!holds && (d.children as unknown[])?.length) orphans.push(`${label} (${kind || "no type"})`);
-        if (kind !== "FIREWALL" && (d.rules as unknown[])?.length) strays.push(`${label} (${kind || "no type"})`);
-        if (d.domainName) domains.push(d.domainName);
-        (d.children ?? []).forEach((c) => walk(c as DeviceNode));
-    };
-    walk(root);
-    return { orphans, strays, domains };
-}
-
-/** Find devices with an open login service but no user accounts. */
-function findLoginlessDevices(root: DeviceNode): string[] {
-    const loginless: string[] = [];
-    const walk = (dv: DeviceNode) => {
-        const kind = String(dv.type ?? "").toUpperCase();
-        if (kind !== "SPLITTER" && kind !== "FIREWALL") {
-            const open = (dv.ports ?? []).filter(
-                (pt) => pt.active !== false && LOGIN_SERVICES.includes(String(pt.service ?? "").toLowerCase()),
-            );
-            if (open.length && !(dv.users ?? []).length) {
-                loginless.push(`${dv.name || dv.ip || "a device"} (port ${open.map((pt) => pt.external).join(", ")})`);
-            }
-        }
-        (dv.children ?? []).forEach((c) => walk(c as DeviceNode));
-    };
-    walk(root);
-    return loginless;
-}
-
-/** Find port version strings that metasploit will reject (letters or fewer than three numbers). */
-function findBadPortVersions(root: DeviceNode): string[] {
-    const bad: string[] = [];
-    const walk = (dv: DeviceNode) => {
-        for (const port of dv.ports ?? []) {
-            const v = String(port.version ?? "").trim();
-            if (!v) continue;
-            const num = v.replace(/^[^0-9]*/, "");
-            if (!num) continue;
-            const parts = num.split(".");
-            const where = `${dv.name || dv.ip || "a device"} port ${port.external ?? "?"}`;
-            if (/[A-Za-z]/.test(num)) {
-                bad.push(`${where} ("${v}") has a letter in the version number`);
-            } else if (parts.length < 3) {
-                bad.push(`${where} ("${v}") has only ${parts.length === 1 ? "one number" : "two numbers"}`);
-            }
-        }
-        (dv.children ?? []).forEach((c) => walk(c as DeviceNode));
-    };
-    walk(root);
-    return bad;
-}
-
 function warnNetworkStructure(project: ProjectDocument): string[] {
     const warnings: string[] = [];
+    const LOGIN_SERVICES = ["ssh", "ftp", "telnet", "mysql", "rdp", "smb", "vnc"];
+
     for (const q of project.quests) {
         for (const n of q.graph.nodes) {
             if (n.type !== "world.network") continue;
-            const device = (n.data as { device?: DeviceNode }).device ?? {};
 
-            const { orphans, strays, domains } = walkDeviceStructure(device);
+            const orphans: string[] = [];
+            const strays: string[] = [];
+            const domains: string[] = [];
+            const walkStructure = (d: DeviceNode) => {
+                const kind = String(d.type ?? "").toUpperCase();
+                const holds = kind === "ROUTER" || kind === "SPLITTER";
+                const label = d.name || d.ip || "a device";
+                if (!holds && (d.children as unknown[])?.length) orphans.push(`${label} (${kind || "no type"})`);
+                if (kind !== "FIREWALL" && (d.rules as unknown[])?.length) strays.push(`${label} (${kind || "no type"})`);
+                if (d.domainName) domains.push(d.domainName);
+                (d.children ?? []).forEach((c) => walkStructure(c as DeviceNode));
+            };
+            walkStructure((n.data as { device?: DeviceNode }).device ?? {});
+
             if (domains.length) {
                 warnings.push(
                     `${q.name}: this network claims the domain ${domains.map((d) => `“${d}”`).join(", ")}. Domain names are shared with the whole game, so if the base game or another installed mod already uses one, that one wins and your server will not answer to it. A name nobody else is likely to pick — something tied to your own story — is the safest choice.`,
@@ -424,14 +367,46 @@ function warnNetworkStructure(project: ProjectDocument): string[] {
                 );
             }
 
-            const loginless = findLoginlessDevices(device);
+            const loginless: string[] = [];
+            const findLoginless = (dv: DeviceNode) => {
+                const kind = String(dv.type ?? "").toUpperCase();
+                if (kind !== "SPLITTER" && kind !== "FIREWALL") {
+                    const open = (dv.ports ?? []).filter(
+                        (pt) => pt.active !== false && LOGIN_SERVICES.includes(String(pt.service ?? "").toLowerCase()),
+                    );
+                    if (open.length && !(dv.users ?? []).length) {
+                        loginless.push(`${dv.name || dv.ip || "a device"} (port ${open.map((pt) => pt.external).join(", ")})`);
+                    }
+                }
+                (dv.children ?? []).forEach((c) => findLoginless(c as DeviceNode));
+            };
+            findLoginless((n.data as { device?: DeviceNode }).device ?? {});
             if (loginless.length) {
                 warnings.push(
                     `${q.name}: ${loginless.join(", ")} has a login service open but no user accounts, so the player cannot break in — metasploit reports “Attack failed. Port 22 could not be accessed.” Add a user to the device, or close the port.`,
                 );
             }
 
-            const badVersions = findBadPortVersions(device);
+            const badVersions: string[] = [];
+            const checkPorts = (dv: DeviceNode) => {
+                for (const port of dv.ports ?? []) {
+                    const v = String(port.version ?? "").trim();
+                    if (!v) continue;
+                    const num = v.replace(/^[^0-9]*/, "");
+                    if (!num) continue;
+                    const parts = num.split(".");
+                    const where = `${dv.name || dv.ip || "a device"} port ${port.external ?? "?"}`;
+                    if (/[A-Za-z]/.test(num)) {
+                        badVersions.push(`${where} ("${v}") has a letter in the version number`);
+                    } else if (parts.length < 3) {
+                        badVersions.push(
+                            `${where} ("${v}") has only ${parts.length === 1 ? "one number" : "two numbers"}`,
+                        );
+                    }
+                }
+                (dv.children ?? []).forEach((c) => checkPorts(c as DeviceNode));
+            };
+            checkPorts((n.data as { device?: DeviceNode }).device ?? {});
             if (badVersions.length) {
                 warnings.push(
                     `${q.name}: ${badVersions.join("; ")}. metasploit needs three numbers (for example "OpenSSH 7.2.0") — it rejects anything else with “Invalid version for option: Version”, and the player cannot run the exploit at all.`,
@@ -492,51 +467,43 @@ function warnWifi(project: ProjectDocument): string[] {
     return warnings;
 }
 
-/** Warn about a single dialogue node's kind-specific issues (F1: one job per helper). */
-function warnDialogueNode(
-    questName: string,
-    node: NodeDoc,
-    hasInput: boolean,
-    isWired: boolean,
-): string[] {
-    const warnings: string[] = [];
-    const d = node.data as {
-        kind: string;
-        mail?: { replyable?: boolean; subject?: string };
-        kisscord?: { messages?: { playerAction?: string }[] };
-    };
-    if (d.kind === "mail" && d.mail?.replyable) {
-        warnings.push(
-            `${questName}: “${d.mail.subject || "a mail"}” lets the player reply, so it is sent through Quest.sendMail — the only path that carries a reply flag. If the Reply button does not appear in game, turn the setting off and give the player a hackertyper reply page instead, which is the route the other templates use.`,
-        );
-    }
-    if (d.kind === "phone" && hasInput) {
-        warnings.push(
-            `${questName}: phone lines with typed answers also register a terminal command (qe-…) the player uses to answer.`,
-        );
-    }
-    const live = (node.data as { postLive?: boolean }).postLive === true;
-    if (live && (d.kind === "kisscord" || d.kind === "weechat")) {
-        warnings.push(
-            isWired
-                ? `${questName}: a conversation set to “play when the story reaches this node” is sent live at that moment. Player replies, uploads and “unlocks after” steps are skipped, and the game does not remove live messages with the quest.`
-                : `${questName}: a conversation is set to “play when the story reaches this node” but nothing is wired into it — it stays a normal quest conversation.`,
-        );
-    }
-    if (d.kind === "kisscord" && d.kisscord?.messages?.some((m) => m.playerAction === "upload")) {
-        warnings.push(`${questName}: Kisscord uploads compile to a “[uploaded file …]” message.`);
-    }
-    return warnings;
-}
-
 function warnDialogue(project: ProjectDocument): string[] {
     const warnings: string[] = [];
     for (const q of project.quests) {
-        const hasInput = q.dialog.some((b) => b.lines.some((l) => l.input));
         for (const n of q.graph.nodes) {
             if (n.type !== "comms.dialogue") continue;
-            const isWired = q.graph.edges.some((e) => e.kind === "flow" && e.target === n.id);
-            warnings.push(...warnDialogueNode(q.name, n, hasInput, isWired));
+            const d = n.data as {
+                kind: string;
+                mail?: { replyable?: boolean; subject?: string };
+                kisscord?: { messages?: { playerAction?: string }[] };
+            };
+            const mail = d.mail;
+            if (d.kind === "mail" && mail?.replyable) {
+                warnings.push(
+                    `${q.name}: “${mail.subject || "a mail"}” lets the player reply, so it is sent through Quest.sendMail — the only path that carries a reply flag. If the Reply button does not appear in game, turn the setting off and give the player a hackertyper reply page instead, which is the route the other templates use.`,
+                );
+            }
+            if (d.kind === "phone" && q.dialog.some((b) => b.lines.some((l) => l.input))) {
+                warnings.push(
+                    `${q.name}: phone lines with typed answers also register a terminal command (qe-…) the player uses to answer.`,
+                );
+            }
+            const live = (n.data as { postLive?: boolean }).postLive === true;
+            const wired = q.graph.edges.some((e) => e.kind === "flow" && e.target === n.id);
+            if (live && (d.kind === "kisscord" || d.kind === "weechat")) {
+                if (!wired) {
+                    warnings.push(
+                        `${q.name}: a conversation is set to “play when the story reaches this node” but nothing is wired into it — it stays a normal quest conversation.`,
+                    );
+                } else {
+                    warnings.push(
+                        `${q.name}: a conversation set to “play when the story reaches this node” is sent live at that moment. Player replies, uploads and “unlocks after” steps are skipped, and the game does not remove live messages with the quest.`,
+                    );
+                }
+            }
+            if (d.kind === "kisscord" && d.kisscord?.messages?.some((m) => m.playerAction === "upload")) {
+                warnings.push(`${q.name}: Kisscord uploads compile to a “[uploaded file …]” message.`);
+            }
         }
     }
     return warnings;
@@ -572,49 +539,44 @@ function warnCommunityNodes(project: ProjectDocument): string[] {
     return warnings;
 }
 
-/** Placeholder domains the game ships as real sites — flagged so authors pick distinctive hosts (A8). */
-const PLACEHOLDER_DOMAINS = /^(www\.)?(example\.(com|net|org)|test\.com|localhost)$/i;
-
-/** Warn about per-website issues: unlisted pages, duplicate paths, slash-less paths. */
-function warnWebsitePages(w: ProjectDocument["websites"][number]): string[] {
+function warnWebsites(project: ProjectDocument): string[] {
     const warnings: string[] = [];
-    const hidden = w.pages.filter((p) => !p.seo);
-    if (hidden.length) {
-        warnings.push(
-            `${w.host}: ${hidden.length} unlisted page${hidden.length > 1 ? "s" : ""} (${hidden.map((p) => p.path).join(", ")}). Nothing links to ${hidden.length > 1 ? "them" : "it"} and the in-game search will not show ${hidden.length > 1 ? "them" : "it"}, so the player reaches ${hidden.length > 1 ? "them" : "it"} only by typing the address or by running dirhunter on the host — which is exactly what makes a good hiding place for a clue. If you meant ${hidden.length > 1 ? "these" : "this"} to be findable normally, turn on “Listed in search” for the page.`,
-        );
-    }
-    const seenPaths = new Map<string, number>();
-    for (const p of w.pages) seenPaths.set(p.path, (seenPaths.get(p.path) ?? 0) + 1);
-    for (const [path, count] of seenPaths) {
-        if (count > 1) {
+    for (const w of project.websites) {
+        const hidden = w.pages.filter((p) => !p.seo);
+        if (hidden.length) {
             warnings.push(
-                `${w.host} has ${count} pages at the path ${path}. They ship as two definitions of the same address — give one of them a different path.`,
+                `${w.host}: ${hidden.length} unlisted page${hidden.length > 1 ? "s" : ""} (${hidden.map((p) => p.path).join(", ")}). Nothing links to ${hidden.length > 1 ? "them" : "it"} and the in-game search will not show ${hidden.length > 1 ? "them" : "it"}, so the player reaches ${hidden.length > 1 ? "them" : "it"} only by typing the address or by running dirhunter on the host — which is exactly what makes a good hiding place for a clue. If you meant ${hidden.length > 1 ? "these" : "this"} to be findable normally, turn on “Listed in search” for the page.`,
             );
         }
-    }
-    for (const p of w.pages) {
-        if (p.path && !p.path.startsWith("/")) {
-            warnings.push(
-                `${w.host}: the page “${p.title || p.path}” has the path ${p.path}, but paths start at the host root — it should be /${p.path}. The in-game browser and dirhunter address pages from the root.`,
-            );
+        const seenPaths = new Map<string, number>();
+        for (const p of w.pages) {
+            seenPaths.set(p.path, (seenPaths.get(p.path) ?? 0) + 1);
+        }
+        for (const [path, count] of seenPaths) {
+            if (count > 1) {
+                warnings.push(
+                    `${w.host} has ${count} pages at the path ${path}. They ship as two definitions of the same address — give one of them a different path.`,
+                );
+            }
+        }
+        for (const p of w.pages) {
+            if (p.path && !p.path.startsWith("/")) {
+                warnings.push(
+                    `${w.host}: the page “${p.title || p.path}” has the path ${p.path}, but paths start at the host root — it should be /${p.path}. The in-game browser and dirhunter address pages from the root.`,
+                );
+            }
         }
     }
-    return warnings;
-}
 
-/** Warn about host-level issues: duplicate hosts and placeholder domains. */
-function warnWebsiteHosts(websites: ProjectDocument["websites"]): string[] {
-    const warnings: string[] = [];
     const hosts = new Map<string, number>();
-    for (const w of websites) hosts.set(w.host, (hosts.get(w.host) ?? 0) + 1);
+    for (const w of project.websites) hosts.set(w.host, (hosts.get(w.host) ?? 0) + 1);
     for (const [host, count] of hosts) {
         if (count > 1) {
             warnings.push(
                 `${host} is the host of ${count} websites in this mod. Domains are global — two sites on one host will fight over which one answers. Give each site its own distinctive host.`,
             );
         }
-        if (PLACEHOLDER_DOMAINS.test(host)) {
+        if (/^(www\.)?(example\.(com|net|org)|test\.com|localhost)$/i.test(host)) {
             warnings.push(
                 `${host} is a placeholder domain, but the export ships it as a real site any player can find (and another mod may already use it). Pick a distinctive host — read it like a domain you would type yourself.`,
             );
@@ -623,14 +585,6 @@ function warnWebsiteHosts(websites: ProjectDocument["websites"]): string[] {
     return warnings;
 }
 
-function warnWebsites(project: ProjectDocument): string[] {
-    return [
-        ...project.websites.flatMap(warnWebsitePages),
-        ...warnWebsiteHosts(project.websites),
-    ];
-}
-
-/** Collect every author-facing warning the compiler can surface: unstartable quests, network structure issues, dialogue pitfalls, website problems, and community-node setup gaps. */
 export function computeWarnings(project: ProjectDocument): string[] {
     return [
         ...warnUnstartableQuests(project),
@@ -746,8 +700,51 @@ function buildReadme(project: ProjectDocument, permissions: string[], warnings: 
     ].join("\n");
 }
 
-/** Build the npm/esbuild scaffolding files that let a power user rebuild from src/. */
-function buildScaffoldingFiles(project: ProjectDocument): CompiledFile[] {
+export function compileProject(project: ProjectDocument): CompileResult {
+    const working: ProjectDocument = structuredClone(project);
+
+    const seeded = working.quests.map((q) => ({ quest: q, result: seedRemoteFiles(q) }));
+    const absorbed = new Set<string>();
+    for (const { result } of seeded) for (const id of result.absorbed) absorbed.add(id);
+
+    const permissions = computePermissions(working);
+    const warnings = computeWarnings(working);
+
+    for (const { quest, result } of seeded) {
+        for (const { reason } of result.unplaced) {
+            warnings.push(
+                `${quest.name}: a “Place files” node could not be placed — ${reason}. ` +
+                    "Point it at a device this quest creates, or target the player's PC instead.",
+            );
+        }
+    }
+
+    const compiledQuests = working.quests.map((q) => {
+        const graph = {
+            ...q.graph,
+            nodes: q.graph.nodes.filter((n) => !absorbed.has(n.id)),
+            edges: q.graph.edges,
+        };
+        const { nodes, edges } = stripFurniture(graph.nodes, graph.edges);
+        return { q, graph: { ...graph, nodes, edges } };
+    });
+
+    // Rebuild working with stripped graphs for the final payload
+    const finalWorking: ProjectDocument = {
+        ...working,
+        quests: compiledQuests.map(({ q, graph }) => ({ ...q, graph })),
+    };
+
+    const planningBlock = planningComments(working.quests);
+    const modJs = buildModJs(finalWorking, planningBlock);
+
+    const iconAsset = imageAsset(project.mod.icon, "icon");
+    const coverAsset = imageAsset(project.mod.cover, "cover");
+
+    const manifest = buildManifest(project, permissions, iconAsset?.path, coverAsset?.path);
+    const manifestJson = JSON.stringify(manifest, null, 4) + "\n";
+    const readme = buildReadme(project, permissions, warnings);
+
     const packageJson = {
         name: project.mod.id,
         version: project.mod.version,
@@ -780,64 +777,6 @@ function buildScaffoldingFiles(project: ProjectDocument): CompiledFile[] {
         include: ["src"],
     };
 
-    return [
-        { path: "package.json", content: JSON.stringify(packageJson, null, 2) + "\n" },
-        { path: "esbuild.config.mjs", content: esbuildConfig },
-        { path: "tsconfig.json", content: JSON.stringify(tsconfig, null, 2) + "\n" },
-    ];
-}
-
-/**
- * Turn a project into a complete, build-free mod folder.
- *
- * Seeds remote files, strips furniture, computes permissions and warnings,
- * then assembles manifest.json, dist/mod.js, src/index.ts, README.md, and
- * the npm scaffolding a power user needs to rebuild from source.
- */
-export function compileProject(project: ProjectDocument): CompileResult {
-    const working: ProjectDocument = structuredClone(project);
-
-    const seeded = working.quests.map((q) => ({ quest: q, result: seedRemoteFiles(q) }));
-    const absorbed = new Set<string>();
-    for (const { result } of seeded) for (const id of result.absorbed) absorbed.add(id);
-
-    const permissions = computePermissions(working);
-    const warnings = computeWarnings(working);
-
-    for (const { quest, result } of seeded) {
-        for (const { reason } of result.unplaced) {
-            warnings.push(
-                `${quest.name}: a “Place files” node could not be placed — ${reason}. ` +
-                    "Point it at a device this quest creates, or target the player's PC instead.",
-            );
-        }
-    }
-
-    const compiledQuests = working.quests.map((q) => {
-        const graph = {
-            ...q.graph,
-            nodes: q.graph.nodes.filter((n) => !absorbed.has(n.id)),
-            edges: q.graph.edges,
-        };
-        const { nodes, edges } = stripFurniture(graph.nodes, graph.edges);
-        return { q, graph: { ...graph, nodes, edges } };
-    });
-
-    const finalWorking: ProjectDocument = {
-        ...working,
-        quests: compiledQuests.map(({ q, graph }) => ({ ...q, graph })),
-    };
-
-    const planningBlock = planningComments(working.quests);
-    const modJs = buildModJs(finalWorking, planningBlock);
-
-    const iconAsset = imageAsset(project.mod.icon, "icon");
-    const coverAsset = imageAsset(project.mod.cover, "cover");
-
-    const manifest = buildManifest(project, permissions, iconAsset?.path, coverAsset?.path);
-    const manifestJson = JSON.stringify(manifest, null, 4) + "\n";
-    const readme = buildReadme(project, permissions, warnings);
-
     return {
         permissions,
         warnings,
@@ -847,7 +786,9 @@ export function compileProject(project: ProjectDocument): CompileResult {
             { path: "dist/mod.js", content: modJs },
             { path: "src/index.ts", content: modJs },
             { path: "README.md", content: readme },
-            ...buildScaffoldingFiles(project),
+            { path: "package.json", content: JSON.stringify(packageJson, null, 2) + "\n" },
+            { path: "esbuild.config.mjs", content: esbuildConfig },
+            { path: "tsconfig.json", content: JSON.stringify(tsconfig, null, 2) + "\n" },
             ...(iconAsset ? [iconAsset.file] : []),
             ...(coverAsset ? [coverAsset.file] : []),
         ],

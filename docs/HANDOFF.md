@@ -1,36 +1,3 @@
-# Handoff — r143
-
-r143 is a **clean code pass on `compiler/compile.ts`** (plan:
-[plans/r143-compile-clean-code-pass.md](plans/r143-compile-clean-code-pass.md)),
-a follow-up to r139's architecture pass that left four functions still over
-the F2 target:
-
-- **`warnNetworkStructure`** (87→41 lines): extracted `walkDeviceStructure`,
-  `findLoginlessDevices`, `findBadPortVersions` — each does one device-tree
-  walk; the main function dispatches and formats warnings.
-- **`compileProject`** (94→59 lines): extracted `buildScaffoldingFiles` —
-  the package.json / esbuild.config / tsconfig generation that was inline.
-- **`warnWebsites`** (45→6 lines): extracted `warnWebsitePages` (per-site:
-  unlisted pages, duplicate paths, slash-less paths) and `warnWebsiteHosts`
-  (duplicate hosts, placeholder domains).
-- **`warnDialogue`** (41→12 lines): extracted `warnDialogueNode` — the
-  per-node checks (replyable mail, phone+input, live conversations, kisscord
-  uploads).
-- **Externalized constants** (A8/AR20): `LOGIN_SERVICES` moved from a local
-  inside `warnNetworkStructure` to a module-level constant;
-  `PLACEHOLDER_DOMAINS` regex extracted from inline.
-- **TSDoc** (C5): added to `CompiledFile`, `CompileResult`,
-  `computePermissions`, `computeWarnings`, `compileProject`.
-- **registry.ts naming**: `world.packData` and `pack.node` have
-  `category: "community"` but keep their `world.` / `pack.` prefixes (AR11).
-  Renaming would be a breaking change — flagged as a recommendation, not
-  changed.
-- No `EDITOR_BUILD` bump — the compiler emits nothing new (AR13). The
-  refactoring is purely internal; the exported mod.js is byte-identical.
-  1375 tests green, typecheck clean, build clean.
-
----
-
 # Handoff — r142
 
 r142 shipped the **visual canvas grid** and two more fonts (plan:

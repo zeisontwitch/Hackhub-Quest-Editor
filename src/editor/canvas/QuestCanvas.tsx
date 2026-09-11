@@ -6,11 +6,13 @@
  * are written back. React Flow's own runtime fields never reach the document.
  */
 import {
+    Background,
     type ConnectionLineComponentProps,
     type InternalNode,
     type Node as RFNode,
     SelectionMode,
     type OnNodeDrag,
+    BackgroundVariant,
     Controls,
     MiniMap,
     ReactFlow,
@@ -62,7 +64,6 @@ import { Icon } from "@/components/Icon";
 import { useEditor, selectActiveQuest } from "@/store/editor";
 import { categoryOf, nodeTypeDef, sourcesOf } from "@/schema/registry";
 import { themeCategoryHex } from "@/editor/settings/theme";
-import { CanvasGridBackground } from "./CanvasGrid";
 import { HANDLE_STYLE } from "@/schema/edges";
 import type { NodeType } from "@/schema/nodes";
 import type { EdgeDoc } from "@/schema/edges";
@@ -135,8 +136,8 @@ function CanvasInner() {
     const { screenToFlowPosition, getInternalNode } = useReactFlow();
     // Per-author editor preferences, kept out of the project document.
     const snap = useSyncExternalStore(subscribeSnap, snapEnabled, () => false);
-    // The snap cell (r141): snapping and align/distribute spacing read it.
-    // The visual grid is separate since r142 — its scale is its own setting.
+    // The cell size is a preference too (r141): grid, dots and align spacing
+    // all read it, so what snaps together also spaces together.
     const step = useSyncExternalStore(subscribeSnap, snapStep, () => GRID);
     const physics = useSyncExternalStore(
         subscribeWirePhysics,
@@ -1190,10 +1191,7 @@ function CanvasInner() {
                 proOptions={{ hideAttribution: true }}
                 className="bg-canvas"
             >
-                {/* The visual grid (r142) — its own style, scale and opacity,
-                    deliberately independent of snapping. Renders nothing while
-                    off, which is the shipped default. */}
-                <CanvasGridBackground />
+                <Background variant={BackgroundVariant.Dots} gap={step} size={1} color="var(--color-canvas-dots)" />
                 <Controls position="bottom-left" showInteractive={false} />
                 <MiniMap
                     position="bottom-right"

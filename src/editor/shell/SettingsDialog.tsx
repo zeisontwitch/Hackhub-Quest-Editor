@@ -19,7 +19,7 @@
  * Theme and font choices apply the moment they are clicked, and the canvas
  * beside the sheet is the preview (r141).
  */
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/Icon";
@@ -32,13 +32,6 @@ import {
     snapStep,
     subscribeSnap,
 } from "@/editor/canvas/snapGrid";
-import {
-    CANVAS_GRID_STYLES,
-    canvasGrid,
-    setCanvasGrid,
-    subscribeCanvasGrid,
-    type CanvasGridStyle,
-} from "@/editor/canvas/canvasGrid";
 import {
     DOT_PERIOD_S,
     dotPeriodS,
@@ -113,12 +106,6 @@ export function SettingsDialog({
     const physics = useSyncExternalStore(subscribeWirePhysics, wirePhysicsEnabled, () => true);
     const tuning = useSyncExternalStore(subscribeWireTuning, wireTuning, () => DEFAULT_TUNING);
     const drift = useSyncExternalStore(subscribeWireMotion, dotPeriodS, () => DOT_PERIOD_S);
-    const grid = useSyncExternalStore(subscribeCanvasGrid, canvasGrid, () => ({
-        enabled: false,
-        style: "squares",
-        scale: 22,
-        opacity: 50,
-    }));
     const theme = useSyncExternalStore(subscribeTheme, currentTheme, () => THEMES[0]);
     const font = useSyncExternalStore(subscribeUiFont, currentUiFont, () => UI_FONTS[0]);
     const zeta = dampingRatio(tuning);
@@ -217,51 +204,6 @@ export function SettingsDialog({
                                 what snaps together also spaces together.
                             </p>
                         </div>
-
-                        <Section>Canvas grid</Section>
-                        <SwitchRow
-                            label="Show grid"
-                            description="A visual grid on the canvas. Off by default — the plain canvas keeps the focus on your nodes."
-                            checked={grid.enabled}
-                            onChange={(on) => setCanvasGrid({ enabled: on })}
-                        />
-                        {grid.enabled && (
-                            <>
-                                <div className="grid grid-cols-3 gap-1.5 py-2.5">
-                                    {CANVAS_GRID_STYLES.map((style) => (
-                                        <GridStyleButton
-                                            key={style.id}
-                                            style={style}
-                                            active={style.id === grid.style}
-                                            onPick={() => setCanvasGrid({ style: style.id })}
-                                        />
-                                    ))}
-                                </div>
-                                <div className="border-b border-line pb-2.5">
-                                    <NumberSlider
-                                        label="Grid scale"
-                                        hint="Cell size, in canvas units."
-                                        min={4}
-                                        max={200}
-                                        value={grid.scale}
-                                        onChange={(scale) => setCanvasGrid({ scale })}
-                                    />
-                                </div>
-                                <div className="py-2.5">
-                                    <NumberSlider
-                                        label="Grid opacity"
-                                        hint="0 hides the grid; 100 is full strength."
-                                        min={0}
-                                        max={100}
-                                        value={grid.opacity}
-                                        onChange={(opacity) => setCanvasGrid({ opacity })}
-                                    />
-                                </div>
-                                <p className="mb-1 text-[10.5px] leading-snug text-ink-4">
-                                    The grid is visual only — node snapping has its own size (above).
-                                </p>
-                            </>
-                        )}
 
                         <Section>Wires</Section>
                         <SwitchRow
@@ -419,161 +361,6 @@ function ThemeCard({
                 {theme.label}
             </span>
         </button>
-    );
-}
-
-/** One grid style, with a tiny live preview of its pattern. A visual
-    person should see the pattern before picking it — the label alone is not
-    enough to tell hexagons from diamond. */
-function GridStyleButton({
-    style,
-    active,
-    onPick,
-}: {
-    style: { id: CanvasGridStyle; label: string; hint: string };
-    active: boolean;
-    onPick: () => void;
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onPick}
-            aria-pressed={active}
-            title={style.hint}
-            className={cn(
-                "flex flex-col items-center gap-1 rounded-lg border p-1.5 transition-colors",
-                active
-                    ? "border-accent/60 bg-accent-soft"
-                    : "border-line bg-surface-2/40 hover:border-line-strong hover:bg-surface-2",
-            )}
-        >
-            <GridStylePreview id={style.id} />
-            <span className="flex items-center gap-1 text-[10.5px] font-medium text-ink-2">
-                {active && <span className="size-1 rounded-full bg-accent" aria-hidden />}
-                {style.label}
-            </span>
-        </button>
-    );
-}
-
-/** A static miniature of each pattern, drawn in currentColor so it themes. */
-function GridStylePreview({ id }: { id: CanvasGridStyle }) {
-    const stroke = "currentColor";
-    const common = { fill: "none", stroke, strokeWidth: 1 } as const;
-    return (
-        <svg width="44" height="22" viewBox="0 0 44 22" aria-hidden className="text-ink-3">
-            {id === "squares" && (
-                <g {...common}>
-                    <path d="M11 0V22M33 0V22M0 11H44" />
-                </g>
-            )}
-            {id === "dots" && (
-                <g fill={stroke}>
-                    <circle cx="7" cy="6" r="1.2" />
-                    <circle cx="22" cy="6" r="1.2" />
-                    <circle cx="37" cy="6" r="1.2" />
-                    <circle cx="7" cy="16" r="1.2" />
-                    <circle cx="22" cy="16" r="1.2" />
-                    <circle cx="37" cy="16" r="1.2" />
-                </g>
-            )}
-            {id === "crosses" && (
-                <g {...common}>
-                    <path d="M11 4v6M8 7h6M33 12v6M30 15h6" />
-                </g>
-            )}
-            {id === "hexagons" && (
-                <g {...common}>
-                    <path d="M14 3l4 2.5v5L14 13l-4-2.5v-5zM30 8l4 2.5v5L30 18l-4-2.5v-5z" />
-                </g>
-            )}
-            {id === "graph" && (
-                <g {...common}>
-                    <path d="M11 0V22M33 0V22M0 11H44" strokeWidth={0.5} />
-                    <path d="M22 0V22" strokeWidth={1.5} />
-                </g>
-            )}
-            {id === "diamond" && (
-                <g {...common}>
-                    <path d="M8 0l14 22M36 0L22 22M8 22L22 0M36 22L22 0" />
-                </g>
-            )}
-        </svg>
-    );
-}
-
-/** A slider with a number input beside it — for values people want to both
-    feel (drag) and state exactly (type). Commits only in-range values while
-    typing; an out-of-range entry is clamped on blur. */
-function NumberSlider({
-    label,
-    hint,
-    min,
-    max,
-    value,
-    onChange,
-}: {
-    label: string;
-    hint: string;
-    min: number;
-    max: number;
-    value: number;
-    onChange: (value: number) => void;
-}) {
-    const [text, setText] = useState(String(value));
-    // Keep the field in step when the value changes elsewhere (reset, or the
-    // slider itself).
-    useEffect(() => {
-        setText(String(value));
-    }, [value]);
-
-    const commitText = (raw: string) => {
-        const parsed = Number(raw);
-        if (Number.isFinite(parsed)) {
-            const clamped = Math.min(max, Math.max(min, Math.round(parsed)));
-            onChange(clamped);
-            setText(String(clamped));
-        } else {
-            setText(String(value));
-        }
-    };
-
-    return (
-        <div className="py-1">
-            <div className="flex items-baseline justify-between gap-2">
-                <span className="text-[12px] font-medium text-ink-2">{label}</span>
-                <input
-                    type="number"
-                    aria-label={`${label} (exact)`}
-                    min={min}
-                    max={max}
-                    value={text}
-                    onChange={(e) => {
-                        setText(e.target.value);
-                        const parsed = Number(e.target.value);
-                        if (e.target.value !== "" && Number.isFinite(parsed) && parsed >= min && parsed <= max) {
-                            onChange(Math.round(parsed));
-                        }
-                    }}
-                    onBlur={(e) => commitText(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") commitText((e.target as HTMLInputElement).value);
-                    }}
-                    className="field-input w-20 px-1.5 py-0.5 text-right font-mono text-[11px]"
-                />
-            </div>
-            <input
-                type="range"
-                min={min}
-                max={max}
-                step={1}
-                value={value}
-                aria-label={label}
-                onChange={(e) => onChange(Number(e.target.value))}
-                className="mt-1 h-1.5 w-full cursor-pointer"
-            />
-            <p className="mt-0.5 text-[10.5px] leading-snug text-ink-4">{hint}</p>
-        </div>
     );
 }
 

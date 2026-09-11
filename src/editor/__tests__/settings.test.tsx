@@ -30,11 +30,6 @@ import {
 } from "@/editor/canvas/wireTuning";
 import { dotPeriodS, setDotPeriod, DOT_PERIOD_S } from "@/editor/canvas/wireMotion";
 import {
-    canvasGrid,
-    resetCanvasGridForTests,
-    setCanvasGrid,
-} from "@/editor/canvas/canvasGrid";
-import {
     currentTheme,
     resetThemeForTests,
     setTheme,
@@ -54,7 +49,6 @@ beforeEach(() => {
     resetThemeForTests();
     resetUiFontForTests();
     setDotPeriod(DOT_PERIOD_S);
-    resetCanvasGridForTests();
     act(() => {
         useEditor.getState().load(createProject(), { clearHistory: true });
         // A previous test may have left a modal open; the store is module
@@ -260,60 +254,5 @@ describe("editor data", () => {
         await user.click(screen.getByRole("button", { name: "Really erase?" }));
         expect(localStorage.getItem(DRAFT_KEY)).toBeNull();
         expect(screen.getByText("Autosaved draft cleared.")).toBeTruthy();
-    });
-});
-
-describe("the canvas grid", () => {
-    it("is off by default, so its controls stay tucked away", async () => {
-        await openSettings();
-        expect(screen.queryByRole("radio", { name: /Hexagons/ })).toBeNull();
-    });
-
-    it("the switch turns it on and remembers it", async () => {
-        const user = await openSettings();
-        await user.click(screen.getByRole("switch", { name: "Show grid" }));
-        expect(canvasGrid().enabled).toBe(true);
-        expect(JSON.parse(localStorage.getItem("qe.canvasGrid")!).enabled).toBe(true);
-    });
-
-    it("picks a style from the preview buttons", async () => {
-        const user = await openSettings();
-        await user.click(screen.getByRole("switch", { name: "Show grid" }));
-        await user.click(screen.getByRole("button", { name: /Hexagons/ }));
-        expect(canvasGrid().style).toBe("hexagons");
-    });
-
-    it("the scale slider and number input both drive the cell size", async () => {
-        const user = await openSettings();
-        await user.click(screen.getByRole("switch", { name: "Show grid" }));
-        // The slider is the primary control; the number field is "(exact)".
-        fireEvent.change(screen.getByLabelText("Grid scale"), { target: { value: "48" } });
-        expect(canvasGrid().scale).toBe(48);
-        fireEvent.change(screen.getByLabelText("Grid scale (exact)"), { target: { value: "120" } });
-        expect(canvasGrid().scale).toBe(120);
-    });
-
-    it("an out-of-range number is clamped on blur, not silently kept", async () => {
-        const user = await openSettings();
-        await user.click(screen.getByRole("switch", { name: "Show grid" }));
-        const field = screen.getByLabelText("Grid scale (exact)");
-        fireEvent.change(field, { target: { value: "9999" } });
-        fireEvent.blur(field);
-        expect(canvasGrid().scale).toBe(200);
-    });
-
-    it("the opacity slider drives the strength", async () => {
-        const user = await openSettings();
-        await user.click(screen.getByRole("switch", { name: "Show grid" }));
-        fireEvent.change(screen.getByLabelText("Grid opacity"), { target: { value: "80" } });
-        expect(canvasGrid().opacity).toBe(80);
-    });
-
-    it("reset-all puts the grid back too", async () => {
-        const user = await openSettings();
-        setCanvasGrid({ enabled: true, style: "graph", scale: 88, opacity: 90 });
-        await user.click(screen.getByRole("button", { name: "Reset all editor preferences" }));
-        await user.click(screen.getByRole("button", { name: "Really reset?" }));
-        expect(canvasGrid()).toEqual({ enabled: false, style: "squares", scale: 22, opacity: 50 });
     });
 });

@@ -29,9 +29,6 @@ import { sagPath } from "./wirePhysics";
 import { count, record } from "./diagnostics";
 import { wireTuning } from "./wireTuning";
 
-/** How long the ghost takes to snap back and fade. */
-export const GHOST_MS = 200;
-
 interface LiveGhost {
     /** The wrapper that is actually in the document. */
     root: SVGSVGElement;
@@ -86,8 +83,8 @@ export interface WireGhostOptions {
      * (and it connects) or dismisses the search (and it winds home).
      */
     hold?: boolean;
-    /** Fade length. Overridden in tests; real callers use the default. */
-    durationMs?: number;
+    /** How long the fade takes, in ms. Overridden in tests; real callers use the default. */
+    fadeMs?: number;
     /**
      * How long the free end takes to travel home, in ms.
      *
@@ -97,6 +94,27 @@ export interface WireGhostOptions {
      * longer.
      */
     retractMs?: number;
+}
+
+/**
+ * The ghost's opacity at a moment in its life.
+ *
+ * Pure arithmetic on purpose: jsdom cannot show a fade, so the one part of the
+ * ghost that is invisible to tests gets its own testable function (compute,
+ * don't measure).
+ *
+ * Full opacity while the wire travels, then a fade over the final `fadeMs` —
+ * the retraction carries the motion and the fade must not compete with it
+ * (r115 QA). A fade longer than the retraction starts fading immediately and
+ * outlives the travel; a zero fade is an instant vanish.
+ */
+export function ghostOpacity(elapsedMs: number, retractMs: number, fadeMs: number): number {
+    if (fadeMs <= 0) return 0;
+    const fadeStartsAt = Math.max(0, retractMs - fadeMs);
+    const through = (elapsedMs - fadeStartsAt) / fadeMs;
+    if (through <= 0) return 1;
+    if (through >= 1) return 0;
+    return 1 - through;
 }
 
 /**
@@ -111,12 +129,12 @@ export function spawnWireGhost(options: WireGhostOptions): () => void {
         to,
         sag = 0,
         colour,
-        durationMs = wireTuning().ghostMs,
+        fadeMs = wireTuning().ghostMs,
         retractMs = wireTuning().retractMs,
         hold = false,
     } = options;
     count("ghosts");
-    record("ghost", `sag ${sag.toFixed(1)}, ${durationMs}ms`);
+    record("ghost", `sag ${sag.toFixed(1)}, retract ${retractMs}ms, fade ${fadeMs}ms`);
 
     /*
      * The ghost needs its own <svg>.
@@ -163,7 +181,7 @@ export function spawnWireGhost(options: WireGhostOptions): () => void {
          */
         timer: hold
             ? (undefined as unknown as ReturnType<typeof setTimeout>)
-            : setTimeout(() => dismiss(ghost), Math.max(durationMs, retractMs) + 250),
+            : setTimeout(() => dismiss(ghost), Math.max(fadeMs, retractMs) + 250),
     };
     live.add(ghost);
 
@@ -205,11 +223,15 @@ export function spawnWireGhost(options: WireGhostOptions): () => void {
         const x = to.x + (from.x - to.x) * eased;
         const y = to.y + (from.y - to.y) * eased;
         el.setAttribute("d", sagPath(from.x, from.y, x, y, sag * (1 - eased)));
-        // Hold full opacity until the very end, then fade over the final
-        // stretch, so the retraction is what the eye follows.
-        el.style.opacity = String(1 - eased ** 3);
+        // The fade owns only the final fadeMs of the ghost's life, so the
+        // retraction is what the eye follows (r115 QA). Until r140 this line
+        // ignored the fade dial entirely — the fade ran on the retraction's
+        // own easing curve, and ghostMs fed nothing but the backstop timer.
+        el.style.opacity = String(ghostOpacity(elapsed, travel, fadeMs));
 
-        if (t < 1) ghost.frame = requestAnimationFrame(frame);
+        // A fade longer than the retraction keeps the ghost alive after it
+        // has arrived home, dissolving in place.
+        if (elapsed < Math.max(travel, fadeMs)) ghost.frame = requestAnimationFrame(frame);
         else dismiss(ghost);
     };
     /*
@@ -221,7 +243,7 @@ export function spawnWireGhost(options: WireGhostOptions): () => void {
         ghost.retract = () => {
             ghost.retract = undefined;
             clearTimeout(ghost.timer);
-            ghost.timer = setTimeout(() => dismiss(ghost), Math.max(durationMs, retractMs) + 250);
+            ghost.timer = setTimeout(() => dismiss(ghost), Math.max(fadeMs, retractMs) + 250);
             ghost.frame = requestAnimationFrame(frame);
         };
     } else {

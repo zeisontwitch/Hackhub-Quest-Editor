@@ -101,7 +101,7 @@ describe("arrange toolbar", () => {
     it("the snap toggle remembers its state and does not touch the project", async () => {
         const { user } = await threeNodes();
         const before = JSON.stringify(quest().graph.nodes.map((n) => n.position));
-        const toggle = document.querySelector('[aria-pressed][title*="snap"]') as HTMLButtonElement;
+        const toggle = document.querySelector('[aria-pressed][title*="snap to the grid"]') as HTMLButtonElement;
         expect(toggle.getAttribute("aria-pressed")).toBe("false");
         await user.click(toggle);
         await waitFor(() => expect(toggle.getAttribute("aria-pressed")).toBe("true"));

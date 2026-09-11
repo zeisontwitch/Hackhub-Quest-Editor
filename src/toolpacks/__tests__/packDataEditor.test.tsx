@@ -236,7 +236,7 @@ describe("pack events in the trigger picker", () => {
         expect(detail.value).toBe("target");
     });
 
-    it("the picker lists a Community tools group with the pack's labels", () => {
+    it("the picker lists a Community tools group with the pack's labels", { timeout: 30_000 }, () => {
         act(() => usePacks.getState().loadPack(exampleRaw));
         render(<EventPicker value="" onChange={() => {}} />);
         /* fireEvent, not userEvent: Radix popover under jsdom (repo lesson). */
@@ -247,7 +247,15 @@ describe("pack events in the trigger picker", () => {
         expect(screen.getByText("ExampleTools.Breach.FileDownloaded")).toBeInTheDocument();
     });
 
-    it("picking the community event is not treated as a custom unknown event", () => {
+    /*
+     * These two picker tests are the slowest in the suite: opening the event
+     * popover walks the whole event list in jsdom, and the pick test adds a
+     * full-DOM text match on top. Measured 21s / 6s on a slow sandbox (r140;
+     * identical on the clean r139 tree, so it is the machine, not a change),
+     * against vitest's 5s default — the default timeout made the gate flaky
+     * there. The ceiling moves; the assertions are unchanged.
+     */
+    it("picking the community event is not treated as a custom unknown event", { timeout: 30_000 }, () => {
         act(() => usePacks.getState().loadPack(exampleRaw));
         const Harness = () => {
             const [value, setValue] = useState("");

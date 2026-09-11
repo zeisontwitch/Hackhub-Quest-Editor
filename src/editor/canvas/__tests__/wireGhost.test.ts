@@ -10,9 +10,10 @@
  * moment, and how it actually reads is for Zeis in the preview.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { waitFor } from "@testing-library/react";
 import {
-    GHOST_MS,
     dismissWireGhosts,
+    ghostOpacity,
     liveWireGhostCount,
     retractWireGhosts,
     spawnWireGhost,
@@ -138,8 +139,8 @@ describe("going away again", () => {
         // A backgrounded tab gets no rAF; the timer must still clean up.
         vi.useFakeTimers();
         const svg = layer();
-        spawn(svg, { retractMs: 40 });
-        vi.advanceTimersByTime(GHOST_MS + 40 + 300);
+        spawn(svg, { retractMs: 40, fadeMs: 120 });
+        vi.advanceTimersByTime(120 + 300);
         expect(liveWireGhostCount()).toBe(0);
     });
 });
@@ -277,6 +278,56 @@ describe("r115: the wire winds back like a vacuum cable", () => {
         await new Promise((r) => setTimeout(r, 120));
         expect(liveWireGhostCount()).toBe(0);
         expect(host.children).toHaveLength(0);
+    });
+});
+
+describe("r140: the fade dial does what it says", () => {
+    /*
+     * ghostMs used to feed nothing but the backstop timer: the fade ran on
+     * the retraction's own easing curve, so the "Fade ms" slider changed
+     * nothing anyone could see. The fade is now its own arithmetic — pure, so
+     * it can be tested without a compositor (jsdom cannot show a fade).
+     */
+    it("holds full opacity until the final fade window", () => {
+        expect(ghostOpacity(0, 260, 20)).toBe(1);
+        expect(ghostOpacity(230, 260, 20)).toBe(1);
+    });
+
+    it("fades to nothing across the fade window", () => {
+        expect(ghostOpacity(250, 260, 20)).toBeCloseTo(0.5, 5);
+        expect(ghostOpacity(260, 260, 20)).toBe(0);
+    });
+
+    it("a fade longer than the retract starts immediately and outlives it", () => {
+        expect(ghostOpacity(0, 100, 300)).toBe(1);
+        expect(ghostOpacity(150, 100, 300)).toBeCloseTo(0.5, 5);
+        expect(ghostOpacity(300, 100, 300)).toBe(0);
+    });
+
+    it("a zero fade is an instant vanish", () => {
+        expect(ghostOpacity(0, 260, 0)).toBe(0);
+    });
+
+    it("a long fade keeps the ghost alive after the wire is home", async () => {
+        // Fails on the pre-r140 code, which dismissed the ghost the moment
+        // the retraction finished regardless of the fade.
+        //
+        // Timings are chosen to stay honest under a loaded test run, where
+        // requestAnimationFrame can be starved: with retract 20 / fade 1000
+        // the ghost cannot be gone before 1000ms of frames (or the 1250ms
+        // backstop) no matter when frames arrive, and the opacity sweep is
+        // slow enough to be caught by polling.
+        const host = layer();
+        spawn(host, { retractMs: 20, fadeMs: 1000 });
+        await new Promise((r) => setTimeout(r, 120));
+        expect(liveWireGhostCount()).toBe(1);
+        const path = host.querySelector("svg.qe-wire-ghost path") as SVGPathElement;
+        await waitFor(() => {
+            const opacity = Number(path.style.opacity);
+            expect(opacity).toBeGreaterThan(0);
+            expect(opacity).toBeLessThan(1);
+        });
+        await waitFor(() => expect(liveWireGhostCount()).toBe(0), { timeout: 2500 });
     });
 });
 

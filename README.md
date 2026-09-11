@@ -35,7 +35,12 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 
 | # | Item | Notes |
 |---|---|---|
-| 5 | **Settings page** | The wire-physics dials currently live in the debug panel, which is a developer tool. They — and the snap/animation/physics toggles — deserve a proper home an author can find. |
 | 6 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
 | 7 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. The official Cryptographer Hunt (a phone social-engineering scene with a fail route on the wrong choice) is the strongest argument for it — see [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). The shape now ships inside The Long Game (r136, act III: a typed verdict with two endings); whether a standalone template still adds anything is Zeis's call. |
 | 12 | **Tool packs — Editor Mods** | r137 + r138 shipped both halves: a pack is one `toolpack.json` of pure data ([`docs/ToolPack-Format.md`](docs/ToolPack-Format.md), starter pack in `reference/example-toolpack/`). r137: pack events join the trigger picker as a Community group; SharedStorage data shapes become "Community data" nodes. r138: **Editor Mods** — a pack's `nodes[]` grow the palette under "Editor Mods · <pack>" (one generic `pack.node` type carrying a full snapshot; four declarative emitters — `sdk` calls, `emit`, `storage`, `commandData` — never code), with the honesty spine throughout. Remaining: pack-driven target-rule surfaces (`targetRules` is parsed and carried, no quest-facing lint yet — needs a real second pack to design against). |
+
+### Done recently
+
+| # | Item | Notes |
+|---|---|---|
+| 5 | **Settings page** | Done in r140: a non-modal settings sheet from the top bar — the snap/animated/springy toggles with honest descriptions, and the wire-physics dials moved out of the debug panel, with the damping-ratio and settle readouts. The "Fade ms" dial became honest too (it used to do nothing — the fade now honours it). Editor-only; nothing exported changes. |

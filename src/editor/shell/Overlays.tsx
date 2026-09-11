@@ -14,6 +14,7 @@ import { DialoguesDialog } from "./DialoguesDialog";
 import { SimulatorDialog } from "@/editor/simulator/SimulatorDialog";
 import { ExportDialog } from "./ExportDialog";
 import { ToolPackManagerDialog } from "@/toolpacks/ToolPackManagerDialog";
+import { SettingsDialog } from "./SettingsDialog";
 import { EVENT_COUNT, SDK_VERSION } from "@/schema/events";
 
 /* ── Toast ───────────────────────────────────────────────────────────────── */
@@ -339,6 +340,7 @@ export function Overlays() {
             <ExportDialog open={modal === "mod"} onOpenChange={(o) => setUi({ modal: o ? "mod" : null })} />
             <SimulatorDialog open={modal === "simulator"} onOpenChange={(o) => setUi({ modal: o ? "simulator" : null })} />
             <ToolPackManagerDialog open={modal === "toolpacks"} onOpenChange={(o) => setUi({ modal: o ? "toolpacks" : null })} />
+            <SettingsDialog open={modal === "settings"} onOpenChange={(o) => setUi({ modal: o ? "settings" : null })} />
         </>
     );
 }

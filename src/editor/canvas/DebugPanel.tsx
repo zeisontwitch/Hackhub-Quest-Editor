@@ -15,10 +15,13 @@
  *    veto immediately.
  *  - **Counters and FPS.** Separates "never started" from "started and looks
  *    wrong" — the distinction I could not make from a screenshot.
- *  - **Live tuning.** Feel is not testable. Zeis moves the sliders, reads off
- *    the numbers, and I make them the defaults.
  *  - **Event log.** The last sixty things that happened, so a gesture that
  *    ends in the wrong branch says so.
+ *
+ * The live tuning sliders moved to the Settings sheet in r140 — an
+ * author-facing home. What stays here is what diagnoses: the event log
+ * records each ghost's retract/fade pair, so "what were the numbers?" is
+ * answerable without any dial on screen.
  *
  * Costs nothing when closed: no subscription, no timer, no render.
  */
@@ -32,32 +35,11 @@ import {
     physicsFps,
     subscribeDiagnostics,
 } from "./diagnostics";
-import {
-    DEFAULT_TUNING,
-    dampingRatio,
-    resetWireTuning,
-    setWireTuning,
-    settleSeconds,
-    subscribeWireTuning,
-    wireTuning,
-    type WireTuning,
-} from "./wireTuning";
 import { refusalReason, wirePhysicsRunning, wirePhysicsState } from "./wirePhysics";
 import { wireMotionEnabled } from "./wireMotion";
 import { wirePhysicsEnabled } from "./wirePhysicsPref";
 
-const NUMBERS: { key: keyof WireTuning; label: string; min: number; max: number; step: number }[] = [
-    { key: "stiffness", label: "Stiffness", min: 20, max: 1600, step: 10 },
-    { key: "damping", label: "Damping", min: 2, max: 120, step: 1 },
-    { key: "maxSag", label: "Max sag", min: 0, max: 300, step: 5 },
-    { key: "tautDistance", label: "Taut at", min: 100, max: 1200, step: 20 },
-    { key: "swing", label: "Swing", min: 0, max: 40, step: 0.5 },
-    { key: "ghostMs", label: "Fade ms", min: 0, max: 1000, step: 5 },
-    { key: "retractMs", label: "Retract ms", min: 0, max: 1200, step: 20 },
-];
-
 export function DebugPanel({ onClose }: { onClose: () => void }) {
-    const tuning = useSyncExternalStore(subscribeWireTuning, wireTuning, () => DEFAULT_TUNING);
     const diagVersion = useSyncExternalStore(
         subscribeDiagnostics,
         () => diagCounters().physicsStarts + diagCounters().ghosts + diagCounters().dragEnds,
@@ -79,7 +61,6 @@ export function DebugPanel({ onClose }: { onClose: () => void }) {
 
     const counters = diagCounters();
     const refusal = refusalReason();
-    const zeta = dampingRatio(tuning);
 
     return (
         <div
@@ -131,40 +112,6 @@ export function DebugPanel({ onClose }: { onClose: () => void }) {
                 <Row label="FPS" value={physicsFps() ? physicsFps().toFixed(0) : "—"} />
                 <Row label="Starts / refused" value={`${counters.physicsStarts} / ${counters.physicsRefused}`} />
                 <Row label="Drags / ghosts" value={`${counters.dragStarts}→${counters.dragEnds} / ${counters.ghosts}`} />
-
-                <Section>Tuning</Section>
-                {NUMBERS.map((n) => (
-                    <label key={n.key} className="mb-1.5 flex items-center gap-2">
-                        <span className="w-[62px] shrink-0 text-ink-3">{n.label}</span>
-                        <input
-                            type="range"
-                            min={n.min}
-                            max={n.max}
-                            step={n.step}
-                            value={tuning[n.key]}
-                            aria-label={n.label}
-                            onChange={(e) => setWireTuning({ [n.key]: Number(e.target.value) })}
-                            className="h-1.5 flex-1 cursor-pointer"
-                        />
-                        <span className="w-[46px] shrink-0 text-right font-mono text-[10.5px] text-ink">
-                            {tuning[n.key]}
-                        </span>
-                    </label>
-                ))}
-                {/* The number that predicts the feel: under 1 it bounces, at 1
-                    it arrives dead, over 1 it crawls in. */}
-                <Row
-                    label="Damping ratio"
-                    value={`${zeta.toFixed(2)} ${zeta < 1 ? "(bouncy)" : zeta > 1 ? "(sluggish)" : "(critical)"}`}
-                />
-                <Row label="Settle" value={`${settleSeconds(tuning).toFixed(2)}s`} />
-                <button
-                    type="button"
-                    onClick={resetWireTuning}
-                    className="btn-ghost mt-1 w-full py-1 text-[10.5px]"
-                >
-                    Reset to defaults
-                </button>
 
                 <Section>Recent events</Section>
                 <div className="max-h-[140px] overflow-y-auto rounded border border-line bg-void/60 p-1.5 font-mono text-[10px] leading-snug text-ink-3">

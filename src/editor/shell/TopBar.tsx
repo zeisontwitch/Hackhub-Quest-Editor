@@ -22,6 +22,7 @@ export function TopBar() {
     const canUndo = useEditor(selectCanUndo);
     const canRedo = useEditor(selectCanRedo);
     const setUi = useEditor((s) => s.setUi);
+    const modal = useEditor((s) => s.ui.modal);
     const toast = useEditor((s) => s.toast);
     const project = useEditor((s) => s.project);
     const load = useEditor((s) => s.load);
@@ -247,8 +248,21 @@ export function TopBar() {
             </button>
 
             <button type="button" className="btn-default" onClick={() => setUi({ modal: "shortcuts" })}>
-                <Icon name="sliders" size={13} />
+                <Icon name="keyboard" size={13} />
                 <span className="hidden lg:inline">Shortcuts</span>
+            </button>
+
+            {/* The sheet is non-modal, so the button can act as a toggle:
+                clicking Settings while it is open puts it away. */}
+            <button
+                type="button"
+                className="btn-default"
+                aria-pressed={modal === "settings"}
+                onClick={() => setUi({ modal: modal === "settings" ? null : "settings" })}
+                title="Editor preferences — snapping, wire animation and wire physics feel. Editor only; never part of the exported mod."
+            >
+                <Icon name="sliders" size={13} />
+                <span className="hidden lg:inline">Settings</span>
             </button>
 
             <button

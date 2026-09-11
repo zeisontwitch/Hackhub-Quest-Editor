@@ -68,17 +68,22 @@ same shape (a module value, a `useSyncExternalStore` subscription, a setter):
 They are deliberately **not** in the project: a view preference should not be
 exported with someone's mod, and should not create an undo entry.
 
+Their author-facing home is the **Settings sheet** (top bar, r140) — a
+non-modal right-anchored sheet so the canvas stays usable while tuning. The
+canvas toolbar keeps the three quick toggles at the point of use; both
+surfaces write the same modules, so they cannot disagree.
+
 ### Wire physics
 A damped spring on the midpoint of the wire being dragged — one wire at a time,
 never the resting ones. The loop writes one `d` attribute per frame and nothing
 else. Released wires wind back to their socket like a vacuum-cleaner cable.
-Numbers are tunable live from the debug panel.
+Numbers are tunable live from the Settings sheet (r140; before that, the debug
+panel carried the dials).
 
 ### The debug panel
 The **Debug** button on the canvas. Shows the build stamp, whether wire physics
-is allowed and which switch refused it, loop counters and FPS, sliders for every
-physics number, and a rolling log of the last sixty events. Costs nothing while
-closed.
+is allowed and which switch refused it, loop counters and FPS, and a rolling
+log of the last sixty events. Costs nothing while closed.
 
 It exists because a run of bugs all had the same shape: something upstream
 refused a feature silently, and the UI looked identical either way.

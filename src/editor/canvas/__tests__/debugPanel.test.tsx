@@ -128,10 +128,10 @@ describe("live tuning", () => {
         expect(localStorage.getItem("qe.wireTuning")).toBeNull();
     });
 
-    it("exposes the numbers the sliders drive", async () => {
+    it("no longer carries the tuning dials — they moved to Settings in r140", async () => {
         await openPanel();
         for (const label of ["Stiffness", "Damping", "Max sag", "Taut at", "Swing", "Fade ms", "Retract ms"]) {
-            expect(screen.getByLabelText(label)).toBeTruthy();
+            expect(screen.queryByLabelText(label)).toBeNull();
         }
     });
 

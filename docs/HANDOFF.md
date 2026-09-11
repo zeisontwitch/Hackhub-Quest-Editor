@@ -1,6 +1,49 @@
-# Handoff — r139
+# Handoff — r140
 
-r139 is a **Clean Code & Architecture pass** over the rail r137+r138 built
+r140 shipped the **Settings page** (roadmap item 5, plan:
+[plans/r140-settings-page.md](plans/r140-settings-page.md)) — the author-facing
+home for the editor preferences that used to live only in the debug panel (a
+developer tool) or on the canvas toolbar (no explanations, no dials):
+
+- **A settings sheet**, opened by a Settings button in the top bar (Shortcuts
+  moved to the `keyboard` icon; `sliders` finally means settings). It is a
+  right-anchored Radix dialog running **non-modal**: no dimmed overlay, and it
+  spans only the workspace between the fixed-height bars — so the canvas stays
+  visible and interactive while tuning, which is the whole point (the debug
+  panel proved that interaction model for two rounds). Esc closes it; the
+  top-bar button toggles it.
+- **Contents**: the snap / animated-wires / springy-wires switches with the
+  honest descriptions, and the seven wire-physics dials moved over from the
+  debug panel, each with a one-line hint, plus the damping-ratio and settle
+  readouts and Reset to defaults. A standing honesty line: none of it changes
+  the exported mod. Everything reads/writes the **existing** preference
+  modules (`snapGrid`, `wireMotion`, `wirePhysicsPref`, `wireTuning`) — the
+  sheet owns no state, so it can never disagree with the canvas toolbar.
+- **The "Fade ms" dial became honest.** The ghost's fade used to run on the
+  retraction's own easing curve, so `ghostMs` fed nothing but the backstop
+  timer — a dial that did nothing (the known inconsistency queued for exactly
+  this round). The fade is now its own pure arithmetic, `ghostOpacity()` in
+  `wireGhost.ts`: full opacity while the wire travels, then a fade over the
+  final `fadeMs`; a fade longer than the retraction outlives it (dissolve in
+  place), zero is an instant vanish. Shipped defaults keep the r115 QA'd
+  vacuum-cable feel; the lifetime test fails on the pre-r140 code (verified
+  by reverting). `WireGhostOptions.durationMs` → `fadeMs`; the vestigial
+  `GHOST_MS` export is gone.
+- **The debug panel went back to being a debug panel**: build stamp, gates,
+  counters/FPS, event log. The event log now records each ghost's
+  retract/fade pair, so "what were the numbers?" is answerable without a dial.
+- **Rider — a flaky gate made honest.** The two event-picker tests in
+  `packDataEditor.test.tsx` measure 21s / 6s on a slow sandbox, against
+  vitest's 5s per-test default, so `npm test` flaked there. Verified on the
+  clean r139 tree (changes stashed): identical timings — the machine, not a
+  change. Both now carry an explicit 30s timeout; assertions unchanged.
+- No `EDITOR_BUILD` bump — nothing the compiler emits changed (AR13).
+
+The canvas toolbar's three quick toggles and the Debug button stay as they
+were — direct manipulation at the point of use, both surfaces writing the
+same modules.
+
+r139 was a **Clean Code & Architecture pass** over the rail r137+r138 built
 (plan: [plans/r139-clean-code-architecture.md](plans/r139-clean-code-architecture.md)).
 No new feature — it pays the debt the pack system introduced:
 
@@ -122,22 +165,28 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r139 (Clean Code & Architecture) on
-  `arena/01a08fa5-hackhub-quest-editor`, not yet pushed. Previous
-  rounds: r138 (Editor Mods), r137 (tool packs, first rail), r136 (campaign
-  template), `423569f` (r130). (A sandbox reset rolled local history back to
-  `c0e511f` mid-r129, and again mid-r134 — that time taking node_modules with
-  it; recovered both times from the remote tip per the standing fetch-first
-  rule (mid-r134 addendum: rescue the round's uncommitted files with plain
-  copies BEFORE `reset --hard`), then `npm ci`. The remote is authoritative.)
-- **1,316 tests green** across 61 files, typecheck clean, build clean, and —
+- **HEAD:** r140 (Settings page) on
+  `arena/01a08ff8-hackhub-quest-editor`, committed — **push pending**: the
+  sandbox's GitHub token expired mid-round (`gh auth` says Bad credentials,
+  no credential helper, SSH blocked), so the next session must
+  `git push origin arena/01a08ff8-hackhub-quest-editor` first thing (or Zeis
+  reconnects GitHub in Arena). Previous
+  rounds: r139 (Clean Code & Architecture pass), r138 (Editor Mods), r137
+  (tool packs, first rail), r136 (campaign template), `423569f` (r130). (A
+  sandbox reset rolled local history back to `c0e511f` mid-r129, and again
+  mid-r134 — that time taking node_modules with it; recovered both times from
+  the remote tip per the standing fetch-first rule (mid-r134 addendum: rescue
+  the round's uncommitted files with plain copies BEFORE `reset --hard`),
+  then `npm ci`. The remote is authoritative.)
+- **1,331 tests green** across 62 files, typecheck clean, build clean, and —
   since the r138 prep rider — **vitest exits 0**: the 4 long-standing
   unhandled d3-drag errors were diagnosed as load-bearing jsdom noise (they
   aborted every canvas drag handler mid-gesture; four selection-gesture
   tests had been passing *because of* the crash) and fixed in
   `vitest.setup.ts` by giving MouseEvents the view a real browser would.
   r139 also cleared the `pack.node` duplicate-key React warning.
-- **Editor build stamp:** `2026-09-13.r139`.
+- **Editor build stamp:** `2026-09-13.r139` (r140 changes nothing the
+  compiler emits, so the stamp did not move — AR13).
 - Tool-pack modules: `src/toolpacks/schema.ts` (format 2 + plain-language
   `parseToolPack`), `src/toolpacks/palette.ts` (pure `packNodeDefs`,
   `packEvents`, `packEventByName`, `paletteDefKey` — the synthesized palette
@@ -384,16 +433,10 @@ wants the *specific action* named.
    retest of the completion path + Twotter on the patched build, and a minimal
    mail repro if BUG 1 persists. Before all of that: nothing implements,
    nothing is removed.
-4. **A settings page** (roadmap item 5) — the wire-physics dials live in the
-   debug panel, which is a developer tool. Those and the snap/animation/physics
-   toggles deserve a home an author can find. Also outstanding: the **fade-ms
-   slider in the debug panel does nothing** (the fade runs inside the
-   retraction, so `ghostMs` only feeds a safety backstop) — cosmetic, but a
-   real inconsistency to resolve when the settings page lands.
-5. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
+4. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
    template, not yet built. Cryptographer Hunt's fail-choice phone scene is
    the in-game proof this shape matters.
-6. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
+5. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
    banners + ports 25/110/143; Apache metasploit module for 2.4.49/50 or
    flavour?; Handbook screenshot (titles + categories) + the id=title jump
    test; eyes on the preview. Plus the Harbour `scp` hint fix noted above.

@@ -44,7 +44,7 @@ import {
 } from "./wirePhysics";
 import { dismissWireGhosts, retractWireGhosts, spawnWireGhost } from "./wireGhost";
 import type { EdgeKind } from "@/schema/edges";
-import { setSnapEnabled, snapEnabled, subscribeSnap } from "./snapGrid";
+import { setSnapEnabled, snapEnabled, snapStep, subscribeSnap } from "./snapGrid";
 import {
     setWirePhysicsEnabled,
     subscribeWirePhysics,
@@ -62,14 +62,13 @@ import {
 import { analyseGraph, summariseIssues, type GraphIssue } from "@/analysis/graph";
 import { Icon } from "@/components/Icon";
 import { useEditor, selectActiveQuest } from "@/store/editor";
-import { categoryOf, nodeTypeDef, sourcesOf, CATEGORY_HEX } from "@/schema/registry";
+import { categoryOf, nodeTypeDef, sourcesOf } from "@/schema/registry";
+import { themeCategoryHex } from "@/editor/settings/theme";
 import { HANDLE_STYLE } from "@/schema/edges";
 import type { NodeType } from "@/schema/nodes";
 import type { EdgeDoc } from "@/schema/edges";
 
 const NODE_TYPES: NodeTypes = { qe: GraphNode };
-/** Stable identity: a fresh array each render would churn React Flow's store. */
-const SNAP_GRID: [number, number] = [GRID, GRID];
 
 const EDGE_TYPES: EdgeTypes = { typed: TypedEdge };
 
@@ -137,6 +136,9 @@ function CanvasInner() {
     const { screenToFlowPosition, getInternalNode } = useReactFlow();
     // Per-author editor preferences, kept out of the project document.
     const snap = useSyncExternalStore(subscribeSnap, snapEnabled, () => false);
+    // The cell size is a preference too (r141): grid, dots and align spacing
+    // all read it, so what snaps together also spaces together.
+    const step = useSyncExternalStore(subscribeSnap, snapStep, () => GRID);
     const physics = useSyncExternalStore(
         subscribeWirePhysics,
         wirePhysicsEnabled,
@@ -697,7 +699,7 @@ function CanvasInner() {
              */
             const moved =
                 what === "row" || what === "column"
-                    ? alignPositions(chosen, what, snapEnabled() ? GRID : 0)
+                    ? alignPositions(chosen, what, snapEnabled() ? snapStep() : 0)
                     : distributePositions(chosen, what === "spread-row" ? "row" : "column");
             arrangeNodes(moved);
         },
@@ -1169,7 +1171,7 @@ function CanvasInner() {
                         : { x: 0, y: 0, zoom: 0.85 }
                 }
                 snapToGrid={snap}
-                snapGrid={SNAP_GRID}
+                snapGrid={[step, step]}
                 deleteKeyCode={["Backspace", "Delete"]}
                 selectionKeyCode={null}
                 /*
@@ -1189,7 +1191,7 @@ function CanvasInner() {
                 proOptions={{ hideAttribution: true }}
                 className="bg-canvas"
             >
-                <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#1c2029" />
+                <Background variant={BackgroundVariant.Dots} gap={step} size={1} color="var(--color-canvas-dots)" />
                 <Controls position="bottom-left" showInteractive={false} />
                 <MiniMap
                     position="bottom-right"
@@ -1201,14 +1203,14 @@ function CanvasInner() {
                         // A frame is a container, not a card: draw it as a faint
                         // wash in its own colour so the nodes inside stay visible.
                         if (doc.type === "layout.group") {
-                            return withAlpha(doc.data?.color || CATEGORY_HEX.layout, 0.22);
+                            return withAlpha(doc.data?.color || themeCategoryHex("layout"), 0.22);
                         }
                         // Concrete hex per category, matching the node cards'
-                        // accent stripe (see CATEGORY_HEX).
-                        return CATEGORY_HEX[categoryOf(doc.type).id];
+                        // accent stripe — theme-aware for the two themes that
+                        // retint categories (see theme.ts).
+                        return themeCategoryHex(categoryOf(doc.type).id);
                     }}
                     nodeStrokeWidth={0}
-                    maskColor="rgba(8, 9, 13, 0.72)"
                 />
             </ReactFlow>
 

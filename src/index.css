@@ -14,6 +14,8 @@
     /* Surfaces */
     --color-void: #08090d;
     --color-canvas: #0c0e13;
+    /* The canvas dot pattern — the visible face of the snap grid. */
+    --color-canvas-dots: #1c2029;
     --color-surface: #12141b;
     --color-surface-2: #171a22;
     --color-surface-3: #1e222c;
@@ -65,6 +67,268 @@
     /* Shadows */
     --shadow-node: 0 1px 2px rgb(0 0 0 / 0.5), 0 8px 24px -12px rgb(0 0 0 / 0.7);
     --shadow-panel: 0 12px 40px -12px rgb(0 0 0 / 0.8);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   Themes (r141)
+
+   One unlayered `html[data-theme="…"]` block per curated palette. Unlayered
+   on purpose: Tailwind v4 emits @theme tokens inside `@layer theme`, and an
+   unlayered rule beats a layered one regardless of specificity — so these
+   overrides win at runtime, which is what lets the Settings sheet preview a
+   theme live. The blocks below are the source of truth for each palette;
+   `src/editor/settings/theme.ts` mirrors a few values for its picker cards
+   and the minimap.
+
+   The rule that keeps the canvas readable: themes retint the CHROME, and
+   only High Contrast and Daylight also shift the node-category hues — as a
+   curated set, never per colour. The categories are the canvas's reading
+   language.
+   ───────────────────────────────────────────────────────────────────── */
+
+html[data-theme="high-contrast"] {
+    --color-void: #000000;
+    --color-canvas: #050608;
+    --color-canvas-dots: #2a3040;
+    --color-surface: #0b0d12;
+    --color-surface-2: #12151d;
+    --color-surface-3: #1a1e28;
+    --color-line: #3d4454;
+    --color-line-strong: #59617a;
+
+    --color-ink: #ffffff;
+    --color-ink-2: #dfe3ee;
+    --color-ink-3: #aab2c5;
+    --color-ink-4: #7c8598;
+
+    --color-accent: #4ee4ff;
+    --color-accent-dim: #0e7490;
+    --color-accent-soft: rgba(78, 228, 255, 0.18);
+
+    --color-ok: #45e8a4;
+    --color-warn: #ffd23e;
+    --color-danger: #ff8f8f;
+
+    --color-cat-entry: #c4a5fc;
+    --color-cat-objective: #ffd23e;
+    --color-cat-trigger: #55e3ff;
+    --color-cat-world: #52e8b0;
+    --color-cat-community: #5ce8d8;
+    --color-cat-comms: #ff8cc9;
+    --color-cat-reply: #ffab5e;
+    --color-cat-effect: #82b4ff;
+    --color-cat-flow: #b8c4d4;
+    --color-cat-layout: #8494ab;
+}
+
+/* A warm cream, not a white screen: the paper-and-ink counterpart, with the
+   accent darkened because cyan on cream has no contrast. */
+html[data-theme="daylight"] {
+    --color-void: #efe5d0;
+    --color-canvas: #f7efdf;
+    --color-canvas-dots: #e6d9bd;
+    --color-surface: #fdf6e9;
+    --color-surface-2: #f6ecd9;
+    --color-surface-3: #eee1c8;
+    --color-line: #e3d5b8;
+    --color-line-strong: #cdb98f;
+
+    --color-ink: #2b2313;
+    --color-ink-2: #4a4030;
+    --color-ink-3: #6f6350;
+    --color-ink-4: #8a7a63;
+
+    --color-accent: #0f7d96;
+    --color-accent-dim: #0c6478;
+    --color-accent-soft: rgba(15, 125, 150, 0.12);
+
+    --color-ok: #0e8a54;
+    --color-warn: #a86f00;
+    --color-danger: #c23a3a;
+
+    --color-cat-entry: #6d4bc4;
+    --color-cat-objective: #a8730a;
+    --color-cat-trigger: #0b7d97;
+    --color-cat-world: #0f8a56;
+    --color-cat-community: #0b8478;
+    --color-cat-comms: #c2337f;
+    --color-cat-reply: #c05f16;
+    --color-cat-effect: #2b62c9;
+    --color-cat-flow: #5b6b80;
+    --color-cat-layout: #56647a;
+
+    --shadow-node: 0 1px 2px rgb(72 60 32 / 0.18), 0 8px 24px -12px rgb(72 60 32 / 0.3);
+    --shadow-panel: 0 12px 40px -12px rgb(72 60 32 / 0.35);
+}
+
+/* Green-on-black CRT. Categories keep their standard hues — the reading
+   language survives the nostalgia (see theme.ts). */
+html[data-theme="phosphor"] {
+    --color-void: #030703;
+    --color-canvas: #050b06;
+    --color-canvas-dots: #123318;
+    --color-surface: #0a140b;
+    --color-surface-2: #0e1c10;
+    --color-surface-3: #142616;
+    --color-line: #1d3320;
+    --color-line-strong: #2c4c31;
+
+    --color-ink: #a8f0b0;
+    --color-ink-2: #7fd68d;
+    --color-ink-3: #55a864;
+    --color-ink-4: #3a7a47;
+
+    --color-accent: #4dff88;
+    --color-accent-dim: #1d7a3f;
+    --color-accent-soft: rgba(77, 255, 136, 0.12);
+
+    --color-ok: #58e88d;
+    --color-warn: #ffd23e;
+    --color-danger: #ff7a7a;
+}
+
+/* A warm, low-blue dark mode for evening sessions. */
+html[data-theme="dusk"] {
+    --color-void: #0d0906;
+    --color-canvas: #120d08;
+    --color-canvas-dots: #2e2318;
+    --color-surface: #191209;
+    --color-surface-2: #1f1710;
+    --color-surface-3: #2a1f15;
+    --color-line: #38291a;
+    --color-line-strong: #4d3a24;
+
+    --color-ink: #f3e9da;
+    --color-ink-2: #d6c5ab;
+    --color-ink-3: #a89172;
+    --color-ink-4: #7a6750;
+
+    --color-accent: #f5b04c;
+    --color-accent-dim: #9a6a1f;
+    --color-accent-soft: rgba(245, 176, 76, 0.14);
+
+    --color-ok: #7ddba0;
+    --color-warn: #ffcf5e;
+    --color-danger: #ff8f7a;
+}
+
+/* A softer, lighter grey-blue dark mode — less stark than Midnight. */
+html[data-theme="slate"] {
+    --color-void: #101318;
+    --color-canvas: #141821;
+    --color-canvas-dots: #232b38;
+    --color-surface: #1a1f2a;
+    --color-surface-2: #212734;
+    --color-surface-3: #2a3242;
+    --color-line: #333c4d;
+    --color-line-strong: #475266;
+
+    --color-ink: #dde3ee;
+    --color-ink-2: #b7c0d1;
+    --color-ink-3: #8b96ac;
+    --color-ink-4: #626d84;
+
+    --color-accent: #7dd3fc;
+    --color-accent-dim: #3b7ea1;
+    --color-accent-soft: rgba(125, 211, 252, 0.12);
+
+    --color-ok: #6fdcac;
+    --color-warn: #fbd66a;
+    --color-danger: #f2938c;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   UI fonts (r141) — self-hosted in public/fonts/, no CDN, latin only.
+   "system" is the absence of an override. The mono option replaces the
+   whole UI face; --font-mono (code views, monospace fields) keeps its own
+   stack so code stays code.
+   ───────────────────────────────────────────────────────────────────── */
+
+html[data-font="readable"] {
+    --font-sans: Verdana, Tahoma, "Segoe UI", Geneva, sans-serif;
+}
+
+html[data-font="atkinson"] {
+    --font-sans: "Atkinson Hyperlegible", Verdana, ui-sans-serif, system-ui, sans-serif;
+}
+
+html[data-font="lexend"] {
+    --font-sans: "Lexend", ui-sans-serif, system-ui, sans-serif;
+}
+
+html[data-font="jetbrains"] {
+    --font-sans: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@font-face {
+    font-family: "Atkinson Hyperlegible";
+    src: url("/fonts/atkinson-hyperlegible-latin-400-normal.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Atkinson Hyperlegible";
+    src: url("/fonts/atkinson-hyperlegible-latin-700-normal.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Lexend";
+    src: url("/fonts/lexend-latin-400-normal.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Lexend";
+    src: url("/fonts/lexend-latin-500-normal.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Lexend";
+    src: url("/fonts/lexend-latin-600-normal.woff2") format("woff2");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "Lexend";
+    src: url("/fonts/lexend-latin-700-normal.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("/fonts/jetbrains-mono-latin-400-normal.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("/fonts/jetbrains-mono-latin-500-normal.woff2") format("woff2");
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("/fonts/jetbrains-mono-latin-600-normal.woff2") format("woff2");
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("/fonts/jetbrains-mono-latin-700-normal.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
 }
 
 @layer base {
@@ -458,6 +722,14 @@
 .webpage-mail a { color: var(--color-accent); }
 
 /* ── code view syntax colours (Prism, un-themed core) ───────────────────── */
+/* The code view keeps its own fixed dark surface and ink: the Prism token
+   colours below are tuned for exactly one background, like an embedded
+   terminal, and do not follow the theme. */
+.codeview {
+    background: #0b0d12;
+    color: #b3b9c9;
+}
+
 .codeview .token.comment, .codeview .token.prolog, .codeview .token.doctype,
 .codeview .token.cdata { color: #5d6678; font-style: italic; }
 .codeview .token.punctuation { color: #8a93a8; }

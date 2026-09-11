@@ -1,4 +1,46 @@
-# Handoff — r140
+# Handoff — r141
+
+r141 made the settings page a real settings page (plan:
+[plans/r141-themes-and-preferences.md](plans/r141-themes-and-preferences.md)),
+Zeis's approved scope:
+
+- **Six curated themes** — Midnight (default), High Contrast, Daylight (a warm
+  cream light mode, not pure white), Phosphor (green retro terminal), Dusk
+  (warm low-blue dark) and Slate (soft cool grey). Each is one unlayered
+  `html[data-theme="…"]` token block in `src/index.css`; Tailwind v4's theme
+  tokens live in `@layer theme`, so the unlayered block wins at runtime and
+  clicking a card repaints the live canvas beside the sheet. Themes retint
+  chrome only; High Contrast and Daylight also shift the node-category hues
+  **as a set** (the canvas's reading language survives), and the minimap gets
+  matching hex overrides via `themeCategoryHex` because its SVG `fill`
+  attributes can't resolve `var()`.
+- **Typography** — a curated font picker: System, Readable system
+  (Verdana-led), Atkinson Hyperlegible, Lexend, JetBrains Mono. All
+  self-hosted woff2s in `public/fonts/` (OFL licences alongside, provenance in
+  its README — Fontsource packages; Google's font API is blocked from this
+  sandbox, npm is not). A boot script in `index.html` applies stored theme +
+  font before first paint; the modules re-apply on import (which covers
+  tests). No UI scale, per Zeis — browser zoom already does that.
+- **Snap grid size** (Fine 11 / Standard 22 / Coarse 44) — one number, three
+  meanings by design: the drag grid, the canvas dot pattern (`gap` follows
+  the step; the dots are the grid and must not lie) and the align spacing.
+- **Wire dot drift speed** (Calm / Standard / Brisk) — `DOT_PERIOD_S` became
+  the default of a stored preference; `setDotPeriod` restarts running
+  animations (the r43 per-layer registry is what makes that safe). Falsified:
+  the new cycle test fails with the period reverted to a constant.
+- **Editor data section** — "Reset all editor preferences" (calls every
+  module's own setter; fresh-install defaults, OS reduced-motion included)
+  and "Clear the autosaved draft" (`DRAFT_KEY`, now exported from autosave).
+  Both two-step like the pack manager's remove.
+- Canvas hardcodes retired along the way: the minimap mask and background
+  dots now derive from theme tokens (both flow through CSS custom properties
+  — verified in the xyflow dist, not assumed), and the website builder's code
+  view is pinned dark because its Prism colours are tuned for one background.
+
+**Zeis's eyes only** (jsdom cannot see a palette or a typeface): all six
+themes' actual look, the three bundled fonts rendering, dot speed, and the
+light theme's native scrollbar/`color-scheme` behaviour. No `EDITOR_BUILD`
+bump — nothing the compiler emits changed (AR13).
 
 r140 shipped the **Settings page** (roadmap item 5, plan:
 [plans/r140-settings-page.md](plans/r140-settings-page.md)) — the author-facing
@@ -165,16 +207,17 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r140 (Settings page) on
+- **HEAD:** r141 (themes, typography, settings round two) on
   `arena/01a08ff8-hackhub-quest-editor`, committed and pushed. Previous
-  rounds: r139 (Clean Code & Architecture pass), r138 (Editor Mods), r137
+  rounds: r140 (Settings page), r139 (Clean Code & Architecture pass),
+  r138 (Editor Mods), r137
   (tool packs, first rail), r136 (campaign template), `423569f` (r130). (A
   sandbox reset rolled local history back to `c0e511f` mid-r129, and again
   mid-r134 — that time taking node_modules with it; recovered both times from
   the remote tip per the standing fetch-first rule (mid-r134 addendum: rescue
   the round's uncommitted files with plain copies BEFORE `reset --hard`),
   then `npm ci`. The remote is authoritative.)
-- **1,331 tests green** across 62 files, typecheck clean, build clean, and —
+- **1,353 tests green** across 63 files, typecheck clean, build clean, and —
   since the r138 prep rider — **vitest exits 0**: the 4 long-standing
   unhandled d3-drag errors were diagnosed as load-bearing jsdom noise (they
   aborted every canvas drag handler mid-gesture; four selection-gesture

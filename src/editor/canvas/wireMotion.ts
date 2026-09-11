@@ -37,7 +37,7 @@
 
 /** Distance between two travelling dots, in pixels. */
 export const DOT_GAP = 14;
-/** Seconds for a dot to travel one gap: 10px/s — a calm drift, not a stampede. */
+/** Seconds for a dot to travel one gap at the default speed: 10px/s — a calm drift, not a stampede. */
 export const DOT_PERIOD_S = 1.4;
 /**
  * Fallback repaint rate, in frames per second. The dots move one 14px gap
@@ -47,6 +47,14 @@ export const DOT_PERIOD_S = 1.4;
 export const FALLBACK_FPS = 15;
 
 const STORAGE_KEY = "hackhub-quest-editor:wire-motion:v1";
+const PERIOD_KEY = "qe.dotPeriod";
+
+/** The drift speeds offered in Settings, as seconds per dot gap. */
+export const DOT_SPEEDS = [
+    { id: "calm", label: "Calm", seconds: 2.4 },
+    { id: "standard", label: "Standard", seconds: DOT_PERIOD_S },
+    { id: "brisk", label: "Brisk", seconds: 0.8 },
+] as const;
 
 type Listener = () => void;
 
@@ -61,7 +69,42 @@ function readStored(): boolean {
     }
 }
 
+function readStoredPeriod(): number {
+    try {
+        const raw = Number(localStorage.getItem(PERIOD_KEY));
+        return raw > 0 && raw <= 10 ? raw : DOT_PERIOD_S;
+    } catch {
+        return DOT_PERIOD_S;
+    }
+}
+
 let enabled = readStored();
+let dotPeriod = readStoredPeriod();
+
+/** Seconds one dot takes to travel one gap — the live drift speed. */
+export function dotPeriodS(): number {
+    return dotPeriod;
+}
+
+/**
+ * Change the drift speed, remember it, and restart any running dot animation
+ * so the new speed is felt immediately (r43's per-layer animation registry is
+ * what makes this a stop/start rather than a teardown).
+ */
+export function setDotPeriod(seconds: number): void {
+    if (seconds <= 0 || seconds === dotPeriod) return;
+    dotPeriod = seconds;
+    try {
+        localStorage.setItem(PERIOD_KEY, String(seconds));
+    } catch {
+        /* not being able to remember it is not a reason to fail */
+    }
+    if (enabled) {
+        stop();
+        start();
+    }
+    for (const l of listeners) l();
+}
 
 /**
  * Every wire's dot layer, so each can be animated on its own.
@@ -96,7 +139,8 @@ function nowMs(): number {
  * tests, and used by the no-`Element.animate` fallback.
  */
 export function paintDashOffset(ms: number, target?: SVGPathElement | null): void {
-    const phase = ((ms / 1000) % DOT_PERIOD_S) / DOT_PERIOD_S;
+    const period = dotPeriodS();
+    const phase = ((ms / 1000) % period) / period;
     const value = `${-(phase * DOT_GAP).toFixed(2)}px`;
     const targets = target ? [target] : [...dotLayers];
     for (const el of targets) el.style.strokeDashoffset = value;
@@ -107,12 +151,12 @@ function animate(el: SVGPathElement): void {
     if (typeof el.animate !== "function") return;
     const anim = el.animate(
         [{ strokeDashoffset: "0px" }, { strokeDashoffset: `${-DOT_GAP}px` }],
-        { duration: DOT_PERIOD_S * 1000, iterations: Infinity, easing: "linear" },
+        { duration: dotPeriodS() * 1000, iterations: Infinity, easing: "linear" },
     );
     /* Pin every wire to the same origin so the dots stay in step no matter
        when each wire was added to the canvas. */
     try {
-        anim.currentTime = (nowMs() - phaseOrigin) % (DOT_PERIOD_S * 1000);
+        anim.currentTime = (nowMs() - phaseOrigin) % (dotPeriodS() * 1000);
     } catch {
         /* Engines that refuse to seek still animate, just out of phase. */
     }

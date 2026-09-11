@@ -29,8 +29,11 @@ const listeners = new Set<Listener>();
  * On, unless the OS asks for reduced motion — a hint, not a veto. Using it to
  * *block* the feature meant a deliberate click on "Springy wires" did nothing
  * and said nothing, which is worse for the author than simply defaulting off.
+ *
+ * Exported since r141: the settings sheet's reset-everything action needs the
+ * fresh-install default, not a hardcoded "on".
  */
-function defaultWirePhysics(): boolean {
+export function defaultWirePhysics(): boolean {
     try {
         return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     } catch {

@@ -55,15 +55,20 @@ comment in it records a specific in-game failure. Read them before changing it.
 terminates it. That has broken the build at least once.
 
 ### Editor preferences
-Four toggles live outside the project document, in `localStorage`, each with the
-same shape (a module value, a `useSyncExternalStore` subscription, a setter):
+The editor's own knobs live outside the project document, in `localStorage`,
+each with the same shape (a module value, a `useSyncExternalStore`
+subscription, a setter):
 
 | Preference | Module | Default |
 |---|---|---|
 | Snap to grid | `snapGrid.ts` | off |
+| Snap grid size | `snapGrid.ts` | 22 |
 | Animated wires | `wireMotion.ts` | on |
-| Springy wires | `wirePhysicsPref.ts` | on |
+| Dot drift speed | `wireMotion.ts` | 1.4s per gap |
+| Springy wires | `wirePhysicsPref.ts` | on (OS reduced-motion aware) |
 | Wire tuning numbers | `wireTuning.ts` | see the file |
+| Theme | `settings/theme.ts` | Midnight |
+| Interface font | `settings/uiFont.ts` | System |
 
 They are deliberately **not** in the project: a view preference should not be
 exported with someone's mod, and should not create an undo entry.
@@ -72,6 +77,19 @@ Their author-facing home is the **Settings sheet** (top bar, r140) — a
 non-modal right-anchored sheet so the canvas stays usable while tuning. The
 canvas toolbar keeps the three quick toggles at the point of use; both
 surfaces write the same modules, so they cannot disagree.
+
+**Themes (r141)** are six curated palettes, each one unlayered
+`html[data-theme="…"]` token block in `src/index.css` — Tailwind v4 emits its
+theme tokens in `@layer theme`, so the unlayered block wins at runtime and
+switching repaints live. Themes retint the chrome; only High Contrast and
+Daylight also shift the node-category hues, as a set (the categories are the
+canvas's reading language). The minimap can't resolve `var()` in its SVG
+fills, so `theme.ts` carries hex overrides for those two themes
+(`themeCategoryHex`). Fonts are self-hosted woff2s in `public/fonts/` behind
+`html[data-font="…"]` stacks; a boot script in `index.html` applies the stored
+theme + font before first paint so there is no flash. The website builder's
+code view is pinned dark — its Prism syntax colours are tuned for one
+background, like an embedded terminal.
 
 ### Wire physics
 A damped spring on the midpoint of the wire being dragged — one wire at a time,

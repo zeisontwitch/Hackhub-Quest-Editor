@@ -8,28 +8,42 @@
  * toggles, the debug panel and this sheet can never disagree.
  *
  * A right-anchored sheet rather than a dimmed, centred modal, because every
- * setting is about the canvas and tuning wire feel means *seeing wires while
- * moving a dial* — the interaction model the debug panel already proved.
- * Radix runs the dialog non-modal: no overlay, the canvas stays reachable,
- * focus moves into the sheet on open and Esc closes it. The sheet spans only
- * the workspace between the fixed-height top and status bars, so the rest of
- * the chrome — Export, Debug, the Settings button itself as a toggle — stays
+ * setting is about the canvas and tuning means *seeing the canvas while
+ * changing something* — the interaction model the debug panel proved. Radix
+ * runs the dialog non-modal: no overlay, the canvas stays reachable, focus
+ * moves into the sheet on open and Esc closes it. The sheet spans only the
+ * workspace between the fixed-height top and status bars, so the rest of the
+ * chrome — Export, Debug, the Settings button itself as a toggle — stays
  * clickable while it is open.
+ *
+ * Theme and font choices apply the moment they are clicked, and the canvas
+ * beside the sheet is the preview (r141).
  */
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/Icon";
-import { snapEnabled, setSnapEnabled, subscribeSnap } from "@/editor/canvas/snapGrid";
+import { clearDraft } from "@/store/autosave";
 import {
-    wireMotionEnabled,
+    SNAP_STEPS,
+    setSnapEnabled,
+    setSnapStep,
+    snapEnabled,
+    snapStep,
+    subscribeSnap,
+} from "@/editor/canvas/snapGrid";
+import {
+    DOT_PERIOD_S,
+    dotPeriodS,
+    setDotPeriod,
     setWireMotion,
     subscribeWireMotion,
+    wireMotionEnabled,
 } from "@/editor/canvas/wireMotion";
 import {
-    wirePhysicsEnabled,
     setWirePhysicsEnabled,
     subscribeWirePhysics,
+    wirePhysicsEnabled,
 } from "@/editor/canvas/wirePhysicsPref";
 import {
     DEFAULT_TUNING,
@@ -41,6 +55,22 @@ import {
     wireTuning,
     type WireTuning,
 } from "@/editor/canvas/wireTuning";
+import {
+    currentTheme,
+    setTheme,
+    subscribeTheme,
+    THEMES,
+    type ThemeDef,
+} from "@/editor/settings/theme";
+import {
+    currentUiFont,
+    setUiFont,
+    subscribeUiFont,
+    UI_FONTS,
+    type UiFontId,
+} from "@/editor/settings/uiFont";
+import { resetEditorPreferences } from "@/editor/settings/reset";
+import { useEditor } from "@/store/editor";
 
 /** The dials, their ranges, and the one-line hint that makes each tunable
     without reading the physics. Wording follows wireTuning's own docs. */
@@ -61,6 +91,8 @@ const DIALS: {
     { key: "ghostMs", label: "Fade ms", hint: "How long the release ghost takes to fade out, over the end of its retraction.", min: 0, max: 1000, step: 5 },
 ];
 
+const GRID_LABELS: Record<number, string> = { 11: "Fine", 22: "Standard", 44: "Coarse" };
+
 export function SettingsDialog({
     open,
     onOpenChange,
@@ -69,10 +101,15 @@ export function SettingsDialog({
     onOpenChange: (open: boolean) => void;
 }) {
     const snap = useSyncExternalStore(subscribeSnap, snapEnabled, () => false);
+    const step = useSyncExternalStore(subscribeSnap, snapStep, () => 22);
     const motion = useSyncExternalStore(subscribeWireMotion, wireMotionEnabled, () => true);
     const physics = useSyncExternalStore(subscribeWirePhysics, wirePhysicsEnabled, () => true);
     const tuning = useSyncExternalStore(subscribeWireTuning, wireTuning, () => DEFAULT_TUNING);
+    const drift = useSyncExternalStore(subscribeWireMotion, dotPeriodS, () => DOT_PERIOD_S);
+    const theme = useSyncExternalStore(subscribeTheme, currentTheme, () => THEMES[0]);
+    const font = useSyncExternalStore(subscribeUiFont, currentUiFont, () => UI_FONTS[0]);
     const zeta = dampingRatio(tuning);
+    const toast = useEditor((s) => s.toast);
 
     return (
         <Dialog.Root open={open} onOpenChange={onOpenChange} modal={false}>
@@ -82,7 +119,7 @@ export function SettingsDialog({
                         // Spans the workspace only — top-12/bottom-7 match the
                         // fixed-height bars (h-12 top bar, h-7 status bar), so
                         // the chrome around it stays live and clickable.
-                        "fixed top-12 bottom-7 right-0 z-50 flex w-[min(360px,94vw)] flex-col",
+                        "fixed top-12 bottom-7 right-0 z-50 flex w-[min(380px,94vw)] flex-col",
                         "overflow-hidden border-l border-line bg-surface shadow-panel",
                     )}
                 >
@@ -104,6 +141,46 @@ export function SettingsDialog({
                     </div>
 
                     <div className="flex-1 overflow-y-auto px-4 pb-4">
+                        <Section>Theme</Section>
+                        <p className="mb-2 text-[11px] leading-relaxed text-ink-4">
+                            Applies instantly — the canvas beside this sheet is the preview.
+                            Node categories keep their colours except where a theme genuinely
+                            needs them shifted.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                            {THEMES.map((t) => (
+                                <ThemeCard
+                                    key={t.id}
+                                    theme={t}
+                                    active={t.id === theme.id}
+                                    onPick={() => setTheme(t.id)}
+                                />
+                            ))}
+                        </div>
+
+                        <Section>Typography</Section>
+                        <label className="block">
+                            <span className="mb-1 block text-[12px] font-medium text-ink-2">
+                                Interface font
+                            </span>
+                            <select
+                                aria-label="Interface font"
+                                className="field-input"
+                                value={font.id}
+                                onChange={(e) => setUiFont(e.target.value as UiFontId)}
+                            >
+                                {UI_FONTS.map((f) => (
+                                    <option key={f.id} value={f.id}>
+                                        {f.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <p className="mt-1.5 text-[10.5px] leading-snug text-ink-4">{font.hint}</p>
+                        <p className="mt-1 text-[10.5px] leading-snug text-ink-4">
+                            Fonts are bundled with the editor — no internet needed.
+                        </p>
+
                         <Section>Canvas</Section>
                         <SwitchRow
                             label="Snap to grid"
@@ -111,6 +188,22 @@ export function SettingsDialog({
                             checked={snap}
                             onChange={setSnapEnabled}
                         />
+                        <div className="border-b border-line py-2.5">
+                            <div className="mb-1 text-[12.5px] font-medium text-ink">Grid size</div>
+                            <Segmented
+                                ariaLabel="Grid size"
+                                options={SNAP_STEPS.map((s) => ({
+                                    value: String(s),
+                                    label: GRID_LABELS[s],
+                                }))}
+                                value={String(step)}
+                                onPick={(v) => setSnapStep(Number(v) as (typeof SNAP_STEPS)[number])}
+                            />
+                            <p className="mt-1 text-[10.5px] leading-snug text-ink-4">
+                                The cell nodes snap to — and the spacing align/distribute uses, so
+                                what snaps together also spaces together.
+                            </p>
+                        </div>
 
                         <Section>Wires</Section>
                         <SwitchRow
@@ -119,6 +212,22 @@ export function SettingsDialog({
                             checked={motion}
                             onChange={setWireMotion}
                         />
+                        <div className="border-b border-line py-2.5">
+                            <div className="mb-1 text-[12.5px] font-medium text-ink">Drift speed</div>
+                            <Segmented
+                                ariaLabel="Drift speed"
+                                options={[
+                                    { value: "2.4", label: "Calm" },
+                                    { value: "1.4", label: "Standard" },
+                                    { value: "0.8", label: "Brisk" },
+                                ]}
+                                value={nearestDriftOption(drift)}
+                                onPick={(v) => setDotPeriod(Number(v))}
+                            />
+                            <p className="mt-1 text-[10.5px] leading-snug text-ink-4">
+                                How fast the dots travel along a resting wire.
+                            </p>
+                        </div>
                         <SwitchRow
                             label="Springy wires"
                             description="A wire you drag hangs and springs as you move it. Off means plain, straight wires — lighter on older machines."
@@ -178,10 +287,170 @@ export function SettingsDialog({
                             <Icon name="refresh" size={12} />
                             Reset to defaults
                         </button>
+
+                        <Section>Editor data</Section>
+                        <DangerAction
+                            label="Reset all editor preferences"
+                            description="Theme, font, snapping, wires and physics numbers go back to what a fresh install uses. Your project is not touched."
+                            confirmLabel="Really reset?"
+                            onConfirmed={() => {
+                                resetEditorPreferences();
+                                toast("Editor preferences reset.", "ok");
+                            }}
+                        />
+                        <DangerAction
+                            label="Clear the autosaved draft"
+                            description="Erases the browser's saved copy of this project. The canvas keeps what you see — but after a reload it is gone."
+                            confirmLabel="Really erase?"
+                            onConfirmed={() => {
+                                clearDraft();
+                                toast("Autosaved draft cleared.", "ok");
+                            }}
+                        />
                     </div>
                 </Dialog.Content>
             </Dialog.Portal>
         </Dialog.Root>
+    );
+}
+/** The offered drift speed closest to the live one, so the segmented
+    control always highlights something even if the stored value is off-menu. */
+function nearestDriftOption(seconds: number): string {
+    return ["2.4", "1.4", "0.8"].reduce((best, v) =>
+        Math.abs(Number(v) - seconds) < Math.abs(Number(best) - seconds) ? v : best,
+    );
+}
+
+function ThemeCard({
+    theme,
+    active,
+    onPick,
+}: {
+    theme: ThemeDef;
+    active: boolean;
+    onPick: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onPick}
+            aria-pressed={active}
+            title={theme.hint}
+            className={cn(
+                "flex flex-col gap-1.5 rounded-lg border p-2 text-left transition-colors",
+                active
+                    ? "border-accent/60 bg-accent-soft"
+                    : "border-line bg-surface-2/40 hover:border-line-strong hover:bg-surface-2",
+            )}
+        >
+            {/* Four chips: canvas, surface, ink, accent — a silhouette of the
+                theme, drawn from the same values the CSS block uses. */}
+            <span className="flex gap-1" aria-hidden>
+                {[theme.preview.canvas, theme.preview.surface, theme.preview.ink, theme.preview.accent].map(
+                    (colour, i) => (
+                        <span
+                            key={i}
+                            className="h-4 flex-1 rounded-sm border border-black/20"
+                            style={{ background: colour }}
+                        />
+                    ),
+                )}
+            </span>
+            <span className="flex items-center gap-1 text-[11.5px] font-medium text-ink">
+                {active && <span className="size-1.5 rounded-full bg-accent" aria-hidden />}
+                {theme.label}
+            </span>
+        </button>
+    );
+}
+
+function Segmented({
+    ariaLabel,
+    options,
+    value,
+    onPick,
+}: {
+    ariaLabel: string;
+    options: { value: string; label: string }[];
+    value: string;
+    onPick: (value: string) => void;
+}) {
+    return (
+        <div
+            role="radiogroup"
+            aria-label={ariaLabel}
+            className="flex overflow-hidden rounded-md border border-line"
+        >
+            {options.map((option, i) => {
+                const active = option.value === value;
+                return (
+                    <button
+                        key={option.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => onPick(option.value)}
+                        className={cn(
+                            "flex-1 py-1 text-[11.5px] transition-colors",
+                            i > 0 && "border-l border-line",
+                            active
+                                ? "bg-accent-soft font-medium text-ink"
+                                : "text-ink-3 hover:bg-surface-2 hover:text-ink-2",
+                        )}
+                    >
+                        {option.label}
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
+function DangerAction({
+    label,
+    description,
+    confirmLabel,
+    onConfirmed,
+}: {
+    label: string;
+    description: string;
+    confirmLabel: string;
+    onConfirmed: () => void;
+}) {
+    const [arming, setArming] = useState(false);
+    return (
+        <div className="border-b border-line py-2.5 last:border-b-0">
+            <div className="text-[12.5px] font-medium text-ink">{label}</div>
+            <p className="mt-0.5 mb-1.5 text-[11px] leading-relaxed text-ink-4">{description}</p>
+            {/* Two steps, like the pack manager's remove: the first click only
+                arms, the second commits, and anything else disarms. */}
+            {arming ? (
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        className="btn-default border-danger/50 text-danger hover:bg-danger/10"
+                        onClick={() => {
+                            setArming(false);
+                            onConfirmed();
+                        }}
+                    >
+                        <Icon name="alert" size={12} />
+                        {confirmLabel}
+                    </button>
+                    <button
+                        type="button"
+                        className="btn-default"
+                        onClick={() => setArming(false)}
+                    >
+                        Cancel
+                    </button>
+                </div>
+            ) : (
+                <button type="button" className="btn-default" onClick={() => setArming(true)}>
+                    {label}
+                </button>
+            )}
+        </div>
     );
 }
 

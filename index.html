@@ -1,14 +1,28 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="dark" />
+    <!-- Both schemes allowed: the theme module sets the live one, and this
+         script applies the stored theme + font before first paint so a
+         returning author never sees a Midnight flash in Daylight. -->
+    <meta name="color-scheme" content="dark light" />
     <meta
       name="description"
       content="Visual no-code quest mod editor for HackHub - Ultimate Hacker Simulator"
     />
     <title>Quest Mod Editor — HackHub</title>
+    <script>
+      try {
+        var t = localStorage.getItem("qe.theme");
+        if (t) document.documentElement.dataset.theme = t;
+        if (t === "daylight") document.documentElement.style.colorScheme = "light";
+        var f = localStorage.getItem("qe.uiFont");
+        if (f) document.documentElement.dataset.font = f;
+      } catch (e) {
+        /* no storage: the defaults apply */
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

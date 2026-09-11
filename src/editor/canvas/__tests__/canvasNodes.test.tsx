@@ -19,6 +19,7 @@ import {
     FALLBACK_FPS,
     paintDashOffset,
     registerWireDots,
+    setDotPeriod,
     setWireMotion,
     wireMotionEnabled,
     wireMotionRunning,
@@ -360,7 +361,11 @@ describe("wire motion", () => {
         const un = registerWireDots(el);
         paintDashOffset((DOT_PERIOD_S * 1000) / 4);
         expect(document.documentElement.style.getPropertyValue("--qe-dash-offset")).toBe("");
-        expect(document.documentElement.getAttribute("style")).toBeNull();
+        // Precise on purpose (matches canvasPerformance's form): the wire
+        // motion must add nothing of its own. The root style attribute is no
+        // longer empty since r141 — the theme module writes color-scheme
+        // there once at boot, which is not this module's business.
+        expect(document.documentElement.getAttribute("style") ?? "").not.toContain("--qe-");
         un();
         el.remove();
     });
@@ -404,6 +409,21 @@ describe("wire motion", () => {
         unB();
         a.remove();
         b.remove();
+    });
+
+    it("the drift speed changes the cycle without touching the geometry (r141)", () => {
+        // Compute, don't measure: at 0.8s per gap, 400ms is half a cycle, so
+        // the dots sit half a gap along — same gap, faster story.
+        setDotPeriod(0.8);
+        const el = dotPath();
+        const un = registerWireDots(el);
+        paintDashOffset(400, el);
+        expect(parseFloat(el.style.strokeDashoffset)).toBeCloseTo(-DOT_GAP / 2, 1);
+        un();
+        el.remove();
+        // And it is remembered.
+        expect(Number(localStorage.getItem("qe.dotPeriod"))).toBe(0.8);
+        setDotPeriod(DOT_PERIOD_S);
     });
 
     it("moves the dots along the wire, one gap per cycle", () => {

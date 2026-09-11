@@ -14,6 +14,14 @@
  */
 
 const STORAGE_KEY = "qe.snapToGrid";
+const STEP_KEY = "qe.snapStep";
+
+/** The snap cell sizes offered in Settings, in flow units. */
+export const SNAP_STEPS = [11, 22, 44] as const;
+export type SnapStep = (typeof SNAP_STEPS)[number];
+
+/** The shipped cell; also the alignment/distribution spacing default. */
+export const DEFAULT_SNAP_STEP: SnapStep = 22;
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -29,11 +37,42 @@ function readStored(): boolean {
     }
 }
 
+function readStoredStep(): SnapStep {
+    try {
+        const raw = Number(localStorage.getItem(STEP_KEY));
+        return (SNAP_STEPS as readonly number[]).includes(raw) ? (raw as SnapStep) : DEFAULT_SNAP_STEP;
+    } catch {
+        return DEFAULT_SNAP_STEP;
+    }
+}
+
 let enabled = readStored();
+let step: SnapStep = readStoredStep();
 
 /** Is snapping on? */
 export function snapEnabled(): boolean {
     return enabled;
+}
+
+/** The snap cell size, in flow units. */
+export function snapStep(): SnapStep {
+    return step;
+}
+
+/**
+ * Change the snap cell. One number, three meanings by design: the drag grid,
+ * the canvas dot pattern, and the align/distribute spacing all read it, so
+ * what snaps together also spaces together.
+ */
+export function setSnapStep(next: SnapStep): void {
+    if (next === step) return;
+    step = next;
+    try {
+        localStorage.setItem(STEP_KEY, String(next));
+    } catch {
+        /* not being able to remember it is not a reason to fail */
+    }
+    for (const l of listeners) l();
 }
 
 /** Turn snapping on or off, and remember the choice. */
@@ -59,5 +98,6 @@ export function subscribeSnap(listener: Listener): () => void {
 /** Test seam: forget the stored preference. */
 export function resetSnapForTests(): void {
     enabled = false;
+    step = DEFAULT_SNAP_STEP;
     listeners.clear();
 }

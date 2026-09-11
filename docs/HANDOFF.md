@@ -166,11 +166,7 @@ banner before acting on any of it.
 ## Where things stand
 
 - **HEAD:** r140 (Settings page) on
-  `arena/01a08ff8-hackhub-quest-editor`, committed — **push pending**: the
-  sandbox's GitHub token expired mid-round (`gh auth` says Bad credentials,
-  no credential helper, SSH blocked), so the next session must
-  `git push origin arena/01a08ff8-hackhub-quest-editor` first thing (or Zeis
-  reconnects GitHub in Arena). Previous
+  `arena/01a08ff8-hackhub-quest-editor`, committed and pushed. Previous
   rounds: r139 (Clean Code & Architecture pass), r138 (Editor Mods), r137
   (tool packs, first rail), r136 (campaign template), `423569f` (r130). (A
   sandbox reset rolled local history back to `c0e511f` mid-r129, and again

@@ -109,20 +109,11 @@ foundation for everything that follows. The three findings that shape the whole 
 
 ---
 
----
-
 ## Roadmap
 
 Live list of what is being worked on. Newest problems at the top of each
 section; anything ticked off moves to **Done recently** and is eventually
-dropped once it has stayed fixed for a few rounds.
-
-### Standing rule
-
-**Never guess. Check, test, confirm.** Every claim about what the game or SDK
-does must be backed by one of: the SDK declarations, the working reference mod,
-or a real in-game test. A fix shipped on a theory has cost this project more
-rounds than any bug — see r41, r43, r55, r60, r61 and r66.
+archived once it has stayed fixed for a few rounds.
 
 ### In progress
 

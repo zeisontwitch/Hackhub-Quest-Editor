@@ -1,4 +1,75 @@
-# Handoff — r141
+# Handoff — r144
+
+r144 answered a grey screen, rebuilt the README, and re-landed the grid (plan:
+[plans/r144-grey-screen-readme-reland.md](plans/r144-grey-screen-readme-reland.md)):
+
+- **The report:** the day r142 landed, Zeis saw the editor load to "a grey
+  colour and absolutely nothing else" and rolled the branch back with
+  GitHub's revert — taking r143 (a Compile.ts clean-code pass from a
+  different tool) with it.
+- **The investigation:** no boot crash is reproducible in r142's code — the
+  full `<App />` boots clean with the grid off and on (r142's render tests
+  already mounted it whole; r144 adds a dedicated net). A real-browser check
+  is impossible from this sandbox: every browser-binary CDN is
+  network-blocked, only npm and github answer. The leading suspect is the
+  dev-preview server dying with a sandbox reset — the sandbox provably reset
+  that night (local git rewound, node_modules gone), and a dead preview shows
+  exactly a grey nothing.
+- **One real bug, found on review and fixed:** the hexagon/diamond overlay
+  set its colour as an SVG `stroke` *attribute* — `var()`/`color-mix()` are
+  CSS and do not resolve in presentation attributes, so those two styles
+  would have rendered invisible in a real browser (jsdom cannot see
+  painting). The colour now travels a real CSS channel — inline `color` on
+  the overlay svg, `currentColor` strokes — and the render tests assert it.
+- **The boot net:** `src/__tests__/appBoot.test.tsx` mounts the whole editor
+  three ways (grid off, native style on, overlay style on) and requires the
+  standing shell. "The editor boots" was only ever implied before; now it is
+  a test. Falsified: a render-time throw in the grid component fails all
+  three.
+- **The README:** truncated to intro + roadmap since somewhere in r134–r139;
+  Zeis restored it from a backup. r144 brings it current — test counts, an
+  r142 row, the r134–r140 history reconstructed from this file, the Visual
+  Grid roadmap item retired, `src/editor/settings/` and `public/fonts/`
+  added to the layout.
+- **r143 stays reverted** (another tool's round): preserved at `a1fb342`;
+  re-applying it is a separate, reviewed decision.
+- Gates: **1,378 tests / 66 files**, typecheck clean, build clean. No
+  `EDITOR_BUILD` bump (AR13).
+
+**Zeis's eyes only:** the six patterns' actual look, seamlessness under
+pan/zoom, Roboto/Roboto Mono rendering — and the grid is **off** by default
+now, so toggle it on in Settings first.
+
+r142 shipped the **visual canvas grid** and two more fonts (plan:
+[plans/r142-canvas-grid.md](plans/r142-canvas-grid.md)), Zeis's specced scope:
+
+- **Grid on/off** — default **off** (his explicit call): the grid *replaces*
+  the always-on dot pattern r140/r141 shipped, so the default canvas is now
+  plain — a deliberate change, not a regression. The r141 coupling "dots
+  follow the snap step" is retired with it: the grid's scale is its own
+  setting, snapping keeps its own size, and the sheet says so plainly.
+- **Six styles** — his three (squares, dots, hexagons) plus our three:
+  crosses, graph paper, diamond. Four ride React Flow's native `<Background>`
+  (graph paper = two stacked Line layers, fine + every-fifth); hexagons and
+  diamond are a custom overlay (`src/editor/canvas/CanvasGrid.tsx`) that
+  mirrors the library's own tile math (verified in the xyflow dist) and tiles
+  seamlessly by stamping motifs at lattice points, letting the pattern clip.
+- **Scale** (slider + number input, 4–200, default 22) and **opacity**
+  (0–100, default 50). The colour is a `color-mix` over the theme's
+  `--color-canvas-dots` token — every theme recolors the grid for free.
+- Settings: a "Canvas grid" section with a switch, six preview buttons (each
+  a tiny live SVG of its pattern), and the two slider+number controls.
+  Falsified: with the grid component reduced to always-off, four of the six
+  render tests fail.
+- **Roboto and Roboto Mono** joined the font picker (Fontsource, OFL,
+  self-hosted latin 400/500/600/700 — fontsource generates the 600 Roboto
+  never had upstream).
+- The settings sheet's number fields got distinct aria-labels from their
+  sliders ("(exact)") — the collision was real, not a test artifact.
+
+**Zeis's eyes only:** how all six patterns actually look, seamlessness under
+pan and zoom, the new fonts. No `EDITOR_BUILD` bump — the compiler emits
+nothing new (AR13).
 
 r141 made the settings page a real settings page (plan:
 [plans/r141-themes-and-preferences.md](plans/r141-themes-and-preferences.md)),
@@ -207,17 +278,17 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r141 (themes, typography, settings round two) on
+- **HEAD:** r142 (canvas grid, Roboto fonts) on
   `arena/01a08ff8-hackhub-quest-editor`, committed and pushed. Previous
-  rounds: r140 (Settings page), r139 (Clean Code & Architecture pass),
-  r138 (Editor Mods), r137
+  rounds: r141 (themes, typography), r140 (Settings page), r139 (Clean Code
+  & Architecture pass), r138 (Editor Mods), r137
   (tool packs, first rail), r136 (campaign template), `423569f` (r130). (A
   sandbox reset rolled local history back to `c0e511f` mid-r129, and again
   mid-r134 — that time taking node_modules with it; recovered both times from
   the remote tip per the standing fetch-first rule (mid-r134 addendum: rescue
   the round's uncommitted files with plain copies BEFORE `reset --hard`),
   then `npm ci`. The remote is authoritative.)
-- **1,353 tests green** across 63 files, typecheck clean, build clean, and —
+- **1,375 tests green** across 65 files, typecheck clean, build clean, and —
   since the r138 prep rider — **vitest exits 0**: the 4 long-standing
   unhandled d3-drag errors were diagnosed as load-bearing jsdom noise (they
   aborted every canvas drag handler mid-gesture; four selection-gesture

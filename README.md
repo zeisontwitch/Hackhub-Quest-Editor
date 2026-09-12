@@ -36,7 +36,7 @@ Only relevant to coders, if you just want to use the tool you can ignore this.
 
 ```bash
 npm run typecheck    # tsc --noEmit
-npm test             # 1,218 tests (vitest)
+npm test             # 1,378 tests (vitest)
 npm run build        # typecheck + vite build → dist/
 ```
 
@@ -130,14 +130,15 @@ archived once it has stayed fixed for a few rounds.
 | 1 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
 | 2 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. The official Cryptographer Hunt (a phone social-engineering scene with a fail route on the wrong choice) is the strongest argument for it — see [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). The shape now ships inside The Long Game (r136, act III: a typed verdict with two endings); whether a standalone template still adds anything is Zeis's call. |
 | 3 | **Tool packs — Editor Mods** | r137 + r138 shipped both halves: a pack is one `toolpack.json` of pure data ([`docs/ToolPack-Format.md`](docs/ToolPack-Format.md), starter pack in `reference/example-toolpack/`). r137: pack events join the trigger picker as a Community group; SharedStorage data shapes become "Community data" nodes. r138: **Editor Mods** — a pack's `nodes[]` grow the palette under "Editor Mods · <pack>" (one generic `pack.node` type carrying a full snapshot; four declarative emitters — `sdk` calls, `emit`, `storage`, `commandData` — never code), with the honesty spine throughout. Remaining: pack-driven target-rule surfaces (`targetRules` is parsed and carried, no quest-facing lint yet — needs a real second pack to design against). |
-| 4 | Visual Grid | Add an optional visual grid to the canvas (standard: Off) with the following options available on the settings page: Grid on/off, Grid style (dots/squares/hexagons/..), Grid size (scales with the invisible grid's scale), Opacity (slider+number input) |
 
 ### Done recently
 
 | # | Item | Notes |
 |---|---|---|
+| r144 | **Grey-screen report, README rebuilt, grid re-landed** | ([plan](docs/plans/r144-grey-screen-readme-reland.md)) The grey screen could not be reproduced in r142's code — the whole app boots clean with the grid off and on, and the likely culprit was the dev-preview server dying with a sandbox reset (this sandbox has reset itself several times, including that night). One real bug was found on review and fixed: the hexagon/diamond overlay set its colour through an SVG attribute, where `var()`/`color-mix()` do not resolve — the colour now travels a real CSS channel (inline `color`, `currentColor` strokes). A boot regression net now mounts the whole editor with the grid off and on. The README had been truncated to intro + roadmap since somewhere in r134–r139; restored from Zeis's backup and brought current this round. r143 (a Compile.ts clean-code pass by a different tool) stays reverted — preserved at commit `a1fb342`, re-apply on request. |
+| r142 | **The visual canvas grid + Roboto** | ([plan](docs/plans/r142-canvas-grid.md)) A grid you can see and tune, on the Settings page: on/off (default **off**, Zeis's call — it replaces the always-on dot pattern, so the default canvas is now plain), six styles (squares, dots, hexagons, crosses, graph paper, diamond — each picker button shows a live miniature of its pattern), scale 4–200 and opacity 0–100 as slider + exact-number pairs. The colour is a `color-mix` over the theme's canvas-dots token, so every theme recolors it; the grid's scale is deliberately independent of the snap size. **Roboto** and **Roboto Mono** joined the font picker (self-hosted, OFL). Editor-only; nothing exported changes. |
 | r141 | **Settings page** | Done in r140 + r141: a non-modal settings sheet from the top bar — the snap/animated/springy toggles with honest descriptions, the wire-physics dials with the damping-ratio and settle readouts, an honest "Fade ms" dial (r140); then six curated themes (Midnight, High Contrast, Daylight, Phosphor, Dusk, Slate), self-hosted readable fonts (Atkinson Hyperlegible, Lexend, JetBrains Mono), snap grid size, wire dot drift speed, and an editor-data section (reset all preferences, clear the autosaved draft) (r141). Editor-only; nothing exported changes. |
-| r134-r140 | ??? | The changes made in those rounds might have been recorded elsewhere, seeing as the majority of this readme file was reduced to only this roadmap somewhere in those rounds. |
+| r134-r140 | **The truncation window** | The README was truncated to intro + roadmap somewhere in here, so these rounds lost their rows — reconstructed from [`docs/HANDOFF.md`](docs/HANDOFF.md): r134 website polish (editing no longer runs page scripts — CSP-blocked; delete-site confirmation; host and path normalization); r135 tool-packs design; r136 **The Long Game** campaign template (act III's typed verdict ships the branching-consequence shape); r137 tool packs, first rail (pack events in the trigger picker, Community data nodes); r138 **Editor Mods** (a pack's nodes join the palette; four declarative emitters, never code); r139 Clean Code and Architecture pass; r140 the Settings page (see the r141 row). |
 | r133 | **Linking without touching HTML** | ([plan](docs/plans/r133-page-linking.md)): Zeis proposed an After Effects pick-whip (drag a wire from the sidebar page onto the text that should link to it); the verdict — right instinct, wrong physics for a *drag* — shipped as **click-click with the noodle kept**: the 🔗 toolbar button is a popover listing the site's pages (link the selection, or insert the path bare); every sidebar page row has a 🎯 socket that arms *point-to-link* — a wire renders from the socket to the cursor (reroute-nodule tip, follows across the iframe via a same-origin forwarder, ghost-fades on place/Cancel/Esc), the next click inside the page becomes the link, existing links retarget. |
 | r132 | **Website builder audit** | ([plan](docs/plans/r132-website-builder-audit.md)): full read of the builder surface; three real defects fixed — the visual editor silently *ran page scripts* while editing (now CSP-blocked in the editing copy, scripts preserved), "Delete site" had no confirmation, and hosts/paths shipped verbatim (now normalized on blur). Plus: `WebsiteDefinition.popular` exposed end-to-end with an honest unverified hint (the docs/03 Q12 self-test is buildable), `hiddenBits` surfaced in the page scan, duplicate/slash-less path warnings, Save HTML export, named toggles for assistive tech. |
 | r130 | **The Dry run** | ([plan](docs/plans/r130-quest-simulator.md)): a top-bar button compiles the project, evaluates the real emitted `dist/mod.js` against a recording stub SDK and walks every quest — the trace of what fires, how each objective completes, and a probe that fires the runtime's own trigger listeners with a payload shaped the way the conditions expect ("would tick / would never tick"). Cookbook gained Port forwarding and **Pacing** cards and the payload/handler line; `computeWarnings` now flags shared and placeholder hosts. Simulates the editor's runtime, and says so in the dialog. |
@@ -172,9 +173,9 @@ rules the code now follows.
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-11.r130`: **1,218 tests** across 57
-files, **32 node types** in 9 categories (31 in the palette — Wi-Fi is hidden),
-**12 templates** (10 playable + 2 reference sheets), **92 game events**,
+Counted from the code at build `2026-09-12.r144`: **1,378 tests** across 66
+files, **34 node types** in 10 categories (33 in the palette — Wi-Fi is hidden),
+**13 templates** (11 playable + 2 reference sheets), **92 game events**,
 against `@hotbunny/hackhub-content-sdk@0.21.0`.
 
 ### Documentation
@@ -218,6 +219,8 @@ reference/
   Official-Quest/                   # Zeis's transcriptions of the game's official quests
 scripts/
   build-naza-pages.mjs              # regenerates the "public agency" site template
+public/
+  fonts/                            # self-hosted woff2 typefaces + their OFL licences
 src/
   schema/                           # the ProjectDocument model (Zod) — the product's spine
     registry.ts                     #   one description per node type: palette, handles,
@@ -229,6 +232,8 @@ src/
   store/                            # Zustand + Immer: undo/redo, autosave
   editor/
     canvas/                         # React Flow surface, typed nodes and edges
+    settings/                       # editor preferences (theme, font, snap, grid, wires) —
+                                    #   editor-only, never part of the project document
     palette/                        # searchable node library
     inspector/                      # registry-driven field renderer, event + condition
                                     #   pickers, list and network-device editors

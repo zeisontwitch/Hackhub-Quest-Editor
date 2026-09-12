@@ -1,12 +1,12 @@
 # How the editor works today
 
-**Current as of build `2026-09-05.r115`.** Where the other documents are
+**Current as of build `2026-09-12.r144`.** Where the other documents are
 histories — how we got here, and what we learned on the way — this one is a
 snapshot of the thing as it stands. If it disagrees with an older document,
 this one is right.
 
-Verified figures, counted from the code rather than remembered: **1,008 tests**
-across 38 files, **31 node types** in 9 categories, **8 templates**, **92 game
+Verified figures, counted from the code rather than remembered: **1,378 tests**
+across 66 files, **34 node types** in 10 categories, **13 templates**, **92 game
 events**, against `@hotbunny/hackhub-content-sdk@0.21.0`.
 
 ---
@@ -63,6 +63,7 @@ subscription, a setter):
 |---|---|---|
 | Snap to grid | `snapGrid.ts` | off |
 | Snap grid size | `snapGrid.ts` | 22 |
+| Canvas grid | `canvasGrid.ts` | off · squares · 22 · 50% |
 | Animated wires | `wireMotion.ts` | on |
 | Dot drift speed | `wireMotion.ts` | 1.4s per gap |
 | Springy wires | `wirePhysicsPref.ts` | on (OS reduced-motion aware) |
@@ -77,6 +78,16 @@ Their author-facing home is the **Settings sheet** (top bar, r140) — a
 non-modal right-anchored sheet so the canvas stays usable while tuning. The
 canvas toolbar keeps the three quick toggles at the point of use; both
 surfaces write the same modules, so they cannot disagree.
+
+**The canvas grid (r142)** is visual only: on/off, six styles (squares, dots,
+crosses, hexagons, graph paper, diamond), its own scale and opacity. It
+replaced the always-on dot pattern, so the default canvas is now plain —
+Zeis's call. Four styles ride React Flow's native `<Background>`; hexagons and
+diamond are a custom overlay (`CanvasGrid.tsx`) mirroring the library's own
+tile math, tiled seamlessly by stamping motifs at lattice points and letting
+the pattern clip. The colour is a `color-mix` over the theme's
+`--color-canvas-dots` token, so every theme recolors the grid. The grid's
+scale is deliberately independent of the snap size.
 
 **Themes (r141)** are six curated palettes, each one unlayered
 `html[data-theme="…"]` token block in `src/index.css` — Tailwind v4 emits its

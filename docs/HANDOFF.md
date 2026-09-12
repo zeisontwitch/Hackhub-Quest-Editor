@@ -1,4 +1,33 @@
-# Handoff — r146
+# Handoff — r147
+
+r147 is the grid-polish round from Zeis's first hands-on (plan:
+[plans/r147-grid-polish.md](plans/r147-grid-polish.md)):
+
+- **Dots were genuinely invisible** — a real sizing bug, not his eyes: the
+  library's Dots `size` is the *diameter* and r142 passed 1.5, a 0.75px
+  radius at 100% zoom — sub-pixel ink no opacity can rescue. Now
+  `GRID_DOT_SIZE = 9` (his spec: just above the crosses' old span).
+- **Crosses** lengthened from span 8 to 11 so they read as crosses.
+- **Grid scale reset**: the circular-arrow button beside the number field
+  puts the standard size (22) back — `NumberSlider` grew an `onReset`.
+- **Grid colour** (the accessibility ask): Theme (default, the canvas-dots
+  token) + six fixed presets + a native colour field; stored as `colour`
+  in the same `qe.canvasGrid` JSON (`null` or a strict lowercased `#rrggbb`
+  — everything else rejected on read and write). Opacity still mixes on
+  top. The overlay's ink now rides a `--qe-grid-ink` custom property
+  (identical rendering; jsdom re-serializes standard properties lossily,
+  custom ones verbatim).
+- **Line weight**: Hairline 0.5 / Thin 1 / Medium 1.75 / Bold 2.5, driving
+  native `lineWidth`, overlay `strokeWidth`, and the graph heavy line at
+  `weight × 1.75`. Dots keep their own size (the hint says so).
+- Both new guards falsified (sub-pixel dots probe, dropped-colour probe);
+  pre-r147 stored blobs upgrade losslessly (tested with that exact shape).
+- Gates: typecheck clean, **1,392 tests / 67 files**, build clean. No
+  `EDITOR_BUILD` bump (AR13).
+
+**Zeis's eyes only:** dot size feel at a few scales (9 is one number to
+tweak), the crosses' arms, each weight on each style, the presets against
+dark and light themes.
 
 r146 found the real grey screen (plan:
 [plans/r146-grey-screen-name-twin.md](plans/r146-grey-screen-name-twin.md)).

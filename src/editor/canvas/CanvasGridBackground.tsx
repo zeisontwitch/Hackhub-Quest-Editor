@@ -27,22 +27,34 @@ import {
     type CanvasGridStyle,
 } from "./canvasGrid";
 
+/**
+ * Pattern sizes in flow units (they scale with zoom, like everything on the
+ * canvas). r147, from Zeis's first hands-on: the original dot size of 1.5
+ * meant a radius of 0.75px at 100% zoom — literally sub-pixel ink, invisible
+ * even at full opacity (the library's `size` is the *diameter*). Dots now
+ * sit just above the crosses' old span; the crosses got longer arms so they
+ * read as crosses, not as a dot grid.
+ */
+export const GRID_DOT_SIZE = 9;
+export const CROSS_SPAN = 11;
+
 /** Renders the configured grid, or nothing at all when it is off. */
 export function CanvasGridBackground() {
     const grid = useSyncExternalStore(subscribeCanvasGrid, canvasGrid, () => DEFAULT_CANVAS_GRID);
     if (!grid.enabled) return null;
-    const colour = gridPatternColour(grid.opacity);
+    const colour = gridPatternColour(grid.opacity, grid.colour);
+    const weight = grid.weight;
 
     switch (grid.style) {
         case "dots":
-            return <Background variant={BackgroundVariant.Dots} gap={grid.scale} size={1.5} color={colour} />;
+            return <Background variant={BackgroundVariant.Dots} gap={grid.scale} size={GRID_DOT_SIZE} color={colour} />;
         case "crosses":
             return (
                 <Background
                     variant={BackgroundVariant.Cross}
                     gap={grid.scale}
-                    size={8}
-                    lineWidth={1}
+                    size={CROSS_SPAN}
+                    lineWidth={weight}
                     color={colour}
                 />
             );
@@ -51,21 +63,21 @@ export function CanvasGridBackground() {
                 <>
                     {/* Graph paper: fine lines every cell, a heavier line every
                         fifth — two stacked native layers, no custom SVG. */}
-                    <Background variant={BackgroundVariant.Lines} gap={grid.scale} lineWidth={1} color={colour} />
+                    <Background variant={BackgroundVariant.Lines} gap={grid.scale} lineWidth={weight} color={colour} />
                     <Background
                         variant={BackgroundVariant.Lines}
                         gap={grid.scale * 5}
-                        lineWidth={1.75}
+                        lineWidth={weight * 1.75}
                         color={colour}
                     />
                 </>
             );
         case "hexagons":
         case "diamond":
-            return <CanvasGridOverlay style={grid.style} scale={grid.scale} colour={colour} />;
+            return <CanvasGridOverlay style={grid.style} scale={grid.scale} colour={colour} weight={weight} />;
         case "squares":
         default:
-            return <Background variant={BackgroundVariant.Lines} gap={grid.scale} lineWidth={1} color={colour} />;
+            return <Background variant={BackgroundVariant.Lines} gap={grid.scale} lineWidth={weight} color={colour} />;
     }
 }
 
@@ -101,10 +113,13 @@ export function CanvasGridOverlay({
     style,
     scale,
     colour,
+    weight,
 }: {
     style: Extract<CanvasGridStyle, "hexagons" | "diamond">;
     scale: number;
     colour: string;
+    /** Line thickness, same scale as the native styles (r147). */
+    weight: number;
 }) {
     // The d3 zoom transform [x, y, zoom]; the pattern must pan and zoom with
     // the canvas exactly as the native variants do.
@@ -132,7 +147,13 @@ export function CanvasGridOverlay({
                 if (cx + halfW < 0 || cx - halfW > tileWidth) continue;
                 if (cy + halfH < 0 || cy - halfH > tileHeight) continue;
                 stamps.push(
-                    <path key={`${m}:${n}`} d={hexPath(cx, cy, s)} fill="none" stroke="currentColor" strokeWidth={1} />,
+                    <path
+                        key={`${m}:${n}`}
+                        d={hexPath(cx, cy, s)}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={weight}
+                    />,
                 );
             }
         }
@@ -153,7 +174,7 @@ export function CanvasGridOverlay({
                     x2={2 * d}
                     y2={2 * d + k * d}
                     stroke="currentColor"
-                    strokeWidth={1}
+                    strokeWidth={weight}
                 />,
                 <line
                     key={`a${k}`}
@@ -162,7 +183,7 @@ export function CanvasGridOverlay({
                     x2={2 * d}
                     y2={-2 * d + k * d}
                     stroke="currentColor"
-                    strokeWidth={1}
+                    strokeWidth={weight}
                 />,
             );
         }
@@ -183,11 +204,14 @@ export function CanvasGridOverlay({
                 left: 0,
                 pointerEvents: "none",
                 zIndex: -1,
-                // The colour rides inline `color` (real CSS) and the stamps
-                // stroke currentColor: var()/color-mix() resolve in styles,
-                // not in SVG presentation attributes (the r144 fix).
-                color: colour,
-            }}
+                // The ink rides a custom property and the stamps stroke
+                // currentColor: var()/color-mix() resolve in styles, not in
+                // SVG presentation attributes (the r144 fix). A custom
+                // property rather than `color` directly so the raw value
+                // survives even lossy CSS re-serialization (r147).
+                ["--qe-grid-ink" as string]: colour,
+                color: "var(--qe-grid-ink)",
+            } as React.CSSProperties}
         >
             <defs>
                 <pattern

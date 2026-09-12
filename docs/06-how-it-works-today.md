@@ -1,11 +1,11 @@
 # How the editor works today
 
-**Current as of build `2026-09-13.r146`.** Where the other documents are
+**Current as of build `2026-09-13.r147`.** Where the other documents are
 histories — how we got here, and what we learned on the way — this one is a
 snapshot of the thing as it stands. If it disagrees with an older document,
 this one is right.
 
-Verified figures, counted from the code rather than remembered: **1,379 tests**
+Verified figures, counted from the code rather than remembered: **1,392 tests**
 across 67 files, **34 node types** in 10 categories, **13 templates**, **92 game
 events**, against `@hotbunny/hackhub-content-sdk@0.21.0`.
 
@@ -79,10 +79,11 @@ non-modal right-anchored sheet so the canvas stays usable while tuning. The
 canvas toolbar keeps the three quick toggles at the point of use; both
 surfaces write the same modules, so they cannot disagree.
 
-**The canvas grid (r142)** is visual only: on/off, six styles (squares, dots,
-crosses, hexagons, graph paper, diamond), its own scale and opacity. It
-replaced the always-on dot pattern, so the default canvas is now plain —
-Zeis's call. Four styles ride React Flow's native `<Background>`; hexagons and
+**The canvas grid (r142, polished r147)** is visual only: on/off, six styles
+(squares, dots, crosses, hexagons, graph paper, diamond), its own scale and
+opacity, a colour override (Theme by default, fixed hex for accessibility),
+and a line weight. It replaced the always-on dot pattern, so the default
+canvas is now plain — Zeis's call. Four styles ride React Flow's native `<Background>`; hexagons and
 diamond are a custom overlay (`CanvasGridBackground.tsx`, the .tsx spelled
 out in its import — a case-insensitive name twin grey-screened Windows in
 r142–r145, see the r146 plan) mirroring the library's own

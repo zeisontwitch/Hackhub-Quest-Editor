@@ -8,6 +8,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     CANVAS_GRID_STYLES,
+    CANVAS_GRID_WEIGHTS,
     canvasGrid,
     DEFAULT_CANVAS_GRID,
     gridPatternColour,
@@ -24,8 +25,15 @@ beforeEach(() => {
 });
 
 describe("defaults", () => {
-    it("ships off, squares, snap-sized, half strength", () => {
-        expect(canvasGrid()).toEqual({ enabled: false, style: "squares", scale: 22, opacity: 50 });
+    it("ships off, squares, snap-sized, half strength, theme ink, thin lines", () => {
+        expect(canvasGrid()).toEqual({
+            enabled: false,
+            style: "squares",
+            scale: 22,
+            opacity: 50,
+            colour: null,
+            weight: 1,
+        });
     });
 
     it("offers exactly the six styles Zeis specced — three his, three ours", () => {
@@ -49,6 +57,8 @@ describe("changes", () => {
             style: "squares",
             scale: 22,
             opacity: 50,
+            colour: null,
+            weight: 1,
         });
     });
 
@@ -78,13 +88,67 @@ describe("changes", () => {
         localStorage.setItem("qe.canvasGrid", '{"enabled":true,"style":"triangles","scale":"big","opacity":"lots"}');
         vi.resetModules();
         const { canvasGrid: fresh } = await import("@/editor/canvas/canvasGrid");
-        expect(fresh()).toEqual({ enabled: true, style: "squares", scale: 22, opacity: 50 });
+        expect(fresh()).toEqual({
+            enabled: true,
+            style: "squares",
+            scale: 22,
+            opacity: 50,
+            colour: null,
+            weight: 1,
+        });
+    });
+
+    it("upgrades a pre-r147 blob (no colour, no weight) without losing it", async () => {
+        // Exactly the blob every r142–r146 install has stored.
+        localStorage.setItem("qe.canvasGrid", '{"enabled":true,"style":"hexagons","scale":40,"opacity":70}');
+        vi.resetModules();
+        const { canvasGrid: fresh } = await import("@/editor/canvas/canvasGrid");
+        expect(fresh()).toEqual({
+            enabled: true,
+            style: "hexagons",
+            scale: 40,
+            opacity: 70,
+            colour: null,
+            weight: 1,
+        });
+    });
+
+    it("accepts a strict hex colour, lowercased — and nothing else", () => {
+        setCanvasGrid({ colour: "#FF00FF" });
+        expect(canvasGrid().colour).toBe("#ff00ff");
+        setCanvasGrid({ colour: "red" as never });
+        expect(canvasGrid().colour).toBe("#ff00ff");
+        setCanvasGrid({ colour: "#123" as never });
+        expect(canvasGrid().colour).toBe("#ff00ff");
+        setCanvasGrid({ colour: null });
+        expect(canvasGrid().colour).toBeNull();
+    });
+
+    it("rejects a corrupt stored colour and an off-menu weight", async () => {
+        localStorage.setItem("qe.canvasGrid", '{"colour":"chartreuse","weight":9}');
+        vi.resetModules();
+        const { canvasGrid: fresh } = await import("@/editor/canvas/canvasGrid");
+        expect(fresh().colour).toBeNull();
+        expect(fresh().weight).toBe(1);
+    });
+
+    it("accepts exactly the four line weights", () => {
+        for (const w of CANVAS_GRID_WEIGHTS) {
+            setCanvasGrid({ weight: w });
+            expect(canvasGrid().weight).toBe(w);
+        }
+        setCanvasGrid({ weight: 3 as never });
+        expect(canvasGrid().weight).toBe(2.5);
     });
 });
 
 describe("pattern helpers", () => {
     it("mixes the pattern colour from the theme's canvas-dots token", () => {
         expect(gridPatternColour(50)).toBe("color-mix(in srgb, var(--color-canvas-dots) 50%, transparent)");
+    });
+
+    it("mixes a fixed colour at the same opacity when one is pinned", () => {
+        expect(gridPatternColour(70, "#ff00ff")).toBe("color-mix(in srgb, #ff00ff 70%, transparent)");
     });
 
     it("anchors a tile the way React Flow's own Background does", () => {

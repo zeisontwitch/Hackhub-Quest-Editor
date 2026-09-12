@@ -34,7 +34,9 @@ import {
 } from "@/editor/canvas/snapGrid";
 import {
     CANVAS_GRID_STYLES,
+    CANVAS_GRID_WEIGHTS,
     canvasGrid,
+    DEFAULT_CANVAS_GRID,
     setCanvasGrid,
     subscribeCanvasGrid,
     type CanvasGridStyle,
@@ -100,6 +102,26 @@ const DIALS: {
 
 const GRID_LABELS: Record<number, string> = { 11: "Fine", 22: "Standard", 44: "Coarse" };
 
+/** Words for the four grid line weights (r147). */
+const GRID_WEIGHT_LABELS: Record<number, string> = {
+    0.5: "Hairline",
+    1: "Thin",
+    1.75: "Medium",
+    2.5: "Bold",
+};
+
+/** Fixed grid-ink presets beside "Theme" — high-contrast hues that read on
+    light and dark themes alike, chosen to differ in lightness as well as hue
+    (r147, accessibility: pick the one you see best). */
+const GRID_COLOUR_PRESETS: { value: string; label: string }[] = [
+    { value: "#ffffff", label: "White" },
+    { value: "#000000", label: "Black" },
+    { value: "#38bdf8", label: "Sky" },
+    { value: "#fbbf24", label: "Amber" },
+    { value: "#4ade80", label: "Green" },
+    { value: "#f472b6", label: "Magenta" },
+];
+
 export function SettingsDialog({
     open,
     onOpenChange,
@@ -114,10 +136,7 @@ export function SettingsDialog({
     const tuning = useSyncExternalStore(subscribeWireTuning, wireTuning, () => DEFAULT_TUNING);
     const drift = useSyncExternalStore(subscribeWireMotion, dotPeriodS, () => DOT_PERIOD_S);
     const grid = useSyncExternalStore(subscribeCanvasGrid, canvasGrid, () => ({
-        enabled: false,
-        style: "squares",
-        scale: 22,
-        opacity: 50,
+        ...DEFAULT_CANVAS_GRID,
     }));
     const theme = useSyncExternalStore(subscribeTheme, currentTheme, () => THEMES[0]);
     const font = useSyncExternalStore(subscribeUiFont, currentUiFont, () => UI_FONTS[0]);
@@ -245,9 +264,10 @@ export function SettingsDialog({
                                         max={200}
                                         value={grid.scale}
                                         onChange={(scale) => setCanvasGrid({ scale })}
+                                        onReset={() => setCanvasGrid({ scale: DEFAULT_CANVAS_GRID.scale })}
                                     />
                                 </div>
-                                <div className="py-2.5">
+                                <div className="border-b border-line pb-2.5">
                                     <NumberSlider
                                         label="Grid opacity"
                                         hint="0 hides the grid; 100 is full strength."
@@ -256,6 +276,29 @@ export function SettingsDialog({
                                         value={grid.opacity}
                                         onChange={(opacity) => setCanvasGrid({ opacity })}
                                     />
+                                </div>
+                                <div className="border-b border-line py-2.5">
+                                    <GridColourRow
+                                        value={grid.colour}
+                                        onPick={(colour) => setCanvasGrid({ colour })}
+                                    />
+                                </div>
+                                <div className="py-2.5">
+                                    <div className="mb-1 text-[12.5px] font-medium text-ink">Line weight</div>
+                                    <Segmented
+                                        ariaLabel="Grid line weight"
+                                        options={CANVAS_GRID_WEIGHTS.map((w) => ({
+                                            value: String(w),
+                                            label: GRID_WEIGHT_LABELS[w],
+                                        }))}
+                                        value={String(grid.weight)}
+                                        onPick={(v) =>
+                                            setCanvasGrid({ weight: Number(v) as (typeof CANVAS_GRID_WEIGHTS)[number] })
+                                        }
+                                    />
+                                    <p className="mt-1 text-[10.5px] leading-snug text-ink-4">
+                                        How thick the lines and outlines draw. Dots keep their own size.
+                                    </p>
                                 </div>
                                 <p className="mb-1 text-[10.5px] leading-snug text-ink-4">
                                     The grid is visual only — node snapping has its own size (above).
@@ -422,6 +465,72 @@ function ThemeCard({
     );
 }
 
+/** The grid-ink picker (r147): follow the theme, or pin a colour that
+    stays put on every theme — the accessibility ask. The Theme swatch shows
+    the theme's own grid colour; the presets differ in lightness as well as
+    hue; the little colour field is a full custom picker. */
+function GridColourRow({ value, onPick }: { value: string | null; onPick: (colour: string | null) => void }) {
+    return (
+        <div>
+            <div className="mb-1 flex items-center justify-between gap-2">
+                <span className="text-[12.5px] font-medium text-ink">Grid colour</span>
+                <label className="flex items-center gap-1.5 text-[10.5px] text-ink-4">
+                    Custom
+                    <input
+                        type="color"
+                        aria-label="Grid colour (custom)"
+                        value={value ?? "#94a3b8"}
+                        onChange={(e) => onPick(e.target.value)}
+                        className="size-5 cursor-pointer rounded border border-line bg-transparent p-0"
+                    />
+                </label>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Grid colour presets">
+                <button
+                    type="button"
+                    aria-pressed={value === null}
+                    onClick={() => onPick(null)}
+                    title="Follow the editor theme"
+                    className={cn(
+                        "flex items-center gap-1 rounded-md border px-1.5 py-1 text-[10.5px] transition-colors",
+                        value === null
+                            ? "border-accent/60 bg-accent-soft text-ink"
+                            : "border-line text-ink-3 hover:border-line-strong hover:text-ink",
+                    )}
+                >
+                    <span
+                        className="size-2.5 rounded-sm border border-line"
+                        style={{ background: "var(--color-canvas-dots)" }}
+                        aria-hidden
+                    />
+                    Theme
+                </button>
+                {GRID_COLOUR_PRESETS.map((preset) => (
+                    <button
+                        key={preset.value}
+                        type="button"
+                        aria-pressed={value === preset.value}
+                        aria-label={`${preset.label} (${preset.value})`}
+                        title={`${preset.label} ${preset.value}`}
+                        onClick={() => onPick(preset.value)}
+                        className={cn(
+                            "size-5 rounded-md border transition-transform",
+                            value === preset.value
+                                ? "border-accent ring-1 ring-accent"
+                                : "border-line hover:scale-110",
+                        )}
+                        style={{ background: preset.value }}
+                    />
+                ))}
+            </div>
+            <p className="mt-1 text-[10.5px] leading-snug text-ink-4">
+                Theme follows the editor theme; a fixed colour stays the same on every theme — pick
+                whichever you see best. Opacity still applies.
+            </p>
+        </div>
+    );
+}
+
 /** One grid style, with a tiny live preview of its pattern. A visual
     person should see the pattern before picking it — the label alone is not
     enough to tell hexagons from diamond. */
@@ -512,6 +621,7 @@ function NumberSlider({
     max,
     value,
     onChange,
+    onReset,
 }: {
     label: string;
     hint: string;
@@ -519,6 +629,9 @@ function NumberSlider({
     max: number;
     value: number;
     onChange: (value: number) => void;
+    /** Show the circular-arrow reset beside the number field (r147 — Zeis's
+        ask for Grid scale: one click back to the standard size). */
+    onReset?: () => void;
 }) {
     const [text, setText] = useState(String(value));
     // Keep the field in step when the value changes elsewhere (reset, or the
@@ -542,25 +655,38 @@ function NumberSlider({
         <div className="py-1">
             <div className="flex items-baseline justify-between gap-2">
                 <span className="text-[12px] font-medium text-ink-2">{label}</span>
-                <input
-                    type="number"
-                    aria-label={`${label} (exact)`}
-                    min={min}
-                    max={max}
-                    value={text}
-                    onChange={(e) => {
-                        setText(e.target.value);
-                        const parsed = Number(e.target.value);
-                        if (e.target.value !== "" && Number.isFinite(parsed) && parsed >= min && parsed <= max) {
-                            onChange(Math.round(parsed));
-                        }
-                    }}
-                    onBlur={(e) => commitText(e.target.value)}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") commitText((e.target as HTMLInputElement).value);
-                    }}
-                    className="field-input w-20 px-1.5 py-0.5 text-right font-mono text-[11px]"
-                />
+                <span className="flex items-center gap-1">
+                    <input
+                        type="number"
+                        aria-label={`${label} (exact)`}
+                        min={min}
+                        max={max}
+                        value={text}
+                        onChange={(e) => {
+                            setText(e.target.value);
+                            const parsed = Number(e.target.value);
+                            if (e.target.value !== "" && Number.isFinite(parsed) && parsed >= min && parsed <= max) {
+                                onChange(Math.round(parsed));
+                            }
+                        }}
+                        onBlur={(e) => commitText(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") commitText((e.target as HTMLInputElement).value);
+                        }}
+                        className="field-input w-20 px-1.5 py-0.5 text-right font-mono text-[11px]"
+                    />
+                    {onReset && (
+                        <button
+                            type="button"
+                            onClick={onReset}
+                            aria-label={`Reset ${label} to standard`}
+                            title={`Reset ${label} to standard`}
+                            className="rounded p-0.5 text-ink-4 transition-colors hover:bg-surface-2 hover:text-ink"
+                        >
+                            <Icon name="refresh" size={11} />
+                        </button>
+                    )}
+                </span>
             </div>
             <input
                 type="range"

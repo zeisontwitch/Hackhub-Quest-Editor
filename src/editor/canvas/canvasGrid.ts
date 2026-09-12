@@ -42,7 +42,10 @@ export const CANVAS_GRID_STYLES: readonly {
     { id: "diamond", label: "Diamond", hint: "Diagonals both ways — the isometric look." },
 ];
 
-/** The shipped grid: off, squares, matching the default snap size, half strength. */
+/**
+ * The shipped grid: off, squares, matching the default snap size, half
+ * strength, theme-coloured, thin lines.
+ */
 export interface CanvasGrid {
     enabled: boolean;
     style: CanvasGridStyle;
@@ -50,6 +53,13 @@ export interface CanvasGrid {
     scale: number;
     /** 0–100. */
     opacity: number;
+    /**
+     * The grid ink: `null` follows the theme's canvas-dots token; a `#rrggbb`
+     * hex is a fixed override (accessibility — pick the colour you see best).
+     */
+    colour: string | null;
+    /** Line thickness; one of {@link CANVAS_GRID_WEIGHTS}. */
+    weight: number;
 }
 
 export const DEFAULT_CANVAS_GRID: CanvasGrid = {
@@ -57,7 +67,12 @@ export const DEFAULT_CANVAS_GRID: CanvasGrid = {
     style: "squares",
     scale: 22,
     opacity: 50,
+    colour: null,
+    weight: 1,
 };
+
+/** The four line weights the sheet offers, thinnest first. */
+export const CANVAS_GRID_WEIGHTS = [0.5, 1, 1.75, 2.5] as const;
 
 export const MIN_GRID_SCALE = 4;
 export const MAX_GRID_SCALE = 200;
@@ -76,6 +91,17 @@ function isStyle(value: unknown): value is CanvasGridStyle {
     return typeof value === "string" && (CANVAS_GRID_STYLE_IDS as readonly string[]).includes(value);
 }
 
+/** `null` (theme) or a strict `#rrggbb` hex — anything else is not a colour. */
+function isColour(value: unknown): value is string | null {
+    return value === null || (typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value));
+}
+
+function isWeight(value: unknown): value is number {
+    return (
+        typeof value === "number" && Number.isFinite(value) && (CANVAS_GRID_WEIGHTS as readonly number[]).includes(value)
+    );
+}
+
 function readStored(): CanvasGrid {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -88,6 +114,8 @@ function readStored(): CanvasGrid {
             style: isStyle(saved.style) ? saved.style : DEFAULT_CANVAS_GRID.style,
             scale: clampScale(Number(saved.scale)),
             opacity: clampOpacity(Number(saved.opacity)),
+            colour: isColour(saved.colour) ? (saved.colour === null ? null : saved.colour.toLowerCase()) : null,
+            weight: isWeight(saved.weight) ? saved.weight : DEFAULT_CANVAS_GRID.weight,
         };
     } catch {
         return { ...DEFAULT_CANVAS_GRID };
@@ -108,12 +136,23 @@ export function setCanvasGrid(patch: Partial<CanvasGrid>): void {
         style: isStyle(patch.style) ? patch.style : current.style,
         scale: patch.scale === undefined ? current.scale : clampScale(patch.scale),
         opacity: patch.opacity === undefined ? current.opacity : clampOpacity(patch.opacity),
+        colour:
+            patch.colour === undefined
+                ? current.colour
+                : isColour(patch.colour)
+                  ? patch.colour === null
+                      ? null
+                      : patch.colour.toLowerCase()
+                  : current.colour,
+        weight: patch.weight === undefined ? current.weight : isWeight(patch.weight) ? patch.weight : current.weight,
     };
     if (
         next.enabled === current.enabled &&
         next.style === current.style &&
         next.scale === current.scale &&
-        next.opacity === current.opacity
+        next.opacity === current.opacity &&
+        next.colour === current.colour &&
+        next.weight === current.weight
     ) {
         return;
     }
@@ -145,10 +184,13 @@ export function resetCanvasGridForTests(): void {
 
 /**
  * The pattern colour at a given opacity — a `color-mix` over the theme's
- * canvas-dots token, so every theme recolors the grid for free.
+ * canvas-dots token (so every theme recolors the grid for free), or over a
+ * fixed hex when the author chose one (accessibility: the colour you see
+ * best, on any theme).
  */
-export function gridPatternColour(opacity: number): string {
-    return `color-mix(in srgb, var(--color-canvas-dots) ${Math.round(opacity)}%, transparent)`;
+export function gridPatternColour(opacity: number, colour: string | null = null): string {
+    const base = colour ?? "var(--color-canvas-dots)";
+    return `color-mix(in srgb, ${base} ${Math.round(opacity)}%, transparent)`;
 }
 
 /**

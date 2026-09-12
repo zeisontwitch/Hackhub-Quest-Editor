@@ -309,11 +309,50 @@ describe("the canvas grid", () => {
         expect(canvasGrid().opacity).toBe(80);
     });
 
-    it("reset-all puts the grid back too", async () => {
+    it("the scale field's reset arrow puts the standard size back", async () => {
         const user = await openSettings();
-        setCanvasGrid({ enabled: true, style: "graph", scale: 88, opacity: 90 });
+        await user.click(screen.getByRole("switch", { name: "Show grid" }));
+        fireEvent.change(screen.getByLabelText("Grid scale (exact)"), { target: { value: "120" } });
+        expect(canvasGrid().scale).toBe(120);
+        await user.click(screen.getByRole("button", { name: "Reset Grid scale to standard" }));
+        expect(canvasGrid().scale).toBe(22);
+    });
+
+    it("pins a fixed grid colour, and Theme returns it to the token", async () => {
+        const user = await openSettings();
+        await user.click(screen.getByRole("switch", { name: "Show grid" }));
+        await user.click(screen.getByRole("button", { name: "Sky (#38bdf8)" }));
+        expect(canvasGrid().colour).toBe("#38bdf8");
+        await user.click(screen.getByRole("button", { name: "Theme" }));
+        expect(canvasGrid().colour).toBeNull();
+    });
+
+    it("the custom colour field accepts any hex", async () => {
+        const user = await openSettings();
+        await user.click(screen.getByRole("switch", { name: "Show grid" }));
+        fireEvent.change(screen.getByLabelText("Grid colour (custom)"), { target: { value: "#123456" } });
+        expect(canvasGrid().colour).toBe("#123456");
+    });
+
+    it("the line weight segmented control drives the thickness", async () => {
+        const user = await openSettings();
+        await user.click(screen.getByRole("switch", { name: "Show grid" }));
+        await user.click(screen.getByRole("radio", { name: "Bold" }));
+        expect(canvasGrid().weight).toBe(2.5);
+    });
+
+    it("reset-all puts the grid back too — colour and weight included", async () => {
+        const user = await openSettings();
+        setCanvasGrid({ enabled: true, style: "graph", scale: 88, opacity: 90, colour: "#ff00ff", weight: 2.5 });
         await user.click(screen.getByRole("button", { name: "Reset all editor preferences" }));
         await user.click(screen.getByRole("button", { name: "Really reset?" }));
-        expect(canvasGrid()).toEqual({ enabled: false, style: "squares", scale: 22, opacity: 50 });
+        expect(canvasGrid()).toEqual({
+            enabled: false,
+            style: "squares",
+            scale: 22,
+            opacity: 50,
+            colour: null,
+            weight: 1,
+        });
     });
 });

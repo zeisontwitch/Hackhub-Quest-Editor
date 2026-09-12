@@ -115,7 +115,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-13.r139";
+export const EDITOR_BUILD = "2026-09-13.r148";
 
 export interface CompiledFile {
     path: string;

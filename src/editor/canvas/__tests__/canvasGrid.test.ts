@@ -8,7 +8,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     CANVAS_GRID_STYLES,
-    CANVAS_GRID_WEIGHTS,
     canvasGrid,
     DEFAULT_CANVAS_GRID,
     gridPatternColour,
@@ -25,7 +24,7 @@ beforeEach(() => {
 });
 
 describe("defaults", () => {
-    it("ships off, squares, snap-sized, half strength, theme ink, thin lines", () => {
+    it("ships off, squares, snap-sized, half strength, theme ink, thin lines, standard marks", () => {
         expect(canvasGrid()).toEqual({
             enabled: false,
             style: "squares",
@@ -33,6 +32,7 @@ describe("defaults", () => {
             opacity: 50,
             colour: null,
             weight: 1,
+            markSize: 100,
         });
     });
 
@@ -59,6 +59,7 @@ describe("changes", () => {
             opacity: 50,
             colour: null,
             weight: 1,
+            markSize: 100,
         });
     });
 
@@ -95,6 +96,7 @@ describe("changes", () => {
             opacity: 50,
             colour: null,
             weight: 1,
+            markSize: 100,
         });
     });
 
@@ -110,6 +112,26 @@ describe("changes", () => {
             opacity: 70,
             colour: null,
             weight: 1,
+            markSize: 100,
+        });
+    });
+
+    it("upgrades an r147 blob (no markSize) without losing it", async () => {
+        // Exactly the blob r147 installs have stored.
+        localStorage.setItem(
+            "qe.canvasGrid",
+            '{"enabled":true,"style":"crosses","scale":30,"opacity":60,"colour":"#38bdf8","weight":2.5}',
+        );
+        vi.resetModules();
+        const { canvasGrid: fresh } = await import("@/editor/canvas/canvasGrid");
+        expect(fresh()).toEqual({
+            enabled: true,
+            style: "crosses",
+            scale: 30,
+            opacity: 60,
+            colour: "#38bdf8",
+            weight: 2.5,
+            markSize: 100,
         });
     });
 
@@ -124,21 +146,38 @@ describe("changes", () => {
         expect(canvasGrid().colour).toBeNull();
     });
 
-    it("rejects a corrupt stored colour and an off-menu weight", async () => {
-        localStorage.setItem("qe.canvasGrid", '{"colour":"chartreuse","weight":9}');
+    it("clamps a corrupt stored colour and wild weight and markSize", async () => {
+        localStorage.setItem("qe.canvasGrid", '{"colour":"chartreuse","weight":9,"markSize":999}');
         vi.resetModules();
         const { canvasGrid: fresh } = await import("@/editor/canvas/canvasGrid");
         expect(fresh().colour).toBeNull();
-        expect(fresh().weight).toBe(1);
+        expect(fresh().weight).toBe(6);
+        expect(fresh().markSize).toBe(250);
     });
 
-    it("accepts exactly the four line weights", () => {
-        for (const w of CANVAS_GRID_WEIGHTS) {
-            setCanvasGrid({ weight: w });
-            expect(canvasGrid().weight).toBe(w);
-        }
-        setCanvasGrid({ weight: 3 as never });
-        expect(canvasGrid().weight).toBe(2.5);
+    it("weight is free-range and quarter-stepped, not four presets (r148)", () => {
+        setCanvasGrid({ weight: 3.5 });
+        expect(canvasGrid().weight).toBe(3.5);
+        setCanvasGrid({ weight: 0.75 });
+        expect(canvasGrid().weight).toBe(0.75);
+        setCanvasGrid({ weight: 9 });
+        expect(canvasGrid().weight).toBe(6);
+        setCanvasGrid({ weight: 0.1 });
+        expect(canvasGrid().weight).toBe(0.5);
+        // Off-grid values snap to the quarter grid the slider uses.
+        setCanvasGrid({ weight: 1.3 });
+        expect(canvasGrid().weight).toBe(1.25);
+    });
+
+    it("markSize clamps to its range and rounds", () => {
+        setCanvasGrid({ markSize: 150 });
+        expect(canvasGrid().markSize).toBe(150);
+        setCanvasGrid({ markSize: 0 });
+        expect(canvasGrid().markSize).toBe(25);
+        setCanvasGrid({ markSize: 4000 });
+        expect(canvasGrid().markSize).toBe(250);
+        setCanvasGrid({ markSize: 137.6 });
+        expect(canvasGrid().markSize).toBe(138);
     });
 });
 

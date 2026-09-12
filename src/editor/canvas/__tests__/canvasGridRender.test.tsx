@@ -128,6 +128,26 @@ describe("the canvas grid mounts", () => {
         );
     });
 
+    it("mark size scales the marks — native dots and the hexagon lattice", async () => {
+        setCanvasGrid({ enabled: true, style: "dots", markSize: 200 });
+        await renderCanvas();
+        const pattern = document.querySelector('[data-testid="rf__background"] pattern');
+        const dot = document.querySelector('[data-testid="rf__background"] pattern circle');
+        const zoom = Number(pattern?.getAttribute("width")) / canvasGrid().scale;
+        // 200% marks: the radius is double the standard GRID_DOT_SIZE/2.
+        expect(Number(dot?.getAttribute("r"))).toBeCloseTo(GRID_DOT_SIZE * zoom, 5);
+
+        // The overlay's tile follows the mark size too (hexagon side halves
+        // at 50%, so the 3s-wide lattice halves).
+        setCanvasGrid({ enabled: true, style: "hexagons", markSize: 50 });
+        await waitFor(() => {
+            const tile = document.querySelector('[data-testid="qe-canvas-grid"] pattern');
+            expect(tile).toBeTruthy();
+            const s = (canvasGrid().scale * 0.5 * zoom) / 2;
+            expect(Number(tile?.getAttribute("width"))).toBeCloseTo(3 * s, 3);
+        });
+    });
+
     it("the overlay strokes follow the line weight", async () => {
         setCanvasGrid({ enabled: true, style: "hexagons", weight: 2.5 });
         await renderCanvas();

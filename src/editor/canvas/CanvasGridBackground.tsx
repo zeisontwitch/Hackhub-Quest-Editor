@@ -44,16 +44,20 @@ export function CanvasGridBackground() {
     if (!grid.enabled) return null;
     const colour = gridPatternColour(grid.opacity, grid.colour);
     const weight = grid.weight;
+    // Marks draw at markSize% of their standard size (r148).
+    const mark = grid.markSize / 100;
 
     switch (grid.style) {
         case "dots":
-            return <Background variant={BackgroundVariant.Dots} gap={grid.scale} size={GRID_DOT_SIZE} color={colour} />;
+            return (
+                <Background variant={BackgroundVariant.Dots} gap={grid.scale} size={GRID_DOT_SIZE * mark} color={colour} />
+            );
         case "crosses":
             return (
                 <Background
                     variant={BackgroundVariant.Cross}
                     gap={grid.scale}
-                    size={CROSS_SPAN}
+                    size={CROSS_SPAN * mark}
                     lineWidth={weight}
                     color={colour}
                 />
@@ -74,7 +78,15 @@ export function CanvasGridBackground() {
             );
         case "hexagons":
         case "diamond":
-            return <CanvasGridOverlay style={grid.style} scale={grid.scale} colour={colour} weight={weight} />;
+            return (
+                <CanvasGridOverlay
+                    style={grid.style}
+                    scale={grid.scale}
+                    colour={colour}
+                    weight={weight}
+                    mark={mark}
+                />
+            );
         case "squares":
         default:
             return <Background variant={BackgroundVariant.Lines} gap={grid.scale} lineWidth={weight} color={colour} />;
@@ -114,12 +126,15 @@ export function CanvasGridOverlay({
     scale,
     colour,
     weight,
+    mark,
 }: {
     style: Extract<CanvasGridStyle, "hexagons" | "diamond">;
     scale: number;
     colour: string;
     /** Line thickness, same scale as the native styles (r147). */
     weight: number;
+    /** Mark-size factor, 1 = the standard look (r148). */
+    mark: number;
 }) {
     // The d3 zoom transform [x, y, zoom]; the pattern must pan and zoom with
     // the canvas exactly as the native variants do.
@@ -134,7 +149,9 @@ export function CanvasGridOverlay({
         // A honeycomb: hexagon side is half the cell, the lattice repeats
         // after two columns (3·s) and one row (√3·s). Stamps cover every
         // centre whose hexagon could reach into the tile.
-        const s = (scale * zoom) / 2;
+        // The hexagon outline draws at markSize% of the touching size; the
+        // lattice follows the outline so the honeycomb stays seamless.
+        const s = (scale * mark * zoom) / 2;
         tileWidth = 3 * s;
         tileHeight = Math.sqrt(3) * s;
         const stamps: React.ReactNode[] = [];
@@ -161,7 +178,8 @@ export function CanvasGridOverlay({
     } else {
         // Diamond: both diagonal families through every lattice point of a
         // square tile — long stamped segments, clipped by the pattern itself.
-        const d = Math.max(1, scale * zoom);
+        // Diamond "mark size" is the spacing: bigger marks, sparser lattice.
+        const d = Math.max(1, scale * mark * zoom);
         tileWidth = d;
         tileHeight = d;
         const stamps: React.ReactNode[] = [];

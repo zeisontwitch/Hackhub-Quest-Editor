@@ -34,13 +34,17 @@ import {
 } from "@/editor/canvas/snapGrid";
 import {
     CANVAS_GRID_STYLES,
-    CANVAS_GRID_WEIGHTS,
     canvasGrid,
     DEFAULT_CANVAS_GRID,
+    MAX_GRID_WEIGHT,
+    MAX_MARK_SIZE,
+    MIN_GRID_WEIGHT,
+    MIN_MARK_SIZE,
     setCanvasGrid,
     subscribeCanvasGrid,
     type CanvasGridStyle,
 } from "@/editor/canvas/canvasGrid";
+import { ColourPicker } from "@/editor/inspector/ColourPicker";
 import {
     DOT_PERIOD_S,
     dotPeriodS,
@@ -101,15 +105,6 @@ const DIALS: {
 ];
 
 const GRID_LABELS: Record<number, string> = { 11: "Fine", 22: "Standard", 44: "Coarse" };
-
-/** Words for the four grid line weights (r147). */
-const GRID_WEIGHT_LABELS: Record<number, string> = {
-    0.5: "Hairline",
-    1: "Thin",
-    1.75: "Medium",
-    2.5: "Bold",
-};
-
 /** Fixed grid-ink presets beside "Theme" — high-contrast hues that read on
     light and dark themes alike, chosen to differ in lightness as well as hue
     (r147, accessibility: pick the one you see best). */
@@ -283,23 +278,32 @@ export function SettingsDialog({
                                         onPick={(colour) => setCanvasGrid({ colour })}
                                     />
                                 </div>
-                                <div className="py-2.5">
-                                    <div className="mb-1 text-[12.5px] font-medium text-ink">Line weight</div>
-                                    <Segmented
-                                        ariaLabel="Grid line weight"
-                                        options={CANVAS_GRID_WEIGHTS.map((w) => ({
-                                            value: String(w),
-                                            label: GRID_WEIGHT_LABELS[w],
-                                        }))}
-                                        value={String(grid.weight)}
-                                        onPick={(v) =>
-                                            setCanvasGrid({ weight: Number(v) as (typeof CANVAS_GRID_WEIGHTS)[number] })
-                                        }
+                                <div className="border-b border-line py-2.5">
+                                    <NumberSlider
+                                        label="Line weight"
+                                        hint="How thick lines and outlines draw — free range, hairline to properly fat."
+                                        min={MIN_GRID_WEIGHT}
+                                        max={MAX_GRID_WEIGHT}
+                                        step={0.25}
+                                        value={grid.weight}
+                                        onChange={(weight) => setCanvasGrid({ weight })}
+                                        onReset={() => setCanvasGrid({ weight: DEFAULT_CANVAS_GRID.weight })}
                                     />
-                                    <p className="mt-1 text-[10.5px] leading-snug text-ink-4">
-                                        How thick the lines and outlines draw. Dots keep their own size.
-                                    </p>
                                 </div>
+                                {grid.style !== "squares" && grid.style !== "graph" && (
+                                    <div className="py-2.5">
+                                        <NumberSlider
+                                            label="Mark size"
+                                            hint="How big the dots, crosses, hexagons or diamonds draw, as a percentage of their standard size. Line styles have no marks."
+                                            min={MIN_MARK_SIZE}
+                                            max={MAX_MARK_SIZE}
+                                            step={5}
+                                            value={grid.markSize}
+                                            onChange={(markSize) => setCanvasGrid({ markSize })}
+                                            onReset={() => setCanvasGrid({ markSize: DEFAULT_CANVAS_GRID.markSize })}
+                                        />
+                                    </div>
+                                )}
                                 <p className="mb-1 text-[10.5px] leading-snug text-ink-4">
                                     The grid is visual only — node snapping has its own size (above).
                                 </p>
@@ -469,23 +473,15 @@ function ThemeCard({
     stays put on every theme — the accessibility ask. The Theme swatch shows
     the theme's own grid colour; the presets differ in lightness as well as
     hue; the little colour field is a full custom picker. */
+/** The seed the picker shows while the grid follows the theme — the first
+    colour an author tweaking from "Theme" starts from. */
+const GRID_PICKER_SEED = "#94a3b8";
+
 function GridColourRow({ value, onPick }: { value: string | null; onPick: (colour: string | null) => void }) {
     return (
         <div>
             <div className="mb-1 flex items-center justify-between gap-2">
                 <span className="text-[12.5px] font-medium text-ink">Grid colour</span>
-                <label className="flex items-center gap-1.5 text-[10.5px] text-ink-4">
-                    Custom
-                    <input
-                        type="color"
-                        aria-label="Grid colour (custom)"
-                        value={value ?? "#94a3b8"}
-                        onChange={(e) => onPick(e.target.value)}
-                        className="size-5 cursor-pointer rounded border border-line bg-transparent p-0"
-                    />
-                </label>
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Grid colour presets">
                 <button
                     type="button"
                     aria-pressed={value === null}
@@ -505,24 +501,17 @@ function GridColourRow({ value, onPick }: { value: string | null; onPick: (colou
                     />
                     Theme
                 </button>
-                {GRID_COLOUR_PRESETS.map((preset) => (
-                    <button
-                        key={preset.value}
-                        type="button"
-                        aria-pressed={value === preset.value}
-                        aria-label={`${preset.label} (${preset.value})`}
-                        title={`${preset.label} ${preset.value}`}
-                        onClick={() => onPick(preset.value)}
-                        className={cn(
-                            "size-5 rounded-md border transition-transform",
-                            value === preset.value
-                                ? "border-accent ring-1 ring-accent"
-                                : "border-line hover:scale-110",
-                        )}
-                        style={{ background: preset.value }}
-                    />
-                ))}
             </div>
+            {/* The inspector's own picker (Zeis's r148 ask): presets, HSL
+                sliders and a hex field — no operating-system dialog. While the
+                grid follows the theme it shows the seed; any change pins the
+                colour. */}
+            <ColourPicker
+                label="Grid colour"
+                value={value ?? GRID_PICKER_SEED}
+                onChange={(hex) => onPick(hex)}
+                presets={GRID_COLOUR_PRESETS}
+            />
             <p className="mt-1 text-[10.5px] leading-snug text-ink-4">
                 Theme follows the editor theme; a fixed colour stays the same on every theme — pick
                 whichever you see best. Opacity still applies.
@@ -619,6 +608,7 @@ function NumberSlider({
     hint,
     min,
     max,
+    step = 1,
     value,
     onChange,
     onReset,
@@ -627,12 +617,16 @@ function NumberSlider({
     hint: string;
     min: number;
     max: number;
+    /** Snap size — 1 for whole numbers, e.g. 0.25 for the weight dial (r148). */
+    step?: number;
     value: number;
     onChange: (value: number) => void;
     /** Show the circular-arrow reset beside the number field (r147 — Zeis's
         ask for Grid scale: one click back to the standard size). */
     onReset?: () => void;
 }) {
+    /** Snap a value to the step grid, then shed float dust (0.1+0.2 disease). */
+    const quantize = (v: number) => Math.round(Math.round(v / step) * step * 100) / 100;
     const [text, setText] = useState(String(value));
     // Keep the field in step when the value changes elsewhere (reset, or the
     // slider itself).
@@ -643,7 +637,7 @@ function NumberSlider({
     const commitText = (raw: string) => {
         const parsed = Number(raw);
         if (Number.isFinite(parsed)) {
-            const clamped = Math.min(max, Math.max(min, Math.round(parsed)));
+            const clamped = quantize(Math.min(max, Math.max(min, parsed)));
             onChange(clamped);
             setText(String(clamped));
         } else {
@@ -666,7 +660,7 @@ function NumberSlider({
                             setText(e.target.value);
                             const parsed = Number(e.target.value);
                             if (e.target.value !== "" && Number.isFinite(parsed) && parsed >= min && parsed <= max) {
-                                onChange(Math.round(parsed));
+                                onChange(quantize(parsed));
                             }
                         }}
                         onBlur={(e) => commitText(e.target.value)}
@@ -692,7 +686,7 @@ function NumberSlider({
                 type="range"
                 min={min}
                 max={max}
-                step={1}
+                step={step}
                 value={value}
                 aria-label={label}
                 onChange={(e) => onChange(Number(e.target.value))}

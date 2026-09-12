@@ -36,7 +36,7 @@ Only relevant to coders, if you just want to use the tool you can ignore this.
 
 ```bash
 npm run typecheck    # tsc --noEmit
-npm test             # 1,392 tests (vitest)
+npm test             # 1,396 tests (vitest)
 npm run build        # typecheck + vite build → dist/
 ```
 
@@ -135,6 +135,7 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
+| r148 | **The real colour picker, mark size, free weight, current stamp** | ([plan](docs/plans/r148-picker-marksize-stamp.md)) The grid colour row now embeds the inspector's own ColourPicker (presets, hex field, HSL sliders — no OS dialog); **Mark size** (25–250% of standard) sizes dots, crosses, hexagons and diamonds — hidden for line styles; **Line weight** became a free 0.5–6 slider (quarter steps, reset arrow); and `EDITOR_BUILD` now bumps every round — the debug panel and export headers had read r139 since, well, r139. |
 | r147 | **Grid polish — visible dots, ink and weight** | ([plan](docs/plans/r147-grid-polish.md)) Zeis's first hands-on: dots were genuinely invisible (the library's Dots `size` is the *diameter*; r142's 1.5 meant a 0.75px radius at 100% zoom — sub-pixel ink) — now size 9, crosses span 8 → 11; a circular-arrow reset beside Grid scale; a grid **colour** picker (Theme + six presets + custom hex, strict `#rrggbb`, the accessibility ask) so colourblind or low-vision authors can pick what they see best; and a **line weight** control (Hairline/Thin/Medium/Bold) driving every style. |
 | r146 | **The grey screen, part 3 — the real one: a Windows name twin** | ([plan](docs/plans/r146-grey-screen-name-twin.md)) The grid round shipped `CanvasGrid.tsx` (component) beside `canvasGrid.ts` (preferences) — the same name ignoring case. Windows filenames are case-insensitive, so an extensionless import resolved to the wrong file on Zeis's machine and only his: every gate runs on case-sensitive Linux and stayed green. His Firefox console named the nonexistent `CanvasGrid.ts` and cracked the case; reproduced end-to-end, fixed by renaming the component (`CanvasGridBackground.tsx`, extension spelled out in the import) plus a guard test that fails on any future case-insensitive filename twin. r145's optimizer fix was real but secondary; its "slow machine" framing is retracted in the docs. |
 | r145 | **The grey screen, part 2 — the launch race** | ([plan](docs/plans/r145-grey-screen-launch-race.md)) Root cause found and fixed: Vite bundles dependencies *after* the dev server starts listening, and the one-click launcher opens the browser the moment the port answers — if the browser connects before the optimizer finishes, the page's dependency URLs go stale mid-load (504 Outdated Optimize Dep) and the half-loaded page cannot recover: a permanently grey editor. Reproduced locally; fixed by running the optimizer to completion before the server accepts a single request, plus declaring every dependency up front. Editor code untouched; a code-level review did fix the hexagon/diamond overlay's colour channel along the way (r144). |
@@ -176,7 +177,7 @@ rules the code now follows.
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-13.r147`: **1,392 tests** across 67
+Counted from the code at build `2026-09-13.r148`: **1,396 tests** across 67
 files, **34 node types** in 10 categories (33 in the palette — Wi-Fi is hidden),
 **13 templates** (11 playable + 2 reference sheets), **92 game events**,
 against `@hotbunny/hackhub-content-sdk@0.21.0`.

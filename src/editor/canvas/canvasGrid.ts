@@ -58,8 +58,14 @@ export interface CanvasGrid {
      * hex is a fixed override (accessibility — pick the colour you see best).
      */
     colour: string | null;
-    /** Line thickness; one of {@link CANVAS_GRID_WEIGHTS}. */
+    /** Line thickness, 0.5–6 (r148: a free slider, not four presets). */
     weight: number;
+    /**
+     * How big the marks draw, as a percentage of the standard look — dots'
+     * diameter, crosses' arms, hexagon outlines, diamond spacing (r148).
+     * Line styles have no marks; the sheet hides the control for them.
+     */
+    markSize: number;
 }
 
 export const DEFAULT_CANVAS_GRID: CanvasGrid = {
@@ -69,10 +75,13 @@ export const DEFAULT_CANVAS_GRID: CanvasGrid = {
     opacity: 50,
     colour: null,
     weight: 1,
+    markSize: 100,
 };
 
-/** The four line weights the sheet offers, thinnest first. */
-export const CANVAS_GRID_WEIGHTS = [0.5, 1, 1.75, 2.5] as const;
+export const MIN_GRID_WEIGHT = 0.5;
+export const MAX_GRID_WEIGHT = 6;
+export const MIN_MARK_SIZE = 25;
+export const MAX_MARK_SIZE = 250;
 
 export const MIN_GRID_SCALE = 4;
 export const MAX_GRID_SCALE = 200;
@@ -87,6 +96,16 @@ function clampOpacity(value: number): number {
     return Math.min(100, Math.max(0, Math.round(value)));
 }
 
+function clampWeight(value: number): number {
+    if (!Number.isFinite(value)) return DEFAULT_CANVAS_GRID.weight;
+    return Math.min(MAX_GRID_WEIGHT, Math.max(MIN_GRID_WEIGHT, Math.round(value * 4) / 4));
+}
+
+function clampMarkSize(value: number): number {
+    if (!Number.isFinite(value)) return DEFAULT_CANVAS_GRID.markSize;
+    return Math.min(MAX_MARK_SIZE, Math.max(MIN_MARK_SIZE, Math.round(value)));
+}
+
 function isStyle(value: unknown): value is CanvasGridStyle {
     return typeof value === "string" && (CANVAS_GRID_STYLE_IDS as readonly string[]).includes(value);
 }
@@ -96,11 +115,7 @@ function isColour(value: unknown): value is string | null {
     return value === null || (typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value));
 }
 
-function isWeight(value: unknown): value is number {
-    return (
-        typeof value === "number" && Number.isFinite(value) && (CANVAS_GRID_WEIGHTS as readonly number[]).includes(value)
-    );
-}
+
 
 function readStored(): CanvasGrid {
     try {
@@ -115,7 +130,8 @@ function readStored(): CanvasGrid {
             scale: clampScale(Number(saved.scale)),
             opacity: clampOpacity(Number(saved.opacity)),
             colour: isColour(saved.colour) ? (saved.colour === null ? null : saved.colour.toLowerCase()) : null,
-            weight: isWeight(saved.weight) ? saved.weight : DEFAULT_CANVAS_GRID.weight,
+            weight: clampWeight(Number(saved.weight)),
+            markSize: clampMarkSize(Number(saved.markSize)),
         };
     } catch {
         return { ...DEFAULT_CANVAS_GRID };
@@ -144,7 +160,8 @@ export function setCanvasGrid(patch: Partial<CanvasGrid>): void {
                       ? null
                       : patch.colour.toLowerCase()
                   : current.colour,
-        weight: patch.weight === undefined ? current.weight : isWeight(patch.weight) ? patch.weight : current.weight,
+        weight: patch.weight === undefined ? current.weight : clampWeight(patch.weight),
+        markSize: patch.markSize === undefined ? current.markSize : clampMarkSize(patch.markSize),
     };
     if (
         next.enabled === current.enabled &&
@@ -152,7 +169,8 @@ export function setCanvasGrid(patch: Partial<CanvasGrid>): void {
         next.scale === current.scale &&
         next.opacity === current.opacity &&
         next.colour === current.colour &&
-        next.weight === current.weight
+        next.weight === current.weight &&
+        next.markSize === current.markSize
     ) {
         return;
     }

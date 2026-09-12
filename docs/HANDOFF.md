@@ -1,4 +1,31 @@
-# Handoff — r147
+# Handoff — r148
+
+r148 answers Zeis's r147 review, item for item (plan:
+[plans/r148-picker-marksize-stamp.md](plans/r148-picker-marksize-stamp.md)):
+
+- **The grid colour picker is now the inspector's own ColourPicker** —
+  presets, hex field, HSL sliders; the native `<input type="color">` (which
+  the picker was originally built to replace) is gone. Theme stays a button
+  beside it (null state, seeded neutral while following the theme).
+- **Mark size** (his "Line width", clarified by ask → "both"): 25–250% of
+  the standard look, default 100% = the r147 look. Sizes dots' diameter,
+  crosses' arms, hexagon outlines (lattice follows, stays seamless),
+  diamond spacing. Hidden for line styles — they have no marks.
+- **Line weight freed**: the four presets became a slider, 0.5–6 in
+  quarter steps, reset arrow included. Old preset values live inside the
+  range, so r147 stored weights carry over. `NumberSlider` grew a `step`
+  prop for fractional dials.
+- **EDITOR_BUILD bumps every round from now** — Zeis reads it as the
+  version (debug panel + every exported mod header showed r139). Now
+  `2026-09-13.r148`. The old AR13 reading (bump only on compiler changes)
+  is retired: the stamp is a version, not a changelog.
+- Mark-size guard falsified (forced mark factor 1 fails the render test:
+  dot radius and hexagon lattice width both asserted); stored-blob upgrades
+  tested with the exact pre-r147 and r147 shapes.
+- Gates: typecheck clean, **1,396 tests / 67 files**, build clean.
+
+**Zeis's eyes only:** the picker's sliders against the live grid, mark size
+at the extremes, weight 6 on squares, the panel reading r148.
 
 r147 is the grid-polish round from Zeis's first hands-on (plan:
 [plans/r147-grid-polish.md](plans/r147-grid-polish.md)):

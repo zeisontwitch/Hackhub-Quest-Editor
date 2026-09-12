@@ -318,32 +318,55 @@ describe("the canvas grid", () => {
         expect(canvasGrid().scale).toBe(22);
     });
 
-    it("pins a fixed grid colour, and Theme returns it to the token", async () => {
+    it("pins a fixed grid colour via the picker, and Theme returns it to the token", async () => {
         const user = await openSettings();
         await user.click(screen.getByRole("switch", { name: "Show grid" }));
-        await user.click(screen.getByRole("button", { name: "Sky (#38bdf8)" }));
+        await user.click(screen.getByLabelText("Sky"));
         expect(canvasGrid().colour).toBe("#38bdf8");
         await user.click(screen.getByRole("button", { name: "Theme" }));
         expect(canvasGrid().colour).toBeNull();
     });
 
-    it("the custom colour field accepts any hex", async () => {
+    it("the picker's hex field accepts any hex", async () => {
         const user = await openSettings();
         await user.click(screen.getByRole("switch", { name: "Show grid" }));
-        fireEvent.change(screen.getByLabelText("Grid colour (custom)"), { target: { value: "#123456" } });
+        const hex = screen.getByLabelText("Grid colour — hex value");
+        fireEvent.change(hex, { target: { value: "#123456" } });
+        fireEvent.blur(hex);
         expect(canvasGrid().colour).toBe("#123456");
     });
 
-    it("the line weight segmented control drives the thickness", async () => {
+    it("the weight slider is free-range, quarter-stepped", async () => {
         const user = await openSettings();
         await user.click(screen.getByRole("switch", { name: "Show grid" }));
-        await user.click(screen.getByRole("radio", { name: "Bold" }));
-        expect(canvasGrid().weight).toBe(2.5);
+        fireEvent.change(screen.getByLabelText("Line weight"), { target: { value: "3.5" } });
+        expect(canvasGrid().weight).toBe(3.5);
+        fireEvent.change(screen.getByLabelText("Line weight (exact)"), { target: { value: "0.75" } });
+        expect(canvasGrid().weight).toBe(0.75);
+    });
+
+    it("mark size appears for dot styles and drives the size", async () => {
+        const user = await openSettings();
+        await user.click(screen.getByRole("switch", { name: "Show grid" }));
+        // Hidden while a line style is selected…
+        expect(screen.queryByLabelText("Mark size")).toBeNull();
+        // …and present once the style has marks.
+        await user.click(screen.getByRole("button", { name: /Dots/ }));
+        fireEvent.change(screen.getByLabelText("Mark size"), { target: { value: "150" } });
+        expect(canvasGrid().markSize).toBe(150);
     });
 
     it("reset-all puts the grid back too — colour and weight included", async () => {
         const user = await openSettings();
-        setCanvasGrid({ enabled: true, style: "graph", scale: 88, opacity: 90, colour: "#ff00ff", weight: 2.5 });
+        setCanvasGrid({
+            enabled: true,
+            style: "graph",
+            scale: 88,
+            opacity: 90,
+            colour: "#ff00ff",
+            weight: 2.5,
+            markSize: 180,
+        });
         await user.click(screen.getByRole("button", { name: "Reset all editor preferences" }));
         await user.click(screen.getByRole("button", { name: "Really reset?" }));
         expect(canvasGrid()).toEqual({
@@ -353,6 +376,7 @@ describe("the canvas grid", () => {
             opacity: 50,
             colour: null,
             weight: 1,
+            markSize: 100,
         });
     });
 });

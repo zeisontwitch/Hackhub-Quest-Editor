@@ -36,7 +36,7 @@ Only relevant to coders, if you just want to use the tool you can ignore this.
 
 ```bash
 npm run typecheck    # tsc --noEmit
-npm test             # 1,378 tests (vitest)
+npm test             # 1,379 tests (vitest)
 npm run build        # typecheck + vite build → dist/
 ```
 
@@ -135,7 +135,8 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
-| r145 | **The grey screen, part 2 — the launch race** | ([plan](docs/plans/r145-grey-screen-launch-race.md)) Root cause found and fixed: Vite bundles dependencies *after* the dev server starts listening, and the one-click launcher opens the browser the moment the port answers — on a slow first launch the browser beats the optimizer, the page's dependency URLs go stale mid-load (504 Outdated Optimize Dep) and the half-loaded page cannot recover: a permanently grey editor. Reproduced locally; fixed by running the optimizer to completion before the server accepts a single request, plus declaring every dependency up front. Editor code untouched; a code-level review did fix the hexagon/diamond overlay's colour channel along the way (r144). |
+| r146 | **The grey screen, part 3 — the real one: a Windows name twin** | ([plan](docs/plans/r146-grey-screen-name-twin.md)) The grid round shipped `CanvasGrid.tsx` (component) beside `canvasGrid.ts` (preferences) — the same name ignoring case. Windows filenames are case-insensitive, so an extensionless import resolved to the wrong file on Zeis's machine and only his: every gate runs on case-sensitive Linux and stayed green. His Firefox console named the nonexistent `CanvasGrid.ts` and cracked the case; reproduced end-to-end, fixed by renaming the component (`CanvasGridBackground.tsx`, extension spelled out in the import) plus a guard test that fails on any future case-insensitive filename twin. r145's optimizer fix was real but secondary; its "slow machine" framing is retracted in the docs. |
+| r145 | **The grey screen, part 2 — the launch race** | ([plan](docs/plans/r145-grey-screen-launch-race.md)) Root cause found and fixed: Vite bundles dependencies *after* the dev server starts listening, and the one-click launcher opens the browser the moment the port answers — if the browser connects before the optimizer finishes, the page's dependency URLs go stale mid-load (504 Outdated Optimize Dep) and the half-loaded page cannot recover: a permanently grey editor. Reproduced locally; fixed by running the optimizer to completion before the server accepts a single request, plus declaring every dependency up front. Editor code untouched; a code-level review did fix the hexagon/diamond overlay's colour channel along the way (r144). |
 | r144 | **Grey-screen report, README rebuilt, grid re-landed** | ([plan](docs/plans/r144-grey-screen-readme-reland.md)) The grey screen could not be reproduced in r142's code — the whole app boots clean with the grid off and on; this round's suspect (a dead preview server) was later retracted, and the real cause was found in r145 (next row). One real bug was found on review and fixed: the hexagon/diamond overlay set its colour through an SVG attribute, where `var()`/`color-mix()` do not resolve — the colour now travels a real CSS channel (inline `color`, `currentColor` strokes). A boot regression net now mounts the whole editor with the grid off and on. The README had been truncated to intro + roadmap since somewhere in r134–r139; restored from Zeis's backup and brought current this round. r143 (a Compile.ts clean-code pass by a different tool) stays reverted — preserved at commit `a1fb342`, re-apply on request. |
 | r142 | **The visual canvas grid + Roboto** | ([plan](docs/plans/r142-canvas-grid.md)) A grid you can see and tune, on the Settings page: on/off (default **off**, Zeis's call — it replaces the always-on dot pattern, so the default canvas is now plain), six styles (squares, dots, hexagons, crosses, graph paper, diamond — each picker button shows a live miniature of its pattern), scale 4–200 and opacity 0–100 as slider + exact-number pairs. The colour is a `color-mix` over the theme's canvas-dots token, so every theme recolors it; the grid's scale is deliberately independent of the snap size. **Roboto** and **Roboto Mono** joined the font picker (self-hosted, OFL). Editor-only; nothing exported changes. |
 | r141 | **Settings page** | Done in r140 + r141: a non-modal settings sheet from the top bar — the snap/animated/springy toggles with honest descriptions, the wire-physics dials with the damping-ratio and settle readouts, an honest "Fade ms" dial (r140); then six curated themes (Midnight, High Contrast, Daylight, Phosphor, Dusk, Slate), self-hosted readable fonts (Atkinson Hyperlegible, Lexend, JetBrains Mono), snap grid size, wire dot drift speed, and an editor-data section (reset all preferences, clear the autosaved draft) (r141). Editor-only; nothing exported changes. |
@@ -174,7 +175,7 @@ rules the code now follows.
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-12.r144`: **1,378 tests** across 66
+Counted from the code at build `2026-09-13.r146`: **1,379 tests** across 67
 files, **34 node types** in 10 categories (33 in the palette — Wi-Fi is hidden),
 **13 templates** (11 playable + 2 reference sheets), **92 game events**,
 against `@hotbunny/hackhub-content-sdk@0.21.0`.

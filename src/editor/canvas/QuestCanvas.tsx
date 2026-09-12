@@ -62,7 +62,11 @@ import { Icon } from "@/components/Icon";
 import { useEditor, selectActiveQuest } from "@/store/editor";
 import { categoryOf, nodeTypeDef, sourcesOf } from "@/schema/registry";
 import { themeCategoryHex } from "@/editor/settings/theme";
-import { CanvasGridBackground } from "./CanvasGrid";
+// The extension is spelled out deliberately (r146): an extensionless
+// "./CanvasGrid" collided case-insensitively with canvasGrid.ts on Windows
+// (NTFS matched CanvasGrid.ts -> the preference module), which grey-screened
+// the editor on every Windows machine while Linux stayed green.
+import { CanvasGridBackground } from "./CanvasGridBackground.tsx";
 import { HANDLE_STYLE } from "@/schema/edges";
 import type { NodeType } from "@/schema/nodes";
 import type { EdgeDoc } from "@/schema/edges";

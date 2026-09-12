@@ -1,12 +1,12 @@
 # How the editor works today
 
-**Current as of build `2026-09-12.r144`.** Where the other documents are
+**Current as of build `2026-09-13.r146`.** Where the other documents are
 histories — how we got here, and what we learned on the way — this one is a
 snapshot of the thing as it stands. If it disagrees with an older document,
 this one is right.
 
-Verified figures, counted from the code rather than remembered: **1,378 tests**
-across 66 files, **34 node types** in 10 categories, **13 templates**, **92 game
+Verified figures, counted from the code rather than remembered: **1,379 tests**
+across 67 files, **34 node types** in 10 categories, **13 templates**, **92 game
 events**, against `@hotbunny/hackhub-content-sdk@0.21.0`.
 
 ---
@@ -83,7 +83,9 @@ surfaces write the same modules, so they cannot disagree.
 crosses, hexagons, graph paper, diamond), its own scale and opacity. It
 replaced the always-on dot pattern, so the default canvas is now plain —
 Zeis's call. Four styles ride React Flow's native `<Background>`; hexagons and
-diamond are a custom overlay (`CanvasGrid.tsx`) mirroring the library's own
+diamond are a custom overlay (`CanvasGridBackground.tsx`, the .tsx spelled
+out in its import — a case-insensitive name twin grey-screened Windows in
+r142–r145, see the r146 plan) mirroring the library's own
 tile math, tiled seamlessly by stamping motifs at lattice points and letting
 the pattern clip. The colour is a `color-mix` over the theme's
 `--color-canvas-dots` token, so every theme recolors the grid. The grid's

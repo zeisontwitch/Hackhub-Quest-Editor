@@ -1,4 +1,44 @@
-# Handoff — r145
+# Handoff — r146
+
+r146 found the real grey screen (plan:
+[plans/r146-grey-screen-name-twin.md](plans/r146-grey-screen-name-twin.md)).
+Zeis's Firefox console named it outright:
+
+```
+Uncaught SyntaxError: The requested module
+'.../src/editor/canvas/CanvasGrid.ts' doesn't provide an export named:
+'CanvasGridBackground'
+```
+
+— a file that does not exist in the repository.
+
+- **The bug:** r142 shipped `CanvasGrid.tsx` (the component) beside
+  `canvasGrid.ts` (the preference module) — the same name ignoring case,
+  differing extension. `QuestCanvas` imported the component extensionless;
+  Vite tries `.ts` before `.tsx`; on Windows (NTFS, case-insensitive)
+  `CanvasGrid.ts` "exists" (it is `canvasGrid.ts`), so the import bound to
+  the wrong module and the browser died with that SyntaxError — grey screen.
+  On Linux (this sandbox, every gate we have) the two names are distinct and
+  everything stays green. Born exactly with r142, which is why every build
+  before it worked for Zeis and every build after grey-screened.
+- **Reproduced end to end** by simulating the Windows view: the dev server
+  rewrote the import to `CanvasGrid.ts` and served the preference module
+  there — zero mentions of `CanvasGridBackground`, Zeis's error verbatim.
+- **The fix:** the component is renamed `CanvasGridBackground.tsx` and its
+  import spells the extension (`.tsx`), so no extensionless resolution
+  happens at all; plus a new guard test (`filenameSafety.test.ts`) fails
+  the build if any two JS/TS files anywhere share a lowercased stem —
+  falsified with a planted twin pair. The bug class is unshippable now.
+- **r145 corrected:** its optimizer fix was real and stands (the optimizer
+  line disappeared from Zeis's terminal), but its "slow machine" framing
+  was an unverified assumption stated as fact, and the race was never this
+  bug. Both the r145 plan and README now carry the correction. The lesson
+  is recorded in the r146 plan: never explain a failure with an unverified
+  property of the user's machine, and a bug that appears exactly when a
+  round lands is the round's bug until proven otherwise.
+- Gates: typecheck clean, **1,379 tests / 67 files**, build clean. No
+  `EDITOR_BUILD` bump (AR13).
+- **Zeis's verification:** fresh zip as always — it should simply boot.
 
 r145 found and fixed the grey screen (plan:
 [plans/r145-grey-screen-launch-race.md](plans/r145-grey-screen-launch-race.md)).

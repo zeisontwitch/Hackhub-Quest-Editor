@@ -1,5 +1,13 @@
 # r145 — The grey screen, part 2: the launch race, found and fixed
 
+> **Correction (r146):** the race this round fixed is real, and the fix
+> stands (Zeis's optimizer line disappeared). But this round also *assumed*
+> his machine was slow — an unverified guess stated as fact, against the
+> project's standing rule — and the race was never the grey screen. The
+> actual cause was a case-insensitive filename collision that only
+> manifests on Windows. See
+> [r146-grey-screen-name-twin.md](r146-grey-screen-name-twin.md).
+
 ## The report that cracked it
 
 Zeis came back: the grey screen returned on r144 (Firefox, Windows 11,

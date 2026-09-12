@@ -1,5 +1,11 @@
 # r144 — The grey screen, the README, and the grid's re-landing
 
+> **Correction (r145):** this round's leading suspect — the dev-preview
+> server dying with a sandbox reset — was wrong. Zeis never uses the in-chat
+> preview; he launches fresh zips locally. The real cause was found and fixed
+> in r145: the Vite dependency-optimizer launch race. See
+> [r145-grey-screen-launch-race.md](r145-grey-screen-launch-race.md).
+
 ## The report
 
 Zeis, the morning after r142 landed: the editor showed "a grey colour and

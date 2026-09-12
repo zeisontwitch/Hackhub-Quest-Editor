@@ -6,7 +6,7 @@
   "description": "Visual no-code quest mod editor for HackHub - Ultimate Hacker Simulator",
   "license": "MIT",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "vite optimize --logLevel error && vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc --noEmit",

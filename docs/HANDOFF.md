@@ -1,4 +1,40 @@
-# Handoff — r144
+# Handoff — r145
+
+r145 found and fixed the grey screen (plan:
+[plans/r145-grey-screen-launch-race.md](plans/r145-grey-screen-launch-race.md)).
+Zeis's second report carried the clue that cracked it: his terminal printed
+`[vite] (client) [optimizer] bundling dependencies...` — a line the working
+builds never showed.
+
+- **The mechanism:** Vite optimizes dependencies asynchronously *after* the
+  dev server starts listening. Launch.bat polls the TCP port — it answers
+  before the optimizer finishes — and opens the browser into the window. On
+  Zeis's machine the browser beats the optimizer; the page's dep URLs get
+  superseded mid-load (504 Outdated Optimize Dep); the half-loaded page has
+  no HMR connection to self-recover, so it stays grey forever. A documented
+  Vite failure mode, not an editor-code crash — which is why 1,378 tests,
+  the r144 boot net and 154-module dev-server crawls all stayed green while
+  his browser sat empty.
+- **Reproduced locally:** a crawl against a server whose dep cache was
+  re-bundled underneath it caught live `504 Outdated Optimize Dep`
+  responses — the exact failure.
+- **Not caused by the grid rounds, but real:** the lockfile is byte-identical
+  r141 (worked) → r144 (grey); the race had been in the launch flow since
+  the start and is timing-dependent. r144's "dead preview server" theory is
+  retracted (Zeis never uses the preview).
+- **The fix (no editor code changed):** the dev script now runs
+  `vite optimize` to completion *before* `vite` listens, so a browser cannot
+  connect until every dependency is bundled; and all 21 runtime dependencies
+  are declared in `optimizeDeps.include` so the startup scan can never miss
+  one for the browser to discover mid-session. Verified: cold cache → port
+  answers only after optimizing → instant parallel crawl: zero 504s, zero
+  slow requests, no client-optimizer line.
+- Gates: **1,378 tests / 66 files**, typecheck clean, build clean. No
+  `EDITOR_BUILD` bump (AR13).
+- **Zeis's verification:** fresh zip as always — the editor should just
+  appear. If a grey screen ever recurs: wait a few seconds and hard-reload
+  (Ctrl+Shift+R); if that does not fix it, F12 → Console → send the red
+  lines (that would be a different failure).
 
 r144 answered a grey screen, rebuilt the README, and re-landed the grid (plan:
 [plans/r144-grey-screen-readme-reland.md](plans/r144-grey-screen-readme-reland.md)):

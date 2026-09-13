@@ -11,7 +11,10 @@ import { downloadProject, parseProjectFile, projectFileName } from "@/templates/
 import { clearDraft } from "@/store/autosave";
 import { WebsiteBuilderDialog } from "@/editor/websites/WebsiteBuilder";
 import { DialoguesDialog } from "./DialoguesDialog";
+import { SimulatorDialog } from "@/editor/simulator/SimulatorDialog";
 import { ExportDialog } from "./ExportDialog";
+import { ToolPackManagerDialog } from "@/toolpacks/ToolPackManagerDialog";
+import { SettingsDialog } from "./SettingsDialog";
 import { EVENT_COUNT, SDK_VERSION } from "@/schema/events";
 
 /* ── Toast ───────────────────────────────────────────────────────────────── */
@@ -119,7 +122,7 @@ function Modal({
 
 const DIFFICULTY_STYLE: Record<Template["difficulty"], string> = {
     Beginner: "border-ok/30 bg-ok/10 text-ok",
-    Intermediate: "border-warn/30 bg-warn/10 text-warn",
+    Expert: "border-warn/30 bg-warn/10 text-warn",
     Advanced: "border-danger/30 bg-danger/10 text-danger",
     Reference: "border-accent/30 bg-accent-soft text-accent",
 };
@@ -335,6 +338,9 @@ export function Overlays() {
             <WebsiteBuilderDialog open={modal === "websites"} onOpenChange={(o) => setUi({ modal: o ? "websites" : null })} />
             <DialoguesDialog open={modal === "dialogues"} onOpenChange={(o) => setUi({ modal: o ? "dialogues" : null })} />
             <ExportDialog open={modal === "mod"} onOpenChange={(o) => setUi({ modal: o ? "mod" : null })} />
+            <SimulatorDialog open={modal === "simulator"} onOpenChange={(o) => setUi({ modal: o ? "simulator" : null })} />
+            <ToolPackManagerDialog open={modal === "toolpacks"} onOpenChange={(o) => setUi({ modal: o ? "toolpacks" : null })} />
+            <SettingsDialog open={modal === "settings"} onOpenChange={(o) => setUi({ modal: o ? "settings" : null })} />
         </>
     );
 }

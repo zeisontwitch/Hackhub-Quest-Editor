@@ -7,11 +7,15 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { getPath, setPath, useEditor } from "@/store/editor";
 import { createProject } from "@/schema/project";
 import { nodeTypeDef } from "@/schema/registry";
-import { TEMPLATES } from "@/templates";
+import { getTemplate } from "@/templates";
 
 /** Load a fresh document and wipe history so tests are order-independent. */
 function fresh() {
-    const project = TEMPLATES[2].build();
+    // The store tests exercise history/connect/undo against a real quest, and
+    // need both an objective and a world.network node. The Harbour Manifest
+    // ships both, so use it rather than depending on which template is at an
+    // index.
+    const project = getTemplate("data-grab")!.build();
     useEditor.getState().load(project, { clearHistory: true });
     useEditor.setState({ selection: { nodeIds: [], edgeIds: [] } });
     return useEditor.getState();
@@ -77,7 +81,9 @@ describe("history", () => {
 
     it("collapses a whole drag into one undo step", () => {
         fresh();
-        const nodeId = useEditor.getState().project.quests[0].graph.nodes[0].id;
+        const first = useEditor.getState().project.quests[0].graph.nodes[0];
+        const nodeId = first.id;
+        const original = first.position;
         const before = useEditor.getState().past.length;
 
         useEditor.getState().beginTransient();
@@ -87,10 +93,9 @@ describe("history", () => {
 
         expect(useEditor.getState().past.length).toBe(before + 1);
         useEditor.getState().undo();
-        expect(useEditor.getState().project.quests[0].graph.nodes.find((n) => n.id === nodeId)?.position).toEqual({
-            x: 0,
-            y: 0,
-        });
+        expect(useEditor.getState().project.quests[0].graph.nodes.find((n) => n.id === nodeId)?.position).toEqual(
+            original,
+        );
     });
 
     it("does not write history for viewport pans", () => {
@@ -112,16 +117,16 @@ describe("writing node data", () => {
     it("patches one field without disturbing its neighbours", () => {
         fresh();
         const state = useEditor.getState();
-        const wifi = state.project.quests[0].graph.nodes.find((n) => n.type === "world.wifi")!;
+        const objective = state.project.quests[0].graph.nodes.find((n) => n.type === "objective")!;
 
-        useEditor.getState().updateNodeData(wifi.id, { ssid: "EDITED" });
+        useEditor.getState().updateNodeData(objective.id, { description: "EDITED" });
 
         const after = useEditor
             .getState()
-            .project.quests[0].graph.nodes.find((n) => n.id === wifi.id)!;
-        expect((after.data as { ssid: string }).ssid).toBe("EDITED");
-        expect((after.data as { password: string }).password).toBe(wifi.data.password);
-        expect(after.type).toBe("world.wifi");
+            .project.quests[0].graph.nodes.find((n) => n.id === objective.id)!;
+        expect((after.data as { description: string }).description).toBe("EDITED");
+        expect((after.data as { hint: string }).hint).toBe(objective.data.hint);
+        expect(after.type).toBe("objective");
     });
 
     it("reaches nested paths", () => {
@@ -147,9 +152,11 @@ describe("connecting", () => {
 
     it("stamps the edge kind from the handles", () => {
         fresh();
-        // entry.load is deliberately unused by the template, so this wire is new.
-        const start = idsOf("entry.load");
-        const briefing = idsOf("world.wifi");
+        /* Add our own entry point rather than borrowing a spare one from the
+           template: templates no longer ship nodes that are wired to nothing
+           (r70), and a test should not depend on one existing. */
+        const start = useEditor.getState().addNode("entry.load", { x: 0, y: 0 })!;
+        const briefing = idsOf("world.network");
         const added = useEditor.getState().connect({
             source: start,
             sourceHandle: "out",
@@ -179,8 +186,8 @@ describe("connecting", () => {
 
     it("refuses self-loops and duplicate wires", () => {
         fresh();
-        const start = idsOf("entry.load");
-        const wifi = idsOf("world.wifi");
+        const start = useEditor.getState().addNode("entry.load", { x: 0, y: 0 })!;
+        const wifi = idsOf("world.network");
         const before = useEditor.getState().project.quests[0].graph.edges.length;
 
         expect(

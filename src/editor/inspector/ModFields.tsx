@@ -3,8 +3,9 @@
  * as a data URL — the compiler turns it into a real file in the exported zip —
  * and a tag input with autocomplete and one-click common tags.
  */
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@/components/Icon";
+import { forgetTag, rememberTags } from "@/lib/tagMemory";
 import { FieldShell } from "./primitives";
 
 /* The most-used Workshop tags, offered as suggestions and quick chips.
@@ -120,6 +121,17 @@ export function TagInput({
     ariaLabel: string;
 }) {
     const [draft, setDraft] = useState("");
+    // Tags this browser has seen before, so a tag an author invents once is a
+    // click away in every later mod.
+    const [remembered, setRemembered] = useState<string[]>([]);
+
+    useEffect(() => {
+        // Seed the memory with whatever the project already carries, so tags
+        // typed before this feature existed are remembered too.
+        setRemembered(rememberTags(value));
+        // Only on mount: later additions are recorded by `add`.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const add = (raw: string) => {
         const parts = raw.split(",").map((t) => t.trim()).filter(Boolean);
@@ -127,6 +139,7 @@ export function TagInput({
         const next = [...value];
         for (const p of parts) if (!next.includes(p)) next.push(p);
         onChange(next);
+        setRemembered(rememberTags(parts));
         setDraft("");
     };
 
@@ -135,10 +148,15 @@ export function TagInput({
     const suggestions = useMemo(() => {
         const q = draft.trim().toLowerCase();
         if (!q) return [];
-        return COMMON_TAGS.filter(
-            (t) => t.toLowerCase().includes(q) && !value.includes(t) && t.toLowerCase() !== q,
-        ).slice(0, 5);
-    }, [draft, value]);
+        const pool = [...remembered, ...COMMON_TAGS];
+        return [...new Set(pool)]
+            .filter((t) => t.toLowerCase().includes(q) && !value.includes(t) && t.toLowerCase() !== q)
+            .slice(0, 5);
+    }, [draft, value, remembered]);
+
+    const unusedRemembered = remembered.filter(
+        (t) => !value.includes(t) && !COMMON_TAGS.includes(t),
+    );
 
     const unusedCommon = COMMON_TAGS.filter((t) => !value.includes(t));
 
@@ -194,6 +212,34 @@ export function TagInput({
                             {s} ↹
                         </button>
                     ))}
+                </div>
+            )}
+            {unusedRemembered.length > 0 && (
+                <div className="grid gap-1">
+                    <p className="text-[10.5px] text-ink-3">
+                        Your tags — ones you have used before, click to add
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                        {unusedRemembered.map((t) => (
+                            <span
+                                key={t}
+                                className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2 py-0.5 font-mono text-[10px] text-ink-3 hover:border-accent hover:text-ink-2"
+                            >
+                                <button type="button" onClick={() => add(t)} title="Add this tag">
+                                    + {t}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="text-ink-4 hover:text-danger"
+                                    aria-label={`Forget tag ${t}`}
+                                    title="Forget this tag"
+                                    onClick={() => setRemembered(forgetTag(t))}
+                                >
+                                    <Icon name="x" size={9} />
+                                </button>
+                            </span>
+                        ))}
+                    </div>
                 </div>
             )}
             <details className="text-[10.5px] text-ink-3">

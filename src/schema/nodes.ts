@@ -190,6 +190,8 @@ export const LayoutGroupNodeDataSchema = z.object({
     comment: z.string().default(""),
     w: z.number().default(360),
     h: z.number().default(240),
+    /** Title-bar colour. Any CSS hex; older drafts fall back to slate. */
+    color: z.string().default("#64748b"),
 });
 export const EntryLoadData = empty;
 export const EntryCompleteData = empty;
@@ -211,11 +213,26 @@ export const TriggerEventDataSchema = z.object({
 });
 
 export const NetworkNodeDataSchema = z.object({
-    /** `random` allocates via `Network.randomIp()` in `CreateData()`. */
-    ipMode: z.enum(["fixed", "random"]).default("random"),
+    /**
+     * Always `random`: the game allocates the address in `CreateData()` and the
+     * author reads it back with `{{data.targetIp}}`.
+     *
+     * Typed addresses were removed in r73. Networks live in the SAVE and
+     * outlive the mod, so a fixed address meant a re-exported build was
+     * answered by whatever an older version had left there — and every attempt
+     * to clear it first broke something worse (r55, r56, r59, r71, r72).
+     * The enum is kept so old projects still parse; anything that says "fixed"
+     * is coerced to "random" on load.
+     */
+    ipMode: z.enum(["fixed", "random"]).catch("random").default("random")
+        .transform(() => "random" as const),
     device: NetworkDeviceSchema,
-    /** Remove the whole network in `OnComplete` / `OnAbandon`. */
-    destroyOnComplete: z.boolean().default(true),
+    /**
+     * Remove the whole network when the quest *completes*. Defaults to false:
+     * destroying a network the player may still be connected to hangs the game
+     * (r81). Abandoning a quest always tears its networks down.
+     */
+    destroyOnComplete: z.boolean().default(false),
 });
 
 export const WifiNodeDataSchema = z.object({
@@ -224,15 +241,16 @@ export const WifiNodeDataSchema = z.object({
     signal: z.number().default(2),
     bssid: z.string().optional(),
     channel: z.string().optional(),
-    /** Router IP. `random` lets the engine allocate one. */
-    ipMode: z.enum(["fixed", "random"]).default("random"),
+    /** Always `random` — see NetworkNodeDataSchema.ipMode (r73). */
+    ipMode: z.enum(["fixed", "random"]).catch("random").default("random")
+        .transform(() => "random" as const),
     ip: z.string().optional(),
     /** Router model — enables the in-game `fern` recovery route. */
     model: z.string().optional(),
     users: z.array(NetworkUserSchema).default([]),
     ports: z.array(NetworkPortSchema).default([]),
     children: z.array(NetworkDeviceSchema).default([]),
-    destroyOnComplete: z.boolean().default(true),
+    destroyOnComplete: z.boolean().default(false),
 });
 
 export const FirewallNodeDataSchema = z.object({
@@ -281,9 +299,13 @@ export const FilesNodeDataSchema = z.object({
 });
 
 /**
- * `Shell.addCommandData` — scripts what a built-in reconnaissance tool reports.
- * `dataText` is edited through a shape-aware editor in the inspector, never as
- * raw JSON in the common case.
+ * `Shell.addCommandData(command, input, data)` — scripts what a built-in
+ * reconnaissance tool reports for one exact input.
+ *
+ * `dataText` is authored as readable "Label: value" lines (or port lines, for
+ * nmap) and the compiler turns them into the shape that tool actually returns;
+ * JSON is passed through untouched. The engine takes a structure here, never a
+ * block of text, and getting that wrong throws inside the game.
  */
 export const ToolResponseNodeDataSchema = z.object({
     command: z
@@ -340,32 +362,6 @@ export const WeeChatNodeDataSchema = z.object({
     messages: z.array(WeeChatMessageSchema).default([]),
 });
 
-export const TweetNodeDataSchema = z.object({
-    accountId: z.string().default(""),
-    content: z.string().default(""),
-    /** Optional attached picture, embedded as a data URL. */
-    image: z.string().optional(),
-    likes: z.number().optional(),
-    comments: z.number().optional(),
-    shares: z.number().optional(),
-    views: z.number().optional(),
-    /**
-     * How the post's timestamp is decided:
-     *  - "now": no stored date; the game shows it relative to real time (its
-     *    natural, always-valid fallback).
-     *  - "relative": an age string like "2 days" (SDK `postedAgo`).
-     *  - "absolute": a specific calendar date the author picks (`postedAt`),
-     *    which the compiler turns into the age string the SDK understands.
-     */
-    timeMode: z.enum(["now", "relative", "absolute"]).default("now"),
-    /** Relative age, SDK format, e.g. "2 days" / "1 month". Used when timeMode = "relative". */
-    postedAgo: z.string().optional(),
-    /** A specific date (yyyy-mm-dd). Used when timeMode = "absolute". */
-    postedAt: z.string().optional(),
-    /** Also surface this post in the main Twotter timeline, not just the profile. */
-    showInTimeline: z.boolean().default(false),
-});
-
 /**
  * The general dialogue node: one node, four flavours. The payload for every
  * flavour lives on the node; `kind` selects which one the editor shows and the
@@ -381,26 +377,14 @@ export const DialogueNodeDataSchema = z.object({
     kisscord: KisscordNodeDataSchema.default({ contactId: "", messages: [] }),
     mail: MailNodeDataSchema.default({ from: "", subject: "", content: "", replyable: false }),
     weechat: WeeChatNodeDataSchema.default({ host: "", password: "", registerServer: true, messages: [] }),
+    /**
+     * Kisscord/WeeChat only: play the conversation when the story flow arrives
+     * instead of registering it with the quest up front. Opt-in, because the
+     * declarative script is the path the engine scopes and cleans up.
+     */
+    postLive: z.boolean().default(false),
 });
 
-/**
- * "Hackertyper" — the player mashes keys and a predefined string types itself
- * out. There is no engine primitive for this, so the editor emits a small HTML
- * surface (website page / desktop app / phone app) that runs the effect and
- * emits a custom event; a quest listener turns that into an objective.
- */
-export const HackertyperNodeDataSchema = z.object({
-    surface: z.enum(["website", "app", "phoneApp"]).default("website"),
-    /** Website host + path, or app name, depending on `surface`. */
-    targetRef: z.string().default(""),
-    text: z.string().default(""),
-    /** How many characters of the string each keypress reveals. */
-    charsPerKeypress: z.number().default(3),
-    /** Optional headline shown above the terminal. */
-    heading: z.string().optional(),
-    /** Emitted when the string is fully revealed. */
-    eventName: z.string().default(""),
-});
 
 /**
  * "Manual input" — the player must type a specific phrase. Compiles to a custom
@@ -445,6 +429,66 @@ export const ClaimQuestNodeDataSchema = z.object({
     questName: IdentifierSchema.optional().or(z.literal("")),
 });
 
+/**
+ * Community data (r137): one SharedStorage write driven by a tool pack's
+ * declared contract. The pack's entry template and the author's values are
+ * snapshotted INTO the node, so the project stays self-contained — it
+ * compiles (and the game mod reads its key) even where the pack is not
+ * loaded. See docs/ToolPack-Format.md.
+ */
+export const PackDataNodeDataSchema = z.object({
+    packId: z.string().default(""),
+    packName: z.string().default(""),
+    /** The in-game mod players must have installed — the honesty line. */
+    gameModName: z.string().default(""),
+    contractId: z.string().default(""),
+    contractLabel: z.string().default(""),
+    storageKey: z.string().default(""),
+    merge: z.enum(["overwrite", "replace"]).default("replace"),
+    mergeBy: z.string().optional(),
+    /** The pack's entry template (JSON with "{{fieldKey}}" holes). */
+    entry: z.unknown().optional(),
+    /** The contract's field definitions, snapshotted for the inspector. */
+    fields: z.array(z.record(z.string(), z.unknown())).default([]),
+    /** The author's answers, keyed by field key (stored as strings). */
+    values: z.record(z.string(), z.string()).default({}),
+});
+
+/**
+ * A pack-authored node (Editor Mods, r138). The whole definition is
+ * SNAPSHOTTED at authoring time — pack id/version, the game mod's honesty
+ * line, the node's label, the emitter and its full config, the field
+ * definitions — so the node compiles and runs even where the pack was never
+ * loaded, exactly like world.packData. `values` are the author's form
+ * answers, keyed by field key, always strings.
+ */
+export const PackNodeDataSchema = z.object({
+    packId: z.string().default(""),
+    packName: z.string().default(""),
+    packVersion: z.string().default(""),
+    /** The in-game mod players must have installed — the honesty line. */
+    gameModName: z.string().default(""),
+    nodeId: z.string().default(""),
+    nodeLabel: z.string().default(""),
+    emitter: z.enum(["sdk", "emit", "storage", "commandData"]).default("sdk"),
+    fields: z.array(z.record(z.string(), z.unknown())).default([]),
+    values: z.record(z.string(), z.string()).default({}),
+    /** sdk emitter: the calls to make, in order. */
+    steps: z.array(z.object({ call: z.string().default(""), args: z.array(z.unknown()).default([]) })).default([]),
+    /** emit emitter. */
+    eventName: z.string().default(""),
+    payload: z.unknown().optional(),
+    /** storage emitter. */
+    storageKey: z.string().default(""),
+    merge: z.enum(["overwrite", "replace"]).default("replace"),
+    mergeBy: z.string().optional(),
+    entry: z.unknown().optional(),
+    /** commandData emitter. */
+    command: z.string().default(""),
+    input: z.string().default(""),
+    data: z.unknown().optional(),
+});
+
 export const ShellExecNodeDataSchema = z.object({
     command: z.string().default(""),
 });
@@ -471,9 +515,77 @@ export const RandomPickNodeDataSchema = z.object({
     storeAs: z.string().optional(),
 });
 
+/**
+ * Fire several outputs one after another, with an author-set pause before each.
+ *
+ * Every step owns one output socket (`step-<id>`), so the sockets a Sequence
+ * node shows are derived from its own data rather than fixed in the registry.
+ */
+export const SequenceStepSchema = z.object({
+    id: z.string(),
+    /* Blank falls back to the step number wherever the label shows, so an
+       unnamed step still reads as "1", "2", ... */
+    label: z.string().default(""),
+    /** Pause before this output fires, in milliseconds. */
+    delayMs: z.number().min(0).default(0),
+});
+export type SequenceStep = z.infer<typeof SequenceStepSchema>;
+
+export const SequenceNodeDataSchema = z.object({
+    steps: z.array(SequenceStepSchema).default([]),
+});
+
+/**
+ * A checkpoint the author drops into a chain to see what is actually happening
+ * in-game. Exists because most of this project's hard bugs were invisible:
+ * the mod ran, nothing errored, and nothing happened.
+ */
+export const DebugNodeDataSchema = z.object({
+    /** Shown in the log line, so several probes can be told apart. */
+    label: z.string().default(""),
+    /**
+     * True while the label is one we generated from the wire.
+     *
+     * Without this, "has the author named it?" has to be guessed from whether
+     * the label is blank — which stops being true the moment we fill it in, so
+     * re-wiring a probe to a different socket left it describing the wire it
+     * used to be on. An author who types their own name clears this flag and
+     * keeps their text for good.
+     */
+    labelAuto: z.boolean().default(false),
+    /** Also show it on screen, for testing without reading a log file. */
+    toast: z.boolean().default(false),
+    /** Print the quest's saved Data alongside the label. */
+    includeData: z.boolean().default(true),
+    /** Print the event payload that reached this point, if any. */
+    includePayload: z.boolean().default(true),
+});
+
 export const NoteNodeDataSchema = z.object({
     text: z.string().default(""),
     width: z.number().default(240),
+});
+
+/**
+ * A planning beat: a colour, a headline and a short body the author uses to
+ * sketch linear and branching story beats. It is canvas furniture — it can be
+ * wired (in/out) so it sits among reroute / branch / sequence nodes while a
+ * story is being planned, but it is stripped from the exported mod, and the
+ * flow through it is a transparent pass-through.
+ */
+export const StoryBeatChoiceSchema = z.object({
+    id: z.string(),
+    label: z.string().default(""),
+    note: z.string().default(""),
+});
+export const StoryBeatNodeDataSchema = z.object({
+    title: z.string().default(""),
+    text: z.string().default(""),
+    /** Card tint. Any CSS hex; older drafts fall back to slate. */
+    color: z.string().default("#64748b"),
+    width: z.number().default(280),
+    /** Branch "chiplets": a label plus a one-line note for each path. */
+    choices: z.array(StoryBeatChoiceSchema).default([]),
 });
 
 /* ── The node union ──────────────────────────────────────────────────────── */
@@ -506,9 +618,9 @@ export const NodeSchema = z.discriminatedUnion("type", [
     node("world.database", DatabaseNodeDataSchema),
     node("world.files", FilesNodeDataSchema),
     node("world.toolResponse", ToolResponseNodeDataSchema),
+    node("world.packData", PackDataNodeDataSchema),
+    node("pack.node", PackNodeDataSchema),
     node("comms.dialogue", DialogueNodeDataSchema),
-    node("comms.tweet", TweetNodeDataSchema),
-    node("reply.hackertyper", HackertyperNodeDataSchema),
     node("reply.input", ManualInputNodeDataSchema),
     node("fx.pay", PayNodeDataSchema),
     node("fx.withdraw", PayNodeDataSchema),
@@ -520,7 +632,10 @@ export const NodeSchema = z.discriminatedUnion("type", [
     node("flow.branch", BranchNodeDataSchema),
     node("flow.delay", DelayNodeDataSchema),
     node("flow.random", RandomPickNodeDataSchema),
+    node("flow.sequence", SequenceNodeDataSchema),
+    node("flow.debug", DebugNodeDataSchema),
     node("flow.note", NoteNodeDataSchema),
+    node("flow.beat", StoryBeatNodeDataSchema),
     node("flow.reroute", RerouteNodeDataSchema),
     node("layout.group", LayoutGroupNodeDataSchema),
 ]);

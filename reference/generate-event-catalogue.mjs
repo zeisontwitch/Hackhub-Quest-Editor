@@ -89,7 +89,9 @@ function docFor(eventName) {
     const idx = mapMatch[1].indexOf(`"${eventName}"`);
     if (idx === -1) return undefined;
     const before = mapMatch[1].slice(0, idx);
-    const docMatch = before.match(/\/\*\*([\s\S]*?)\*\/\s*$/);
+    /* The LAST comment block only: [\s\S]*? spans from the FIRST "/**", which
+       glued Terminal.SSH.Connected's comment onto Disconnected's entry. */
+    const docMatch = before.match(/\/\*\*((?:[^*]|\*(?!\/))*)\*\/\s*$/);
     if (!docMatch) return undefined;
     return docMatch[1]
         .split("\n")

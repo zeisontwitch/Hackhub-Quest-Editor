@@ -5,16 +5,23 @@
  * a field can live at any depth (`attachment.name`, `messages.2.content`) without
  * the parent threading callbacks down.
  */
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { ColourPicker } from "./ColourPicker";
 import { Icon } from "@/components/Icon";
 import type { FieldDef } from "@/schema/registry";
-import { getPath, selectActiveQuest, useEditor } from "@/store/editor";
+import { getPath, useEditor } from "@/store/editor";
+import { fieldWarnings } from "@/analysis/fields";
 import { ImagePickerField } from "./ModFields";
 import { ConditionsEditor } from "./ConditionsEditor";
 import { DeviceEditor, DeviceListEditor } from "./DeviceTree";
 import { EventPicker } from "./EventPicker";
 import { ListEditor } from "./ListEditor";
+import { HANDBOOK_ARTICLES } from "@/schema/handbookArticles";
+import { SelectOrCustomInput } from "./SelectOrCustom";
+import { TablesEditor } from "./TablesEditor";
+import { TokenTextInput } from "./TokenInsert";
+import { listTokenSuggestions } from "./tokenSuggestions";
 import {
     FieldShell,
     NumberInput,
@@ -25,6 +32,18 @@ import {
 } from "./primitives";
 import type { NetworkDevice } from "@/schema/common";
 import type { ConditionClause } from "@/schema/nodes";
+
+/** Ready-made frame colours. Anything else is one click away in the picker. */
+const GROUP_COLORS = [
+    { value: "#64748b", label: "Slate" },
+    { value: "#60a5fa", label: "Blue" },
+    { value: "#34d399", label: "Green" },
+    { value: "#fbbf24", label: "Amber" },
+    { value: "#f472b6", label: "Pink" },
+    { value: "#a78bfa", label: "Violet" },
+    { value: "#fb923c", label: "Orange" },
+    { value: "#22d3ee", label: "Cyan" },
+] as const;
 
 export function Field({
     def,
@@ -39,6 +58,10 @@ export function Field({
         const quest = s.project.quests.find((q) => q.id === s.project.editor.activeQuestId);
         return quest?.graph.nodes.find((n) => n.id === nodeId) ?? null;
     });
+    const quest = useEditor((s) =>
+        (s.project.quests.find((q) => q.id === s.project.editor.activeQuestId) ?? null),
+    );
+    const warnings = useMemo(() => fieldWarnings(quest ?? undefined, node!), [quest, node]);
     const updateNodeData = useEditor((s) => s.updateNodeData);
 
     if (!node) return null;
@@ -48,13 +71,19 @@ export function Field({
         const siblingPath = basePath ? `${basePath}.${def.showWhen.key}` : def.showWhen.key;
         const current = getPath(node.data, siblingPath);
         const wanted = def.showWhen.equals;
+        // Booleans are compared by their spelling, so a toggle can gate a field
+        // with equals: "true".
+        const seen = typeof current === "boolean" ? String(current) : current;
         const matches = Array.isArray(wanted)
-            ? wanted.includes(current as string)
-            : current === wanted;
+            ? wanted.includes(seen as string)
+            : seen === wanted;
         if (!matches) return null;
     }
 
     if (def.kind === "section") {
+        // A section with `path` addresses its children under a nested record
+        // (the firewall node's single rule); without one they share the parent.
+        const childBase = def.path ? (basePath ? `${basePath}.${def.path}` : def.path) : basePath;
         return (
             <fieldset className="my-1 rounded-md border border-line/70 py-0.5">
                 <legend className="ml-2 px-1 text-[10px] font-semibold tracking-wider text-ink-4 uppercase">
@@ -65,7 +94,7 @@ export function Field({
                         key={"key" in child ? child.key : `${i}-${child.kind}`}
                         def={child}
                         nodeId={nodeId}
-                        basePath={basePath}
+                        basePath={childBase}
                     />
                 ))}
             </fieldset>
@@ -93,6 +122,9 @@ export function Field({
     }
 
     const path = basePath ? `${basePath}.${def.key}` : def.key;
+    // Only match warnings on exactly this field — a nested or sibling field's
+    // problem belongs to its own control, not here.
+    const fieldWarning = warnings.find((w) => w.path === path);
     const raw = getPath(node.data, path);
 
     const write = (value: unknown) => updateNodeData(nodeId, { [path]: value });
@@ -104,20 +136,31 @@ export function Field({
     switch (def.kind) {
         case "text":
             return (
-                <FieldShell label={def.label} hint={def.hint}>
-                    <TextInput
-                        ariaLabel={def.label}
-                        value={asString(raw)}
-                        onChange={write}
-                        placeholder={def.placeholder}
-                        mono={def.mono}
-                    />
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
+                    {def.tokens ? (
+                        <TokenTextInput
+                            ariaLabel={def.label}
+                            value={asString(raw)}
+                            onChange={write}
+                            placeholder={def.placeholder}
+                            mono={def.mono}
+                            suggestions={listTokenSuggestions(quest, nodeId)}
+                        />
+                    ) : (
+                        <TextInput
+                            ariaLabel={def.label}
+                            value={asString(raw)}
+                            onChange={write}
+                            placeholder={def.placeholder}
+                            mono={def.mono}
+                        />
+                    )}
                 </FieldShell>
             );
 
         case "date":
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <input
                         type="date"
                         aria-label={def.label}
@@ -130,21 +173,34 @@ export function Field({
 
         case "textarea":
             return (
-                <FieldShell label={def.label} hint={def.hint}>
-                    <TextArea
-                        ariaLabel={def.label}
-                        value={asString(raw)}
-                        onChange={write}
-                        placeholder={def.placeholder}
-                        mono={def.mono}
-                        rows={def.rows ?? 3}
-                    />
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
+                    {def.tokens ? (
+                        <TokenTextInput
+                            ariaLabel={def.label}
+                            value={asString(raw)}
+                            onChange={write}
+                            placeholder={def.placeholder}
+                            mono={def.mono}
+                            multiline
+                            rows={def.rows ?? 3}
+                            suggestions={listTokenSuggestions(quest, nodeId)}
+                        />
+                    ) : (
+                        <TextArea
+                            ariaLabel={def.label}
+                            value={asString(raw)}
+                            onChange={write}
+                            placeholder={def.placeholder}
+                            mono={def.mono}
+                            rows={def.rows ?? 3}
+                        />
+                    )}
                 </FieldShell>
             );
 
         case "number":
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <NumberInput
                         ariaLabel={def.label}
                         value={asNumber(raw)}
@@ -159,7 +215,7 @@ export function Field({
         case "slider": {
             const value = Math.min(def.max, Math.max(def.min, asNumber(raw)));
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <div className="flex items-center gap-3">
                         <input
                             type="range"
@@ -183,6 +239,20 @@ export function Field({
             );
         }
 
+        case "color": {
+            const current = asString(raw) || GROUP_COLORS[0].value;
+            return (
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
+                    <ColourPicker
+                        label={def.label}
+                        value={current}
+                        onChange={write}
+                        presets={GROUP_COLORS}
+                    />
+                </FieldShell>
+            );
+        }
+
         case "image":
             return (
                 <ImagePickerField
@@ -193,30 +263,6 @@ export function Field({
                     onChange={(next) => write(next ?? "")}
                 />
             );
-
-        case "questAccount": {
-            const accounts = useEditor(selectActiveQuest)?.twotterAccounts ?? [];
-            return (
-                <FieldShell label={def.label} hint={def.hint}>
-                    {accounts.length === 0 ? (
-                        <p className="text-[11px] leading-relaxed text-ink-3">
-                            No Twotter accounts yet — add one in the <strong className="text-ink-2">Quest tab</strong> under
-                            “Twotter accounts”, then pick which account makes this post.
-                        </p>
-                    ) : (
-                        <SelectInput
-                            ariaLabel={def.label}
-                            value={asString(raw)}
-                            onChange={write}
-                            options={accounts.map((a) => ({
-                                value: a.id,
-                                label: `@${a.username || a.id}${a.displayName ? ` — ${a.displayName}` : ""}`,
-                            }))}
-                        />
-                    )}
-                </FieldShell>
-            );
-        }
 
         case "toggle":
             return (
@@ -230,7 +276,7 @@ export function Field({
 
         case "select":
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <SelectInput
                         ariaLabel={def.label}
                         value={asString(raw)}
@@ -240,9 +286,52 @@ export function Field({
                 </FieldShell>
             );
 
+        case "selectOrCustom": {
+            const sameValue = def.sameAs
+                ? resolveSameAs(node.data, basePath, def.sameAs.fromKey)
+                : undefined;
+            return (
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
+                    <SelectOrCustomInput
+                        ariaLabel={def.label}
+                        value={asString(raw)}
+                        onChange={(v) => write(v)}
+                        options={def.options}
+                        sameAsLabel={def.sameAs?.label}
+                        sameAsValue={sameValue}
+                        sameAsEmptyHint={def.sameAs?.emptyHint}
+                        placeholder={def.placeholder}
+                        mono={def.mono}
+                        tokenSuggestions={def.tokens ? listTokenSuggestions(quest, nodeId) : undefined}
+                    />
+                </FieldShell>
+            );
+        }
+
+        case "tables":
+            return (
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
+                    <TablesEditor value={asArray(raw)} onChange={(next) => write(next)} />
+                </FieldShell>
+            );
+
+        case "handbookArticle":
+            return (
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
+                    <SelectOrCustomInput
+                        ariaLabel={def.label}
+                        value={asString(raw)}
+                        onChange={(v) => write(v)}
+                        options={HANDBOOK_ARTICLES.map((a) => ({ value: a.id, label: a.title }))}
+                        placeholder="Article id"
+                        mono
+                    />
+                </FieldShell>
+            );
+
         case "event":
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <EventPicker value={asString(raw)} onChange={write} />
                 </FieldShell>
             );
@@ -251,7 +340,7 @@ export function Field({
             const eventPath = basePath ? `${basePath}.event` : "event";
             const eventName = asString(getPath(node.data, eventPath));
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <ConditionsEditor
                         value={(raw as ConditionClause[] | undefined) ?? []}
                         onChange={(next) => write(next)}
@@ -263,7 +352,7 @@ export function Field({
 
         case "list":
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <ListEditor nodeId={nodeId} path={path} items={asArray(raw)} def={def} />
                 </FieldShell>
             );
@@ -271,7 +360,7 @@ export function Field({
         case "deviceTree": {
             const value = raw as NetworkDevice | NetworkDevice[] | undefined;
             return (
-                <FieldShell label={def.label} hint={def.hint}>
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     {Array.isArray(value) ? (
                         <DeviceListEditor nodeId={nodeId} path={path} devices={value} />
                     ) : value ? (
@@ -288,6 +377,24 @@ export function Field({
             return <NoValue label={String(exhaustive)} />;
         }
     }
+}
+
+/**
+ * Reads the field a `sameAs` choice copies. A leading "/" addresses the node
+ * root (the firewall rule's "/ip"); otherwise the row is tried first so a
+ * row-local key wins, then the root.
+ */
+function resolveSameAs(data: unknown, basePath: string, fromKey: string): string {
+    const read = (path: string) => {
+        const v = getPath(data, path);
+        return v === undefined || v === null ? "" : String(v);
+    };
+    if (fromKey.startsWith("/")) return read(fromKey.slice(1));
+    if (basePath) {
+        const scoped = getPath(data, `${basePath}.${fromKey}`);
+        if (scoped !== undefined && scoped !== null) return String(scoped);
+    }
+    return read(fromKey);
 }
 
 function NoValue({ label }: { label?: ReactNode }) {

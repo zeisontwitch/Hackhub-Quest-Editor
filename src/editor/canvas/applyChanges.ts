@@ -34,3 +34,134 @@ export function nextSelection(current: string[], changes: SelectionDelta[]): str
 export function altersSelection(changes: SelectionDelta[]): boolean {
     return changes.some((c) => c.type === "select");
 }
+
+/**
+ * True when a batch only ever *deselects*.
+ *
+ * A box drag makes React Flow emit node changes and edge changes as two
+ * separate batches. Our node handler used to write `edgeIds: []` and the edge
+ * handler `nodeIds: []`, so whichever batch arrived second wiped what the first
+ * had just selected — the user drags a box around three nodes and ends up with
+ * the wires between them selected instead.
+ *
+ * Telling the two apart needs no guesswork: a batch that *adds* something is
+ * the user choosing that kind of thing, and may clear the other kind. A batch
+ * that only clears is React Flow tidying up, and must leave the other kind
+ * alone.
+ */
+export function onlyDeselects(changes: SelectionDelta[]): boolean {
+    const selects = changes.filter((c) => c.type === "select");
+    return selects.length > 0 && selects.every((c) => !c.selected);
+}
+
+/**
+ * What a batch of selection changes should do to the store's selection.
+ *
+ * Extracted from the canvas so the rules can be tested without mounting React
+ * Flow. `kind` is the sort of thing the batch is about; `boxSelecting` is true
+ * while a selection box is open.
+ */
+export function resolveSelection(
+    kind: "nodes" | "edges",
+    current: { nodeIds: string[]; edgeIds: string[] },
+    changes: SelectionDelta[],
+    boxSelecting: boolean,
+    /**
+     * True while a multi-select modifier is held. React Flow calls
+     * `resetSelectedElements()` when a box drag starts, with no modifier check,
+     * so Shift+drag arrives as "deselect everything" followed by the new box's
+     * picks. Holding the modifier means the user is adding to what they had.
+     */
+    additive = false,
+): { nodeIds: string[]; edgeIds: string[] } | null {
+    if (!altersSelection(changes)) return null;
+    // React Flow sweeps up every wire touching a box-selected node. The user
+    // was pointing at nodes, so those edge changes are ignored outright.
+    if (kind === "edges" && boxSelecting) return null;
+    const tidyUp = onlyDeselects(changes);
+    /*
+     * Adding to a selection: ignore the wholesale clear React Flow sends at the
+     * start of a box drag (resetSelectedElements(), which does not check for a
+     * modifier).
+     *
+     * Only while a BOX is actually open. An earlier version dropped every
+     * clear-only batch whenever a modifier was held, which also swallowed
+     * ctrl+click-to-deselect — that is a clear-only batch too, and the one the
+     * user most wants honoured. The two are indistinguishable by their changes
+     * alone; the box is what tells them apart.
+     */
+    if (additive && tidyUp && boxSelecting) return null;
+    if (kind === "nodes") {
+        return {
+            nodeIds: nextSelection(current.nodeIds, changes),
+            // Only wipe the other kind when the user actually picked something.
+            edgeIds: tidyUp || additive ? current.edgeIds : [],
+        };
+    }
+    return {
+        nodeIds: tidyUp || additive ? current.nodeIds : [],
+        edgeIds: nextSelection(current.edgeIds, changes),
+    };
+}
+
+/**
+ * The selection a box drag should produce.
+ *
+ * `start` is what was selected when the drag began, `inside` the ids the box
+ * currently covers. React Flow only ever reports the ids inside the box as
+ * selected and has no notion of a box that *removes* nodes, so both the add
+ * and the subtract are computed here.
+ */
+export function boxSelectionResult(
+    start: string[],
+    inside: Set<string>,
+    keys: { shift?: boolean; ctrl?: boolean },
+): string[] {
+    if (keys.ctrl) return start.filter((id) => !inside.has(id));
+    if (keys.shift) return [...new Set([...start, ...inside])];
+    return [...inside];
+}
+
+/** A node as React Flow's `nodeLookup` describes it, trimmed to what we read. */
+export interface BoxTestNode {
+    id: string;
+    measured?: { width?: number; height?: number };
+    width?: number;
+    height?: number;
+    initialWidth?: number;
+    initialHeight?: number;
+    hidden?: boolean;
+    selectable?: boolean;
+    internals?: { positionAbsolute?: { x: number; y: number } };
+}
+
+/**
+ * Which nodes a selection box covers.
+ *
+ * React Flow computes this internally but only *reports* it as change events,
+ * and it emits none when the boxed nodes are already in the state the box
+ * wants — which is exactly ctrl+dragging over a live selection. So the same
+ * overlap test is done here, from the store's own geometry.
+ *
+ * `rect` and the node positions are both in flow coordinates. Matches
+ * SelectionMode.Partial: any overlap counts.
+ */
+export function nodesInBox(
+    nodes: Iterable<BoxTestNode>,
+    rect: { x: number; y: number; width: number; height: number },
+): Set<string> {
+    const x2 = rect.x + rect.width;
+    const y2 = rect.y + rect.height;
+    const hits = new Set<string>();
+    for (const n of nodes) {
+        if (n.hidden || n.selectable === false) continue;
+        const pos = n.internals?.positionAbsolute;
+        if (!pos) continue;
+        const w = n.measured?.width ?? n.width ?? n.initialWidth ?? 0;
+        const h = n.measured?.height ?? n.height ?? n.initialHeight ?? 0;
+        if (pos.x < x2 && pos.x + w > rect.x && pos.y < y2 && pos.y + h > rect.y) {
+            hits.add(n.id);
+        }
+    }
+    return hits;
+}

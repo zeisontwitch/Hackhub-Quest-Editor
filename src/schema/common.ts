@@ -1,4 +1,16 @@
 /**
+ * The address of the machine a quest is built around.
+ *
+ * The game allocates it per playthrough (`Network.randomIp()` in
+ * `CreateData()`), and the author never types it: networks live in the save and
+ * outlive the mod, so a fixed address meant a re-exported build collided with
+ * its own older self (r73). Anywhere an author needs the address — a whois
+ * answer, an objective hint, a mail — this token is filled in for them, and the
+ * inspector shows "Random IP" rather than the token itself.
+ */
+export const TARGET_IP_TOKEN = "{{data.targetIp}}";
+
+/**
  * Shared primitives for the project document.
  *
  * Everything here is deliberately JSON-serialisable: the document is the single
@@ -187,6 +199,14 @@ export const NetworkDeviceSchema: z.ZodType<NetworkDevice> = z.lazy(() =>
         rootFiles: z.array(FileEntrySchema).default([]),
         /** Hidden from `nmap` unless the player already knows the IP. */
         isIpHidden: z.boolean().optional(),
+        /**
+         * Device only. Adds the engine's stock `root` and `guest` accounts
+         * alongside the ones written here. A guest account is what the SSH
+         * exploit lands in when it finds one, so leaving it off gives the
+         * player the authored account instead. Defaults to on, which is what
+         * every build before r78 did unconditionally.
+         */
+        extraAccounts: z.boolean().optional(),
         location: z
             .object({
                 latitude: z.string(),
@@ -214,6 +234,7 @@ export type NetworkDevice = {
     rules: FirewallRule[];
     rootFiles: FileEntry[];
     isIpHidden?: boolean;
+    extraAccounts?: boolean;
     location?: { latitude: string; longitude: string; city?: string; country?: string };
     children: NetworkDevice[];
 };

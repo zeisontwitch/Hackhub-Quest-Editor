@@ -13,6 +13,8 @@ import { Icon } from "@/components/Icon";
 import { CONDITION_OPS, CONDITION_OP_LABELS, UNARY_OPS, type ConditionClause } from "@/schema/nodes";
 import { RUNTIME_TOKENS } from "@/schema/common";
 import { eventFields, isPrimitivePayload } from "@/schema/events";
+import { usePacks } from "@/store/packs";
+import { packEventByName } from "@/toolpacks/palette";
 import { SelectInput, TextInput } from "./primitives";
 
 const OP_OPTIONS = CONDITION_OPS.map((op) => ({ value: op, label: CONDITION_OP_LABELS[op] }));
@@ -26,8 +28,10 @@ export function ConditionsEditor({
     onChange: (next: ConditionClause[]) => void;
     eventName?: string;
 }) {
-    const fields = eventName ? eventFields(eventName) : [];
-    const primitive = eventName ? isPrimitivePayload(eventName) : false;
+    const packs = usePacks((s) => s.packs);
+    const packEv = eventName ? packEventByName(packs, eventName) : undefined;
+    const fields = packEv ? packEv.fields : eventName ? eventFields(eventName) : [];
+    const primitive = eventName && !packEv ? isPrimitivePayload(eventName) : false;
 
     const update = (index: number, patch: Partial<ConditionClause>) =>
         onChange(value.map((c, i) => (i === index ? { ...c, ...patch } : c)));
@@ -59,7 +63,7 @@ export function ConditionsEditor({
             {value.length === 0 && (
                 <p className="rounded-md border border-dashed border-line px-3 py-3 text-center text-[11.5px] leading-relaxed text-ink-4">
                     {primitive
-                        ? "This event's payload is a single value. Test it with the field name “value”."
+                        ? "This event only gives one piece of information. Compare it using the name “value”."
                         : "No conditions — this fires whenever the event happens."}
                 </p>
             )}
@@ -67,10 +71,7 @@ export function ConditionsEditor({
             {value.map((clause, index) => {
                 const unary = UNARY_OPS.includes(clause.op);
                 return (
-                    <div
-                        key={clause.id}
-                        className="rounded-md border border-line bg-surface-2/50 p-2"
-                    >
+                    <div key={clause.id} className="rounded-md border border-line bg-surface-2/50 p-2">
                         <div className="mb-1.5 flex items-center gap-1.5">
                             {index === 0 ? (
                                 <span className="w-[42px] text-[10px] font-semibold tracking-wider text-ink-4 uppercase">
@@ -80,9 +81,7 @@ export function ConditionsEditor({
                                 <select
                                     aria-label={`Join condition ${index + 1}`}
                                     value={clause.join}
-                                    onChange={(e) =>
-                                        update(index, { join: e.target.value as "and" | "or" })
-                                    }
+                                    onChange={(e) => update(index, { join: e.target.value as "and" | "or" })}
                                     className="h-5 w-[42px] rounded border border-line bg-surface-3 px-1 text-[10px] font-semibold tracking-wider text-ink-3 uppercase"
                                 >
                                     <option value="and">and</option>
@@ -138,12 +137,7 @@ export function ConditionsEditor({
                                 />
                             </div>
 
-                            {!unary && (
-                                <ValueInput
-                                    value={clause.value}
-                                    onChange={(v) => update(index, { value: v })}
-                                />
-                            )}
+                            {!unary && <ValueInput value={clause.value} onChange={(v) => update(index, { value: v })} />}
                         </div>
                     </div>
                 );
@@ -173,9 +167,7 @@ function FieldCombobox({
         return (
             <div className="flex items-center gap-1.5 rounded border border-line bg-surface-2 px-2 py-1">
                 <Icon name="info" size={11} className="shrink-0 text-ink-4" />
-                <span className="text-[11px] text-ink-3">
-                    the event value
-                </span>
+                <span className="text-[11px] text-ink-3">the event value</span>
             </div>
         );
     }
@@ -185,13 +177,7 @@ function FieldCombobox({
     return (
         <div className="flex items-center gap-1.5">
             <div className="relative flex-1">
-                <TextInput
-                    ariaLabel="Payload field"
-                    value={value}
-                    onChange={onChange}
-                    placeholder="field"
-                    mono
-                />
+                <TextInput ariaLabel="Event detail" value={value} onChange={onChange} placeholder="detail name" mono />
             </div>
             {fields.length > 0 && (
                 <Popover.Root>
@@ -199,8 +185,8 @@ function FieldCombobox({
                         <button
                             type="button"
                             className="btn-default shrink-0 px-2 py-1.5"
-                            title="Pick a payload field"
-                            aria-label="Pick a payload field"
+                            title="Pick a detail this event provides"
+                            aria-label="Pick a detail this event provides"
                         >
                             <Icon name="list" size={12} />
                         </button>
@@ -229,7 +215,7 @@ function FieldCombobox({
                 </Popover.Root>
             )}
             {!known && value !== "" && fields.length > 0 && (
-                <span className="shrink-0 text-warn" title="Not one of this event's payload fields">
+                <span className="shrink-0 text-warn" title="Not one of this event's known details">
                     <Icon name="alert" size={13} />
                 </span>
             )}
@@ -242,13 +228,7 @@ function ValueInput({ value, onChange }: { value: string; onChange: (v: string) 
     return (
         <div className="flex items-start gap-1.5">
             <div className="flex-1">
-                <TextInput
-                    ariaLabel="Value to compare"
-                    value={value}
-                    onChange={onChange}
-                    placeholder="value"
-                    mono
-                />
+                <TextInput ariaLabel="Value to compare" value={value} onChange={onChange} placeholder="value" mono />
             </div>
             <Popover.Root>
                 <Popover.Trigger asChild>

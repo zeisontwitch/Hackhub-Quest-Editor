@@ -3,6 +3,8 @@
  * compiler cannot emit and the inspector would render fields for data that is
  * never there. These tests are the guard rail for that.
  */
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { canConnect, EDGE_KINDS, type EdgeKind } from "@/schema/edges";
 import {
@@ -10,7 +12,7 @@ import {
     EVENTS,
     EVENT_COUNT,
     eventFields,
-    eventLabel,
+    humanEventName,
     getEvent,
     groupedEvents,
     isKnownEvent,
@@ -19,11 +21,14 @@ import {
     SDK_VERSION,
 } from "@/schema/events";
 import { NODE_TYPES, NodeSchema, type NodeDoc, type NodeType } from "@/schema/nodes";
+import { EVENT_DOCS, eventDoc } from "@/schema/eventDocs";
 import {
     CATEGORIES,
     nodeTypeDef,
     NODE_TYPES_REGISTRY,
+    PALETTE_HIDDEN_TYPES,
     paletteGroups,
+    storyBeatSockets,
     type FieldDef,
     type NodeTypeDef,
 } from "@/schema/registry";
@@ -35,8 +40,8 @@ describe("registry ↔ node union", () => {
         expect([...NODE_TYPES].sort()).toEqual([...ALL_TYPES].sort());
     });
 
-    it("has 31 node types", () => {
-        expect(NODE_TYPES).toHaveLength(31);
+    it("has 34 node types", () => {
+        expect(NODE_TYPES).toHaveLength(34);
     });
 
     it.each(ALL_TYPES)("creates valid default data for %s", (type) => {
@@ -67,10 +72,25 @@ describe("registry ↔ node union", () => {
     it("renders a non-empty palette group for every category", () => {
         const groups = paletteGroups().filter((g) => g.types.length > 0);
         const grouped = new Set(groups.flatMap((g) => g.types.map((t) => t.type)));
-        expect(grouped.size).toBe(ALL_TYPES.length);
+        // Hidden types stay in the schema/registry (legacy projects parse) but
+        // are not offered in the palette.
+        expect(grouped.size).toBe(ALL_TYPES.filter((t) => !PALETTE_HIDDEN_TYPES.has(t)).length);
         for (const group of groups) {
             expect(group.types.length).toBeGreaterThan(0);
             expect(group.category.label.length).toBeGreaterThan(0);
+        }
+    });
+
+    it("hides the palette-excluded types but keeps them registered", () => {
+        // Every hidden type is a real node type the engine can still emit.
+        for (const t of PALETTE_HIDDEN_TYPES) {
+            expect(ALL_TYPES).toContain(t);
+            expect(nodeTypeDef(t)).toBeDefined();
+        }
+        // ...and none of them is offered in the palette.
+        const palette = new Set(paletteGroups().flatMap((g) => g.types.map((t) => t.type)));
+        for (const t of PALETTE_HIDDEN_TYPES) {
+            expect(palette.has(t)).toBe(false);
         }
     });
 });
@@ -114,6 +134,29 @@ describe("field explanations", () => {
             expect(/[.!?]$/.test(hint), hint).toBe(true);
         }
     });
+
+    it("keeps hints and notes free of mod-coding jargon", () => {
+        // The game's own vocabulary (nmap, metasploit, hydra, targetIp, SDK) is
+        // fine — a HackHub player learns those playing. What must not appear is
+        // language that only means something to someone *building* the mod.
+        const JARGON =
+            /\b(JSON|schema|node type|d\.ts|Zod|esbuild|prop(-| )drill|nested path|apiVersion|minSdkVersion|runtime source|mod package|aggregate|declarative|descriptor|source map|compile)\b/i;
+        const offenders: string[] = [];
+        for (const type of ALL_TYPES) {
+            const def = nodeTypeDef(type);
+            const walk = (fields: FieldDef[], prefix: string) => {
+                for (const f of fields) {
+                    if (f.kind === "section") { walk(f.fields, prefix); continue; }
+                    if ("text" in f && f.text && JARGON.test(f.text)) offenders.push(`${prefix}${"key" in f ? f.key : f.kind}: ${f.text}`);
+                    const hint = "hint" in f ? f.hint : undefined;
+                    if (hint && JARGON.test(hint)) offenders.push(`${prefix}${"key" in f ? f.key : f.kind}: ${hint}`);
+                    if (f.kind === "list") walk(f.fields, `${prefix}${f.key}.`);
+                }
+            };
+            walk(def.fields, `${type}:`);
+        }
+        expect(offenders, "these hints/notes use mod-coding jargon").toEqual([]);
+    });
 });
 
 describe("connection rules", () => {
@@ -134,6 +177,32 @@ describe("connection rules", () => {
         for (const kind of EDGE_KINDS as readonly EdgeKind[]) {
             expect(canConnect(kind, kind)).toBe(true);
         }
+    });
+});
+
+describe("story beat sockets", () => {
+    it("always keeps the generic Out pass-through socket", () => {
+        const sockets = storyBeatSockets({});
+        expect(sockets.map((s) => s.id)).toEqual(["out"]);
+        expect(sockets[0].kind).toBe("flow");
+    });
+
+    it("adds one flow socket per branch choice, named after it", () => {
+        const sockets = storyBeatSockets({
+            choices: [
+                { id: "c1", label: "Front door" },
+                { id: "c2", label: "Back door" },
+            ],
+        });
+        expect(sockets.map((s) => s.id)).toEqual(["out", "choice-c1", "choice-c2"]);
+        expect(sockets.every((s) => s.kind === "flow")).toBe(true);
+        expect(sockets[1].label).toBe("Front door");
+        expect(sockets[2].label).toBe("Back door");
+    });
+
+    it("falls back to a numbered label for an unnamed choice", () => {
+        const sockets = storyBeatSockets({ choices: [{ id: "c1", label: "" }] });
+        expect(sockets[1].label).toBe("Choice 1");
     });
 });
 
@@ -190,12 +259,19 @@ describe("event catalogue", () => {
         expect(eventFields(primitive!.name)).toEqual([]);
     });
 
-    it("renders a human label distinct from the raw id", () => {
-        expect(eventLabel("Terminal.NmapScan")).not.toBe("Terminal.NmapScan");
-        expect(eventLabel("Terminal.NmapScan")).toMatch(/nmap/i);
-        // Custom events are humanised the same way — the namespace is dropped
-        // because the picker already groups by it.
-        expect(eventLabel("MyMod.Custom")).toBe("Custom");
+    it("renders human-readable event names", () => {
+        expect(humanEventName("Terminal.Cat")).toBe("Terminal: Cat");
+        expect(humanEventName("Metasploit.Meterpreter.Connected")).toBe(
+            "Metasploit: Meterpreter connected",
+        );
+        // Acronyms survive; only later words are lowercased.
+        expect(humanEventName("Terminal.SSH.Connected")).toBe("Terminal: SSH connected");
+        expect(humanEventName("Terminal.FTP.Connect")).toBe("Terminal: FTP connect");
+        // Single-segment names just get their words split.
+        expect(humanEventName("Hashcat")).toBe("Hashcat");
+        expect(humanEventName("NetworkPacketTransfer")).toBe("Network packet transfer");
+        // Custom events are humanised the same way.
+        expect(humanEventName("MyMod.Custom")).toBe("MyMod: Custom");
     });
 });
 
@@ -230,5 +306,180 @@ describe("node documents", () => {
         expect(objective.data).toHaveProperty("name");
         expect(wifi.data).toHaveProperty("ssid");
         expect((wifi.data as Record<string, unknown>).name).toBeUndefined();
+    });
+});
+
+/**
+ * QA, round 52. `destroyOnComplete` sat in the schema and in the inspector from
+ * the beginning, and the compiler never read it — so every network a quest
+ * created outlived the quest, and re-exporting a mod could not replace a
+ * network the save already had. Three rounds were spent on symptoms of that.
+ *
+ * A toggle the editor shows an author is a promise. This checks the promises
+ * about cleanup are all kept, so the next one added cannot be forgotten.
+ */
+describe("cleanup toggles the editor offers are honoured by the compiler", () => {
+    const runtime = readFileSync(resolve(process.cwd(), "src/compiler/runtimeSource.ts"), "utf8");
+
+    it("reads every cleanup flag the schema defines", () => {
+        const schema = readFileSync(resolve(process.cwd(), "src/schema/nodes.ts"), "utf8");
+        const flags = new Set(
+            [...schema.matchAll(/^\s*(\w*[Oo]nComplete)\s*:/gm)].map((m) => m[1]),
+        );
+        expect(flags.size).toBeGreaterThan(0);
+        const ignored = [...flags].filter((f) => !runtime.includes(f));
+        expect(ignored).toEqual([]);
+    });
+
+    it("registers cleanup for everything it creates in the world", () => {
+        // Each of these leaves something behind in the player's save if it is
+        // never undone.
+        for (const kind of ["network", "domain", "commandData", "firewall", "database", "port"]) {
+            expect(runtime, kind).toContain(`kind: "${kind}"`);
+            expect(runtime, kind).toContain(`item.kind === "${kind}"`);
+        }
+    });
+});
+
+describe("choice-or-custom fields", () => {
+    /** Every selectOrCustom, with the keys visible from where it sits. */
+    function collect() {
+        const found: { type: string; field: Extract<FieldDef, { kind: "selectOrCustom" }>; rootKeys: string[]; rowKeys: string[] | null }[] = [];
+        for (const type of ALL_TYPES) {
+            const def = nodeTypeDef(type);
+            const keys = (fields: FieldDef[]) =>
+                fields.flatMap((f) => ("key" in f ? [f.key as string] : []));
+            const rootKeys = keys(def.fields);
+            const walk = (fields: FieldDef[], rowKeys: string[] | null) => {
+                for (const f of fields) {
+                    if (f.kind === "selectOrCustom") found.push({ type, field: f, rootKeys, rowKeys });
+                    if (f.kind === "list") walk(f.fields, keys(f.fields));
+                    if (f.kind === "section") walk(f.fields, f.path ? keys(f.fields) : rowKeys);
+                }
+            };
+            walk(def.fields, null);
+        }
+        return found;
+    }
+
+    it("offers distinct values and always a way out", () => {
+        const found = collect();
+        expect(found.length).toBeGreaterThan(0);
+        for (const { type, field } of found) {
+            const values = field.options.map((o) => o.value);
+            expect(new Set(values).size, `${type}:${field.key} has duplicate options`).toBe(values.length);
+            // Options may be empty only when sameAs offers the way out — plus
+            // the Custom box the component always renders.
+            expect(
+                field.options.length > 0 || field.sameAs !== undefined,
+                `${type}:${field.key} offers no choice at all`,
+            ).toBe(true);
+        }
+    });
+
+    it("points every sameAs at a field that exists", () => {
+        for (const { type, field, rootKeys, rowKeys } of collect()) {
+            if (!field.sameAs) continue;
+            const from = field.sameAs.fromKey;
+            if (from.startsWith("/")) {
+                expect(rootKeys, `${type}:${field.key} sameAs ${from}`).toContain(from.slice(1));
+            } else {
+                const visible = [...(rowKeys ?? []), ...rootKeys];
+                expect(visible, `${type}:${field.key} sameAs ${from}`).toContain(from);
+            }
+        }
+    });
+
+    it("keeps the firewall node a single rule with guided addresses", () => {
+        // The rule used to be a list field over single-object data: a fresh
+        // node showed "None yet" for a rule it had, and adding a row wrote an
+        // array the schema rejects. One rule, always visible, no add button.
+        const def = nodeTypeDef("world.firewall");
+        const ip = def.fields.find((f) => "key" in f && f.key === "ip");
+        expect(ip?.kind).toBe("selectOrCustom");
+        expect(
+            (ip as Extract<FieldDef, { kind: "selectOrCustom" }>).options.map((o) => o.value),
+        ).toContain("{{data.targetIp}}");
+        const rule = def.fields.find((f) => f.kind === "section");
+        expect(rule, "the rule must be a section, not a list").toMatchObject({
+            kind: "section",
+            path: "rule",
+        });
+        const section = rule as Extract<FieldDef, { kind: "section" }>;
+        expect(section.fields.some((f) => f.kind === "selectOrCustom" && f.key === "source")).toBe(true);
+        const destination = section.fields.find((f) => "key" in f && f.key === "destination") as Extract<
+            FieldDef,
+            { kind: "selectOrCustom" }
+        >;
+        expect(destination.kind).toBe("selectOrCustom");
+        expect(destination.sameAs?.fromKey).toBe("/ip");
+    });
+
+    it("starts a firewall rule already aimed at the quest's network", () => {
+        const created = nodeTypeDef("world.firewall").create() as {
+            ip: string;
+            rule: { source: string; destination: string };
+        };
+        expect(created.ip).toBe("{{data.targetIp}}");
+        expect(created.rule.source).toBe("*");
+        expect(created.rule.destination).toBe("{{data.targetIp}}");
+    });
+
+    it("explains every game event in plain language", () => {
+        // The picker shows field names ("command, args") that mean nothing
+        // without knowing what the event IS — so every catalogue event needs
+        // its explanation, and the next SDK regen breaks this until the new
+        // events get theirs.
+        const missing = EVENTS.filter((e) => !eventDoc(e.name));
+        expect(missing.map((e) => e.name), "events with no explanation").toEqual([]);
+        const extra = Object.keys(EVENT_DOCS).filter((name) => !isKnownEvent(name));
+        expect(extra, "explanations for events that do not exist").toEqual([]);
+        for (const [name, doc] of Object.entries(EVENT_DOCS)) {
+            expect(doc.length, name).toBeGreaterThan(20);
+            expect(doc.length, name).toBeLessThan(400);
+            expect(/[.!?]$/.test(doc), name).toBe(true);
+        }
+        // The motivating example: Terminal.Command must say what it is and
+        // what its two fields carry.
+        const command = eventDoc("Terminal.Command")!;
+        expect(command).toMatch(/runs a command/);
+        expect(command).toContain("command");
+        expect(command).toContain("args");
+    });
+
+    it("numbers sequence outputs instead of naming them", () => {
+        const seq = nodeTypeDef("flow.sequence");
+        const created = seq.create() as { steps: { label: string }[] };
+        expect(created.steps.map((s) => s.label)).toEqual(["1", "2"]);
+        const steps = seq.fields.find((f) => f.kind === "list") as Extract<
+            FieldDef,
+            { kind: "list" }
+        >;
+        // The list editor passes the new row's index in, so the third output
+        // arrives already called "3".
+        expect(steps.newItem(2)).toMatchObject({ label: "3" });
+        expect(steps.itemTitle({ label: "" }, 4)).toBe("5");
+    });
+
+    it("starts payments at 100 with no percent option, but honours old ones", () => {
+        const pay = nodeTypeDef("fx.pay");
+        expect((pay.create() as { amount: number }).amount).toBe(100);
+        expect(pay.fields.some((f) => "key" in f && f.key === "amountMode")).toBe(false);
+        expect(pay.fields.some((f) => "key" in f && f.key === "percent")).toBe(false);
+        // …while an old project that paid a percent still explains itself.
+        const legacy = pay.fields.find((f) => f.kind === "note");
+        expect(legacy).toMatchObject({ showWhen: { key: "amountMode", equals: "percent" } });
+        // Charge keeps the percent: taking a cut is its whole job.
+        const charge = nodeTypeDef("fx.withdraw");
+        expect(charge.fields.some((f) => "key" in f && f.key === "amountMode")).toBe(true);
+    });
+
+    it("gives the database its tables and the handbook its article picker", () => {
+        const db = nodeTypeDef("world.database");
+        expect(db.fields.some((f) => f.kind === "tables" && "key" in f && f.key === "tables")).toBe(true);
+        const handbook = nodeTypeDef("fx.handbook");
+        expect(
+            handbook.fields.some((f) => f.kind === "handbookArticle" && "key" in f && f.key === "articleId"),
+        ).toBe(true);
     });
 });

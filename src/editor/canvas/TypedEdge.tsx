@@ -11,6 +11,8 @@ import {
     type EdgeProps,
 } from "@xyflow/react";
 import { HANDLE_STYLE, type EdgeDoc, type EdgeKind } from "@/schema/edges";
+import { DOT_GAP, registerWireDots } from "./wireMotion";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/cn";
 
 export interface TypedEdgeData extends Record<string, unknown> {
@@ -47,21 +49,55 @@ export function TypedEdge(props: EdgeProps<TypedRFEdge>) {
         curvature: 0.28,
     });
 
+    /* Each wire's dots are animated individually by the browser: see
+       wireMotion.ts for why nothing inherits a shared custom property. */
+    const dotsRef = useRef<SVGPathElement | null>(null);
+    useEffect(() => registerWireDots(dotsRef.current), []);
+
     const kind = data?.kind ?? "flow";
     const style = HANDLE_STYLE[kind];
     const text = data?.label || data?.socketLabel;
+    const color = selected ? "var(--color-accent)" : style.color;
+    const width = selected ? 2.5 : 1.75;
 
     return (
         <>
+            {/* The wire itself: one solid stroke in the colour of the socket it
+                leaves from. */}
             <BaseEdge
                 id={props.id}
                 path={path}
-                className={kind === "flow" ? "qe-flow-anim" : undefined}
+                // A wire is 2px of ink; this is how much of the space around it
+                // answers the mouse, so a wire can be grabbed, selected or
+                // double-clicked without pixel-hunting.
+                interactionWidth={26}
                 style={{
-                    stroke: selected ? "var(--color-accent)" : style.color,
-                    strokeDasharray: kind === "flow" ? "8 6" : style.dash,
-                    strokeWidth: selected ? 2.5 : 1.75,
+                    stroke: color,
+                    strokeWidth: width,
                     opacity: selected ? 1 : 0.85,
+                }}
+            />
+            {/* Direction: round dots, a touch fatter than the wire, drifting
+                from the source towards the target. Driven by SVG's own
+                animation rather than a CSS keyframe — that is the one form of
+                motion that cannot be defeated by stylesheet order, and it is
+                visible in the DOM, so it can be tested. Purely decorative, so
+                it never intercepts clicks meant for the wire underneath. */}
+            <path
+                ref={dotsRef}
+                d={path}
+                fill="none"
+                className="qe-flow-dots"
+                style={{
+                    stroke: color,
+                    strokeWidth: width + 1.4,
+                    strokeLinecap: "round",
+                    strokeDasharray: `0.1 ${DOT_GAP}`,
+                    // Animated by the browser, per wire, via wireMotion —
+                    // never through an inherited custom property, which
+                    // restyles the whole canvas every frame. Purely decorative,
+                    // so it never intercepts a click meant for the wire.
+                    pointerEvents: "none",
                 }}
             />
             {text && (

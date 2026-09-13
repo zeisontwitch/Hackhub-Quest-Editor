@@ -4,10 +4,24 @@
  */
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CodePageEditor, VisualPageEditor } from "@/editor/websites/pageEditor";
-import { isFullDocument, joinDocument, splitDocument, wrapFragment } from "@/editor/websites/pageDoc";
+import {
+    importPath,
+    importTitle,
+    injectPreviewNav,
+    isFullDocument,
+    joinDocument,
+    linkElement,
+    linkRange,
+    normalizeHost,
+    normalizePath,
+    notFoundDoc,
+    parseSearchTerms,
+    splitDocument,
+    wrapFragment,
+} from "@/editor/websites/pageDoc";
 import { WebsiteBuilderDialog } from "@/editor/websites/WebsiteBuilder";
 import { createPage, createProject, createWebsite } from "@/schema/project";
 import { PAGE_TEMPLATES, SITE_TEMPLATES } from "@/templates/pages";
@@ -66,6 +80,82 @@ describe("page documents", () => {
         expect(wrapped).toContain("<p>clue</p>");
         expect(splitDocument(wrapped).body).toContain("<p>clue</p>");
     });
+
+    it("parses the extra-search-words input into a clean term list", () => {
+        expect(parseSearchTerms("lcb, meridian bank,  ,banking")).toEqual(["lcb", "meridian bank", "banking"]);
+        expect(parseSearchTerms("solo")).toEqual(["solo"]);
+        // Dedupe is exact-match; the author's casing is kept (the engine may
+        // match case-insensitively — that is its call, not ours).
+        expect(parseSearchTerms("dup, dup, DUP")).toEqual(["dup", "DUP"]);
+        expect(parseSearchTerms("   ")).toEqual([]);
+    });
+
+    it("normalizes hosts and paths on blur, not mid-typing", () => {
+        expect(normalizeHost("  https://MyBank.com/  ")).toBe("MyBank.com");
+        expect(normalizeHost("http://bank.example")).toBe("bank.example");
+        expect(normalizeHost("plain.example///")).toBe("plain.example");
+        expect(normalizePath("about/team")).toBe("/about/team");
+        expect(normalizePath("  /already/fine ")).toBe("/already/fine");
+        expect(normalizePath("")).toBe("/");
+        expect(normalizePath("/")).toBe("/");
+    });
+
+    it("links a selected range or a pointed-at element without touching the rest", () => {
+        const host = document.createElement("div");
+        host.innerHTML = `<h2>Contact us</h2><p>Call <a href="/old">the desk</a> today</p>`;
+
+        // Point-to-link: the clicked heading's whole text becomes the link —
+        // the natural unit for menu items, buttons and headings.
+        linkElement(host.querySelector("h2")!, "/contact");
+        expect(host.querySelector("h2")!.innerHTML).toBe(`<a href="/contact">Contact us</a>`);
+
+        // Pointing at an existing link retargets it instead of nesting.
+        const retargeted = linkElement(host.querySelector("p a")!, "/helpdesk");
+        expect(retargeted!.getAttribute("href")).toBe("/helpdesk");
+        expect(host.querySelectorAll("a")).toHaveLength(2);
+
+        // Range link across element boundaries: everything selected lands
+        // inside the one new link.
+        const p = host.querySelector("p")!;
+        const range = document.createRange();
+        range.selectNodeContents(p);
+        linkRange(document, range, "/hours");
+        expect(p.querySelector('a[href="/hours"]')!.textContent).toContain("today");
+
+        // A collapsed selection still produces a visible link (the path as
+        // its text) — a link with nothing in it is a link that is lost.
+        const p2 = document.createElement("p");
+        const t = document.createTextNode("ab");
+        p2.appendChild(t);
+        const r2 = document.createRange();
+        r2.setStart(t, 1);
+        r2.collapse(true);
+        linkRange(document, r2, "/x");
+        expect(p2.querySelector('a[href="/x"]')!.textContent).toBe("/x");
+    });
+
+    it("serves preview navigation: interceptor injection, import paths and titles", () => {
+        const full = `<!doctype html><html><body><a href="/news">n</a></body></html>`;
+        const injected = injectPreviewNav(full);
+        expect(injected).toContain("qe-preview");
+        expect(injected.indexOf("qe-preview")).toBeLessThan(injected.indexOf("</body>"));
+        // fragments get the interceptor appended, marked documents pass through
+        expect(injectPreviewNav("<p>x</p>")).toContain("qe-preview");
+        expect(injectPreviewNav(injected)).toBe(injected);
+
+        expect(importPath("site/news.html")).toBe("/news");
+        expect(importPath("site/index.html")).toBe("/");
+        expect(importPath("site/sub/index.html")).toBe("/sub");
+        expect(importPath("site/deep/a/b.html")).toBe("/deep/a/b");
+        expect(importPath("plain.html")).toBe("/plain");
+        expect(importPath("site/readme.txt")).toBeNull();
+
+        expect(importTitle("bakery-news.html", "<title>Fresh bread</title>")).toBe("Fresh bread");
+        expect(importTitle("bakery-news.html", "<p>no title</p>")).toBe("Bakery news");
+
+        expect(notFoundDoc("bank.example", "/vault")).toContain("No page at");
+        expect(notFoundDoc("bank.example", "/v<img>")).not.toContain("<img>");
+    });
 });
 
 describe("template quality", () => {
@@ -111,7 +201,7 @@ describe("website builder dialog", () => {
         expect(hidden.seo).toBe(false);
         expect(hidden.template).toBe("hidden-leak");
 
-        const listing = screen.getByRole("switch");
+        const listing = screen.getByRole("switch", { name: "Listed in the in-game search" });
         expect(listing).not.toBeChecked();
 
         // The visual editor is an iframe running the page's own document.
@@ -121,13 +211,15 @@ describe("website builder dialog", () => {
         // The preview shows the in-game browser with the hidden-page banner.
         await user.click(screen.getByRole("button", { name: "preview" }));
         expect(screen.getByText(/not in search results/i)).toBeInTheDocument();
-        expect(screen.getAllByText(/example\.net\/files\/internal\/q3-audit/).length).toBeGreaterThan(0);
+        expect((screen.getByLabelText("Preview address") as HTMLInputElement).value).toBe(
+            "/files/internal/q3-audit",
+        );
         const preview = screen.getByTitle("Page preview");
         expect(preview.getAttribute("srcdoc")).toContain("router 10.9.4.2");
 
         // Flip it listed and the banner goes away.
         await user.click(screen.getByRole("button", { name: "visual" }));
-        await user.click(screen.getByRole("switch"));
+        await user.click(screen.getByRole("switch", { name: "Listed in the in-game search" }));
         expect(useEditor.getState().project.websites[0].pages.find((p) => p.id === hidden.id)!.seo).toBe(true);
     });
 
@@ -200,6 +292,19 @@ describe("website builder dialog", () => {
         await user.clear(screen.getByLabelText("Page path"));
         await user.type(screen.getByLabelText("Page path"), "/about");
         expect(useEditor.getState().project.websites[0].pages[0].path).toBe("/about");
+    });
+
+    it("edits the search metadata fields", async () => {
+        const user = userEvent.setup();
+        const site = createWebsite();
+        act(() => useEditor.getState().addWebsite(site));
+
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+        await user.type(screen.getByLabelText("Search result description"), "The bank's public front page");
+        await user.type(screen.getByLabelText("Extra search words"), "lcb, meridian bank, , banking");
+        const page = useEditor.getState().project.websites[0].pages[0];
+        expect(page.description).toBe("The bank's public front page");
+        expect(page.search).toEqual(["lcb", "meridian bank", "banking"]);
     });
 
     it("code view exposes the full document for copy-paste", async () => {
@@ -385,6 +490,48 @@ describe("visual and code editors in isolation", () => {
         expect(screen.getByText(/images are embedded/)).toBeInTheDocument();
     });
 
+    it("the link picker lists the site's pages and arms point-to-link", () => {
+        /* fireEvent, not userEvent: Radix's popover mounts its content
+           mid-click and userEvent's pointer sequence hangs on it in jsdom. */
+        render(
+            <VisualPageEditor
+                doc="<p>hi</p>"
+                onChange={() => {}}
+                ariaLabel="Visual editor for /"
+                pages={[{ path: "/contact", title: "Contact" }]}
+            />,
+        );
+        fireEvent.click(screen.getByRole("button", { name: "Insert link" }));
+
+        // The picker offers the site's pages by title and path.
+        expect(screen.getByText("Contact")).toBeInTheDocument();
+        expect(screen.getByText("/contact")).toBeInTheDocument();
+
+        // The target icon arms point-to-link: the picker closes and the hint
+        // bar names the path…
+        fireEvent.click(
+            screen.getByRole("button", { name: "Point at the text on the page to link it to /contact" }),
+        );
+        expect(screen.getByText(/Click the text on the page that should link to/)).toBeInTheDocument();
+
+        // …and Cancel disarms.
+        fireEvent.click(screen.getByRole("button", { name: "Cancel point-to-link" }));
+        expect(screen.queryByText(/Click the text on the page that should link to/)).not.toBeInTheDocument();
+    });
+
+    it("visual editor blocks page scripts while editing but keeps them in the document", () => {
+        const scripted = '<p>hi</p><script>document.title = "pwned"</script>';
+        render(
+            <VisualPageEditor doc={scripted} onChange={() => {}} ariaLabel="Visual editor for /x" />,
+        );
+        const srcdoc = screen.getByTitle("Visual editor for /x").getAttribute("srcdoc")!;
+        // The editing copy carries a CSP that stops the script from running…
+        expect(srcdoc).toContain('content="script-src \'none\'"');
+        // …and the script itself stays in the document, because the emitted
+        // page is rebuilt from the body this iframe holds.
+        expect(srcdoc).toContain("document.title");
+    });
+
     it("code editor is a plain textarea over the document", async () => {
         const user = userEvent.setup();
         function Harness() {
@@ -395,5 +542,196 @@ describe("visual and code editors in isolation", () => {
         const code = screen.getByLabelText("code") as HTMLTextAreaElement;
         await user.type(code, "more");
         expect(code.value).toBe("<p>a</p>more");
+    });
+});
+
+describe("r132 audit fixes", () => {
+    it("deleting a site asks first, and only removes on confirm", async () => {
+        const user = userEvent.setup();
+        const site = createWebsite({ host: "doomed.example" });
+        act(() => useEditor.getState().addWebsite(site));
+
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+        await user.click(screen.getByRole("button", { name: "Delete site" }));
+
+        expect(screen.getByText("Do you really want to delete this site?")).toBeInTheDocument();
+        expect(useEditor.getState().project.websites).toHaveLength(1);
+
+        await user.click(screen.getByRole("button", { name: "Cancel" }));
+        expect(useEditor.getState().project.websites).toHaveLength(1);
+
+        await user.click(screen.getByRole("button", { name: "Delete site" }));
+        // Both the sidebar trigger and the dialog's confirm say "Delete site";
+        // the confirm is the one inside the alert dialog (rendered last).
+        const confirm = screen.getAllByRole("button", { name: "Delete site" }).at(-1)!;
+        await user.click(confirm);
+        expect(useEditor.getState().project.websites).toHaveLength(0);
+    });
+
+    it("normalizes pasted hosts and slash-less paths when the field loses focus", async () => {
+        const user = userEvent.setup();
+        const site = createWebsite();
+        act(() => useEditor.getState().addWebsite(site));
+
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+
+        const host = screen.getByLabelText("Site host");
+        await user.clear(host);
+        await user.type(host, "https://mybank.com/");
+        await user.tab();
+        expect(useEditor.getState().project.websites[0].host).toBe("mybank.com");
+        expect(host).toHaveValue("mybank.com");
+
+        const path = screen.getByLabelText("Page path");
+        await user.clear(path);
+        await user.type(path, "about/team");
+        await user.tab();
+        expect(useEditor.getState().project.websites[0].pages[0].path).toBe("/about/team");
+    });
+
+    it("toggles the popular flag on the site, unset when off", async () => {
+        const user = userEvent.setup();
+        const site = createWebsite();
+        act(() => useEditor.getState().addWebsite(site));
+
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+        const popular = screen.getByRole("switch", { name: "Popular site" });
+        expect(popular).not.toBeChecked();
+
+        await user.click(popular);
+        expect(useEditor.getState().project.websites[0].popular).toBe(true);
+
+        await user.click(popular);
+        expect(useEditor.getState().project.websites[0].popular).toBeUndefined();
+    });
+
+    it("surfaces hidden elements and extra comments in the page scan", async () => {
+        const site = createWebsite();
+        act(() => useEditor.getState().addWebsite(site));
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+
+        act(() =>
+            useEditor.getState().updatePage(site.id, site.pages[0].id, {
+                content:
+                    '<!doctype html><html><body><input type="hidden" value="74"><input type="hidden" value="68"><!-- one --><!-- two --></body></html>',
+            }),
+        );
+
+        expect(await screen.findByText(/2 hidden elements/)).toBeInTheDocument();
+        expect(screen.getByText(/1 more comment/)).toBeInTheDocument();
+    });
+});
+
+describe("r134 website polish", () => {
+    it("imports a folder of .html files as pages, paths from filenames", async () => {
+        const user = userEvent.setup();
+        const site = createWebsite();
+        act(() => useEditor.getState().addWebsite(site));
+        act(() => useEditor.getState().addPage(site.id, createPage({ path: "/dupe", title: "Dupe" })));
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+
+        const mk = (name: string, rel: string, body: string) => {
+            const f = new File([body], name, { type: "text/html" });
+            Object.defineProperty(f, "webkitRelativePath", { value: rel });
+            return f;
+        };
+        const files = [
+            mk("index.html", "assistant/index.html", "<!doctype html><html><body><h1>home</h1></body></html>"),
+            mk("news.html", "assistant/news.html", "<!doctype html><html><head><title>News</title></head><body><p>n</p></body></html>"),
+            mk("team.html", "assistant/about/team.html", "<p>t</p>"),
+            mk("dupe.html", "assistant/dupe.html", "<p>d</p>"),
+        ];
+        await user.upload(screen.getByLabelText("Import pages folder"), files);
+        await waitFor(() => {
+            const paths = useEditor.getState().project.websites[0].pages.map((p) => p.path);
+            expect(paths).toContain("/news");
+            expect(paths).toContain("/about/team");
+        });
+
+        const pages = useEditor.getState().project.websites[0].pages;
+        // index.html maps to "/" which already existed — skipped, not duplicated
+        expect(pages.filter((p) => p.path === "/")).toHaveLength(1);
+        // the existing /dupe page was skipped, not clobbered or duplicated
+        expect(pages.filter((p) => p.path === "/dupe")).toHaveLength(1);
+        expect(pages.find((p) => p.path === "/dupe")!.title).toBe("Dupe");
+        // the AI's <title> wins, fragments are wrapped into full documents
+        expect(pages.find((p) => p.path === "/news")!.title).toBe("News");
+        const team = pages.find((p) => p.path === "/about/team")!;
+        expect(team.title).toBe("Team");
+        expect(team.content).toContain("<!doctype html>");
+        expect(team.content).toContain("<p>t</p>");
+    });
+
+    it("preview navigates: internal links walk the site via postMessage", async () => {
+        const user = userEvent.setup();
+        const site = createWebsite({
+            pages: [
+                createPage({
+                    path: "/",
+                    title: "Home",
+                    content: `<!doctype html><html><body><a href="/contact">Contact</a></body></html>`,
+                }),
+                createPage({
+                    path: "/contact",
+                    title: "Contact",
+                    seo: false,
+                    content: `<!doctype html><html><body><p>reach us</p></body></html>`,
+                }),
+            ],
+        });
+        act(() => useEditor.getState().addWebsite(site));
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+
+        await user.click(screen.getByRole("button", { name: "preview" }));
+        const preview = () => screen.getByTitle("Page preview") as HTMLIFrameElement;
+        // the interceptor rides along with the served page
+        expect(preview().getAttribute("srcdoc")).toContain("qe-preview");
+
+        // an internal link click inside the sandboxed iframe posts out; the
+        // builder serves the linked page and the address bar follows
+        act(() => {
+            window.dispatchEvent(
+                new MessageEvent("message", { data: { source: "qe-preview", path: "/contact" } }),
+            );
+        });
+        expect((screen.getByLabelText("Preview address") as HTMLInputElement).value).toBe("/contact");
+        expect(preview().getAttribute("srcdoc")).toContain("reach us");
+        // the hidden-page banner reflects the page being VIEWED
+        expect(screen.getByText(/Not in search results/)).toBeInTheDocument();
+
+        // a path nobody answers gets the not-found page
+        act(() => {
+            window.dispatchEvent(
+                new MessageEvent("message", { data: { source: "qe-preview", path: "/nope" } }),
+            );
+        });
+        expect(preview().getAttribute("srcdoc")).toContain("No page at");
+    });
+});
+
+describe("r133 pick-whip sockets", () => {
+    it("sidebar page sockets arm point-to-link, noodle and hint bar together", () => {
+        const site = createWebsite({
+            pages: [createPage({ path: "/", title: "Home" }), createPage({ path: "/contact", title: "Contact" })],
+        });
+        act(() => useEditor.getState().addWebsite(site));
+        render(<WebsiteBuilderDialog open onOpenChange={() => {}} />);
+
+        // No noodle while idle.
+        expect(document.body.querySelector("svg.link-noodle")).toBeNull();
+
+        // Arming from the sidebar socket shows the hint bar and renders the
+        // noodle portal (jsdom has no cursor, so the line itself stays
+        // hidden; the overlay is the observable part).
+        fireEvent.click(
+            screen.getByRole("button", { name: "Point at the text on the page to link it to /contact" }),
+        );
+        expect(screen.getByText(/Click the text on the page that should link to/)).toBeInTheDocument();
+        expect(document.body.querySelector("svg.link-noodle")).not.toBeNull();
+
+        // Cancel disarms and the noodle goes away with it.
+        fireEvent.click(screen.getByRole("button", { name: "Cancel point-to-link" }));
+        expect(screen.queryByText(/Click the text on the page that should link to/)).not.toBeInTheDocument();
+        expect(document.body.querySelector("svg.link-noodle")).toBeNull();
     });
 });

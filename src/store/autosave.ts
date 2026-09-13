@@ -10,12 +10,17 @@ import { migrateProject } from "@/schema/migrate";
 import { PROJECT_SCHEMA_VERSION } from "@/schema/common";
 import { useEditor } from "./editor";
 
-const KEY = "hackhub-quest-editor:draft:v1";
+/**
+ * The draft's storage key. Exported since r141: the settings sheet's "clear
+ * the autosaved draft" and its test are the one place outside this module
+ * that needs to name it.
+ */
+export const DRAFT_KEY = "hackhub-quest-editor:draft:v1";
 const DEBOUNCE_MS = 600;
 
 export function loadDraft(): ProjectDocument | null {
     try {
-        const raw = localStorage.getItem(KEY);
+        const raw = localStorage.getItem(DRAFT_KEY);
         if (!raw) return null;
         const parsed: unknown = migrateProject(JSON.parse(raw));
         // Sanity-check the envelope *before* schema parsing: every top-level
@@ -49,7 +54,7 @@ export function loadDraft(): ProjectDocument | null {
 
 export function saveDraft(project: ProjectDocument): void {
     try {
-        localStorage.setItem(KEY, JSON.stringify(project));
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(project));
     } catch (error) {
         // Quota exceeded or storage disabled — the editor keeps working in memory.
         console.warn("[quest-editor] autosave failed:", error);
@@ -58,7 +63,7 @@ export function saveDraft(project: ProjectDocument): void {
 
 export function clearDraft(): void {
     try {
-        localStorage.removeItem(KEY);
+        localStorage.removeItem(DRAFT_KEY);
     } catch {
         /* nothing to do */
     }

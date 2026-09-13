@@ -5,6 +5,7 @@
 import { FieldShell, TextArea, TextInput, Toggle } from "@/editor/inspector/primitives";
 import type { MailNodeData } from "@/schema/nodes";
 import { SimFrame } from "./chrome";
+import { mailBodyText } from "@/compiler/mailText";
 
 export function MailScript({ value, onChange }: { value: MailNodeData; onChange: (p: Partial<MailNodeData>) => void }) {
     const { from, to, subject, content, attachment } = value;
@@ -22,10 +23,13 @@ export function MailScript({ value, onChange }: { value: MailNodeData; onChange:
                         </span>
                         <span>now</span>
                     </div>
-                    <div
-                        className="webpage-mail mt-2 max-h-48 overflow-y-auto text-[11.5px] leading-relaxed text-ink-2"
-                        dangerouslySetInnerHTML={{ __html: content || "<p>…</p>" }}
-                    />
+                    {/* GoMail prints the body as plain text, so the preview
+                        shows exactly what the compiler will send - not the
+                        rendered HTML. Showing the rendered version here is why
+                        a briefing shipped reading "<p>His name is ...". */}
+                    <div className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap text-[11.5px] leading-relaxed text-ink-2">
+                        {mailBodyText(content) || "…"}
+                    </div>
                     {attachment && attachment.name && (
                         <p className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-line bg-surface-2 px-2 py-1 font-mono text-[10.5px] text-ink-3">
                             📎 {attachment.name}.{attachment.extension}
@@ -51,18 +55,29 @@ export function MailScript({ value, onChange }: { value: MailNodeData; onChange:
                 </FieldShell>
                 <FieldShell
                     label="Body"
-                    hint="The body of the mail. HTML tags are rendered as written, so <b> and <p> work."
+                    hint="The body of the mail. GoMail shows it as plain text — blank lines separate paragraphs. Any HTML you paste in is converted to text for you, so it never reaches the player as tags."
                 >
                     <TextArea ariaLabel="Mail body" value={content} onChange={(c) => onChange({ content: c })} rows={8} />
                 </FieldShell>
                 <Toggle
                     label="The player can reply"
-                    hint="Let the player answer. Their reply arrives as an event you can trigger on."
+                    hint="Adds a Reply button. Untested against the live game — if it does not appear, a hackertyper reply page is the proven way to take a written answer."
                     checked={value.replyable}
                     onChange={(replyable) => onChange({ replyable })}
                 />
                 <div className="rounded-md border border-line/70 bg-surface p-2">
                     <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-ink-3 uppercase">Attachment</p>
+                    {/* Worth being explicit: an attachment is a file this mail
+                        ARRIVES with, not the file the player is sent to fetch.
+                        A quest file lives on the target machine, put there by a
+                        user's "Files" list on a network node. QA read it the
+                        other way round, which is a fair reading of a box
+                        labelled only "Attachment". */}
+                    <p className="mb-2 text-[10.5px] leading-snug text-ink-4">
+                        A file that arrives <em>with</em> this mail — a dossier, a photo, a list. Not
+                        the file the player has to go and steal: that one belongs on the target
+                        machine, under a user on a network node.
+                    </p>
                     <div className="grid grid-cols-2 gap-2">
                         <FieldShell label="File name" hint="The attachment's filename, without the extension.">
                             <TextInput

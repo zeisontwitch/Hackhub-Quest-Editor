@@ -5,7 +5,7 @@
  */
 import { Icon } from "@/components/Icon";
 import { DIALOGUE_KIND_LABELS, dialogueFirstLine } from "@/editor/canvas/summarize";
-import { FieldShell, SelectInput } from "@/editor/inspector/primitives";
+import { FieldShell, SelectInput, Toggle } from "@/editor/inspector/primitives";
 import type { DialogueKind, NodeOfType } from "@/schema/nodes";
 import { selectActiveQuest, useEditor } from "@/store/editor";
 
@@ -41,6 +41,26 @@ export function DialogueNodeEditor({ node }: { node: NodeOfType<"comms.dialogue"
                     "Nothing scripted yet."
                 )}
             </p>
+            {(node.data.kind === "kisscord" || node.data.kind === "weechat") && (
+                <div className="-mx-3 border-t border-line/70">
+                    <Toggle
+                        id={`postlive-${node.id}`}
+                        label="Play when the story reaches this node"
+                        hint="Off: the conversation is handed to the game when the quest starts — the safe, normal choice. On: nothing appears until the flow arrives here, so a chat can land on a Sequence beat."
+                        checked={node.data.postLive}
+                        onChange={(postLive) => updateNodeData(node.id, { postLive })}
+                    />
+                    {node.data.postLive && (
+                        <p className="mx-3 mb-2 rounded-md border border-warn/40 bg-warn/10 px-2.5 py-1.5 text-[10.5px] leading-relaxed text-warn">
+                            Timed conversations are sent through the game's live messaging API, one
+                            message at a time with the delays you set. Player replies, uploads and
+                            “unlocks after” steps only work in the normal declarative script, and the
+                            game does not clean live messages up with the quest. Worth an in-game
+                            check before you ship it.
+                        </p>
+                    )}
+                </div>
+            )}
             <button
                 type="button"
                 className="btn-primary justify-center"

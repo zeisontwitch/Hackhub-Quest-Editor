@@ -10,6 +10,7 @@
  * rule that a bad document must never wedge the editor.
  */
 import { ProjectSchema, type ProjectDocument } from "@/schema/project";
+import { migrateProject } from "@/schema/migrate";
 
 export function projectFileName(project: ProjectDocument): string {
     const id = (project.mod.id || "quest").replace(/[^a-z0-9-]+/gi, "-").toLowerCase();
@@ -31,7 +32,11 @@ export function parseProjectFile(text: string): ParseResult {
     } catch {
         return { ok: false, error: "That file isn't valid JSON." };
     }
-    const result = ProjectSchema.safeParse(raw);
+    /* Older files first: the same migrations the autosaved draft gets. Without
+       this, a project saved before a node type changed (or was removed, as
+       Twotter was) fails validation and the author is told their own file is
+       not a quest project. */
+    const result = ProjectSchema.safeParse(migrateProject(raw));
     if (!result.success) {
         const first = result.error.issues[0];
         const where = first?.path?.join(".") || "document";

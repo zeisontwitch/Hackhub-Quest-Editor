@@ -35,25 +35,38 @@ const mapNode = (n: Loose): Loose => {
         case "fx.withdraw":
             // amountMode/percent added in round 19 — old drafts are fixed-amount
             return { ...n, data: { amountMode: "fixed", percent: 10, ...n.data } };
-        case "comms.tweet":
-            // timeMode/showInTimeline added in round 23. Old drafts that set a
-            // postedAgo string were using the relative mode; everything else
-            // defaults to real-time ("now") and profile-only (showInTimeline off).
-            if (n.data && n.data.timeMode == null) {
-                return {
-                    ...n,
-                    data: {
-                        ...n.data,
-                        timeMode: n.data.postedAgo ? "relative" : "now",
-                        showInTimeline: n.data.showInTimeline ?? false,
-                    },
-                };
-            }
-            return n;
         default:
             return n;
     }
 };
+
+/**
+ * Twotter support was removed in round 31 (the game stores a quest account with
+ * an undefined `bio`, and Twotter's search crashes on it — see
+ * docs/02-editor-shell.md). Older drafts still carry “Post tweet” nodes and a
+ * quest-level account list, and a node type the schema no longer knows would
+ * fail validation and lose the whole draft. So they are dropped here, along
+ * with any wire that pointed at them: the rest of the quest opens fine.
+ */
+function dropTwotter(q: Loose): Loose {
+    const rest = { ...q };
+    delete rest.twotterAccounts;
+    if (!rest?.graph?.nodes) return rest;
+    const gone = new Set(
+        rest.graph.nodes.filter((n: Loose) => n?.type === "comms.tweet").map((n: Loose) => n.id),
+    );
+    if (!gone.size) return rest;
+    return {
+        ...rest,
+        graph: {
+            ...rest.graph,
+            nodes: rest.graph.nodes.filter((n: Loose) => !gone.has(n?.id)),
+            edges: (rest.graph.edges ?? []).filter(
+                (e: Loose) => !gone.has(e?.source) && !gone.has(e?.target),
+            ),
+        },
+    };
+}
 
 export function migrateProject(raw: unknown): unknown {
     if (typeof raw !== "object" || raw === null) return raw;
@@ -61,8 +74,11 @@ export function migrateProject(raw: unknown): unknown {
     if (!Array.isArray(doc.quests)) return raw;
     return {
         ...doc,
-        quests: doc.quests.map((q: Loose) =>
-            q?.graph?.nodes ? { ...q, graph: { ...q.graph, nodes: q.graph.nodes.map(mapNode) } } : q,
-        ),
+        quests: doc.quests.map((q: Loose) => {
+            const quest = dropTwotter(q);
+            return quest?.graph?.nodes
+                ? { ...quest, graph: { ...quest.graph, nodes: quest.graph.nodes.map(mapNode) } }
+                : quest;
+        }),
     };
 }

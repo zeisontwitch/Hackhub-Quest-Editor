@@ -4,18 +4,32 @@
  * the dirhunter hiding places — the builder says so plainly instead of making
  * authors learn `seo:false`.
  */
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import * as Dialog from "@radix-ui/react-dialog";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/Icon";
 import { FieldShell, TextInput, Toggle } from "@/editor/inspector/primitives";
 import { createPage, createWebsite } from "@/schema/project";
+import type { WebPageDoc } from "@/schema/project";
 import { useEditor } from "@/store/editor";
 import { PAGE_TEMPLATES, SITE_TEMPLATES } from "@/templates/pages";
-import { isFullDocument, scanDocument, wrapFragment } from "./pageDoc";
+import {
+    importPath,
+    importTitle,
+    injectPreviewNav,
+    isFullDocument,
+    normalizeHost,
+    normalizePath,
+    notFoundDoc,
+    parseSearchTerms,
+    readFileText,
+    scanDocument,
+    wrapFragment,
+} from "./pageDoc";
 import { LlmPromptDialog } from "./LlmPromptDialog";
 import { CodePageEditor, VisualPageEditor } from "./pageEditor";
+import type { TargetingState } from "./pageEditor";
 
 export function WebsiteBuilderDialog({
     open,
@@ -40,8 +54,19 @@ export function WebsiteBuilderDialog({
     /** Bumped when content changes outside the visual editor, so it remounts fresh. */
     const [outsideRev, setOutsideRev] = useState(0);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    /** Site pending deletion — the confirm dialog's open flag. */
+    const [siteDeleteOpen, setSiteDeleteOpen] = useState(false);
+    /** The words input keeps the author's raw text (commas and all) while
+        they type; null = display the stored terms instead. */
+    const [searchDraft, setSearchDraft] = useState<string | null>(null);
+    useEffect(() => setSearchDraft(null), [pageId]);
     const [llmOpen, setLlmOpen] = useState(false);
+    /** Armed point-to-link: which page is being linked and which sidebar
+        socket the noodle hangs from. Lives here so the sidebar sockets and
+        the visual editor's picker share one gesture. */
+    const [targeting, setTargeting] = useState<TargetingState | null>(null);
     const htmlFileRef = useRef<HTMLInputElement>(null);
+    const dirFileRef = useRef<HTMLInputElement>(null);
     const toast = useEditor((s) => s.toast);
 
     const site = websites.find((w) => w.id === siteId) ?? websites[0];
@@ -238,11 +263,8 @@ export function WebsiteBuilderDialog({
                                     <button
                                         type="button"
                                         className="btn-default w-full justify-center text-danger"
-                                        onClick={() => {
-                                            removeWebsite(site.id);
-                                            setSiteId(null);
-                                            setPageId(null);
-                                        }}
+                                        title="Deletes the site and every page on it — asks first"
+                                        onClick={() => setSiteDeleteOpen(true)}
                                     >
                                         <Icon name="trash" size={12} />
                                         Delete site
@@ -253,11 +275,15 @@ export function WebsiteBuilderDialog({
                             {/* pages */}
                             <div className="flex min-h-0 flex-col border-r border-line">
                                 <div className="grid gap-2 border-b border-line p-2.5">
-                                    <FieldShell label="Host">
+                                    <FieldShell
+                                        label="Host"
+                                        hint="The address players type in the in-game browser, like meridian-capital.net. Pasted URLs are cleaned up when you click away."
+                                    >
                                         <TextInput
                                             ariaLabel="Site host"
                                             value={site.host}
                                             onChange={(host) => updateWebsite(site.id, { host })}
+                                            onBlur={() => updateWebsite(site.id, { host: normalizeHost(site.host) })}
                                             mono
                                         />
                                     </FieldShell>
@@ -269,6 +295,13 @@ export function WebsiteBuilderDialog({
                                             placeholder="For your own reference"
                                         />
                                     </FieldShell>
+                                    <Toggle
+                                        id="site-popular-toggle"
+                                        label="Popular site"
+                                        hint="Declared by the game's SDK, but what it does in-game is not verified yet — our test is two identical sites, one flagged, comparing search ranking. Leave off unless you are running that experiment."
+                                        checked={!!site.popular}
+                                        onChange={(popular) => updateWebsite(site.id, { popular: popular || undefined })}
+                                    />
                                 </div>
                                 <div className="flex items-center justify-between gap-2 px-3 py-2">
                                     <span className="text-[10px] font-semibold tracking-wider text-ink-3 uppercase">
@@ -349,6 +382,22 @@ export function WebsiteBuilderDialog({
                                             <div className="absolute top-1/2 right-1.5 flex -translate-y-1/2 items-center gap-0.5 rounded-md border border-line bg-surface-2 p-0.5 opacity-0 shadow transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                                                 <button
                                                     type="button"
+                                                    className="btn-icon text-accent"
+                                                    title="Pick-whip: then click the text on the page that should link to this page (Esc cancels)"
+                                                    aria-label={`Point at the text on the page to link it to ${p.path}`}
+                                                    onClick={(e) => {
+                                                        const r = e.currentTarget.getBoundingClientRect();
+                                                        setMode("visual");
+                                                        setTargeting({
+                                                            path: p.path,
+                                                            origin: { x: r.left + r.width / 2, y: r.top + r.height / 2 },
+                                                        });
+                                                    }}
+                                                >
+                                                    🎯
+                                                </button>
+                                                <button
+                                                    type="button"
                                                     className="btn-icon"
                                                     title="Duplicate page"
                                                     aria-label={`Duplicate page ${p.path}`}
@@ -394,7 +443,10 @@ export function WebsiteBuilderDialog({
                                                     <button
                                                         key={m}
                                                         type="button"
-                                                        onClick={() => setMode(m)}
+                                                        onClick={() => {
+                                                    setTargeting(null);
+                                                    setMode(m);
+                                                }}
                                                         className={cn(
                                                             "rounded px-2.5 py-1 text-[11px] capitalize",
                                                             mode === m ? "bg-accent-soft text-accent" : "text-ink-4 hover:text-ink",
@@ -413,6 +465,78 @@ export function WebsiteBuilderDialog({
                                                 <Icon name="upload" size={11} />
                                                 Load HTML
                                             </button>
+                                            <button
+                                                type="button"
+                                                className="btn-default"
+                                                title="Download this page as a .html file — hand it back to your AI assistant to iterate on it"
+                                                onClick={() => {
+                                                    const blob = new Blob([page.content], { type: "text/html" });
+                                                    const a = document.createElement("a");
+                                                    a.href = URL.createObjectURL(blob);
+                                                    a.download = `${page.path === "/" ? "index" : page.path.replace(/^\//, "").replace(/\//g, "-") || "page"}.html`;
+                                                    a.click();
+                                                    URL.revokeObjectURL(a.href);
+                                                    toast(`Saved ${a.download}.`, "ok");
+                                                }}
+                                            >
+                                                <Icon name="download" size={11} />
+                                                Save HTML
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn-default"
+                                                title="Import a folder of .html files (say, your AI assistant's output) — filenames become paths: news.html becomes /news, sub/index.html becomes /sub"
+                                                onClick={() => dirFileRef.current?.click()}
+                                            >
+                                                <Icon name="folder" size={11} />
+                                                Import folder
+                                            </button>
+                                            <input
+                                                ref={dirFileRef}
+                                                type="file"
+                                                multiple
+                                                aria-label="Import pages folder"
+                                                className="hidden"
+                                                onChange={(e) => {
+                                                    const files = Array.from(e.target.files ?? []);
+                                                    e.target.value = "";
+                                                    if (!files.length) return;
+                                                    void (async () => {
+                                                        let made = 0;
+                                                        let skipped = 0;
+                                                        let folder = "";
+                                                        for (const f of files) {
+                                                            const rel = f.webkitRelativePath || f.name;
+                                                            if (!folder) folder = rel.split("/")[0] || "folder";
+                                                            const p = importPath(rel);
+                                                            if (!p) continue;
+                                                            if (site.pages.some((pg) => pg.path === p)) {
+                                                                skipped++;
+                                                                continue;
+                                                            }
+                                                            const html = await readFileText(f);
+                                                            const title = importTitle(f.name, html);
+                                                            const content = isFullDocument(html)
+                                                                ? html
+                                                                : wrapFragment(html, title);
+                                                            addPage(site.id, createPage({ path: p, title, content }));
+                                                            made++;
+                                                        }
+                                                        if (!made && !skipped) {
+                                                            toast("No .html files found in that folder.", "warn");
+                                                            return;
+                                                        }
+                                                        const bits = [
+                                                            `Imported ${made} page${made === 1 ? "" : "s"} from ${folder}.`,
+                                                        ];
+                                                        if (skipped)
+                                                            bits.push(
+                                                                `${skipped} skipped — a page with that path already exists.`,
+                                                            );
+                                                        toast(bits.join(" "), made ? "ok" : "warn");
+                                                    })();
+                                                }}
+                                            />
                                             <button
                                                 type="button"
                                                 className="btn-default"
@@ -455,12 +579,13 @@ export function WebsiteBuilderDialog({
                                         <div className="grid grid-cols-2 gap-2 border-b border-line px-3 py-2">
                                             <FieldShell
                                                 label="Path"
-                                                hint="Where the page lives on the host. Sub-directories are fine — deep paths make good hiding spots."
+                                                hint="Where the page lives on the host, starting at the root — /about/team. Sub-directories are fine; deep paths make good hiding spots. A missing leading / is added when you click away."
                                             >
                                                 <TextInput
                                                     ariaLabel="Page path"
                                                     value={page.path}
                                                     onChange={(path) => updatePage(site.id, page.id, { path })}
+                                                    onBlur={() => updatePage(site.id, page.id, { path: normalizePath(page.path) })}
                                                     mono
                                                     placeholder="/about/team"
                                                 />
@@ -474,11 +599,45 @@ export function WebsiteBuilderDialog({
                                             </FieldShell>
                                         </div>
                                         <Toggle
+                                            id="page-search-listed-toggle"
                                             label="Listed in the in-game search"
                                             hint="Turn off to hide this page from search results while keeping it reachable by URL. Hidden pages are what dirhunter brute-forces — perfect for clues."
                                             checked={page.seo}
                                             onChange={(seo) => updatePage(site.id, page.id, { seo })}
                                         />
+
+                                        <div className="grid gap-2 border-b border-line px-3 py-2">
+                                            <FieldShell
+                                                label="Search result description"
+                                                hint="A short line the in-game search can show under this page's result, like the snippet under a web result. Leave blank and the game decides what to show."
+                                            >
+                                                <TextInput
+                                                    ariaLabel="Search result description"
+                                                    value={page.description ?? ""}
+                                                    onChange={(description) =>
+                                                        updatePage(site.id, page.id, { description: description || undefined })
+                                                    }
+                                                    placeholder="Custom sets for every budget"
+                                                />
+                                            </FieldShell>
+                                            <FieldShell
+                                                label="Extra search words"
+                                                hint="Words this page should also be found by, besides what is written on it — a codename, a product name, a misspelling a player might try. Separate them with commas."
+                                            >
+                                                <TextInput
+                                                    ariaLabel="Extra search words"
+                                                    value={searchDraft ?? (page.search ?? []).join(", ")}
+                                                    onChange={(text) => {
+                                                        /* Keep the author's raw text (commas and all)
+                                                           while they type; parseSearchTerms only feeds
+                                                           the stored page. */
+                                                        setSearchDraft(text);
+                                                        updatePage(site.id, page.id, { search: parseSearchTerms(text) });
+                                                    }}
+                                                    placeholder="budget, cheap rigs, custom pc"
+                                                />
+                                            </FieldShell>
+                                        </div>
 
                                         {scan && (
                                             <div className="border-b border-line px-3 py-2">
@@ -551,6 +710,24 @@ export function WebsiteBuilderDialog({
                                                                 {scan.comments[0].slice(0, 120)}
                                                                 {scan.comments[0].length > 120 ? "…" : ""}
                                                             </code>
+                                                            {scan.comments.length > 1 && (
+                                                                <span className="text-ink-4">
+                                                                    {" "}
+                                                                    …and {scan.comments.length - 1} more comment
+                                                                    {scan.comments.length === 2 ? "" : "s"} in the
+                                                                    code.
+                                                                </span>
+                                                            )}
+                                                        </p>
+                                                    )}
+                                                    {scan.hiddenBits > 0 && (
+                                                        <p>
+                                                            🫥 {scan.hiddenBits} hidden element
+                                                            {scan.hiddenBits === 1 ? "" : "s"} in the code (hidden
+                                                            inputs, display:none blocks). Players never see{" "}
+                                                            {scan.hiddenBits === 1 ? "it" : "them"} on the page —
+                                                            but anyone who views the source does. Another good
+                                                            clue spot.
                                                         </p>
                                                     )}
                                                     {(scan.scripts > 0 || scan.forms > 0) && (
@@ -565,6 +742,7 @@ export function WebsiteBuilderDialog({
                                                     {missingPaths.length === 0 &&
                                                         scan.anchors.length === 0 &&
                                                         scan.comments.length === 0 &&
+                                                        scan.hiddenBits === 0 &&
                                                         scan.scripts === 0 &&
                                                         scan.forms === 0 && (
                                                             <p className="text-ink-4">
@@ -581,6 +759,9 @@ export function WebsiteBuilderDialog({
                                                 <VisualPageEditor
                                                     key={`${page.id}:${outsideRev}`}
                                                     doc={page.content}
+                                                    pages={pages.map((p) => ({ path: p.path, title: p.title }))}
+                                                    targeting={targeting}
+                                                    onTargetingChange={setTargeting}
                                                     onChange={(content) => updatePage(site.id, page.id, { content })}
                                                     ariaLabel={`Visual editor for ${page.path}`}
                                                 />
@@ -598,9 +779,8 @@ export function WebsiteBuilderDialog({
                                             {mode === "preview" && (
                                                 <BrowserPreview
                                                     host={site.host}
-                                                    path={page.path}
-                                                    seo={page.seo}
-                                                    content={page.content}
+                                                    page={page}
+                                                    pages={pages}
                                                 />
                                             )}
                                         </div>
@@ -651,23 +831,82 @@ export function WebsiteBuilderDialog({
             </AlertDialog.Portal>
         </AlertDialog.Root>
 
+        <AlertDialog.Root open={siteDeleteOpen} onOpenChange={setSiteDeleteOpen}>
+            <AlertDialog.Portal>
+                <AlertDialog.Overlay className="fixed inset-0 z-[60] bg-void/70 backdrop-blur-[2px]" />
+                <AlertDialog.Content className="fixed top-1/2 left-1/2 z-[70] w-[min(400px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-line bg-surface p-4 shadow-panel">
+                    <AlertDialog.Title className="text-[13px] font-semibold text-ink">
+                        Do you really want to delete this site?
+                    </AlertDialog.Title>
+                    <AlertDialog.Description className="mt-1 text-[11.5px] leading-relaxed text-ink-3">
+                        <span className="font-mono text-ink-2">{site?.host}</span> and its{" "}
+                        {site?.pages.length ?? 0} page{(site?.pages.length ?? 0) === 1 ? "" : "s"} will be
+                        removed from the mod. This can be undone with the editor's undo.
+                    </AlertDialog.Description>
+                    <div className="mt-4 flex justify-end gap-2">
+                        <AlertDialog.Cancel className="btn-default">Cancel</AlertDialog.Cancel>
+                        <AlertDialog.Action
+                            className="btn-danger"
+                            onClick={() => {
+                                if (site) {
+                                    removeWebsite(site.id);
+                                    setSiteId(null);
+                                    setPageId(null);
+                                }
+                            }}
+                        >
+                            Delete site
+                        </AlertDialog.Action>
+                    </div>
+                </AlertDialog.Content>
+            </AlertDialog.Portal>
+        </AlertDialog.Root>
+
         <LlmPromptDialog open={llmOpen} onOpenChange={setLlmOpen} />
         </>
     );
 }
 
-/** The player's-eye view: a little in-game browser window. */
+/** The player's-eye view: a little in-game browser window. Internal links
+    clicked inside the preview navigate it — the builder serves whatever page
+    lives at that path (or a friendly not-found) — so an author can walk the
+    whole site like a player. The address bar takes paths directly. */
 function BrowserPreview({
     host,
-    path,
-    seo,
-    content,
+    page,
+    pages,
 }: {
     host: string;
-    path: string;
-    seo: boolean;
-    content: string;
+    page: WebPageDoc;
+    pages: WebPageDoc[];
 }) {
+    const [viewPath, setViewPath] = useState(page.path);
+    const [draft, setDraft] = useState(page.path);
+    // Following the author's page switch, both bars snap back to it.
+    useEffect(() => {
+        setViewPath(page.path);
+        setDraft(page.path);
+    }, [page.id, page.path]);
+
+    useEffect(() => {
+        const onMsg = (e: MessageEvent) => {
+            const d = e.data as { source?: string; path?: string } | null;
+            if (d?.source !== "qe-preview") return;
+            const p = normalizePath(String(d.path ?? "/"));
+            setViewPath(p);
+            setDraft(p);
+        };
+        window.addEventListener("message", onMsg);
+        return () => window.removeEventListener("message", onMsg);
+    }, []);
+
+    const viewed = pages.find((p) => p.path === viewPath) ?? null;
+    const body = viewed
+        ? viewed.content.trim()
+            ? injectPreviewNav(viewed.content)
+            : "<p><em>Empty page.</em></p>"
+        : notFoundDoc(host, viewPath);
+
     return (
         <div className="overflow-hidden rounded-lg border border-line">
             <div className="flex items-center gap-2 border-b border-line bg-surface-2 px-3 py-1.5">
@@ -676,12 +915,38 @@ function BrowserPreview({
                     <i className="size-2 rounded-full bg-warn/70" />
                     <i className="size-2 rounded-full bg-ok/70" />
                 </span>
-                <span className="flex-1 truncate rounded-md border border-line bg-surface px-2.5 py-1 font-mono text-[10.5px] text-ink-3">
-                    http://{host}
-                    {path}
-                </span>
+                <form
+                    className="flex min-w-0 flex-1 items-center"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        const p = normalizePath(draft);
+                        setViewPath(p);
+                        setDraft(p);
+                    }}
+                >
+                    <input
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        aria-label="Preview address"
+                        className="min-w-0 flex-1 rounded-md border border-line bg-surface px-2.5 py-1 font-mono text-[10.5px] text-ink-3 focus:border-accent focus:outline-none"
+                    />
+                </form>
+                {viewPath !== page.path && (
+                    <button
+                        type="button"
+                        className="btn-icon shrink-0"
+                        title={`Back to the page you are editing (${page.path})`}
+                        aria-label="Back to the page you are editing"
+                        onClick={() => {
+                            setViewPath(page.path);
+                            setDraft(page.path);
+                        }}
+                    >
+                        <Icon name="x" size={12} />
+                    </button>
+                )}
             </div>
-            {!seo && (
+            {viewed && !viewed.seo && (
                 <p className="flex items-center gap-1.5 border-b border-warn/30 bg-warn/10 px-3 py-1.5 text-[10.5px] text-warn">
                     <Icon name="lock" size={11} />
                     Not in search results — only a direct URL (or dirhunter) leads here.
@@ -689,7 +954,7 @@ function BrowserPreview({
             )}
             <iframe
                 title="Page preview"
-                srcDoc={content || "<p><em>Empty page.</em></p>"}
+                srcDoc={body}
                 sandbox="allow-scripts"
                 className="block h-[52vh] w-full border-0 bg-white"
             />

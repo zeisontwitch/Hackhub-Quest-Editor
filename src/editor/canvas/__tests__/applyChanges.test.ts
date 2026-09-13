@@ -5,7 +5,7 @@
  * sequentially yields [B].
  */
 import { describe, expect, it } from "vitest";
-import { altersSelection, nextSelection } from "@/editor/canvas/applyChanges";
+import { altersSelection, nextSelection, nodesInBox, onlyDeselects, resolveSelection } from "@/editor/canvas/applyChanges";
 
 describe("nextSelection", () => {
     it("switches to a newly clicked node, dropping the previous one", () => {
@@ -56,5 +56,138 @@ describe("altersSelection", () => {
         expect(altersSelection([{ type: "select", id: "a", selected: true }])).toBe(true);
         expect(altersSelection([{ type: "position", id: "a" }])).toBe(false);
         expect(altersSelection([])).toBe(false);
+    });
+});
+
+describe("onlyDeselects", () => {
+    /* A box drag delivers node changes and edge changes as two batches. If the
+       node batch clears edgeIds and the edge batch clears nodeIds, whichever
+       lands second wins and the user gets the wrong thing selected. */
+    it("is true for a batch that only clears", () => {
+        expect(onlyDeselects([
+            { type: "select", id: "e1", selected: false },
+            { type: "select", id: "e2", selected: false },
+        ])).toBe(true);
+    });
+
+    it("is false as soon as the batch selects something", () => {
+        expect(onlyDeselects([
+            { type: "select", id: "e1", selected: false },
+            { type: "select", id: "e2", selected: true },
+        ])).toBe(false);
+    });
+
+    it("is false for a batch with no select changes at all", () => {
+        expect(onlyDeselects([{ type: "position", id: "a" }])).toBe(false);
+        expect(onlyDeselects([])).toBe(false);
+    });
+});
+
+describe("resolveSelection", () => {
+    const sel = (nodeIds: string[], edgeIds: string[]) => ({ nodeIds, edgeIds });
+    const pick = (id: string) => [{ type: "select", id, selected: true }];
+    const drop = (id: string) => [{ type: "select", id, selected: false }];
+
+    it("ignores wires swept up by a box drag (the reported bug)", () => {
+        // Dragging a box round two nodes also selects the wire between them;
+        // that edge batch must not touch the selection at all.
+        expect(resolveSelection("edges", sel(["a", "b"], []), pick("e1"), true)).toBeNull();
+    });
+
+    it("still lets a wire be clicked when no box is open", () => {
+        expect(resolveSelection("edges", sel(["a"], []), pick("e1"), false))
+            .toEqual(sel([], ["e1"]));
+    });
+
+    it("does not let a tidy-up batch wipe the other kind", () => {
+        // React Flow clears the old node selection as a separate batch; that
+        // must not take a freshly clicked wire with it.
+        expect(resolveSelection("nodes", sel(["a"], ["e1"]), drop("a"), false))
+            .toEqual(sel([], ["e1"]));
+        expect(resolveSelection("edges", sel(["a"], ["e1"]), drop("e1"), false))
+            .toEqual(sel(["a"], []));
+    });
+
+    it("clears the other kind when the user really picks something", () => {
+        expect(resolveSelection("nodes", sel([], ["e1"]), pick("a"), false))
+            .toEqual(sel(["a"], []));
+    });
+
+    it("selects nodes normally during a box drag", () => {
+        expect(resolveSelection("nodes", sel([], []), pick("a"), true))
+            .toEqual(sel(["a"], []));
+    });
+
+    it("does nothing for a batch that changes no selection", () => {
+        expect(resolveSelection("nodes", sel(["a"], []), [{ type: "position", id: "a" }], false))
+            .toBeNull();
+    });
+});
+
+describe("resolveSelection with a modifier held", () => {
+    const sel = (nodeIds: string[], edgeIds: string[]) => ({ nodeIds, edgeIds });
+    const pick = (id: string) => [{ type: "select", id, selected: true }];
+    const drop = (id: string) => [{ type: "select", id, selected: false }];
+    const clearAll = (...ids: string[]) =>
+        ids.map((id) => ({ type: "select", id, selected: false }));
+
+    it("keeps the existing nodes when shift+box-dragging more (reported)", () => {
+        // React Flow calls resetSelectedElements() at the start of every box
+        // drag with no modifier check, so the wholesale clear arrives first.
+        expect(resolveSelection("nodes", sel(["a", "b"], []), clearAll("a", "b"), true, true))
+            .toBeNull();
+        // ...then the new box's picks fold onto what was already there.
+        expect(resolveSelection("nodes", sel(["a", "b"], []), pick("c"), true, true))
+            .toEqual(sel(["a", "b", "c"], []));
+    });
+
+    it("still clears the previous selection without a modifier", () => {
+        expect(resolveSelection("nodes", sel(["a", "b"], []), clearAll("a", "b"), true, false))
+            .toEqual(sel([], []));
+    });
+
+    it("removes a single node from the selection on ctrl+click", () => {
+        // No box is open, so this clear-only batch is the user deselecting one
+        // node - it must be applied, not swallowed as drag tidy-up.
+        expect(resolveSelection("nodes", sel(["a", "b", "c"], []), drop("b"), false, true))
+            .toEqual(sel(["a", "c"], []));
+    });
+
+    it("still ignores the drag-start clear when a box IS open", () => {
+        expect(resolveSelection("nodes", sel(["a", "b"], []), clearAll("a", "b"), true, true))
+            .toBeNull();
+    });
+
+    it("does not clear a wire selection while adding nodes", () => {
+        expect(resolveSelection("nodes", sel([], ["e1"]), pick("a"), false, true))
+            .toEqual(sel(["a"], ["e1"]));
+    });
+});
+
+describe("nodesInBox", () => {
+    const node = (id: string, x: number, y: number, w = 100, h = 50) => ({
+        id, measured: { width: w, height: h }, internals: { positionAbsolute: { x, y } },
+    });
+
+    it("finds nodes the box overlaps, even partially", () => {
+        const nodes = [node("a", 0, 0), node("b", 400, 0)];
+        expect([...nodesInBox(nodes, { x: 350, y: -10, width: 500, height: 200 })]).toEqual(["b"]);
+        expect([...nodesInBox(nodes, { x: -10, y: -10, width: 80, height: 80 })]).toEqual(["a"]);
+        expect([...nodesInBox(nodes, { x: -10, y: -10, width: 900, height: 200 })]).toEqual(["a", "b"]);
+    });
+
+    it("ignores a box that touches nothing", () => {
+        expect([...nodesInBox([node("a", 0, 0)], { x: 900, y: 900, width: 50, height: 50 })]).toEqual([]);
+    });
+
+    it("skips hidden and unselectable nodes", () => {
+        const box = { x: -50, y: -50, width: 999, height: 999 };
+        expect([...nodesInBox([{ ...node("a", 0, 0), hidden: true }], box)]).toEqual([]);
+        expect([...nodesInBox([{ ...node("a", 0, 0), selectable: false }], box)]).toEqual([]);
+    });
+
+    it("skips nodes with no resolved position", () => {
+        expect([...nodesInBox([{ id: "a", measured: { width: 10, height: 10 } }],
+            { x: -50, y: -50, width: 999, height: 999 })]).toEqual([]);
     });
 });

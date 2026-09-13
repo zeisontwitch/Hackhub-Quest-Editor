@@ -12,26 +12,39 @@ import { Icon } from "@/components/Icon";
 import {
     EVENT_COUNT,
     SDK_VERSION,
-    eventLabel,
+    humanEventName,
     getEvent,
     groupedEvents,
     isKnownEvent,
+    isPrimitivePayload,
     payloadFields,
 } from "@/schema/events";
+import { eventDoc } from "@/schema/eventDocs";
+import { usePacks } from "@/store/packs";
+import { packEventByName, packEvents } from "@/toolpacks/palette";
 
-export function EventPicker({
-    value,
-    onChange,
-}: {
-    value: string;
-    onChange: (value: string) => void;
-}) {
+export function EventPicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState("");
+    const packs = usePacks((s) => s.packs);
+    const community = packEvents(packs);
+    const packLabel = new Map(community.map((e) => [e.name, `${e.label} — ${e.packName}`]));
 
     const groups = useMemo(() => {
         const q = query.trim().toLowerCase();
-        const all = groupedEvents();
+        const builtin = groupedEvents();
+        const all = [
+            ...builtin,
+            ...(community.length
+                ? [
+                      {
+                          group: "community",
+                          label: `Community tools (${community.length})`,
+                          events: community.map((e) => ({ name: e.name, payload: e.payload, group: "community" })),
+                      },
+                  ]
+                : []),
+        ];
         if (!q) return all;
         return all
             .map((g) => ({
@@ -39,15 +52,17 @@ export function EventPicker({
                 events: g.events.filter(
                     (e) =>
                         e.name.toLowerCase().includes(q) ||
-                        eventLabel(e.name).toLowerCase().includes(q) ||
-                        e.payload.toLowerCase().includes(q),
+                        humanEventName(e.name).toLowerCase().includes(q) ||
+                        e.payload.toLowerCase().includes(q) ||
+                        (packLabel.get(e.name) ?? "").toLowerCase().includes(q),
                 ),
             }))
             .filter((g) => g.events.length > 0);
-    }, [query]);
+    }, [query, community, packLabel]);
 
     const selected = value ? getEvent(value) : undefined;
-    const isCustom = value !== "" && !isKnownEvent(value);
+    const packEv = value ? packEventByName(packs, value) : undefined;
+    const isCustom = value !== "" && !isKnownEvent(value) && !packEv;
 
     return (
         <Popover.Root open={open} onOpenChange={setOpen}>
@@ -58,12 +73,8 @@ export function EventPicker({
                             <span className="text-ink-4">Choose an event…</span>
                         ) : (
                             <>
-                                <span className="block truncate font-mono text-[12px] text-ink">
-                                    {value}
-                                </span>
-                                <span className="block truncate text-[10.5px] text-ink-4">
-                                    {selected ? eventLabel(value) : "custom event"}
-                                </span>
+                                <span className="block truncate text-[12px] text-ink">{humanEventName(value)}</span>
+                                <span className="block truncate font-mono text-[10.5px] text-ink-4">{value}</span>
                             </>
                         )}
                     </span>
@@ -103,9 +114,7 @@ export function EventPicker({
 
                     <div className="max-h-[320px] overflow-y-auto py-1">
                         {groups.length === 0 && (
-                            <p className="px-3 py-6 text-center text-[11.5px] text-ink-4">
-                                No event matches “{query}”.
-                            </p>
+                            <p className="px-3 py-6 text-center text-[11.5px] text-ink-4">No event matches “{query}”.</p>
                         )}
                         {groups.map((group) => (
                             <section key={group.group} className="mb-1">
@@ -126,17 +135,11 @@ export function EventPicker({
                                             value === event.name && "bg-accent-soft",
                                         )}
                                     >
-                                        <span className="flex items-baseline gap-2">
-                                            <span className="font-mono text-[11.5px] text-ink">
-                                                {event.name}
-                                            </span>
-                                            <span className="truncate text-[10.5px] text-ink-4">
-                                                {eventLabel(event.name)}
-                                            </span>
+                                        <span className="block truncate text-[12px] text-ink">
+                                            {packLabel.get(event.name) ?? humanEventName(event.name)}
                                         </span>
-                                        <span className="truncate font-mono text-[10px] text-ink-4">
-                                            {event.payload}
-                                        </span>
+                                        <span className="block truncate font-mono text-[10.5px] text-ink-4">{event.name}</span>
+                                        <span className="truncate font-mono text-[10px] text-ink-4">{event.payload}</span>
                                     </button>
                                 ))}
                             </section>
@@ -161,19 +164,77 @@ export function EventPicker({
 
             {isCustom && (
                 <p className="field-hint">
-                    Custom event — emit it from a website, app or terminal command with
+                    Advanced: a custom event isn't in the game yet — you (or another mod) must trigger it from a website, app or
+                    terminal command with
                     <code className="mx-1 rounded bg-surface-2 px-1 font-mono text-[10px]">
                         HackhubSDK.Events.emit("{value}")
                     </code>
                 </p>
             )}
-            {selected && (
-                <p className="field-hint">
-                    Payload:{" "}
-                    <code className="font-mono text-[10px] text-ink-3">{selected.payload}</code>
-                    {payloadFields(selected.payload).length === 0 && " (no fields)"}
-                </p>
+            {packEv ? (
+                <EventPackExplanation ev={packEv} />
+            ) : (
+                selected && <EventExplanation name={selected.name} payload={selected.payload} />
             )}
         </Popover.Root>
+    );
+}
+
+/**
+ * The explanation for a community event: same shape as the catalogue one,
+ * but honest about where the event comes from — a tool pack, and the game
+ * mod its quests need on the player's machine.
+ */
+function EventPackExplanation({
+    ev,
+}: {
+    ev: { label: string; docs: string; fields: string[]; packName: string; gameModName: string };
+}) {
+    return (
+        <>
+            {ev.docs && <p className="field-hint">{ev.docs}</p>}
+            <p className="field-hint">
+                Fired by the <strong>{ev.packName}</strong> tool mod. A quest that waits on this event needs{" "}
+                <strong>{ev.gameModName}</strong> installed on the player&apos;s machine — say so in the quest description.
+            </p>
+            <p className="field-hint">
+                {ev.fields.length > 0 ? (
+                    <>
+                        Narrow it down with: <code className="font-mono text-[10px] text-ink-3">{ev.fields.join(", ")}</code>
+                    </>
+                ) : (
+                    "It carries no details to test against."
+                )}
+            </p>
+        </>
+    );
+}
+
+/**
+ * What the chosen event is, then what can be matched on it. Primitive
+ * payloads (a bare string, not an object) are matched as a whole — the
+ * condition builder offers no field for them, so neither does this.
+ */
+export function EventExplanation({ name, payload }: { name: string; payload: string }) {
+    const fields = payloadFields(payload);
+    const primitive = isPrimitivePayload(name);
+    return (
+        <>
+            {eventDoc(name) && <p className="field-hint">{eventDoc(name)}</p>}
+            <p className="field-hint">
+                {primitive ? (
+                    "Match it as a whole — it carries one value, not named details."
+                ) : fields.length > 0 ? (
+                    <>
+                        Narrow it down with:{" "}
+                        <code className="font-mono text-[10px] text-ink-3" title={payload}>
+                            {fields.join(", ")}
+                        </code>
+                    </>
+                ) : (
+                    "It carries no details to test against."
+                )}
+            </p>
+        </>
     );
 }

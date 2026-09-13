@@ -14,6 +14,7 @@ import { z } from "zod";
 import { nanoid } from "nanoid";
 import type { EdgeKind, HandleSpec } from "./edges";
 import {
+    DebugNodeDataSchema,
     DialogueNodeDataSchema,
     BranchNodeDataSchema,
 ClaimQuestNodeDataSchema,
@@ -24,7 +25,6 @@ ClaimQuestNodeDataSchema,
     FilesNodeDataSchema,
     FirewallNodeDataSchema,
     HandbookNodeDataSchema,
-    HackertyperNodeDataSchema,
     ManualInputNodeDataSchema,
     NetworkNodeDataSchema,
     NotifyNodeDataSchema,
@@ -33,18 +33,21 @@ ClaimQuestNodeDataSchema,
     PortNodeDataSchema,
     RandomPickNodeDataSchema,
     SetDataNodeDataSchema,
+    SequenceNodeDataSchema,
     ShellExecNodeDataSchema,
     ToolResponseNodeDataSchema,
     TriggerEventDataSchema,
-    TweetNodeDataSchema,
 WifiNodeDataSchema,
     NoteNodeDataSchema,
+    StoryBeatNodeDataSchema,
     RerouteNodeDataSchema,
     LayoutGroupNodeDataSchema,
+    PackDataNodeDataSchema,
+    PackNodeDataSchema,
     type NodeDoc,
     type NodeType,
 } from "./nodes";
-import { VULNERABILITY_TYPES } from "./common";
+import { TARGET_IP_TOKEN, VULNERABILITY_TYPES } from "./common";
 
 /* ── Inspector field descriptors ─────────────────────────────────────────── */
 
@@ -89,9 +92,36 @@ export type FieldDef =
           options: readonly { value: string; label: string; hint?: string }[];
           showWhen?: FieldShowWhen;
       }
+    | {
+          kind: "selectOrCustom";
+          key: string;
+          label: string;
+          hint?: string;
+          placeholder?: string;
+          mono?: boolean;
+          /** Offer the token menu in the custom box. */
+          tokens?: boolean;
+          /**
+           * Fixed choices. Anything else falls through to the custom box.
+           * `meaning` explains a choice's stored value in words, for when the
+           * author meets it as free text (a custom box holding `*`).
+           */
+          options: readonly { value: string; label: string; meaning?: string }[];
+          /**
+           * An extra "same as …" choice that copies another field's current
+           * value — a snapshot, not a live link. `fromKey` starting with
+           * "/" reads from the node root (e.g. "/ip"); otherwise the row is
+           * tried first, then the root. While the other field is empty the
+           * choice is disabled, showing `emptyHint`.
+           */
+          sameAs?: { label: string; fromKey: string; emptyHint?: string };
+          showWhen?: FieldShowWhen;
+      }
+    | { kind: "tables"; key: string; label: string; hint?: string }
+    | { kind: "handbookArticle"; key: string; label: string; hint?: string }
     | { kind: "date"; key: string; label: string; hint?: string; showWhen?: FieldShowWhen }
+    | { kind: "color"; key: string; label: string; hint?: string; showWhen?: FieldShowWhen }
     | { kind: "image"; key: string; label: string; hint?: string; showWhen?: FieldShowWhen }
-    | { kind: "questAccount"; key: string; label: string; hint?: string }
     | { kind: "event"; key: string; label: string; hint?: string }
     | { kind: "conditions"; key: string; label: string; hint?: string }
     | {
@@ -102,12 +132,22 @@ export type FieldDef =
           addLabel: string;
           /** Text shown for a row when it has no meaningful title yet. */
           itemTitle: (item: Record<string, unknown>, index: number) => string;
+          /** Open every existing row by default (e.g. choices an author should read at once). */
+          defaultOpen?: boolean;
           fields: FieldDef[];
-          newItem: () => Record<string, unknown>;
+          /** Receives the new row's index, so numbered rows (sequence outputs) can name themselves. */
+          newItem: (index: number) => Record<string, unknown>;
       }
     | { kind: "deviceTree"; key: string; label: string; hint?: string }
-    | { kind: "section"; label: string; hint?: string; fields: FieldDef[] }
-    | { kind: "note"; text: string; tone?: "info" | "warn" };
+    | {
+          kind: "section";
+          label: string;
+          hint?: string;
+          fields: FieldDef[];
+          /** Address children under this path (e.g. a single nested record). */
+          path?: string;
+      }
+    | { kind: "note"; text: string; tone?: "info" | "warn"; showWhen?: FieldShowWhen };
 
 /* ── Categories ──────────────────────────────────────────────────────────── */
 
@@ -119,6 +159,7 @@ export const CATEGORIES = [
     { id: "comms", label: "Communication", color: "var(--color-cat-comms)", hex: "#f472b6", icon: "message" },
     { id: "reply", label: "Player replies", color: "var(--color-cat-reply)", hex: "#fb923c", icon: "keyboard" },
     { id: "effect", label: "Effects", color: "var(--color-cat-effect)", hex: "#60a5fa", icon: "sparkle" },
+    { id: "community", label: "Community tools", color: "var(--color-cat-community)", hex: "#2dd4bf", icon: "package" },
     { id: "flow", label: "Flow control", color: "var(--color-cat-flow)", hex: "#94a3b8", icon: "branch" },
     { id: "layout", label: "Layout", color: "var(--color-cat-layout)", hex: "#64748b", icon: "layers" },
 ] as const;
@@ -134,6 +175,7 @@ export const CATEGORY_HEX: Record<CategoryId, string> = {
     objective: "#fbbf24",
     trigger: "#22d3ee",
     world: "#34d399",
+    community: "#2dd4bf",
     comms: "#f472b6",
     reply: "#fb923c",
     effect: "#60a5fa",
@@ -165,7 +207,7 @@ const portFields: FieldDef[] = [
     { kind: "number", key: "external", hint: "The port number as seen from outside. This is what nmap reports and what the player connects to.", label: "External port", min: 0, max: 65535 },
     { kind: "number", key: "internal", hint: "The port the service actually listens on inside the machine. Leave equal to the external port unless you are deliberately redirecting.", label: "Internal port", min: 0, max: 65535 },
     { kind: "text", key: "service", hint: "What nmap prints next to the port, e.g. http, ssh, ftp, mysql. Free text — it is a label, not a real service.", label: "Service", placeholder: "ssh", mono: true },
-    { kind: "text", key: "version", hint: "The banner nmap -sV prints, e.g. \"Apache 2.4.41\". Leave blank to omit the version line.", label: "Version", placeholder: "OpenSSH 8.9", mono: true },
+    { kind: "text", key: "version", hint: "The banner nmap -sV prints. Use three numbers and no letters — metasploit refuses \"7.2\" and \"7.2p2\", leaving the player unable to run the exploit. Blank omits the version line.", label: "Version", placeholder: "OpenSSH 8.9.0", mono: true },
     { kind: "toggle", key: "active", label: "Open", hint: "Closed ports show as filtered to nmap." },
 ];
 
@@ -188,13 +230,53 @@ const vulnFields: FieldDef[] = [
     { kind: "text", key: "version", hint: "The affected component's version, e.g. \"WordPress 5.8\". Cosmetic unless a trigger matches on it.", label: "Version", placeholder: "optional", mono: true },
 ];
 
-const ruleFields: FieldDef[] = [
-    { kind: "number", key: "port", hint: "The port this rule applies to.", label: "Port", min: 0, max: 65535 },
-    { kind: "toggle", key: "allowed", label: "Allowed", hint: "Off means the port is blocked by the firewall." },
-    { kind: "text", key: "source", hint: "Which source addresses the rule matches. `*` means anywhere; write a single IP to narrow it.", label: "Source", placeholder: "*", mono: true },
-    { kind: "text", key: "destination", hint: "Which destination addresses the rule matches. `*` means this machine.", label: "Destination", placeholder: "*", mono: true },
-    { kind: "toggle", key: "locked", label: "Locked", hint: "The player cannot remove a locked rule." },
-];
+/**
+ * Firewall rule fields, shared by the Firewall-rule node and firewall devices.
+ * The node variant offers "same as the protected IP" for the destination; a
+ * device rule has no protected IP, so its destination stays a plain address.
+ */
+function firewallRuleFields(sameAsProtected: boolean): FieldDef[] {
+    return [
+        { kind: "number", key: "port", hint: "The port this rule applies to.", label: "Port", min: 0, max: 65535 },
+        { kind: "toggle", key: "allowed", label: "Allowed", hint: "Off means the port is blocked by the firewall." },
+        {
+            kind: "selectOrCustom",
+            key: "source",
+            label: "Source",
+            hint: "Which machines the rule applies to: anywhere on the internet, or one machine you name.",
+            mono: true,
+            placeholder: "45.33.32.156",
+            options: [{ value: "*", label: "Anywhere", meaning: "matches every machine on the internet" }],
+        },
+        ...(sameAsProtected
+            ? [
+                  {
+                      kind: "selectOrCustom",
+                      key: "destination",
+                      label: "Destination",
+                      hint: "The machine the rule protects — usually the one in “Protected IP” above. Picking it copies that address; changing it later won't follow.",
+                      mono: true,
+                      placeholder: "45.33.32.156",
+                      options: [],
+                      sameAs: {
+                          label: "Same as the protected IP",
+                          fromKey: "/ip",
+                          emptyHint: "Same as the protected IP (set it first)",
+                      },
+                  } as const,
+              ]
+            : [
+                  {
+                      kind: "text",
+                      key: "destination",
+                      label: "Destination",
+                      hint: "The destination address the rule matches — usually the protected machine's own address.",
+                      mono: true,
+                  } as const,
+              ]),
+        { kind: "toggle", key: "locked", label: "Locked", hint: "The player cannot remove a locked rule." },
+    ];
+}
 
 const fileFields: FieldDef[] = [
     { kind: "text", key: "name", hint: "The file or folder name, exactly as it appears in ls.", label: "Name", mono: true },
@@ -222,7 +304,7 @@ export const FIELD_GROUPS = {
         newItem: () => ({ id: nanoid(8), username: "admin" }),
     },
     rules: {
-        fields: ruleFields,
+        fields: firewallRuleFields(false),
         addLabel: "Add rule",
         itemTitle: (r: Record<string, unknown>) => `${r.allowed ? "Allow" : "Block"} ${r.port}`,
         newItem: () => ({ id: nanoid(8), allowed: false, port: 22, source: "*" }),
@@ -253,10 +335,19 @@ export interface NodeTypeDef {
     icon: string;
     targets: HandleSpec[];
     sources: HandleSpec[];
+    /**
+     * Sockets that depend on the node's own data (the Sequence node grows one
+     * output per step). When present it replaces `sources` for that node — the
+     * static list stays as the empty-state fallback.
+     */
+    dynamicSources?: (data: Record<string, unknown>) => HandleSpec[];
     /** Which lifecycle hook the compiler emits this node's statements into. */
     hook: "onStart" | "onObjectivesStart" | "onComplete" | "onAbandon" | "declarative";
     fields: FieldDef[];
     create: () => NodeDoc["data"];
+    /** Extra data merged over `create()` when the palette or the add-node
+        search adds this def (pack nodes: the pack snapshot). */
+    addData?: Record<string, unknown>;
 }
 
 /** Parse a seed through a schema so every `.default()` is materialised. */
@@ -301,7 +392,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         type: "entry.complete",
         category: "entry",
         label: "On quest complete",
-        blurb: "Runs once every objective is done. Rewards go here.",
+        blurb: "Only runs if the quest completes — with auto-complete off and no Complete button (the default) that never happens. End the story from the last objective instead.",
         icon: "check",
         targets: [],
         sources: [outFlow],
@@ -367,18 +458,19 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            {
-                kind: "select",
-                key: "ipMode",
-                hint: "“Random” hands out a fresh address each time the quest is played. “Fixed” keeps the address you typed — use that when another node refers to it by hand.",
-                label: "Router IP",
-                options: [
-                    { value: "random", label: "Random public IP", hint: "A fresh address each time the quest is played" },
-                    { value: "fixed", label: "Fixed IP" },
-                ],
-            },
+            /* No IP field. The game hands out the address, and the author
+               reads it back with {{data.targetIp}} wherever they need it —
+               a mail, a whois answer, an objective hint.
+
+               Typed addresses were removed in r73. The engine writes networks
+               into the save file and they outlive the mod, so a fixed address
+               meant a re-exported build was answered by whatever an older
+               version had left there. Three rounds went into clearing the
+               address first and each one broke something worse, ending with a
+               game that would not finish loading. A per-playthrough address
+               cannot collide, so the problem stops existing. */
             { kind: "deviceTree", key: "device", hint: "The router at the root of the network, plus everything behind it. Routers and splitters carry children; firewalls carry rules.", label: "Devices" },
-            { kind: "toggle", key: "destroyOnComplete", hint: "Remove the whole network when the quest ends, so it does not clutter later playthroughs.", label: "Tear down when the quest ends" },
+            { kind: "toggle", key: "destroyOnComplete", hint: "Off by default: the network stays in the world after the quest, the way a real company would. It is also safer, because deleting a machine the player is still connected to can hang the game. Abandoning the quest removes it either way.", label: "Also remove this network when the quest is completed" },
         ],
         create: () =>
             seed(NetworkNodeDataSchema, {
@@ -429,7 +521,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                 newItem: () => ({ id: nanoid(8), external: 80, internal: 80, active: true, service: "http" }),
             },
             { kind: "deviceTree", key: "children", hint: "Machines reachable through this access point. Add a router here to build a second network hop.", label: "Devices behind the access point" },
-            { kind: "toggle", key: "destroyOnComplete", hint: "Remove the access point when the quest ends.", label: "Tear down when the quest ends" },
+            { kind: "toggle", key: "destroyOnComplete", hint: "Off by default: the access point stays in the world after the quest. Abandoning the quest removes it either way.", label: "Also remove this access point when the quest is completed" },
         ],
         create: () => seed(WifiNodeDataSchema, { ssid: "NEIGHBOUR_5Ghz", password: "letmein123" }),
     },
@@ -443,22 +535,36 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            { kind: "text", key: "ip", hint: "The machine these rules protect. Use {{data.targetIp}} to refer to a randomly-allocated router.", label: "Protected IP", mono: true, tokens: true },
             {
-                kind: "list",
-                key: "rule", hint: "Rules are evaluated in order; the first match wins.",
+                kind: "selectOrCustom",
+                key: "ip",
+                hint: "The machine these rules protect: the quest's own network, or one machine you name.",
+                label: "Protected IP",
+                mono: true,
+                tokens: true,
+                placeholder: "45.33.32.156",
+                options: [
+                    {
+                        value: TARGET_IP_TOKEN,
+                        label: "Random — the quest's network",
+                        meaning: "the address the game gave your network",
+                    },
+                ],
+            },
+            {
+                kind: "section",
                 label: "Rule",
-                addLabel: "Add rule",
-                itemTitle: (r) => `${r.allowed ? "Allow" : "Block"} ${r.port}`,
-                fields: ruleFields,
-                newItem: () => ({ id: nanoid(8), allowed: false, port: 22, source: "*" }),
+                path: "rule",
+                fields: firewallRuleFields(true),
             },
             { kind: "toggle", key: "removeOnComplete", hint: "Drop the firewall when the quest ends so the machine is reachable afterwards.", label: "Remove when the quest ends" },
         ],
         create: () =>
+            /* Fresh nodes arrive working: the quest's own network, protected
+               from anywhere, with the destination already matching. */
             seed(FirewallNodeDataSchema, {
-                ip: "",
-                rule: { id: nanoid(8), allowed: false, port: 22, source: "*" },
+                ip: TARGET_IP_TOKEN,
+                rule: { id: nanoid(8), allowed: false, port: 22, source: "*", destination: TARGET_IP_TOKEN },
             }),
     },
 
@@ -471,6 +577,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
+            { kind: "note", tone: "info", text: "Adjusts a machine that already exists — one your “Create network” node built. To add the machine itself, use “Create network”; to open, close, add or remove one of its ports later in the story, use this." },
             { kind: "text", key: "ip", label: "Device IP", mono: true, tokens: true, hint: "A router IP or any device behind it." },
             {
                 kind: "select",
@@ -535,7 +642,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
             { kind: "text", key: "host", hint: "The address the player points a database client at.", label: "Host IP", mono: true, tokens: true },
             { kind: "text", key: "user", hint: "The login sqlmap or a client uses.", label: "Username", mono: true },
             { kind: "text", key: "password", hint: "The password. Give the player a way to find it — a config file, a leaked dump, a cracked hash.", label: "Password", mono: true },
-            { kind: "note", tone: "info", text: "Table editing arrives with the full data inspector in Step 3." },
+            { kind: "tables", key: "tables", hint: "The data inside: tables holding rows of named values, ready for the player's SQL.", label: "Tables" },
             { kind: "toggle", key: "removeOnComplete", hint: "Drop the database when the quest ends.", label: "Remove when the quest ends" },
         ],
         create: () => seed(DatabaseNodeDataSchema, { host: "", user: "admin", password: "secret123" }),
@@ -544,7 +651,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
     "world.files": {
         type: "world.files",
         category: "world",
-        label: "Seed files",
+        label: "Place files",
         blurb: "Drop files on a PC or a remote device",
         icon: "folder",
         ...io,
@@ -552,14 +659,14 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         fields: [
             {
                 kind: "select",
-                key: "target", hint: "Choose whose filesystem to write to: the player's own machine, or a remote device you created.",
+                key: "target", hint: "Whose filesystem to write to. The player's own machine is written when the flow reaches this node; a remote device is mounted with the machine, under the account the player lands in, so the files are already there when they break in.",
                 label: "Where",
                 options: [
                     { value: "player", label: "The player's PC" },
                     { value: "device", label: "A remote device" },
                 ],
             },
-            { kind: "text", key: "ip", label: "Device IP", mono: true, tokens: true, hint: "Only used for a remote device." },
+            { kind: "text", key: "ip", label: "Device IP", mono: true, tokens: true, hint: "Only used for a remote device. Use the same {{data.targetIp}} token you gave the network, and the files are mounted on that machine before the player ever connects." },
             { kind: "text", key: "parentPath", hint: "Where the files are mounted. Folders named etc, home, logs or lib are merged into the existing ones rather than replacing them.", label: "Parent folder", mono: true, placeholder: "~/" },
             {
                 kind: "list",
@@ -572,6 +679,37 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
             },
         ],
         create: () => seed(FilesNodeDataSchema),
+    },
+
+    "world.packData": {
+        type: "world.packData",
+        category: "community",
+        label: "Community data",
+        blurb: "Hand quest data to a community tool mod",
+        icon: "package",
+        ...io,
+        hook: "onStart",
+        /* No registry fields: this node is edited by its own editor
+           (NODE_SIM_EDITORS), because its dropdowns come from the loaded
+           tool packs, not from a static list. */
+        fields: [],
+        create: () => seed(PackDataNodeDataSchema),
+    },
+
+    "pack.node": {
+        type: "pack.node",
+        category: "community",
+        label: "Community node",
+        blurb: "A node a tool pack provides",
+        icon: "package",
+        ...io,
+        hook: "onStart",
+        /* No registry fields: the form comes from the pack (snapshotted in
+           the node's data) and is rendered by PackNodeEditor — the pack
+           author's labels ARE the interface. The palette's copy of this
+           def carries the per-node label and the addData snapshot. */
+        fields: [],
+        create: () => seed(PackNodeDataSchema),
     },
 
     "world.toolResponse": {
@@ -602,10 +740,22 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                     { value: "weechat", label: "weechat" },
                 ],
             },
-            { kind: "text", key: "input", label: "Keyed by", mono: true, tokens: true, hint: "The IP or domain the player passes. hydra/ssh/ftp use user + target instead." },
+            { kind: "text", key: "input", label: "Keyed by", mono: true, tokens: true, hint: "What the player types after the command — the IP, domain or name it answers for. The tool only responds to this exact input. hydra/ssh/ftp use the user + target fields below instead." },
             { kind: "text", key: "inputUser", hint: "Only match when the player ran the command against this user.", label: "User", mono: true },
             { kind: "text", key: "inputTarget", hint: "Only match when the player ran the command against this host.", label: "Target", mono: true, tokens: true },
-            { kind: "textarea", key: "dataText", label: "Response", mono: true, rows: 8, hint: "The exact text the tool prints. Paste real-looking output — the player sees it word for word." },
+            {
+                kind: "textarea",
+                key: "dataText",
+                label: "Response",
+                mono: true,
+                rows: 8,
+                hint: "One “Label: value” per line. The editor turns them into exactly what that tool shows in-game — add a line for each thing you want the player to see.",
+            },
+            {
+                kind: "note",
+                tone: "info",
+                text: "What each tool reads: whois → domain, ip, registrant, email · lynx → web, email, phone, social, address (anything else is shown as extra detail) · geoip → country, city, latitude, longitude · hydra → username, password · nslookup / mxlookup → ip. nmap is different: write one port per line, like “22 open ssh OpenSSH 8.9.0” — always three numbers. Tags work here too: {{data.targetIp}} is the address the game gave your network, {{data.name}} anything you saved with “Set quest data”, {{player.username}} the player's login, and {{random.password}} a fresh password.",
+            },
             { kind: "toggle", key: "removeOnComplete", hint: "Stop intercepting the command when the quest ends.", label: "Remove when the quest ends" },
         ],
         create: () => seed(ToolResponseNodeDataSchema),
@@ -624,87 +774,6 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         create: () => seed(DialogueNodeDataSchema),
     },
 
-    "comms.tweet": {
-        type: "comms.tweet",
-        category: "comms",
-        label: "Post tweet",
-        blurb: "A Twotter post from an NPC",
-        icon: "bird",
-        ...io,
-        hook: "onStart",
-        fields: [
-            { kind: "questAccount", key: "accountId", hint: "Which of the quest's Twotter accounts posts this. Add accounts in the Quest tab.", label: "Account" },
-            { kind: "textarea", key: "content", hint: "The post body, with the same formatting Twotter supports.", label: "Tweet", rows: 4 },
-            { kind: "image", key: "image", label: "Attached picture", hint: "Optional. PNG or JPG — use it for clues the player must read, or files they download later." },
-            { kind: "number", key: "likes", hint: "Starting like count. Cosmetic, but it sells the fiction.", label: "Likes", min: 0 },
-            { kind: "number", key: "comments", hint: "How many replies the post already shows. Cosmetic, but it sells the fiction.", label: "Comments", min: 0 },
-            { kind: "number", key: "shares", hint: "How many reposts the post already shows. Cosmetic, but it sells the fiction.", label: "Shares", min: 0 },
-            { kind: "number", key: "views", hint: "How many views the post already shows. Cosmetic, but it sells the fiction.", label: "Views", min: 0 },
-            {
-                kind: "select",
-                key: "timeMode",
-                label: "Post time",
-                hint: "How the timestamp reads in-game. \"Now\" lets the game show it relative to real time.",
-                options: [
-                    { value: "now", label: "Now (real time)", hint: "No fixed date — the game shows it as just-posted, relative to when the player sees it." },
-                    { value: "relative", label: "A while ago", hint: "An age like \"2 days\" or \"1 month\" that stays fixed." },
-                    { value: "absolute", label: "A specific date", hint: "Pick a calendar date; the game shows how long ago that was." },
-                ],
-            },
-            {
-                kind: "text",
-                key: "postedAgo",
-                label: "How long ago",
-                hint: "Whole words the game understands, e.g. \"2 days\", \"3 hours\", \"1 month\". Avoid short forms like \"2d\".",
-                placeholder: "2 days",
-                showWhen: { key: "timeMode", equals: "relative" },
-            },
-            {
-                kind: "date",
-                key: "postedAt",
-                label: "Posted on",
-                hint: "The date the post should look like it went up. The game shows it as an age from today.",
-                showWhen: { key: "timeMode", equals: "absolute" },
-            },
-            {
-                kind: "toggle",
-                key: "showInTimeline",
-                label: "Show in main timeline",
-                hint: "On: the post also appears in the main Twotter feed. Off: it shows only on the account's profile.",
-            },
-        ],
-        create: () => seed(TweetNodeDataSchema),
-    },
-
-    "reply.hackertyper": {
-        type: "reply.hackertyper",
-        category: "reply",
-        label: "Hackertyper",
-        blurb: "Mash keys to reveal a string",
-        icon: "keyboard",
-        ...io,
-        hook: "onObjectivesStart",
-        fields: [
-            { kind: "note", tone: "info", text: "HackHub has no engine primitive for this, so the editor emits a small HTML surface that runs the effect and emits a custom event when the string is revealed." },
-            {
-                kind: "select",
-                key: "surface", hint: "Where the widget lives: a page on a website, a desktop app, or a phone app.",
-                label: "Rendered as",
-                options: [
-                    { value: "website", label: "A website page" },
-                    { value: "app", label: "A desktop app" },
-                    { value: "phoneApp", label: "A phone app" },
-                ],
-            },
-            { kind: "text", key: "targetRef", hint: "Which page or app hosts the widget. Must match a website host or app name elsewhere in this mod.", label: "Website host or app name", mono: true },
-            { kind: "textarea", key: "text", hint: "The text that types itself out while the player mashes keys. Make it look like real output — that is the whole illusion.", label: "Text to reveal", mono: true, rows: 5 },
-            { kind: "text", key: "heading", hint: "The heading above the typing area.", label: "Heading" },
-            { kind: "number", key: "charsPerKeypress", hint: "How many characters each keypress reveals. Higher feels faster and less fiddly.", label: "Characters per keypress", min: 1, max: 20 },
-            { kind: "text", key: "eventName", label: "Custom event", mono: true, hint: "Left blank, one is generated from the node id." },
-        ],
-        create: () => seed(HackertyperNodeDataSchema, { text: "ACCESS GRANTED — decrypting payload…" }),
-    },
-
     "reply.input": {
         type: "reply.input",
         category: "reply",
@@ -714,11 +783,11 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...{ targets: [inFlow], sources: [successOut, failureOut] },
         hook: "onObjectivesStart",
         fields: [
-            { kind: "note", tone: "info", text: "Compiles to a custom terminal command using tools.prompt(). Wire the green “Correct” socket for success and the red “Wrong” socket for failure." },
+            { kind: "note", tone: "info", text: "This makes a new command the player can type in the terminal. Wire the green “Correct” socket for a right answer and the red “Wrong” socket for a wrong one." },
             { kind: "text", key: "commandName", hint: "The terminal command the player runs, e.g. decrypt. It appears in help output.", label: "Command name", mono: true, placeholder: "decrypt" },
             { kind: "text", key: "commandDescription", hint: "The one-line description shown next to the command in help.", label: "Help text" },
             { kind: "text", key: "prompt", hint: "The text printed before the cursor, e.g. \"Passphrase >\".", label: "Prompt", placeholder: "Passphrase >" },
-            { kind: "toggle", key: "mask", label: "Mask the input", hint: "Shown as *, like the built-in ssh and sudo prompts." },
+            { kind: "toggle", key: "mask", label: "Mask the input", hint: "Hides typing behind * — the player sees “Passphrase > ****” instead of their answer, like a password box. Use it when the answer is a secret." },
             {
                 kind: "select",
                 key: "matchMode", hint: "Exactly equals checks the whole answer. Contains accepts it anywhere in what the player types. Matches pattern is for advanced authors who want to accept a whole family of answers at once.",
@@ -753,23 +822,16 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            {
-                kind: "select",
-                key: "amountMode",
-                label: "Amount type",
-                hint: "A fixed sum, or a slice of whatever the player currently has.",
-                options: [
-                    { value: "fixed", label: "Fixed amount" },
-                    { value: "percent", label: "Percentage of balance" },
-                ],
-            },
             { kind: "number", key: "amount", hint: "Credits deposited into the player's bank account.", label: "Amount", min: 0 },
-            { kind: "number", key: "percent", hint: "Percentage of the player's current balance, taken when this node runs.", label: "Percent", min: 0, max: 100 },
             { kind: "text", key: "description", hint: "The label on the bank statement line.", label: "Description" },
             { kind: "text", key: "fromIBAN", hint: "The sending account, shown in the transfer details.", label: "From IBAN", mono: true },
             { kind: "text", key: "fromName", hint: "The sender's name on the statement.", label: "From name" },
+            /* Percent-of-balance on a payment was removed from new nodes (it is
+               the Charge node's job). Old projects that used it still run as
+               written — this note is the only trace left. */
+            { kind: "note", tone: "info", showWhen: { key: "amountMode", equals: "percent" }, text: "Kept from an earlier version: this pays a percentage of the player's balance. It still works." },
         ],
-        create: () => seed(PayNodeDataSchema, { amount: 1000, description: "Job payment" }),
+        create: () => seed(PayNodeDataSchema, { amount: 100, description: "Job payment" }),
     },
 
     "fx.withdraw": {
@@ -841,7 +903,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            { kind: "text", key: "key", hint: "A name you choose, like containerId. Use the same name later to read this value back.", label: "Key", mono: true },
+            { kind: "text", key: "key", hint: "A name you choose, like doorCode. Use the same name later to read this value back.", label: "Key", mono: true },
             { kind: "text", key: "value", hint: "Any text is fine — a word, a number, an address. It is just stored, so nothing here can error. You can also insert a live value by typing {{data.name}} for something you saved earlier.", label: "Value", mono: true, tokens: true },
         ],
         create: () => seed(SetDataNodeDataSchema),
@@ -862,12 +924,15 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
     "fx.shell": {
         type: "fx.shell",
         category: "effect",
-        label: "Run shell command",
+        label: "Run terminal command",
         blurb: "Execute in the terminal",
         icon: "terminal",
         ...io,
         hook: "onStart",
-        fields: [{ kind: "text", key: "command", hint: "The command executed in the player's terminal, as if they had typed it.", label: "Command", mono: true, tokens: true }],
+        fields: [
+            { kind: "note", tone: "info", text: "Runs a command the moment the story reaches this node, as if the player had typed it — for things the story should do that the player hasn't. Example: “nmap {{data.targetIp}}” runs a scan the player can read." },
+            { kind: "text", key: "command", hint: "The command executed in the player's terminal, as if they had typed it. Tags like {{data.targetIp}} are filled in first.", label: "Command", mono: true, tokens: true },
+        ],
         create: () => seed(ShellExecNodeDataSchema),
     },
 
@@ -880,7 +945,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            { kind: "text", key: "articleId", hint: "The in-game article to open.", label: "Article", mono: true },
+            { kind: "handbookArticle", key: "articleId", hint: "The in-game article the player lands on. Pick a known page, or type any article id.", label: "Article" },
             { kind: "text", key: "category", hint: "The handbook section the article sits under.", label: "Category" },
         ],
         create: () => seed(HandbookNodeDataSchema),
@@ -898,10 +963,10 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         fields: [
             {
                 kind: "select",
-                key: "source", hint: "Test against the details of the event that fired, or against quest data you stored earlier.",
+                key: "source", hint: "Test against details from the event that fired, or against quest data you stored earlier with a “Set quest data” node.",
                 label: "Test against",
                 options: [
-                    { value: "event", label: "The triggering event payload" },
+                    { value: "event", label: "Details from the event" },
                     { value: "data", label: "Quest data" },
                 ],
             },
@@ -947,7 +1012,8 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         hook: "declarative",
         fields: [
             { kind: "note", tone: "info", text: "Draw a box around part of your quest to keep it tidy. Drag the frame and everything inside moves with it. It has no effect on how the mod runs." },
-            { kind: "text", key: "label", label: "Name", hint: "Shown in the frame's corner — name the cluster after what it does, e.g. “Act 1: recon”." },
+            { kind: "text", key: "label", label: "Name", hint: "Shown in the frame's title bar — name the cluster after what it does, e.g. “Act 1: recon”." },
+            { kind: "color", key: "color", label: "Title bar colour", hint: "Colour-code your frames however you like — e.g. one colour per act, or per character. It only changes how the frame looks in the editor." },
             { kind: "textarea", key: "comment", label: "Comment", rows: 3, hint: "A note to future-you about what this cluster does." },
         ],
         create: () => seed(LayoutGroupNodeDataSchema),
@@ -976,6 +1042,73 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         create: () => seed(RandomPickNodeDataSchema),
     },
 
+    "flow.sequence": {
+        type: "flow.sequence",
+        category: "flow",
+        label: "Sequence",
+        blurb: "Fire several outputs one after another",
+        icon: "list",
+        targets: [inFlow],
+        sources: [],
+        dynamicSources: (data) => sequenceSockets(data),
+        hook: "onStart",
+        fields: [
+            {
+                kind: "note",
+                tone: "info",
+                text: "One input, as many outputs as you like. When the story reaches this node the outputs fire from top to bottom, waiting the pause you set before each one. Add or remove outputs below — each row is a socket on the node.",
+            },
+            {
+                kind: "list",
+                key: "steps",
+                label: "Outputs, in order",
+                hint: "They fire top to bottom. Drag the rows' ✕ to remove an output — any wire attached to it is removed too.",
+                addLabel: "Add output",
+                itemTitle: (s, i) => String(s.label || `${i + 1}`),
+                fields: [
+                    {
+                        kind: "text",
+                        key: "label",
+                        label: "Name",
+                        hint: "Free text — whatever helps you recognise this output on the canvas, e.g. “lights out” or “call Mara”.",
+                    },
+                    {
+                        kind: "number",
+                        key: "delayMs",
+                        label: "Wait before firing (milliseconds)",
+                        hint: "How long to pause before this output fires, counted from the previous one. 0 fires it immediately; 1000 is one second.",
+                        min: 0,
+                        step: 100,
+                    },
+                ],
+                newItem: (index) => ({ id: nanoid(8), label: String(index + 1), delayMs: 500 }),
+            },
+        ],
+        create: () =>
+            seed(SequenceNodeDataSchema, {
+                steps: [
+                    { id: nanoid(8), label: "1", delayMs: 0 },
+                    { id: nanoid(8), label: "2", delayMs: 1000 },
+                ],
+            }),
+    },
+
+    "flow.debug": {
+        type: "flow.debug",
+        category: "flow",
+        label: "Debug probe",
+        blurb: "Print what is happening here",
+        icon: "bug",
+        ...io,
+        hook: "onStart",
+        fields: [
+            { kind: "text", key: "label", hint: "Names itself after whatever you wire it to — socket, node and detail. Type your own to override it.", label: "Label", placeholder: "named when you connect it" },
+            { kind: "toggle", key: "includeData", hint: "Print everything the quest has saved with a “Remember a value” node.", label: "Include saved values" },
+            { kind: "toggle", key: "includePayload", hint: "Also print the details the game passed to this point, so you can see the real values instead of guessing what arrived.", label: "Include the event" },
+            { kind: "toggle", key: "toast", hint: "Also show it on screen, so you can test without reading the log file.", label: "Show on screen too" },
+        ],
+        create: () => seed(DebugNodeDataSchema, { label: "" }),
+    },
     "flow.note": {
         type: "flow.note",
         category: "flow",
@@ -991,20 +1124,124 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ],
         create: () => seed(NoteNodeDataSchema, { text: "" }),
     },
+
+    "flow.beat": {
+        type: "flow.beat",
+        category: "layout",
+        label: "Story Beat",
+        blurb: "Plan a story beat — colour it, preview it",
+        icon: "flag",
+        /* Wireable so it can sit among reroute / branch / sequence while a story
+           is being planned. The flow through it is a transparent pass-through
+           (the runtime's default case), and it is stripped from the export. */
+        targets: [inFlow],
+        sources: [outFlow],
+        hook: "declarative",
+        /* One output socket per branch choice (plus the generic "Out"), so an
+           author can wire each branch onward while planning. Mirrors how a
+           Sequence grows an output per step. */
+        dynamicSources: (data) => storyBeatSockets(data),
+        fields: [
+            { kind: "note", tone: "info", text: "Planning only. This node is stripped from the exported mod and never runs. Wire it among reroute, branch and sequence to sketch a flow; the story passes through it unchanged." },
+            { kind: "text", key: "title", label: "Headline", hint: "A short name for this beat, e.g. “Act 2 — the firewall”. It is the card's title bar." },
+            { kind: "textarea", key: "text", label: "Beat text", rows: 8, hint: "The key content of the beat. The card previews the top ~800 characters and expands into a scrollable panel for the rest." },
+            {
+                kind: "list",
+                key: "choices",
+                label: "Branch choices",
+                hint: "Add a row for each path the story can take. Each gets its own output socket on the card, so you can wire each branch onward while planning.",
+                addLabel: "Add choice",
+                defaultOpen: true,
+                itemTitle: (c: Record<string, unknown>, i: number) =>
+                    String((c.label as string | undefined)?.trim() || `Choice ${i + 1}`),
+                fields: [
+                    { kind: "text", key: "label", label: "Choice", hint: "Short title for this path, e.g. “Go in through the front door”." },
+                    { kind: "textarea", key: "note", label: "What happens", rows: 2, hint: "One line on where this path leads, so a branching beat reads at a glance." },
+                ],
+                newItem: () => ({ id: nanoid(8), label: "", note: "" }),
+            },
+            { kind: "number", key: "width", label: "Width (px)", min: 200, max: 640, step: 20, hint: "How wide the card is on the canvas, in pixels." },
+            { kind: "color", key: "color", label: "Card colour", hint: "Pick any colour. Colour-coding by act, character or branch is usually the clearest." },
+        ],
+        create: () => seed(StoryBeatNodeDataSchema, { title: "", text: "", color: "#64748b", width: 280 }),
+    },
 };
+
+/**
+ * Node types that exist in the engine and schema but are deliberately not
+ * offered in the editor's palette or add-node search.
+ *
+ * `world.wifi` is the reservation for the in-game wireless system (the game
+ * generates hackable Wi-Fi networks, and switching between them lowers
+ * suspicion), but SDK 0.21.0 ships no wireless API — the node falls back to a
+ * plain router network and `ssid`/`password`/`signal` are stored but not read.
+ * It is kept in `NODE_TYPES_REGISTRY` (and the schema) so legacy projects that
+ * already use it still parse, compile and render; it is only hidden from the
+ * authoring surface so nobody builds a "Wi-Fi" quest that cannot be validated.
+ * Re-enable by removing it from this set once the SDK ships the API.
+ */
+export const PALETTE_HIDDEN_TYPES: ReadonlySet<NodeType> = new Set(["world.wifi"]);
 
 /** Palette order: categories first, then registry order within each. */
 export function paletteGroups(): { category: (typeof CATEGORIES)[number]; types: NodeTypeDef[] }[] {
     return CATEGORIES.map((category) => ({
         category,
         types: (Object.values(NODE_TYPES_REGISTRY) as NodeTypeDef[]).filter(
-            (t) => t.category === category.id,
+            (t) => t.category === category.id && !PALETTE_HIDDEN_TYPES.has(t.type),
         ),
     }));
 }
 
 export function nodeTypeDef(type: NodeType): NodeTypeDef {
     return NODE_TYPES_REGISTRY[type];
+}
+
+/**
+ * The output sockets a Sequence node shows: one per step, in author order.
+ * Lives here (not in the node component) because the canvas, the store, the
+ * analysis and the compiler all have to agree on the socket ids.
+ */
+export function sequenceSockets(data: unknown): HandleSpec[] {
+    const steps = (data as { steps?: { id: string; label?: string }[] })?.steps ?? [];
+    return steps.map((step, i) => ({
+        id: `step-${step.id}`,
+        kind: "flow" as const,
+        label: step.label?.trim() || `${i + 1}`,
+    }));
+}
+
+/**
+ * The output sockets a Story Beat shows: the generic "Out" pass-through plus one
+ * per branch choice (in author order), so each planned branch can be wired
+ * onward. A choice's socket survives until the choice is removed; the compiler
+ * strips the whole beat and splices these wires, so they never reach the mod.
+ */
+export function storyBeatSockets(data: unknown): HandleSpec[] {
+    const choices = (data as { choices?: { id?: string; label?: string }[] })?.choices ?? [];
+    return [
+        outFlow,
+        ...choices.map((c, i) => ({
+            id: `choice-${c.id}`,
+            kind: "flow" as const,
+            label: c.label?.trim() || `Choice ${i + 1}`,
+        })),
+    ];
+}
+
+/**
+ * Every output socket of a concrete node — dynamic when the type derives its
+ * sockets from data, otherwise the registry's static list.
+ */
+export function sourcesOf(node: { type: NodeType; data: unknown }): HandleSpec[] {
+    const def = NODE_TYPES_REGISTRY[node.type];
+    return def.dynamicSources
+        ? def.dynamicSources((node.data ?? {}) as Record<string, unknown>)
+        : def.sources;
+}
+
+/** Input sockets of a concrete node. Symmetrical with `sourcesOf`. */
+export function targetsOf(node: { type: NodeType; data: unknown }): HandleSpec[] {
+    return NODE_TYPES_REGISTRY[node.type].targets;
 }
 
 export function categoryOf(type: NodeType) {

@@ -8,7 +8,7 @@
  */
 import type { EdgeDoc } from "@/schema/edges";
 import type { NodeDoc } from "@/schema/nodes";
-import { nodeTypeDef } from "@/schema/registry";
+import { nodeTypeDef, sourcesOf } from "@/schema/registry";
 import type { Position } from "@/schema/common";
 
 export interface GraphIssue {
@@ -17,6 +17,12 @@ export interface GraphIssue {
     label: string;
     /** Full explanation, used by the health panel and export report. */
     detail: string;
+    /**
+     * The concrete next step, in game terms ("which nodes to put where").
+     * Required: a warning that says what is wrong without saying how to fix
+     * it is a dead end for a non-coder (r124).
+     */
+    nextStep: string;
     severity: "warn" | "danger";
 }
 
@@ -68,10 +74,11 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
     for (const node of nodes) {
         const def = nodeTypeDef(node.type);
 
-        // Sticky notes are annotations; nothing about them is broken.
-        if (node.type === "flow.note" || node.type === "layout.group") continue;
+        // Sticky notes, groups and story beats are planning furniture; nothing
+        // about them is broken. (Beats are wireable pass-throughs, stripped
+        // from the export — reachability through them is unaffected.)
+        if (node.type === "flow.note" || node.type === "layout.group" || node.type === "flow.beat") continue;
 
-        const wiredIn = (incoming.get(node.id) ?? []).length;
         const wiredOut = (outgoing.get(node.id) ?? []).length;
 
         // An objective nothing can ever complete.
@@ -83,25 +90,44 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
                     label: "No trigger",
                     detail:
                         "Nothing completes this objective. Wire a “When event” node into its trigger socket, or the player can never finish the quest.",
+                    nextStep:
+                        "Add a “When event” node from Triggers, pick the game event that means the player did it, and wire its “When” socket into this objective's “Trigger” socket.",
                     severity: "danger",
                 });
             }
         }
 
         // A branch or reply with an unwired outcome is a dead end the player hits.
-        if (node.type === "flow.branch" || node.type === "reply.input") {
-            const sockets = def.sources.map((s) => s.id);
+        if (
+            node.type === "flow.branch" ||
+            node.type === "reply.input" ||
+            node.type === "flow.sequence"
+        ) {
+            const outputs = sourcesOf(node);
+            const sockets = outputs.map((s) => s.id);
             const used = new Set(
                 edges.filter((e) => e.source === node.id).map((e) => e.sourceHandle),
             );
             const missing = sockets.filter((s) => !used.has(s));
             if (missing.length > 0) {
+                const names = missing
+                    .map((m) => outputs.find((s) => s.id === m)?.label ?? m)
+                    .join("” and “");
                 issues.push({
                     nodeId: node.id,
                     label: "Dead end",
-                    detail: `The “${missing
-                        .map((m) => def.sources.find((s) => s.id === m)?.label ?? m)
-                        .join("” and “")}” outcome goes nowhere, so the quest stalls if the player takes it.`,
+                    detail:
+                        node.type === "flow.sequence"
+                            ? `The “${names}” output goes nowhere, so that step of the sequence does nothing. Wire it up or remove the output.`
+                            : node.type === "reply.input"
+                              ? `The “${names}” outcome goes nowhere, so a wrong answer just shows the failure message and the player tries again. That retry loop is the usual design — wire it only if a wrong answer should do something more.`
+                              : `The “${names}” outcome goes nowhere, so the quest stalls if the player takes it.`,
+                    nextStep:
+                        node.type === "flow.sequence"
+                            ? `Wire the “${names}” step to the node that should run at that point, or remove the step.`
+                            : node.type === "reply.input"
+                              ? `Leave it if retrying is the design, or wire the “${names}” answer to the node that should run on a wrong answer.`
+                              : `Wire the “${names}” outcome to the node that should run down that path.`,
                     severity: "warn",
                 });
             }
@@ -114,16 +140,30 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
                 label: "Unreachable",
                 detail:
                     "Nothing leads to this node. Wire it to the chain that should run it — nodes do nothing until something points at them.",
+                nextStep:
+                    "Drag a wire from the node that should run it into this node's input — usually the last node of your “Quest start” chain.",
                 severity: "warn",
             });
         }
 
-        // A non-root with no inputs at all is almost certainly a mistake.
-        if (!isRoot(node.type) && wiredIn === 0 && reachable.has(node.id)) {
+        // There used to be an "Unwired" issue here (non-root, reachable, no
+        // inputs). It could never fire: a non-root only becomes reachable by
+        // following an edge that targets it, so it always has an input.
+        // Removed in r124 rather than kept as a guard no test can exercise.
+
+        /* A wired "On quest complete" that can never run. Quests ship with
+           auto-complete off and no Complete button, so completion never
+           happens and everything downstream is dead — four shipped templates
+           fell into this before the audit caught it. The copy stays accurate
+           for quests that do turn completion on: the condition is the point. */
+        if (node.type === "entry.complete" && wiredOut > 0) {
             issues.push({
                 nodeId: node.id,
-                label: "Unwired",
-                detail: "This node has no input socket connected, so nothing will ever run it.",
+                label: "Only runs on completion",
+                detail:
+                    "This is wired, but it only runs if the quest completes — with auto-complete off and no Complete button (the default) that never happens. End the story from the last objective's “done” instead.",
+                nextStep:
+                    "Move these nodes onto the last objective's “done” socket, or turn completion on in the quest's Behaviour settings if you mean it.",
                 severity: "warn",
             });
         }
@@ -134,6 +174,10 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
                 nodeId: node.id,
                 label: "Empty",
                 detail: `Nothing is wired to “${def.label}”. That is fine if you do not need it — delete the node to clear this.`,
+                nextStep:
+                    node.type === "entry.start"
+                        ? "Wire the nodes that should run when the quest is claimed to its output — usually your briefing mail first — or delete it if you don't need it."
+                        : `Wire the nodes that should run at “${def.label}” to its output, or delete it if you don't need it.`,
                 severity: "warn",
             });
         }

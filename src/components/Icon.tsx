@@ -40,6 +40,8 @@ const PATHS: Record<string, string> = {
     clock: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z M12 7v5l3 2",
     shuffle: "M16 3h5v5 M4 20 21 3 M21 16v5h-5 M15 15l6 6 M4 4l5 5",
     note: "M15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9l-6-6Z M14 3v7h7",
+    /* A magnifier over a line: a checkpoint that looks at what is passing. */
+    bug: "M11 4a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z M14.5 13.5 20 19 M3 20h6",
     plus: "M12 5v14 M5 12h14",
     trash: "M3 6h18 M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2 M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6",
     undo: "M9 14 4 9l5-5 M4 9h10a6 6 0 0 1 0 12h-3",
@@ -58,6 +60,7 @@ const PATHS: Record<string, string> = {
     sparkle:
         "M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Z M19 15l.7 2.1L22 18l-2.3.9L19 21l-.7-2.1L16 18l2.3-.9L19 15Z",
     play: "M6 4l14 8-14 8V4Z",
+    pause: "M8 4h3v16H8z M13 4h3v16h-3z",
     file: "M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Z M14 3v6h6",
     package: "M21 8 12 3 3 8v8l9 5 9-5V8Z M3 8l9 5 9-5 M12 13v8",
     panelLeft: "M3 3h18v18H3z M9 3v18",
@@ -71,6 +74,15 @@ const PATHS: Record<string, string> = {
     arrowRight: "M5 12h14 M13 6l6 6-6 6",
     layers: "M12 2 2 7l10 5 10-5-10-5Z M2 17l10 5 10-5 M2 12l10 5 10-5",
     filter: "M3 4h18l-7 8v7l-4 2v-9L3 4Z",
+    /* Two boxes side by side on a shared centre line: nodes aligned in a row. */
+    rows: "M3 12h18 M6 8h4v8H6z M14 8h4v8h-4z",
+    /* Two boxes stacked on a shared centre line: nodes aligned in a column. */
+    columns: "M12 3v18 M8 6h8v4H8z M8 14h8v4H8z",
+    /* Outer bars fixed, middle bar centred: even horizontal gaps. */
+    "spread-h": "M4 4v16 M20 4v16 M11 8h2v8h-2z",
+    /* The same, turned: even vertical gaps. */
+    "spread-v": "M4 4h16 M4 20h16 M8 11v2h8v-2z",
+    grid: "M3 9h18 M3 15h18 M9 3v18 M15 3v18",
 };
 
 export type IconName = keyof typeof PATHS;

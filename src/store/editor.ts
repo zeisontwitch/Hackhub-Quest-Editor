@@ -13,8 +13,9 @@ import type { ProjectDocument, QuestDoc, ModDoc, WebsiteDoc, WebPageDoc } from "
 import type { NodeDoc } from "@/schema/nodes";
 import type { EdgeDoc } from "@/schema/edges";
 import { ProjectSchema, createProject, createQuest } from "@/schema/project";
-import { nodeTypeDef } from "@/schema/registry";
+import { nodeTypeDef, sourcesOf } from "@/schema/registry";
 import { layeredLayout } from "@/analysis/graph";
+import { debugProbeName } from "@/editor/canvas/debugName";
 import { canConnect, type EdgeKind } from "@/schema/edges";
 import type { NodeType } from "@/schema/nodes";
 import type { Position, Viewport } from "@/schema/common";
@@ -32,7 +33,7 @@ export interface UiState {
     inspectorCollapsed: boolean;
     paletteCollapsed: boolean;
     /** Set while a modal (templates, export, settings) is open. */
-    modal: null | "templates" | "mod" | "shortcuts" | "websites" | "dialogues" | "newProject";
+    modal: null | "templates" | "mod" | "shortcuts" | "websites" | "dialogues" | "newProject" | "simulator" | "toolpacks" | "settings";
     /** While set, the dialogues modal edits this node instead of listing all. */
     dialogueNode: string | null;
     toast: { id: string; message: string; tone: ToastTone } | null;
@@ -73,10 +74,16 @@ export interface EditorStore {
     setViewport: (questId: string, viewport: Viewport) => void;
 
     /* nodes */
-    addNode: (type: NodeType, position: Position) => string | null;
+    addNode: (type: NodeType, position: Position, data?: Record<string, unknown>) => string | null;
     updateNodeData: (nodeId: string, patch: Record<string, unknown>) => void;
     setNodePosition: (nodeId: string, position: Position) => void;
     setNodePositions: (positions: Record<string, Position>) => void;
+    /**
+     * Move several nodes as one deliberate edit — aligning, spreading, snapping.
+     * Unlike `setNodePositions`, which serves the live drag and deliberately
+     * records no history, this is a single undoable step for the whole group.
+     */
+    arrangeNodes: (positions: Record<string, Position>) => void;
     removeNodes: (ids: string[]) => void;
     /** Re-arrange the active quest into a readable left-to-right layout. */
     applyLayout: () => void;
@@ -351,12 +358,17 @@ export const useEditor = create<EditorStore>()((set, get) => {
                 project.editor.viewports[questId] = viewport;
             }, { history: false }),
 
-        addNode: (type, position) => {
+        addNode: (type, position, data) => {
             const quest = activeQuestOf(get().project);
             if (!quest) return null;
             const def = nodeTypeDef(type);
             const id = nanoid(10);
-            const node = { id, type, position, data: def.create() } as unknown as NodeDoc;
+            const node = {
+                id,
+                type,
+                position,
+                data: data ? { ...(def.create() as object), ...data } : def.create(),
+            } as unknown as NodeDoc;
             mutate((project) => {
                 const q = project.quests.find((x) => x.id === quest.id);
                 q?.graph.nodes.push(node);
@@ -369,9 +381,26 @@ export const useEditor = create<EditorStore>()((set, get) => {
             mutate((project) => {
                 const quest = project.quests.find((q) => q.id === project.editor.activeQuestId);
                 const node = quest?.graph.nodes.find((n) => n.id === nodeId);
-                if (!node) return;
+                if (!node || !quest) return;
                 for (const [path, value] of Object.entries(patch)) {
                     setPath(node.data as unknown as Record<string, unknown>, path, value);
+                }
+                /* Typing a name into a debug probe makes it the author's, and
+                   re-wiring must never overwrite it again. Clearing the field
+                   hands it back to us, so the next wire names it afresh. */
+                if (node.type === "flow.debug" && "label" in patch) {
+                    (node.data as { labelAuto: boolean }).labelAuto =
+                        String(patch.label ?? "").trim().length === 0;
+                }
+                // Nodes whose sockets come from their own data (Sequence) can
+                // lose a socket on edit. A wire hanging off a socket that no
+                // longer exists would be invisible but still compiled, so it
+                // goes with it.
+                if (nodeTypeDef(node.type).dynamicSources) {
+                    const live = new Set(sourcesOf(node).map((h) => h.id));
+                    quest.graph.edges = quest.graph.edges.filter(
+                        (e) => e.source !== node.id || live.has(e.sourceHandle),
+                    );
                 }
             }),
 
@@ -403,6 +432,18 @@ export const useEditor = create<EditorStore>()((set, get) => {
                 );
             }),
 
+        arrangeNodes: (positions) => {
+            if (Object.keys(positions).length === 0) return;
+            mutate((project) => {
+                const quest = project.quests.find((q) => q.id === project.editor.activeQuestId);
+                if (!quest) return;
+                for (const node of quest.graph.nodes) {
+                    const next = positions[node.id];
+                    if (next) node.position = next;
+                }
+            });
+        },
+
         applyLayout: () => {
             const project = get().project;
             const quest = project.quests.find((q) => q.id === project.editor.activeQuestId);
@@ -429,7 +470,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
             const targetNode = quest.graph.nodes.find((n) => n.id === target);
             if (!sourceNode || !targetNode) return false;
 
-            const sourceKind = nodeTypeDef(sourceNode.type).sources.find(
+            const sourceKind = sourcesOf(sourceNode).find(
                 (h) => h.id === sourceHandle,
             )?.kind;
             const targetKind = nodeTypeDef(targetNode.type).targets.find(
@@ -458,7 +499,32 @@ export const useEditor = create<EditorStore>()((set, get) => {
             };
             mutate((p) => {
                 const q = p.quests.find((x) => x.id === quest.id);
-                q?.graph.edges.push(edge);
+                if (!q) return;
+                q.graph.edges.push(edge);
+
+                /* Name a debug probe after whatever it was just wired to.
+                   Hand-labelling ten probes per test run is the friction that
+                   stops a diagnostic being used, so the probe names itself:
+                   <Socket>-<Node>-<Detail>, the convention QA arrived at. Only
+                   ever fills a blank label — an author's own text is never
+                   overwritten, here or on a later rewire. */
+                const probe = q.graph.nodes.find((n) => n.id === target);
+                if (probe && probe.type === "flow.debug") {
+                    const data = probe.data as { label: string; labelAuto?: boolean };
+                    /* Re-name on every rewire, so a probe plugged into the
+                       wrong socket and then moved stops describing the wire it
+                       used to be on. Only a name we generated is replaced:
+                       `labelAuto` records that, because "is it blank?" stops
+                       being a usable test the moment we fill it in.
+
+                       A probe can take more than one wire, so the newest
+                       connection wins — that is the one the author just made,
+                       and the one they are thinking about. */
+                    if (!data.label.trim() || data.labelAuto) {
+                        data.label = debugProbeName(sourceNode, sourceHandle);
+                        data.labelAuto = true;
+                    }
+                }
             });
             return true;
         },
@@ -530,8 +596,8 @@ export const useEditor = create<EditorStore>()((set, get) => {
             );
             set({
                 clipboard: {
-                    nodes: JSON.parse(JSON.stringify(nodes)),
-                    edges: JSON.parse(JSON.stringify(edges)),
+                    nodes: clone(nodes),
+                    edges: clone(edges),
                 },
             });
         },
@@ -553,7 +619,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
                 const id = nanoid(10);
                 idMap.set(n.id, id);
                 return {
-                    ...JSON.parse(JSON.stringify(n)),
+                    ...clone(n),
                     id,
                     position: { x: n.position.x + 32, y: n.position.y + 32 },
                 } as NodeDoc;
@@ -561,7 +627,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
             const edges = clipboard.edges.map(
                 (e) =>
                     ({
-                        ...JSON.parse(JSON.stringify(e)),
+                        ...clone(e),
                         id: nanoid(10),
                         source: idMap.get(e.source)!,
                         target: idMap.get(e.target)!,

@@ -58,6 +58,17 @@ export const WebPageSchema = z.object({
      * search while keeping it reachable by URL (what `dirhunter` brute-forces).
      */
     seo: z.boolean().default(true),
+    /**
+     * Short line the in-game search can show under this page's result, like
+     * the snippet under a web result. Optional; left out of the export when
+     * unset so pages that don't use it compile exactly as before.
+     */
+    description: z.string().optional(),
+    /**
+     * Extra words the in-game search can match this page by, besides what is
+     * written on it. Optional; left out of the export when empty.
+     */
+    search: z.array(z.string()).optional(),
     /** Which ready-made template the page started from, for provenance. */
     template: z.string().optional(),
     /** WYSIWYG body, stored as HTML. */
@@ -70,6 +81,13 @@ export const WebsiteSchema = z.object({
     /** The host players type into the in-game browser, e.g. `meridian-capital.net`. */
     host: z.string().default("example.net"),
     name: z.string().default(""),
+    /**
+     * `WebsiteDefinition.popular` in the SDK — declared, purpose unverified.
+     * docs/03 Q12: our self-test is two identical sites, one flagged, compare
+     * search ranking in-game. Emitted only when set, so sites that don't use
+     * it compile exactly as before.
+     */
+    popular: z.boolean().optional(),
     pages: z.array(WebPageSchema).default([]),
 });
 export type WebsiteDoc = z.infer<typeof WebsiteSchema>;
@@ -101,17 +119,6 @@ export const HackhubPostSchema = z.object({
         .default([]),
 });
 
-export const TwotterAccountSchema = z.object({
-    id: z.string(),
-    username: z.string().default(""),
-    displayName: z.string().default(""),
-    avatar: z.string().optional(),
-    bio: z.string().optional(),
-    followers: z.number().optional(),
-    following: z.number().optional(),
-    verified: z.boolean().default(false),
-});
-
 export const GraphSchema = z.object({
     nodes: z.array(NodeSchema).default([]),
     edges: z.array(EdgeSchema).default([]),
@@ -131,14 +138,32 @@ export const QuestSchema = z.object({
     }),
     employer: EmployerSchema.default({}),
     autoStart: z.boolean().default(false),
-    autoComplete: z.boolean().default(true),
+    /**
+     * Defaults to false. HackHub 1.1.2 freezes the renderer whenever it
+     * finishes a mod-defined quest - both automatically and via the complete
+     * button - so generated quests end their story without formally
+     * completing. See docs/04-engine-bug-quest-completion.md.
+     */
+    autoComplete: z.boolean().default(false),
     questsToComplete: z.array(z.string()).default([]),
     maxClaim: z.number().optional(),
     maxClaimPerDay: z.number().optional(),
     abandonable: z.boolean().default(true),
     hasCompleteButton: z.boolean().default(false),
+    /**
+     * Hide every objective from the quest panel once they have all been
+     * completed. A workaround for the engine bug in
+     * docs/04-engine-bug-quest-completion.md: a mod quest cannot be completed
+     * without freezing the game, so its entry lingers in the quest list.
+     */
+    hideObjectivesWhenDone: z.boolean().default(true),
+    /**
+     * Text for the single row left behind when the objectives are hidden.
+     * Without it the quest header reads "0/0 completed"; with it the panel
+     * shows one ticked line saying the story is over.
+     */
+    closingObjectiveText: z.string().default(""),
     hackhubPost: HackhubPostSchema.optional(),
-    twotterAccounts: z.array(TwotterAccountSchema).default([]),
     /** Phone-call dialog trees, referenced by name from `comms.call` nodes. */
     dialog: z.array(DialogBranchSchema).default([]),
     /** Keys written by `fx.setData` / `flow.random`, so the inspector can offer them. */
@@ -185,10 +210,19 @@ export function createQuest(partial: Partial<QuestDoc> = {}): QuestDoc {
 
 export function createProject(partial: Partial<ProjectDocument> = {}): ProjectDocument {
     const quest = createQuest({ name: "FirstQuest", title: "First Quest" });
-    return ProjectSchema.parse({
+    const project = ProjectSchema.parse({
         mod: {},
         quests: [quest],
         editor: { activeQuestId: quest.id, viewports: {} },
         ...partial,
     });
+    /* A multi-quest caller replaces the quests array wholesale — the default
+       quest (and its id in activeQuestId) is gone. Point the editor at the
+       first quest that actually ships, so multi-quest projects open on their
+       first act instead of a quest that does not exist (and so templates stay
+       byte-deterministic across builds). */
+    if (!partial.editor && project.quests[0]) {
+        project.editor.activeQuestId = project.quests[0].id;
+    }
+    return project;
 }

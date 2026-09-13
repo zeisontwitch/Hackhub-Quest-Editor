@@ -21,12 +21,15 @@ import { Icon } from "@/components/Icon";
 export function FieldShell({
     label,
     hint,
+    warning,
     children,
     htmlFor,
     className,
 }: {
     label?: string;
     hint?: string;
+    /** A problem with this field's current value; renders the red ⚠ badge. */
+    warning?: { detail: string; nextStep: string; severity: "warn" | "danger" };
     children: ReactNode;
     htmlFor?: string;
     className?: string;
@@ -38,12 +41,22 @@ export function FieldShell({
                     <label className="field-label mb-0" htmlFor={htmlFor}>
                         {label}
                     </label>
+                    {warning && <WarningBadge {...warning} />}
                     {hint && <HintBadge label={label} hint={hint} />}
                 </div>
             )}
             {children}
             {/* A hint with no label has nowhere to hang a badge — keep it inline. */}
             {!label && hint && <p className="field-hint">{hint}</p>}
+            {/* A warning with no label: put the explainer inline too. */}
+            {!label && warning && (
+                <p className="mt-1 flex items-start gap-1.5 text-[11px] leading-snug text-danger">
+                    <Icon name="alert" size={12} className="mt-px shrink-0" />
+                    <span>
+                        {warning.detail} {warning.nextStep}
+                    </span>
+                </p>
+            )}
         </div>
     );
 }
@@ -86,6 +99,67 @@ export function HintBadge({ label, hint }: { label: string; hint: string }) {
     );
 }
 
+/**
+ * The red ⚠ that opens a field's problem and its fix.
+ *
+ * Distinct from the ⓘ (which explains what a field is): this appears only when
+ * the field's current value will not work, and states the concrete next step.
+ */
+export function WarningBadge({
+    detail,
+    nextStep,
+    severity,
+}: {
+    detail: string;
+    nextStep: string;
+    severity: "warn" | "danger";
+}) {
+    const tone = severity === "danger" ? "text-danger" : "text-warn";
+    return (
+        <Tooltip.Provider delayDuration={120} skipDelayDuration={400}>
+            <Tooltip.Root>
+                <Tooltip.Trigger asChild>
+                    <button
+                        type="button"
+                        aria-label={`Warning: ${detail} ${nextStep}`}
+                        className={cn(
+                            "-my-1 flex size-4 shrink-0 items-center justify-center rounded-full transition-colors",
+                            tone,
+                            "hover:bg-surface-3 data-[state=delayed-open]:bg-surface-3",
+                        )}
+                    >
+                        <Icon name="alert" size={11} />
+                    </button>
+                </Tooltip.Trigger>
+                <Tooltip.Portal>
+                    <Tooltip.Content
+                        side="left"
+                        align="start"
+                        sideOffset={8}
+                        collisionPadding={12}
+                        className={cn(
+                            "z-50 max-w-[300px] rounded-lg border px-2.5 py-2 text-[11.5px] leading-relaxed shadow-panel",
+                            severity === "danger"
+                                ? "border-danger/40 bg-danger/10 text-ink-2"
+                                : "border-warn/40 bg-warn/10 text-ink-2",
+                        )}
+                    >
+                        <span className={cn("flex items-center gap-1 text-[10px] font-semibold uppercase", tone)}>
+                            <Icon name="alert" size={11} />
+                            {severity === "danger" ? "Needs fixing" : "Worth checking"}
+                        </span>
+                        <span className="mt-1 block">{detail}</span>
+                        <span className="mt-1.5 block text-ink-3">
+                            <span className="font-semibold text-ink-2">Next step:</span> {nextStep}
+                        </span>
+                        <Tooltip.Arrow className="fill-line" />
+                    </Tooltip.Content>
+                </Tooltip.Portal>
+            </Tooltip.Root>
+        </Tooltip.Provider>
+    );
+}
+
 export function TextInput({
     value,
     onChange,
@@ -93,6 +167,9 @@ export function TextInput({
     mono,
     id,
     ariaLabel,
+    disabled,
+    inputRef,
+    onBlur,
 }: {
     value: string;
     onChange: (value: string) => void;
@@ -100,6 +177,13 @@ export function TextInput({
     mono?: boolean;
     id?: string;
     ariaLabel?: string;
+    /** Shown but not editable — the value is decided for the author. */
+    disabled?: boolean;
+    /** Receives the element, so the token picker can insert at the caret. */
+    inputRef?: (el: HTMLInputElement | HTMLTextAreaElement | null) => void;
+    /** Fires when the field loses focus — where the website builder
+        normalizes hosts and paths (never mid-keystroke). */
+    onBlur?: () => void;
 }) {
     return (
         <input
@@ -107,8 +191,11 @@ export function TextInput({
             aria-label={ariaLabel}
             value={value}
             placeholder={placeholder}
+            disabled={disabled}
+            ref={inputRef as (el: HTMLInputElement | null) => void}
             onChange={(e) => onChange(e.target.value)}
-            className={cn("field-input", mono && "font-mono text-[12px]")}
+            onBlur={onBlur}
+            className={cn("field-input", mono && "font-mono text-[12px]", disabled && "cursor-not-allowed opacity-60")}
         />
     );
 }
@@ -156,6 +243,7 @@ export function TextArea({
     rows = 3,
     id,
     ariaLabel,
+    inputRef,
 }: {
     value: string;
     onChange: (value: string) => void;
@@ -164,6 +252,8 @@ export function TextArea({
     rows?: number;
     id?: string;
     ariaLabel?: string;
+    /** Receives the element, so the token picker can insert at the caret. */
+    inputRef?: (el: HTMLInputElement | HTMLTextAreaElement | null) => void;
 }) {
     return (
         <textarea
@@ -172,6 +262,7 @@ export function TextArea({
             value={value}
             rows={rows}
             placeholder={placeholder}
+            ref={inputRef as (el: HTMLTextAreaElement | null) => void}
             onChange={(e) => onChange(e.target.value)}
             className={cn("field-textarea", mono && "font-mono text-[12px]")}
         />
@@ -187,7 +278,7 @@ export function SelectInput({
 }: {
     value: string;
     onChange: (value: string) => void;
-    options: readonly { value: string; label: string; hint?: string }[];
+    options: readonly { value: string; label: string; hint?: string; disabled?: boolean }[];
     id?: string;
     ariaLabel?: string;
 }) {
@@ -201,7 +292,7 @@ export function SelectInput({
                 className="field-input appearance-none pr-7"
             >
                 {options.map((o) => (
-                    <option key={o.value} value={o.value}>
+                    <option key={o.value} value={o.value} disabled={o.disabled}>
                         {o.label}
                     </option>
                 ))}

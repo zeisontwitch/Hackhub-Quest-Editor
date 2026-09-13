@@ -3,14 +3,13 @@
  * settings. One panel, three tabs, so the author never has to hunt for where a
  * setting lives.
  */
-import { useEffect, useState } from "react";
-import { nanoid } from "nanoid";
+import { useEffect, useMemo, useState } from "react";
 import * as Tabs from "@radix-ui/react-tabs";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/Icon";
 import { categoryOf, nodeTypeDef } from "@/schema/registry";
-import type { QuestDoc } from "@/schema/project";
 import { selectActiveQuest, selectSelectedNode, useEditor } from "@/store/editor";
+import { analyseGraph } from "@/analysis/graph";
 import { Field } from "./Field";
 import { ImagePickerField, TagInput } from "./ModFields";
 import { FieldShell, NumberInput, SelectInput, TextArea, TextInput, Toggle } from "./primitives";
@@ -77,12 +76,21 @@ export function InspectorPanel() {
 
 function NodeInspector({ nodeId }: { nodeId: string }) {
     const node = useEditor(selectSelectedNode);
+    const quest = useEditor(selectActiveQuest);
     const removeNodes = useEditor((s) => s.removeNodes);
     if (!node) return <Empty>Select a node.</Empty>;
 
     const def = nodeTypeDef(node.type);
     const category = categoryOf(node.type);
     const SimEditor = NODE_SIM_EDITORS[node.type];
+
+    // Node-level "why is this flagged" issues, condensed here so an author sees
+    // them next to the fields, not only as a badge on the card. Each carries
+    // its next step: what is wrong, and which nodes to put where to fix it.
+    const nodeWarnings = useMemo(() => {
+        const analysis = analyseGraph(quest?.graph.nodes ?? [], quest?.graph.edges ?? []);
+        return analysis.issues.filter((i) => i.nodeId === node.id);
+    }, [node, quest]);
 
     return (
         <div className="pb-8">
@@ -102,7 +110,6 @@ function NodeInspector({ nodeId }: { nodeId: string }) {
                         {def.label}
                     </h2>
                     <p className="mt-1.5 text-[11px] leading-relaxed text-ink-2">{def.blurb}</p>
-                    <p className="mt-1 font-mono text-[10px] text-ink-4">{node.type}</p>
                 </div>
                 <button
                     type="button"
@@ -114,6 +121,36 @@ function NodeInspector({ nodeId }: { nodeId: string }) {
                     <Icon name="trash" size={14} />
                 </button>
             </div>
+
+            {/* Why this node is flagged, in the place the author is editing. */}
+            {nodeWarnings.length > 0 && (
+                <div className="mx-3 mt-2 space-y-1.5">
+                    {nodeWarnings.map((issue) => (
+                        <p
+                            key={issue.label}
+                            className={cn(
+                                "flex items-start gap-1.5 rounded-md border px-2 py-1.5 text-[11px] leading-snug text-ink-2",
+                                issue.severity === "danger"
+                                    ? "border-danger/30 bg-danger/10"
+                                    : "border-warn/30 bg-warn/10",
+                            )}
+                        >
+                            <Icon
+                                name="alert"
+                                size={13}
+                                className={cn("mt-px shrink-0", issue.severity === "danger" ? "text-danger" : "text-warn")}
+                            />
+                            <span>
+                                <span className={cn("font-semibold", issue.severity === "danger" ? "text-danger" : "text-warn")}>
+                                    {issue.label}
+                                </span>{" "}
+                                <span className="text-ink-3">{issue.detail}</span>{" "}
+                                <span className="text-ink-3">Next step: {issue.nextStep}</span>
+                            </span>
+                        </p>
+                    ))}
+                </div>
+            )}
 
             {SimEditor && <SimEditor node={node} />}
 
@@ -147,7 +184,7 @@ function QuestInspector() {
     return (
         <div className="pb-8">
             <Section>Identity</Section>
-            <FieldShell label="Quest identifier" hint="Unique across all mods. Used by Quest.claim() and quest chaining.">
+            <FieldShell label="Quest identifier" hint="A unique name for this quest, not shown to players. Other quests use it to unlock only after this one is finished.">
                 <TextInput
                     ariaLabel="Quest identifier"
                     value={quest.name}
@@ -214,7 +251,7 @@ function QuestInspector() {
             />
             <Toggle
                 label="Complete automatically"
-                hint="Finish as soon as every objective is done. Turn off to require a manual complete button."
+                hint="Best left off. HackHub 1.1.2 freezes whenever it finishes a quest that came from a mod, whether that happens automatically or through a complete button, so quests are built to end their story without formally completing."
                 checked={quest.autoComplete}
                 onChange={(autoComplete) => write({ autoComplete })}
             />
@@ -225,9 +262,26 @@ function QuestInspector() {
             />
             <Toggle
                 label="Show a manual complete button"
+                hint="Also best left off, for the same reason: pressing it freezes the game."
                 checked={quest.hasCompleteButton}
                 onChange={(hasCompleteButton) => write({ hasCompleteButton })}
             />
+            <Toggle
+                label="Tidy the objective list when the story ends"
+                hint="Once every objective is done, hide them so the panel is not left full of finished steps."
+                checked={quest.hideObjectivesWhenDone}
+                onChange={(hideObjectivesWhenDone) => write({ hideObjectivesWhenDone })}
+            />
+            <FieldShell
+                label="Closing line"
+                hint="Shown as a single ticked item once the story is over. Worth filling in: without it the panel reads 0/0 completed."
+            >
+                <TextInput
+                    ariaLabel="Closing objective line"
+                    value={quest.closingObjectiveText}
+                    onChange={(closingObjectiveText) => write({ closingObjectiveText })}
+                />
+            </FieldShell>
 
             <Section>Employer</Section>
             <FieldShell label="First name" hint="Left blank, the game generates an employer for you.">
@@ -252,63 +306,6 @@ function QuestInspector() {
                     mono
                 />
             </FieldShell>
-
-            <Section>Twotter accounts</Section>
-            <p className="field-hint -mt-1 px-3 pb-1">
-                The in-game social accounts your “Post tweet” nodes speak through.
-            </p>
-            {quest.twotterAccounts.map((acct, i) => {
-                const patch = (p: Partial<QuestDoc["twotterAccounts"][number]>) =>
-                    write({ twotterAccounts: quest.twotterAccounts.map((a, j) => (j === i ? { ...a, ...p } : a)) });
-                return (
-                    <div key={acct.id} className="grid gap-2 rounded-lg border border-line bg-surface-2/50 p-2.5">
-                        <div className="flex items-center justify-between">
-                            <p className="font-mono text-[11px] text-ink-2">@{acct.username || "unnamed"}</p>
-                            <button
-                                type="button"
-                                className="btn-icon size-5 text-ink-4 hover:text-danger"
-                                title="Remove account"
-                                aria-label="Remove account"
-                                onClick={() => write({ twotterAccounts: quest.twotterAccounts.filter((a) => a.id !== acct.id) })}
-                            >
-                                <Icon name="trash" size={12} />
-                            </button>
-                        </div>
-                        <FieldShell label="Username" hint="The @handle players see.">
-                            <TextInput ariaLabel="Username" value={acct.username} onChange={(username) => patch({ username })} mono />
-                        </FieldShell>
-                        <FieldShell label="Display name" hint="Shown in bold above the handle. Left blank, the username is used.">
-                            <TextInput ariaLabel="Display name" value={acct.displayName} onChange={(displayName) => patch({ displayName })} />
-                        </FieldShell>
-                        <ImagePickerField
-                            label="Avatar"
-                            hint="The profile picture. A square image works best."
-                            ariaLabel="Avatar file"
-                            value={acct.avatar}
-                            onChange={(avatar) => patch({ avatar })}
-                        />
-                        <FieldShell label="Bio">
-                            <TextArea ariaLabel="Bio" value={acct.bio ?? ""} onChange={(bio) => patch({ bio })} rows={2} />
-                        </FieldShell>
-                        <Toggle label="Verified" hint="The blue checkmark next to the name." checked={acct.verified} onChange={(verified) => patch({ verified })} />
-                    </div>
-                );
-            })}
-            <button
-                type="button"
-                className="btn-default w-full"
-                onClick={() =>
-                    write({
-                        twotterAccounts: [
-                            ...quest.twotterAccounts,
-                            { id: nanoid(8), username: "", displayName: "", verified: false },
-                        ],
-                    })
-                }
-            >
-                <Icon name="plus" size={12} />
-                Add account
-            </button>
 
             <Section>Health</Section>
             <div className="px-3 py-2 text-[11.5px] leading-relaxed text-ink-3">
@@ -361,7 +358,7 @@ function ModInspector() {
             <FieldShell label="Display name">
                 <TextInput ariaLabel="Display name" value={mod.name} onChange={(name) => updateMod({ name })} />
             </FieldShell>
-            <FieldShell label="Version" hint="Semantic versioning. Bump it before every Workshop upload.">
+            <FieldShell label="Version" hint="A number for this release, like 1.0.0. Increase it before every Workshop upload so players get the update.">
                 <TextInput
                     ariaLabel="Version"
                     value={mod.version}

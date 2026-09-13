@@ -7,7 +7,7 @@
  */
 import type { DialogueKind, NodeDoc } from "@/schema/nodes";
 import type { QuestDoc } from "@/schema/project";
-import { eventLabel } from "@/schema/events";
+import { humanEventName } from "@/schema/events";
 import { DEVICE_TYPE_LABELS } from "@/schema/common";
 
 export const DIALOGUE_KIND_LABELS: Record<DialogueKind, string> = {
@@ -100,7 +100,7 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
             const conditions = d.conditions as { id: string }[] | undefined;
             const n = conditions?.length ?? 0;
             return [
-                d.event ? eventLabel(String(d.event)) : "no event chosen",
+                d.event ? humanEventName(String(d.event)) : "no event chosen",
                 n === 0 ? "fires on any occurrence" : `${n} condition${n === 1 ? "" : "s"}`,
             ];
         }
@@ -184,20 +184,6 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
             ];
         }
 
-        case "comms.tweet":
-            return [
-                d.accountId ? `@${d.accountId}` : "no account yet",
-                d.content ? clip(String(d.content), 56) : "no tweet yet",
-            ];
-
-        case "reply.hackertyper":
-            return [
-                { website: "Website page", app: "Desktop app", phoneApp: "Phone app" }[
-                    d.surface as "website"
-                ],
-                d.text ? clip(String(d.text), 52) : "no text yet",
-            ];
-
         case "reply.input":
             return [
                 d.commandName ? `$ ${d.commandName}` : "no command yet",
@@ -244,8 +230,66 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
             return [options?.length ? `${options.length} options` : "no options yet"];
         }
 
+        case "flow.sequence": {
+            const steps = (d.steps as { label?: string; delayMs?: number }[] | undefined) ?? [];
+            if (steps.length === 0) return ["no outputs yet"];
+            const total = steps.reduce((sum, s) => sum + Number(s.delayMs ?? 0), 0);
+            return [
+                `${steps.length} output${steps.length === 1 ? "" : "s"}, in order`,
+                clip(steps.map((s) => s.label || "step").join(" → "), 46),
+                total > 0 ? `${total} ms end to end` : "no pauses",
+            ];
+        }
+
+        case "flow.debug": {
+            const bits: string[] = [];
+            if (d.includePayload) bits.push("the event");
+            if (d.includeData) bits.push("saved values");
+            return [
+                d.label ? clip(String(d.label), 46) : "unnamed checkpoint",
+                bits.length ? `prints ${bits.join(" and ")}` : "prints when it is reached",
+                d.toast ? "in the log and on screen" : "in the log",
+            ];
+        }
+
+        case "world.packData": {
+            const lines: string[] = [];
+            if (d.contractLabel) lines.push(d.contractLabel);
+            if (d.storageKey) lines.push(d.storageKey);
+            const filled = Object.values((d.values as Record<string, string>) ?? {}).filter((v) => v);
+            if (filled.length) lines.push(`${filled.length} value${filled.length === 1 ? "" : "s"} filled in`);
+            return lines.length ? lines : ["Not set up yet — pick a pack and a data shape"];
+        }
+
+        case "pack.node": {
+            if (!d.nodeId) return ["Not set up yet — add it from the palette's Editor Mods group"];
+            const what =
+                d.emitter === "sdk"
+                    ? `calls ${((d.steps as { call: string }[]) ?? []).map((s) => s.call).join(", ") || "the SDK"}`
+                    : d.emitter === "emit"
+                        ? `fires ${d.eventName || "an event"}`
+                        : d.emitter === "storage"
+                            ? `writes ${d.storageKey || "a storage key"}`
+                            : `answers ${d.command || "a command"}`;
+            const lines = [`${d.nodeLabel || "Community node"} — ${what}`];
+            if (d.packName) lines.push(`from ${d.packName}`);
+            const filled = Object.values((d.values as Record<string, string>) ?? {}).filter((v) => v);
+            if (filled.length) lines.push(`${filled.length} value${filled.length === 1 ? "" : "s"} filled in`);
+            return lines;
+        }
+
         case "flow.note":
             return d.text ? [clip(String(d.text), 120)] : ["Empty note"];
+
+        case "flow.beat": {
+            const lines: string[] = [];
+            if (d.title) lines.push(clip(String(d.title), 80));
+            if (d.text) lines.push(clip(String(d.text), 120));
+            for (const c of (d.choices as { label?: string }[]) ?? []) {
+                if (c.label) lines.push(`· ${clip(String(c.label), 60)}`);
+            }
+            return lines.length ? lines : ["Empty beat"];
+        }
 
         default: {
             const exhaustive: never = node;

@@ -373,7 +373,21 @@ auto-suggests realistic hidden paths, and offers to spawn the matching trigger n
 | **Kisscord** | `Quest.KisscordChats` and/or `Kisscord.*` | ✅ `contactId` + ordered `messages[]` with `content`, `isMine`, `delayMs`, **`unlocksAfter`**, `onSent` |
 | **WeeChat** | `Quest.WeeChatChats` and/or `WeeChat.createServer(host, password)` | ✅ `host`, `messages[]` with `content`, `username`, `isMine`, `delayMs`, `onSent` |
 | Phone **text messages (SMS)** | **no SMS namespace exists** | ❌ **Dropped — see below** |
-| **Twotter** | `Quest.TwotterAccounts` / `Tweets`, `Twotter.*` | ✅ bonus channel |
+| **Twotter** | `Quest.TwotterAccounts` / `Tweets`, `Twotter.*` | ⛔ **Withdrawn in round 31 — the API works, the game does not** (see note) |
+
+**The Twotter withdrawal (round 31).** The SDK surface above is real and the editor
+did ship it for twenty-odd rounds. It was removed after seven in-game QA rounds
+proved the *engine* cannot store what it accepts: a quest-declared
+`TwotterAccountDefinition` becomes a `TwotterUser` in the save whose `bio` is
+`undefined`, and the game's Twotter search calls `.toLowerCase()` on that field for
+every record it tests. Searching any word that does not match something sooner
+crashes the game — and because the record lives in the save, it keeps crashing
+after the mod is uninstalled. There is no `Twotter.removeUser`, reads hand back a
+copy so the record cannot be patched, and writing a complete record back with
+`addUser` left it unchanged. Nothing a mod can do fixes it, so the editor no longer
+offers a “Post tweet” node or quest Twotter accounts. Older projects are migrated
+rather than rejected (`src/schema/migrate.ts`). The full evidence trail is in
+[docs/02 “Round 29–31”](02-editor-shell.md).
 
 **The SMS gap — and its resolution.** Neither the published `index.d.ts` (all 2,898
 lines) nor any docs page exposes an SMS/text-message API. Phone *calls* exist
@@ -384,7 +398,8 @@ simulate SMS on top of Kisscord or fabricate a fake Messages app — both of whi
 look native in the editor and not be native in the game — the requirement is dropped
 and recorded here so it is not re-litigated later. The four conversation editors that
 *do* ship are **Phone calls, E-Mail, Kisscord and WeeChat**, each backed 1:1 by a real
-primitive, plus Twotter as a bonus channel. See [§8](#8-settled-decisions).
+primitive. (Twotter was a fifth channel until round 31 — see the note above.) See
+[§8](#8-settled-decisions).
 
 **`unlocksAfter` on messages is the key progression mechanic** (SDK ≥ 0.18.0): the
 chain plays to the first gated message at quest start, then *pauses*, and resumes
@@ -702,10 +717,10 @@ Node categories:
 | **Objective** | `Objective` (name, description, hint, info, suggested command, hidden) | `Objectives[]` |
 | **Trigger** | `When Event` — one entry per catalogued event, with a typed, human-readable condition builder | `Objectives[].trigger` or `this.Events.on(...)` |
 | **World** | `Create Network`, `Create Wi-Fi`, `Add Firewall Rule`, `Open/Close Port`, `Register Domain`, `Set Vulnerabilities`, `Create Database`, `Seed Files`, `Tool Response` (`Shell.addCommandData`) | `OnStart` |
-| **Comms** | `Send E-Mail`, `Phone Call`, `Kisscord Message`, `WeeChat Message`, `Tweet`, `Hackhub Feed Post` | `Mails` / `Dialog` / `KisscordChats` / `WeeChatChats` / `Tweets` / `HackhubPost` |
+| **Comms** | `Send E-Mail`, `Phone Call`, `Kisscord Message`, `WeeChat Message`, `Hackhub Feed Post` (`Tweet` withdrawn in round 31) | `Mails` / `Dialog` / `KisscordChats` / `WeeChatChats` / `HackhubPost` |
 | **Reply** | `Player Reply` — **Hackertyper** or **Manual Input** (see below) | custom `Command` / custom App HTML + custom event |
 | **Effect** | `Pay Money`, `Withdraw`, `Notify`, `Toast`, `Set Data`, `Claim Quest`, `Run Shell Command`, `Open Handbook` | imperative statements |
-| **Flow** | `Branch` (if/else on a condition), `Delay`, `Random Pick`, `Group/Comment` | control flow in generated code |
+| **Flow** | `Branch` (if/else on a condition), `Delay`, `Random Pick`, `Sequence` (timed outputs), `Reroute`, `Group/Comment` | control flow in generated code |
 
 **Edge types are typed and colour-coded**, and the canvas rejects invalid connections:
 

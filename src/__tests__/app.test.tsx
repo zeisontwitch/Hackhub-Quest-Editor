@@ -114,15 +114,26 @@ describe("editor shell", () => {
         await user.click(screen.getByRole("button", { name: /^Templates$/i }));
         expect(await screen.findByRole("heading", { name: "Start from a template" })).toBeInTheDocument();
 
-        // Share controls live in the same dialog.
+        // Share controls live in the same dialog — and keep their original names.
         expect(screen.getByRole("button", { name: /export current quest/i })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /import a quest file/i })).toBeInTheDocument();
 
-        await user.click(screen.getByRole("button", { name: /Simple Linear Wi-Fi Hack/i }));
+        await user.click(screen.getByRole("button", { name: /First Contact/i }));
 
         const quest = selectActiveQuest(useEditor.getState())!;
-        expect(quest.name).toBe("NeighbourWifi");
-        expect(quest.graph.nodes).toHaveLength(12);
+        expect(quest.name).toBe("FirstContact");
+        expect(quest.graph.nodes).toHaveLength(8);
+    });
+
+    it("offers Save and Load on the top bar, in addition to the template dialog's buttons", async () => {
+        render(<App />);
+
+        // Save/Load are the top-bar naming for the same project-file round-trip.
+        expect(screen.getByRole("button", { name: /^save$/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /^load$/i })).toBeInTheDocument();
+        // The template dialog's own labels remain, so it is still possible to
+        // find the file buttons in that popup without opening the top-bar ones.
+        expect(screen.getByRole("button", { name: /^templates$/i })).toBeInTheDocument();
     });
 
     it("undoes with the keyboard", async () => {
@@ -187,9 +198,11 @@ describe("editor shell", () => {
 
         await user.click(screen.getByRole("button", { name: /^Objective$/i }));
 
-        // The badge names the problem; the node itself carries the explanation.
+        // The badge names the problem on the card; the inspector header repeats
+        // it with the next step, where the author is editing.
         expect(await screen.findByText(/1 blocking/i)).toBeInTheDocument();
-        expect(screen.getByText("No trigger")).toBeInTheDocument();
+        expect(screen.getAllByText("No trigger")).toHaveLength(2);
+        expect(screen.getByText(/Next step:/)).toBeInTheDocument();
     });
 
     it("persists the draft to localStorage", async () => {

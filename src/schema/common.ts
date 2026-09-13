@@ -154,6 +154,21 @@ export const VULNERABILITY_TYPES = [
 export const VulnerabilityTypeSchema = z.enum(VULNERABILITY_TYPES);
 export type VulnerabilityType = z.infer<typeof VulnerabilityTypeSchema>;
 
+/**
+ * Display-only descriptions for the vulnerability dropdown (r155): the
+ * universal meaning of each weakness in gamer words. The option *values*
+ * stay the raw enum, so exports are byte-identical.
+ */
+export const VULNERABILITY_BLURBS: Record<VulnerabilityType, string> = {
+    SQL_INJECTION: "steal from the database",
+    XSS: "script in web pages",
+    CORS: "read other sites' data",
+    SSRF: "make the server fetch",
+    LFI: "read the server's files",
+    RFI: "load a file from your URL",
+    RCE: "run any command",
+};
+
 export const VulnerabilitySchema = z.object({
     id: z.string(),
     type: VulnerabilityTypeSchema,

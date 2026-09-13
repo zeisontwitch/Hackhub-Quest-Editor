@@ -4,7 +4,7 @@ import { PORT_PRESETS } from "../portPresets";
 describe("port presets", () => {
     it("covers the quest author's daily dozen, keyed by port", () => {
         const ports = PORT_PRESETS.map((p) => p.external);
-        for (const expected of [22, 21, 80, 3306, 25, 110, 143]) {
+        for (const expected of [22, 21, 80, 3306, 25, 110, 143, 443, 23]) {
             expect(ports, `missing preset for port ${expected}`).toContain(expected);
         }
     });
@@ -26,6 +26,8 @@ describe("port presets", () => {
             pop3: 110,
             imap: 143,
             mysql: 3306,
+            https: 443,
+            telnet: 23,
         };
         for (const p of PORT_PRESETS) {
             expect(p.external, `${p.label}: out of range`).toBeGreaterThanOrEqual(1);

@@ -133,17 +133,16 @@ archived once it has stayed fixed for a few rounds.
 | 3 | **Freely draggable + resizable Inspector drawer** | Queued r151: the inspector is currently fixed-docked — make it a free-floating drawer the author can drag around and resize. |
 | 4 | **Refresh the Shortcuts cheat sheet** | Queued r151: the Shortcuts panel is stale — audit every entry against what the editor actually does and rewrite. |
 | 5 | **Auto-generate button for name/IP-like fields** | Queued r152: a QoL dice button on fields like IP Address, Hostname, Domain, Router Model — generates a plausible random value **in the editor** (exports hardcoded, not a tag). Needs curated name/number lists to pull from or piece together. Open question for the build round: does the Create-network IP field accept the game's own random-IP tag? Any field that accepts tags should get the tag-insertion button, limited to the tags that field can actually use — audit all of them. |
-| 6 | **More common ports + vuln descriptions** | Queued r152: extend "Add a common port" to everything the game commonly uses (Telnet, …); each Vulnerability Type dropdown entry gains a short display-only description (e.g. "RCE (telnet)"-style — dropdown text only, never exported). |
 
 ### Done recently
 
 | # | Item | Notes |
 |---|---|---|
+| r155 | **Telnet/HTTPS presets + vuln display descriptions** | ([plan](docs/plans/r155-ports-vuln-labels.md)) Queue #6, no behaviour change: "Add a common port" gains Telnet (23) and HTTPS (443, already authored in templates) with blank versions per the no-invention rule; the vulnerability dropdown shows "RCE (run any command)"-style descriptions while values stay the raw enum, so exports are byte-identical. |
 | r154 | **UI words: sticky move, Custom terminal, Tools → Addons** | ([plan](docs/plans/r154-ui-words.md)) Queue batch, no behaviour change: Sticky note moves from Flow Control to Layout below Group frame; the "Player replies" category (one node: a custom terminal command) becomes **Custom terminal**; the Tools button and the whole Tool Packs feature become **Addons** ("Addon node", "Give data to an addon", "Community addons", manager, picker, README line, format doc). File format (`toolpack.json`), ids, and code identifiers stay — display names only. Retires roadmap items 3, 4, 5, 7 (Next-up renumbered; old 6/8/9/10 are now 3/4/5/6). |
 | r153 | **Warning severity: blue / amber / red** | ([plan](docs/plans/r153-warning-severity.md)) Amber cards read as critical errors — now info renders light-blue (unlisted pages, honesty lines, pure FYIs), amber stays for could-cause-issues (dead nodes, target mismatches), red for will-break (unstartable quests, game-crashing lynx handles, broken addresses). Levels ride a new `warningDetails` shape; the string view stays untouched. The export heading turns "Needs attention" when any red is present. |
 | r152 | **Warning cards + house-style pack event labels** | ([plan](docs/plans/r152-warning-cards-event-labels.md)) Zeis's r151 review, first two points: warnings now render as one amber card each with the quest/host context semibold (shared `WarningList`, export + Dry run) instead of a grey bullet wall; and both packs' event labels were rewritten from sentences to the built-in "Group: Thing" form ("Breach: File downloaded", "Scan: Finished") so they match "Terminal: Cat" and stop truncating — the sentences stay in `docs`, the spec now teaches short labels, and picker rows carry `title` hovers. His other two points are queued as Next-up 9–10. |
 | r151 | **Target-matching warnings + Tool pack node stub** | ([plan](docs/plans/r151-target-warnings.md)) Quests that hand work to a tool mod are now warned — at export and in Dry run — when their targets speak a language the mod can't match: unknown services (case-insensitive, alias-aware, verified against the example mod's matcher), serviced ports with blank versions, and weaknesses no listed type lines up with. Intent-gated per quest per pack (pack event listened for, pack storage key written, or pack node run) — never cross-quest, so multi-part campaigns don't cry wolf. Rider: an unset Tool pack node renders a stub pointing at its "Editor Mods · pack" palette group instead of an empty inspector. Both new guards falsified by revert. |
-| r150 | **Pack UX polish — drop zone, Save, human summaries, renames** | ([plan](docs/plans/r150-pack-ux-polish.md)) Zeis eyeballed r149 as a gamer: the manager list is now a drop zone for toolpack.json files; the footer gained an explicit **Save** (loads still apply instantly — Save is the commit moment, the status line the receipt); pack-node summaries speak gamer words via one shared helper ("sends a signal to the tool mod", never "fires ExampleTools.Handover.Done"), the inspector prefers the pack authors own description (newly snapshotted), and a teal **From the X tool pack** banner tops the inspector; "Community data" → **"Give data to a tool mod"**, "Community node" → **"Tool pack node"**. (His screenshot attachment never arrived in the sandbox — all copy verified against the code instead.) |
 
 ---
 
@@ -170,15 +169,15 @@ are in the build log at [`docs/02-editor-shell.md`](docs/02-editor-shell.md),
 which is kept as an archive — the bug histories in it explain several of the
 rules the code now follows.
 
-Rounds 130–149 are archived at
-[`docs/archive/rounds-130-149.md`](docs/archive/rounds-130-149.md).
+Rounds 130–150 are archived at
+[`docs/archive/rounds-130-150.md`](docs/archive/rounds-130-150.md).
 
 ### Build status
 
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-13.r154`: **1,444 tests** across 71
+Counted from the code at build `2026-09-13.r155`: **1,446 tests** across 72
 files, **34 node types** in 10 categories (33 in the palette — Wi-Fi is hidden),
 **13 templates** (11 playable + 2 reference sheets), **92 game events**,
 against `@hotbunny/hackhub-content-sdk@0.21.0`.

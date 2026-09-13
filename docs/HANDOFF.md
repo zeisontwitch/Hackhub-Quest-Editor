@@ -1,4 +1,16 @@
-# Handoff — r154
+# Handoff — r155
+
+r155 closes queue #6 (plan:
+[plans/r155-ports-vuln-labels.md](plans/r155-ports-vuln-labels.md)): Telnet
++ HTTPS presets (blank versions, no-invention rule; telnet is a port label
+only — the handbook says no telnet player command is verified), and
+"TYPE (what it means)" vulnerability dropdown labels with raw-enum values
+(exports byte-identical). Gates: **1,446 tests / 72 files**, build clean.
+Stamp `2026-09-13.r155`. README trimmed (r150 → archive).
+
+**Zeis's eyes only:** the longer port dropdown, the vuln dropdown reading
+"RCE (run any command)". Remaining queue: 1 contact template, 2 branching
+template, 3 floating inspector, 4 shortcuts refresh, 5 auto-generate.
 
 r154 is the UI-words batch (plan:
 [plans/r154-ui-words.md](plans/r154-ui-words.md)): Sticky note → Layout
@@ -595,21 +607,21 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r154 (UI words batch) on
+- **HEAD:** r155 (ports + vuln labels) on
   `arena/01a09bf3-hackhub-quest-editor`, committed and pushed. Previous
-  rounds: r153 (warning severity), r152 (warning cards, event labels), r151
-  (target-matching warnings), r150 (pack UX polish), r149 (Recon-NG example
-  pack). (Sandbox resets have rolled local history back more than once;
+  rounds: r154 (UI words batch), r153 (warning severity), r152 (warning
+  cards, event labels), r151 (target-matching warnings), r150 (pack UX
+  polish). (Sandbox resets have rolled local history back more than once;
   recovered from the remote tip per the standing fetch-first rule, then
   `npm ci` when node_modules went with it. The remote is authoritative.)
-- **1,444 tests green** across 71 files, typecheck clean, build clean, and —
+- **1,446 tests green** across 72 files, typecheck clean, build clean, and —
   since the r138 prep rider — **vitest exits 0**: the 4 long-standing
   unhandled d3-drag errors were diagnosed as load-bearing jsdom noise (they
   aborted every canvas drag handler mid-gesture; four selection-gesture
   tests had been passing *because of* the crash) and fixed in
   `vitest.setup.ts` by giving MouseEvents the view a real browser would.
   r139 also cleared the `pack.node` duplicate-key React warning.
-- **Editor build stamp:** `2026-09-13.r154` (bumps every round since r148 —
+- **Editor build stamp:** `2026-09-13.r155` (bumps every round since r148 —
   the stamp is a version, not a changelog).
 - Tool-pack modules: `src/toolpacks/schema.ts` (format 2 + plain-language
   `parseToolPack`), `src/toolpacks/palette.ts` (pure `packNodeDefs`,

@@ -47,7 +47,7 @@ WifiNodeDataSchema,
     type NodeDoc,
     type NodeType,
 } from "./nodes";
-import { TARGET_IP_TOKEN, VULNERABILITY_TYPES } from "./common";
+import { TARGET_IP_TOKEN, VULNERABILITY_BLURBS, VULNERABILITY_TYPES } from "./common";
 
 /* ── Inspector field descriptors ─────────────────────────────────────────── */
 
@@ -225,7 +225,7 @@ const vulnFields: FieldDef[] = [
         kind: "select",
         key: "type", hint: "The kind of weakness this machine has. The in-game scanners report it when the player probes the machine.",
         label: "Type",
-        options: VULNERABILITY_TYPES.map((t) => ({ value: t, label: t })),
+        options: VULNERABILITY_TYPES.map((t) => ({ value: t, label: `${t} (${VULNERABILITY_BLURBS[t]})` })),
     },
     { kind: "text", key: "version", hint: "The affected component's version, e.g. \"WordPress 5.8\". Cosmetic unless a trigger matches on it.", label: "Version", placeholder: "optional", mono: true },
 ];

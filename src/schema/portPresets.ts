@@ -97,4 +97,22 @@ export const PORT_PRESETS: PortPreset[] = [
         service: "imap",
         version: "",
     },
+    {
+        id: "https",
+        label: "Web secure (HTTPS) · port 443",
+        source: "The templates already author service https on 443; no verified in-game version yet.",
+        external: 443,
+        internal: 443,
+        service: "https",
+        version: "",
+    },
+    {
+        id: "telnet",
+        label: "Telnet · port 23",
+        source: "The standard remote-admin port. A port label only — the handbook's verified command set has no telnet player command, and no verified in-game version exists.",
+        external: 23,
+        internal: 23,
+        service: "telnet",
+        version: "",
+    },
 ];

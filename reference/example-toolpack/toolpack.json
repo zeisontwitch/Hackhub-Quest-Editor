@@ -12,7 +12,7 @@
   "events": [
     {
       "name": "ExampleTools.Breach.FileDownloaded",
-      "label": "A file was downloaded from a breached machine",
+      "label": "Breach: File downloaded",
       "docs": "Fires when the player saves a file out of a remote session on a machine they breached. Match the file by its path or name, or the machine by host or IP.",
       "fields": [
         "sessionId",
@@ -24,7 +24,7 @@
     },
     {
       "name": "ExampleTools.Scan.Completed",
-      "label": "A scan of a target finished",
+      "label": "Scan: Finished",
       "docs": "Fires when the player's scan of a target completes. Match on the target that was scanned.",
       "fields": [
         "target",

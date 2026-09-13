@@ -69,7 +69,7 @@ name, label and pack.
 ```json
 {
   "name": "ExampleTools.Breach.FileDownloaded",
-  "label": "A file was downloaded from a breached machine",
+  "label": "Breach: File downloaded",
   "docs": "Fires when the player saves a file out of a remote session…",
   "fields": ["sessionId", "ip", "host", "path", "name"]
 }
@@ -78,7 +78,7 @@ name, label and pack.
 | Field | Rules |
 |---|---|
 | `name` | The exact event name your game mod emits (`Events.emit(...)`), letters/numbers/dots, starting with a letter. Authors paste this into triggers — match your mod's source exactly. |
-| `label` | Plain words for the picker row. "A file was downloaded from a breached machine", not `FileDownloaded`. |
+| `label` | A short picker row in the same "Group: Thing" form as the built-ins ("Terminal: Cat"), e.g. "Breach: File downloaded". Keep it under ~40 characters — the row truncates. The full sentence goes in `docs`. |
 | `docs` | One or two sentences shown under the picker when the event is chosen. Say when it fires and what a quest can do about it. |
 | `fields` | The payload's property names a condition can test, in the order you want them offered. Empty array = the event carries nothing to match on; the editor then says so instead of offering a dropdown. |
 

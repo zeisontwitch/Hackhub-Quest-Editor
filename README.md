@@ -136,16 +136,18 @@ archived once it has stayed fixed for a few rounds.
 | 6 | **Freely draggable + resizable Inspector drawer** | Queued r151: the inspector is currently fixed-docked — make it a free-floating drawer the author can drag around and resize. |
 | 7 | **Rename Tools → Addons (button + whole feature)** | Queued r151: the top-bar "Tools" button and the entire Tool Packs feature become "Addons" — labels, docs, and user-facing copy throughout. |
 | 8 | **Refresh the Shortcuts cheat sheet** | Queued r151: the Shortcuts panel is stale — audit every entry against what the editor actually does and rewrite. |
+| 9 | **Auto-generate button for name/IP-like fields** | Queued r152: a QoL dice button on fields like IP Address, Hostname, Domain, Router Model — generates a plausible random value **in the editor** (exports hardcoded, not a tag). Needs curated name/number lists to pull from or piece together. Open question for the build round: does the Create-network IP field accept the game's own random-IP tag? Any field that accepts tags should get the tag-insertion button, limited to the tags that field can actually use — audit all of them. |
+| 10 | **More common ports + vuln descriptions** | Queued r152: extend "Add a common port" to everything the game commonly uses (Telnet, …); each Vulnerability Type dropdown entry gains a short display-only description (e.g. "RCE (telnet)"-style — dropdown text only, never exported). |
 
 ### Done recently
 
 | # | Item | Notes |
 |---|---|---|
+| r152 | **Warning cards + house-style pack event labels** | ([plan](docs/plans/r152-warning-cards-event-labels.md)) Zeis's r151 review, first two points: warnings now render as one amber card each with the quest/host context semibold (shared `WarningList`, export + Dry run) instead of a grey bullet wall; and both packs' event labels were rewritten from sentences to the built-in "Group: Thing" form ("Breach: File downloaded", "Scan: Finished") so they match "Terminal: Cat" and stop truncating — the sentences stay in `docs`, the spec now teaches short labels, and picker rows carry `title` hovers. His other two points are queued as Next-up 9–10. |
 | r151 | **Target-matching warnings + Tool pack node stub** | ([plan](docs/plans/r151-target-warnings.md)) Quests that hand work to a tool mod are now warned — at export and in Dry run — when their targets speak a language the mod can't match: unknown services (case-insensitive, alias-aware, verified against the example mod's matcher), serviced ports with blank versions, and weaknesses no listed type lines up with. Intent-gated per quest per pack (pack event listened for, pack storage key written, or pack node run) — never cross-quest, so multi-part campaigns don't cry wolf. Rider: an unset Tool pack node renders a stub pointing at its "Editor Mods · pack" palette group instead of an empty inspector. Both new guards falsified by revert. |
 | r150 | **Pack UX polish — drop zone, Save, human summaries, renames** | ([plan](docs/plans/r150-pack-ux-polish.md)) Zeis eyeballed r149 as a gamer: the manager list is now a drop zone for toolpack.json files; the footer gained an explicit **Save** (loads still apply instantly — Save is the commit moment, the status line the receipt); pack-node summaries speak gamer words via one shared helper ("sends a signal to the tool mod", never "fires ExampleTools.Handover.Done"), the inspector prefers the pack authors own description (newly snapshotted), and a teal **From the X tool pack** banner tops the inspector; "Community data" → **"Give data to a tool mod"**, "Community node" → **"Tool pack node"**. (His screenshot attachment never arrived in the sandbox — all copy verified against the code instead.) |
 | r149 | **The Recon-NG example pack** | ([plan](docs/plans/r149-reconng-pack.md)) Item #3's missing half arrives as a real thing: Darkvalnar's Recon-NG exploitation workspace described as a second tool pack (`reference/reconng/`, fenced — example only, never serviced; source pinned at `798f9ee` with its GitHub linked from the fence doc). All nine source-verified events (their docs page lists five), three data shapes, two story-timed session nodes, and the real target conventions — which taught the format its first new field: optional `serviceAliases` (their matcher treats `https`/`web` as `http`). Verifying the pack caught a latent r137/r138 bug on the way: untouched toggles emitted the truthy string `"{{key}}"` while showing off — booleans now seed to `"false"` at snapshot time (falsified on both paths). Warnings next round, after Zeis eyeballs the pack's labels. |
 | r148 | **The real colour picker, mark size, free weight, current stamp** | ([plan](docs/plans/r148-picker-marksize-stamp.md)) The grid colour row now embeds the inspector's own ColourPicker (presets, hex field, HSL sliders — no OS dialog); **Mark size** (25–250% of standard) sizes dots, crosses, hexagons and diamonds — hidden for line styles; **Line weight** became a free 0.5–6 slider (quarter steps, reset arrow); and `EDITOR_BUILD` now bumps every round — the debug panel and export headers had read r139 since, well, r139. |
-| r147 | **Grid polish — visible dots, ink and weight** | ([plan](docs/plans/r147-grid-polish.md)) Zeis's first hands-on: dots were genuinely invisible (the library's Dots `size` is the *diameter*; r142's 1.5 meant a 0.75px radius at 100% zoom — sub-pixel ink) — now size 9, crosses span 8 → 11; a circular-arrow reset beside Grid scale; a grid **colour** picker (Theme + six presets + custom hex, strict `#rrggbb`, the accessibility ask) so colourblind or low-vision authors can pick what they see best; and a **line weight** control (Hairline/Thin/Medium/Bold) driving every style. |
 
 ---
 
@@ -172,15 +174,15 @@ are in the build log at [`docs/02-editor-shell.md`](docs/02-editor-shell.md),
 which is kept as an archive — the bug histories in it explain several of the
 rules the code now follows.
 
-Rounds 130–146 are archived at
-[`docs/archive/rounds-130-146.md`](docs/archive/rounds-130-146.md).
+Rounds 130–147 are archived at
+[`docs/archive/rounds-130-147.md`](docs/archive/rounds-130-147.md).
 
 ### Build status
 
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-13.r151`: **1,436 tests** across 69
+Counted from the code at build `2026-09-13.r152`: **1,438 tests** across 70
 files, **34 node types** in 10 categories (33 in the palette — Wi-Fi is hidden),
 **13 templates** (11 playable + 2 reference sheets), **92 game events**,
 against `@hotbunny/hackhub-content-sdk@0.21.0`.

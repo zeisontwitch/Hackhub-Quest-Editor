@@ -1,4 +1,34 @@
-# Handoff — r151
+# Handoff — r152
+
+r152 is Zeis's r151 review (plan:
+[plans/r152-warning-cards-event-labels.md](plans/r152-warning-cards-event-labels.md)).
+The warning wording stays — he likes it. Two fixes shipped, two queued:
+
+- **Warning cards:** export + Dry run warnings render as one amber card
+  each (shared `src/components/WarningList.tsx`, `alert` triangle icon),
+  the quest/host context before the first `": "` semibold so entries scan.
+  Colon-less warnings render whole; markup stays flat so each warning's
+  text matches one element. The Dry-run test now finds its quest heading
+  by role — the warning card's `<strong>` collided with the old loose
+  text match (test-only, no behaviour change).
+- **House-style pack event labels:** both packs' labels rewritten from
+  sentences to the built-in "Group: Thing" form ("Breach: File
+  downloaded", "Scan: Finished", …) — the sentences stay in the events'
+  `docs` where the picker explains them. Root cause of the mismatch: pack
+  authors write the labels, and the spec taught sentences; the spec now
+  teaches short labels (~40 chars) with the sentence in `docs`. Picker
+  rows also carry `title` hovers so nothing truncates silently.
+- **Queued:** Next-up 9 (auto-generate dice button for name/IP-like fields,
+  in-editor random, exports hardcoded + the tag-insertion audit incl. the
+  open question whether Create-network IP accepts the game's random-IP
+  tag) and 10 (extend "Add a common port" to everything the game uses;
+  display-only vuln descriptions).
+- Gates: typecheck clean, **1,438 tests / 70 files**, build clean. Stamp
+  `2026-09-13.r152`. README trimmed (r147 → archive).
+
+**Zeis's eyes only:** export anything with warnings (or Dry run it) — amber
+cards, quest names bold. Then the When-event picker with a pack loaded:
+short "Breach: …" rows beside "Terminal: …".
 
 r151 ships the **target-matching warnings** (plan:
 [plans/r151-target-warnings.md](plans/r151-target-warnings.md)) — the second
@@ -536,22 +566,21 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r151 (target-matching warnings) on
+- **HEAD:** r152 (warning cards, event labels) on
   `arena/01a09bf3-hackhub-quest-editor`, committed and pushed. Previous
-  rounds: r150 (pack UX polish), r149 (Recon-NG example pack), r148
-  (picker/mark-size/stamp), r147 (grid polish), r146 (name-twin grey
-  screen). (Sandbox resets have rolled local history back more than once —
-  most recently taking node_modules mid-r151; recovered from the remote
-  tip per the standing fetch-first rule, then `npm ci`. The remote is
-  authoritative.)
-- **1,436 tests green** across 69 files, typecheck clean, build clean, and —
+  rounds: r151 (target-matching warnings), r150 (pack UX polish), r149
+  (Recon-NG example pack), r148 (picker/mark-size/stamp), r147 (grid
+  polish). (Sandbox resets have rolled local history back more than once;
+  recovered from the remote tip per the standing fetch-first rule, then
+  `npm ci` when node_modules went with it. The remote is authoritative.)
+- **1,438 tests green** across 70 files, typecheck clean, build clean, and —
   since the r138 prep rider — **vitest exits 0**: the 4 long-standing
   unhandled d3-drag errors were diagnosed as load-bearing jsdom noise (they
   aborted every canvas drag handler mid-gesture; four selection-gesture
   tests had been passing *because of* the crash) and fixed in
   `vitest.setup.ts` by giving MouseEvents the view a real browser would.
   r139 also cleared the `pack.node` duplicate-key React warning.
-- **Editor build stamp:** `2026-09-13.r151` (bumps every round since r148 —
+- **Editor build stamp:** `2026-09-13.r152` (bumps every round since r148 —
   the stamp is a version, not a changelog).
 - Tool-pack modules: `src/toolpacks/schema.ts` (format 2 + plain-language
   `parseToolPack`), `src/toolpacks/palette.ts` (pure `packNodeDefs`,

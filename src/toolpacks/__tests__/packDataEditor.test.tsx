@@ -295,8 +295,8 @@ describe("pack events in the trigger picker", () => {
         /* fireEvent, not userEvent: Radix popover under jsdom (repo lesson). */
         fireEvent.click(screen.getByText("Choose an event…"));
         expect(screen.getByText(/Community tools \(2\)/)).toBeInTheDocument();
-        /* Rows carry the pack's plain-language label, suffixed with the pack. */
-        expect(screen.getByText(/A file was downloaded from a breached machine/)).toBeInTheDocument();
+        /* Rows carry the pack's house-style label, suffixed with the pack. */
+        expect(screen.getByText(/Breach: File downloaded/)).toBeInTheDocument();
         expect(screen.getByText("ExampleTools.Breach.FileDownloaded")).toBeInTheDocument();
     });
 
@@ -316,7 +316,7 @@ describe("pack events in the trigger picker", () => {
         };
         render(<Harness />);
         fireEvent.click(screen.getByText("Choose an event…"));
-        fireEvent.click(screen.getByText(/A file was downloaded from a breached machine/));
+        fireEvent.click(screen.getByText(/Breach: File downloaded/));
         /* The picker's honesty line: the event comes from a pack, and quests
            waiting on it need that pack's game mod. */
         const fired = screen.getAllByText(

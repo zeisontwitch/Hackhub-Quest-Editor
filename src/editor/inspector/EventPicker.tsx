@@ -135,11 +135,18 @@ export function EventPicker({ value, onChange }: { value: string; onChange: (val
                                             value === event.name && "bg-accent-soft",
                                         )}
                                     >
-                                        <span className="block truncate text-[12px] text-ink">
+                                        <span
+                                            className="block truncate text-[12px] text-ink"
+                                            title={packLabel.get(event.name) ?? humanEventName(event.name)}
+                                        >
                                             {packLabel.get(event.name) ?? humanEventName(event.name)}
                                         </span>
-                                        <span className="block truncate font-mono text-[10.5px] text-ink-4">{event.name}</span>
-                                        <span className="truncate font-mono text-[10px] text-ink-4">{event.payload}</span>
+                                        <span className="block truncate font-mono text-[10.5px] text-ink-4" title={event.name}>
+                                            {event.name}
+                                        </span>
+                                        <span className="truncate font-mono text-[10px] text-ink-4" title={event.payload}>
+                                            {event.payload}
+                                        </span>
                                     </button>
                                 ))}
                             </section>

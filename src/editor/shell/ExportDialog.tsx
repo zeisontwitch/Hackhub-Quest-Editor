@@ -8,6 +8,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import JSZip from "jszip";
 import { compileProject, type CompileResult } from "@/compiler/compile";
 import { Icon } from "@/components/Icon";
+import { WarningList } from "@/components/WarningList";
 import { useEditor } from "@/store/editor";
 import { usePacks } from "@/store/packs";
 
@@ -111,11 +112,7 @@ export function ExportDialog({ open, onOpenChange }: { open: boolean; onOpenChan
                                         <p className="mb-1 text-[10px] font-semibold tracking-wider text-warn uppercase">
                                             Good to know
                                         </p>
-                                        <ul className="grid gap-1">
-                                            {result.warnings.map((w, i) => (
-                                                <li key={i}>• {w}</li>
-                                            ))}
-                                        </ul>
+                                        <WarningList warnings={result.warnings} />
                                     </div>
                                 )}
                             </div>

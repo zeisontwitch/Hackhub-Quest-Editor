@@ -12,7 +12,7 @@
   "events": [
     {
       "name": "ReconNg.Breach.SessionOpened",
-      "label": "The player breached a machine (session opened)",
+      "label": "Breach: Session opened",
       "docs": "Fires when the player's exploit lands and a session opens — a foothold is enough for this one. Match the machine by host or IP, or the attack by module.",
       "fields": [
         "sessionId",
@@ -25,7 +25,7 @@
     },
     {
       "name": "ReconNg.Breach.DesktopOpened",
-      "label": "The player gained desktop access on a breach",
+      "label": "Breach: Desktop opened",
       "docs": "Fires when a session goes desktop-grade through a GUI implant. Match on host or IP; the profile and system say which desktop the player sees.",
       "fields": [
         "sessionId",
@@ -40,7 +40,7 @@
     },
     {
       "name": "ReconNg.Breach.DirListed",
-      "label": "The player listed a directory in a breach session",
+      "label": "Breach: Directory listed",
       "docs": "Fires when the player lists a directory inside a session. (Not on the mod's docs page — confirmed in its source.) Match on host and path.",
       "fields": [
         "sessionId",
@@ -51,7 +51,7 @@
     },
     {
       "name": "ReconNg.Breach.FileRead",
-      "label": "The player read a file in a breach session",
+      "label": "Breach: File read",
       "docs": "Fires when the player reads a file with cat inside a session. Match the file by path or name, the machine by host or IP.",
       "fields": [
         "sessionId",
@@ -63,7 +63,7 @@
     },
     {
       "name": "ReconNg.Breach.FileDownloaded",
-      "label": "The player downloaded a file from a breach",
+      "label": "Breach: File downloaded",
       "docs": "Fires when the player saves a session file to their downloads — the classic bring-me-proof objective. Match the file by path or name.",
       "fields": [
         "sessionId",
@@ -76,7 +76,7 @@
     },
     {
       "name": "ReconNg.Breach.FileDeleted",
-      "label": "The player deleted a file in a breach session",
+      "label": "Breach: File deleted",
       "docs": "Fires when the player removes a file with rm. Only files you planted as deletable can go — match by path or name.",
       "fields": [
         "sessionId",
@@ -88,7 +88,7 @@
     },
     {
       "name": "ReconNg.Breach.Shutdown",
-      "label": "The player shut down a breached machine",
+      "label": "Breach: Machine shut down",
       "docs": "Fires when the player runs shutdown, poweroff or halt inside a session — the machine goes dark and the session ends. (Not on the mod's docs page — confirmed in its source.)",
       "fields": [
         "sessionId",
@@ -98,7 +98,7 @@
     },
     {
       "name": "ReconNg.Breach.SessionClosed",
-      "label": "A breach session ended",
+      "label": "Breach: Session closed",
       "docs": "Fires whenever a session ends for any reason — the player closed it, the story cut it, or the machine went dark. The reason says why: a story kick reports terminated.",
       "fields": [
         "sessionId",
@@ -109,7 +109,7 @@
     },
     {
       "name": "ReconNg.UserEnum.Complete",
-      "label": "An SSH username probe recovered accounts",
+      "label": "User enum: Probe complete",
       "docs": "Fires when a username probe finishes against a host you registered for probing. (Not on the mod's docs page — confirmed in its source.) Match on host; the users list carries what came back.",
       "fields": [
         "ip",

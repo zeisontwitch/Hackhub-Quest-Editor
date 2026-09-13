@@ -39,7 +39,7 @@ describe("the dry run dialog", () => {
         // The honesty caption is part of the product, not decoration.
         expect(screen.getByText(/simulates the editor's own runtime/)).toBeInTheDocument();
         // The auto-run finishes and the quest section appears.
-        await waitFor(() => expect(screen.getByText("First Quest")).toBeInTheDocument());
+        await waitFor(() => expect(screen.getByRole("heading", { name: "First Quest" })).toBeInTheDocument());
         expect(screen.queryByText("would never tick")).not.toBeInTheDocument();
     });
 

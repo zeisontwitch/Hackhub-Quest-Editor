@@ -1,5 +1,5 @@
 /**
- * r151 target-matching warnings: a quest that hands work to a tool mod gets
+ * r151 target-matching warnings: a quest that hands work to an addon gets
  * told — at export and in dry runs — when its targets speak a language the
  * mod cannot match. Per quest, per pack, intent-gated; never cross-quest.
  */

@@ -1,5 +1,5 @@
 /**
- * The tool-pack manager dialog (r137): loading pack files with plain-language
+ * The addon manager dialog (r137): loading addon files with plain-language
  * results, the two-step remove, and persistence across reopenings. userEvent
  * drives the file input (the repo's proven FileReader-safe path).
  */
@@ -16,7 +16,7 @@ const exampleJson = readFileSync(join(process.cwd(), "reference/example-toolpack
 const packFile = (text: string, name = "toolpack.json") => new File([text], name, { type: "application/json" });
 
 async function loadFiles(...files: File[]) {
-    const input = screen.getByLabelText("Load tool pack files");
+    const input = screen.getByLabelText("Load addon files");
     const user = userEvent.setup();
     await user.upload(input, files);
 }
@@ -27,16 +27,16 @@ beforeEach(() => {
     render(<ToolPackManagerDialog open onOpenChange={() => {}} />);
 });
 
-describe("tool pack manager", () => {
-    it("introduces itself and says a pack is data, not code", () => {
-        expect(screen.getByText("Tool packs")).toBeInTheDocument();
+describe("addon manager", () => {
+    it("introduces itself and says an addon is data, not code", () => {
+        expect(screen.getByText("Addons")).toBeInTheDocument();
         expect(screen.getByText(/the editor never runs code from them/)).toBeInTheDocument();
-        expect(screen.getByText("No tool packs loaded.")).toBeInTheDocument();
+        expect(screen.getByText("No addons loaded.")).toBeInTheDocument();
     });
 
     it("loads a valid pack and lists it with its honesty line", async () => {
         await loadFiles(packFile(exampleJson));
-        expect(await screen.findByText(/Loaded 1 pack\./)).toBeInTheDocument();
+        expect(await screen.findByText(/Loaded 1 addon\./)).toBeInTheDocument();
         expect(screen.getAllByText("Example Tools").length).toBeGreaterThan(0);
         expect(screen.getByText(/example-tools · v1\.0\.0/)).toBeInTheDocument();
         /* The honesty line and the counts: broken across elements, so match
@@ -52,7 +52,7 @@ describe("tool pack manager", () => {
 
     it("still shows the packs after closing and reopening (machine-local persistence)", async () => {
         await loadFiles(packFile(exampleJson));
-        await screen.findByText(/Loaded 1 pack\./);
+        await screen.findByText(/Loaded 1 addon\./);
         cleanup();
         render(<ToolPackManagerDialog open onOpenChange={() => {}} />);
         expect(screen.getAllByText("Example Tools").length).toBeGreaterThan(0);
@@ -72,7 +72,7 @@ describe("tool pack manager", () => {
 
     it("loads the good half of a mixed selection and names the bad half", async () => {
         await loadFiles(packFile(exampleJson), packFile("{oops", "broken.json"));
-        expect(await screen.findByText(/Loaded 1 pack\./)).toBeInTheDocument();
+        expect(await screen.findByText(/Loaded 1 addon\./)).toBeInTheDocument();
         expect(screen.getByText(/broken\.json: this is not valid JSON/)).toBeInTheDocument();
         expect(screen.getAllByText("Example Tools").length).toBeGreaterThan(0);
     });
@@ -81,7 +81,7 @@ describe("tool pack manager", () => {
         /* fireEvent, not user.upload: user-event honours the input's accept
            filter, and this input only takes .json — the mislabelled-file
            case must still reach the handler. */
-        fireEvent.change(screen.getByLabelText("Load tool pack files"), {
+        fireEvent.change(screen.getByLabelText("Load addon files"), {
             target: { files: [new File(["<p>hi</p>"], "page.html", { type: "text/html" })] },
         });
         expect(await screen.findByText(/No \.json files in that selection/)).toBeInTheDocument();
@@ -89,7 +89,7 @@ describe("tool pack manager", () => {
 
     it("removes a pack in two steps", async () => {
         await loadFiles(packFile(exampleJson));
-        await screen.findByText(/Loaded 1 pack\./);
+        await screen.findByText(/Loaded 1 addon\./);
 
         /* Step one asks; nothing is gone yet. */
         await userEvent.click(screen.getByLabelText("Remove Example Tools"));
@@ -103,16 +103,16 @@ describe("tool pack manager", () => {
     });
 
     it("dropping a pack file onto the list loads it like the button does", async () => {
-        fireEvent.drop(screen.getByText("No tool packs loaded."), {
+        fireEvent.drop(screen.getByText("No addons loaded."), {
             dataTransfer: { files: [packFile(exampleJson)] },
         });
-        expect(await screen.findByText(/Loaded 1 pack\./)).toBeInTheDocument();
+        expect(await screen.findByText(/Loaded 1 addon\./)).toBeInTheDocument();
         expect(screen.getAllByText("Example Tools").length).toBeGreaterThan(0);
     });
 
     it("Save closes the dialog once the receipt is showing", async () => {
         await loadFiles(packFile(exampleJson));
-        await screen.findByText(/Loaded 1 pack\./);
+        await screen.findByText(/Loaded 1 addon\./);
         cleanup();
         const onOpenChange = vi.fn();
         render(<ToolPackManagerDialog open onOpenChange={onOpenChange} />);
@@ -122,7 +122,7 @@ describe("tool pack manager", () => {
 
     it("the remove question can be dismissed without removing", async () => {
         await loadFiles(packFile(exampleJson));
-        await screen.findByText(/Loaded 1 pack\./);
+        await screen.findByText(/Loaded 1 addon\./);
         await userEvent.click(screen.getByLabelText("Remove Example Tools"));
         await userEvent.click(screen.getByRole("button", { name: "No" }));
         expect(screen.getAllByText("Example Tools").length).toBeGreaterThan(0);

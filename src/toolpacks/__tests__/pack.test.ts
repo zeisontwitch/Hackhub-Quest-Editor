@@ -1,5 +1,5 @@
 /**
- * Tool packs (r137): the format's plain-language validation, the
+ * Addons (r137): the format's plain-language validation, the
  * machine-local store, and the helpers the trigger picker consumes. The
  * starter pack in reference/example-toolpack is the format's living fixture —
  * if it ever stops parsing, the docs lie.
@@ -69,9 +69,9 @@ describe("pack format", () => {
     });
 
     it("recognises a file that is not a pack at all", () => {
-        expect(expectError(parseToolPack("hello"))).toContain("not a tool pack");
-        expect(expectError(parseToolPack([exampleRaw]))).toContain("not a tool pack");
-        expect(expectError(parseToolPack(null))).toContain("not a tool pack");
+        expect(expectError(parseToolPack("hello"))).toContain("not an addon");
+        expect(expectError(parseToolPack([exampleRaw]))).toContain("not an addon");
+        expect(expectError(parseToolPack(null))).toContain("not an addon");
     });
 
     it("points at the offending field, not at zod", () => {
@@ -179,14 +179,14 @@ describe("picker helpers", () => {
     });
 
     it("describePackNodeAction speaks gamer words, never raw keys", () => {
-        expect(describePackNodeAction({ emitter: "sdk" })).toBe("runs the tool mod's own actions");
-        expect(describePackNodeAction({ emitter: "emit" })).toBe("sends a signal to the tool mod");
-        expect(describePackNodeAction({ emitter: "storage" })).toBe("hands data to the tool mod");
+        expect(describePackNodeAction({ emitter: "sdk" })).toBe("runs the addon's own actions");
+        expect(describePackNodeAction({ emitter: "emit" })).toBe("sends a signal to the addon");
+        expect(describePackNodeAction({ emitter: "storage" })).toBe("hands data to the addon");
         expect(describePackNodeAction({ emitter: "commandData", command: "exampletools-scan" })).toBe(
             "places a scripted answer for the exampletools-scan command",
         );
         expect(describePackNodeAction({ emitter: "commandData" })).toBe("places a scripted tool answer");
-        expect(describePackNodeAction({})).toBe("runs the tool mod's own actions");
+        expect(describePackNodeAction({})).toBe("runs the addon's own actions");
     });
 
     it("packEventByName serves fields and the honesty line", () => {

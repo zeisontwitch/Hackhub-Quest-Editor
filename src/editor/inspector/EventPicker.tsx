@@ -39,7 +39,7 @@ export function EventPicker({ value, onChange }: { value: string; onChange: (val
                 ? [
                       {
                           group: "community",
-                          label: `Community tools (${community.length})`,
+                          label: `Community addons (${community.length})`,
                           events: community.map((e) => ({ name: e.name, payload: e.payload, group: "community" })),
                       },
                   ]
@@ -201,7 +201,7 @@ function EventPackExplanation({
         <>
             {ev.docs && <p className="field-hint">{ev.docs}</p>}
             <p className="field-hint">
-                Fired by the <strong>{ev.packName}</strong> tool mod. A quest that waits on this event needs{" "}
+                Fired by the <strong>{ev.packName}</strong> addon. A quest that waits on this event needs{" "}
                 <strong>{ev.gameModName}</strong> installed on the player&apos;s machine — say so in the quest description.
             </p>
             <p className="field-hint">

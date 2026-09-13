@@ -223,9 +223,9 @@ export function buildReference(): ProjectDocument {
         { id: "trigger", title: "Triggers" },
         { id: "world", title: "World building" },
         { id: "comms", title: "Communication" },
-        { id: "reply", title: "Player replies" },
+        { id: "reply", title: "Custom terminal" },
         { id: "effect", title: "Effects" },
-        { id: "community", title: "Community tools" },
+        { id: "community", title: "Community addons" },
         { id: "flow", title: "Flow control" },
         { id: "layout", title: "Layout" },
     ];

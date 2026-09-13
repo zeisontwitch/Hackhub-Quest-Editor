@@ -62,11 +62,11 @@ export function PackDataEditor({ node }: { node: NodeOfType<"world.packData"> })
         return (
             <div className="grid gap-2 px-3 pt-1">
                 <p className="rounded-md border border-line/70 bg-surface-2 px-2.5 py-2 text-[10.5px] leading-relaxed text-ink-3">
-                    This node hands quest data to a community tool mod. Load a tool pack first — it brings the pack's
+                    This node hands quest data to a community addon. Load an addon first — it brings the addon's
                     events, its data shapes and the note about which in-game mod players need.
                 </p>
                 <button type="button" className="btn-default justify-center" onClick={() => setUi({ modal: "toolpacks" })}>
-                    Open the tool pack manager
+                    Open the addon manager
                 </button>
             </div>
         );
@@ -74,9 +74,9 @@ export function PackDataEditor({ node }: { node: NodeOfType<"world.packData"> })
 
     return (
         <div className="grid gap-2 px-3 pt-1">
-            <FieldShell label="Tool pack" hint="The community pack whose data this node hands over.">
+            <FieldShell label="Addon" hint="The community addon whose data this node hands over.">
                 <SelectInput
-                    ariaLabel="Tool pack"
+                    ariaLabel="Addon"
                     value={d.packId}
                     onChange={choosePack}
                     options={[
@@ -115,7 +115,7 @@ export function PackDataEditor({ node }: { node: NodeOfType<"world.packData"> })
                     ))}
                     {d.merge === "replace" && d.mergeBy && (
                         <p className="text-[10px] leading-relaxed text-ink-4">
-                            If the tool mod already has an entry for the same thing, this replaces it; everything
+                            If the addon already has an entry for the same thing, this replaces it; everything
                             else is kept.
                         </p>
                     )}

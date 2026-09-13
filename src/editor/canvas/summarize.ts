@@ -264,7 +264,7 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
         case "pack.node": {
             if (!d.nodeId) return ["Not set up yet — add it from the palette's Editor Mods group"];
             const what = describePackNodeAction(d as { emitter?: string; command?: string });
-            const lines = [`${d.nodeLabel || "Tool pack node"} — ${what}`];
+            const lines = [`${d.nodeLabel || "Addon node"} — ${what}`];
             if (d.packName) lines.push(`from ${d.packName}`);
             const filled = Object.values((d.values as Record<string, string>) ?? {}).filter((v) => v);
             if (filled.length) lines.push(`${filled.length} value${filled.length === 1 ? "" : "s"} filled in`);

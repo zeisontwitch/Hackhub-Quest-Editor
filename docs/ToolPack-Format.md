@@ -1,9 +1,9 @@
-# The Tool Pack format (format 2)
+# The Addon format (format 2)
 
-A **tool pack** is one JSON file — `toolpack.json` — that teaches the Quest
-Editor about a **tool mod** for HackHub: the events your mod emits, the
+An **addon** is one JSON file — `toolpack.json` — that teaches the Quest
+Editor about an **addon** for HackHub: the events your mod emits, the
 SharedStorage data it reads, and the target conventions it matches against.
-Quest authors load the file through **Tools → Tool packs**, and everything in
+Quest authors load the file through **Addons**, and everything in
 it shows up in the editor as labelled, plain-language UI.
 
 Two rules define the format:
@@ -63,7 +63,7 @@ runs even on a machine where the pack was never loaded.
 
 ## `events[]` — trigger picker entries
 
-Each event joins the trigger picker under **Community tools**, searchable by
+Each event joins the trigger picker under **Community addons**, searchable by
 name, label and pack.
 
 ```json

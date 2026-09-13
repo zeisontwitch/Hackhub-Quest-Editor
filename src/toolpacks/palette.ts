@@ -82,15 +82,15 @@ export function describePackNodeAction(data: {
 }): string {
     switch (data.emitter) {
         case "sdk":
-            return "runs the tool mod's own actions";
+            return "runs the addon's own actions";
         case "emit":
-            return "sends a signal to the tool mod";
+            return "sends a signal to the addon";
         case "storage":
-            return "hands data to the tool mod";
+            return "hands data to the addon";
         case "commandData":
             return data.command ? `places a scripted answer for the ${data.command} command` : "places a scripted tool answer";
         default:
-            return "runs the tool mod's own actions";
+            return "runs the addon's own actions";
     }
 }
 
@@ -150,7 +150,7 @@ export function packNodeDefs(packs: ToolPack[]): { def: NodeTypeDef; addData: Re
     return packs.flatMap((pack) =>
         pack.nodes.map((n) => {
             const addData = buildAddData(pack, n);
-            const blurb = n.blurb || (pack.gameMod?.name ? `Needs the ${pack.gameMod.name} game mod` : "From a tool pack");
+            const blurb = n.blurb || (pack.gameMod?.name ? `Needs the ${pack.gameMod.name} game mod` : "From an addon");
 
             const def: NodeTypeDef = {
                 type: "pack.node",

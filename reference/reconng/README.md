@@ -1,6 +1,6 @@
 # Recon-NG example pack — FENCED, read this first
 
-This folder describes **Recon-NG**, a real tool mod by **Darkvalnar**, so the
+This folder describes **Recon-NG**, a real addon by **Darkvalnar**, so the
 Quest Editor has a genuine second pack to design its tool-pack surfaces
 against. It is an **example only**:
 
@@ -29,5 +29,5 @@ files — nothing else references it.
 
 | File | What it is |
 |---|---|
-| `toolpack.json` | The authored pack: 9 events, 3 data shapes, 2 story nodes, the real target conventions. Load it through Tools → Tool packs to see every pack surface driven by a real mod. |
+| `toolpack.json` | The authored pack: 9 events, 3 data shapes, 2 story nodes, the real target conventions. Load it through Addons to see every addon surface driven by a real mod. |
 | `NOTES.md` | The verification record: what was checked against which file+line, the docs-vs-source diffs, and what was deliberately left out with the reason. |

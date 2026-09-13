@@ -157,9 +157,9 @@ export const CATEGORIES = [
     { id: "trigger", label: "Triggers", color: "var(--color-cat-trigger)", hex: "#22d3ee", icon: "zap" },
     { id: "world", label: "World building", color: "var(--color-cat-world)", hex: "#34d399", icon: "globe" },
     { id: "comms", label: "Communication", color: "var(--color-cat-comms)", hex: "#f472b6", icon: "message" },
-    { id: "reply", label: "Player replies", color: "var(--color-cat-reply)", hex: "#fb923c", icon: "keyboard" },
+    { id: "reply", label: "Custom terminal", color: "var(--color-cat-reply)", hex: "#fb923c", icon: "keyboard" },
     { id: "effect", label: "Effects", color: "var(--color-cat-effect)", hex: "#60a5fa", icon: "sparkle" },
-    { id: "community", label: "Community tools", color: "var(--color-cat-community)", hex: "#2dd4bf", icon: "package" },
+    { id: "community", label: "Community addons", color: "var(--color-cat-community)", hex: "#2dd4bf", icon: "package" },
     { id: "flow", label: "Flow control", color: "var(--color-cat-flow)", hex: "#94a3b8", icon: "branch" },
     { id: "layout", label: "Layout", color: "var(--color-cat-layout)", hex: "#64748b", icon: "layers" },
 ] as const;
@@ -684,8 +684,8 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
     "world.packData": {
         type: "world.packData",
         category: "community",
-        label: "Give data to a tool mod",
-        blurb: "Pick a data shape from a tool pack and fill it in",
+        label: "Give data to an addon",
+        blurb: "Pick a data shape from an addon and fill it in",
         icon: "package",
         ...io,
         hook: "onStart",
@@ -699,8 +699,8 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
     "pack.node": {
         type: "pack.node",
         category: "community",
-        label: "Tool pack node",
-        blurb: "A story node from a tool pack — find it under Editor Mods",
+        label: "Addon node",
+        blurb: "A story node from an addon — find it under Editor Mods",
         icon: "package",
         ...io,
         hook: "onStart",
@@ -1111,7 +1111,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
     },
     "flow.note": {
         type: "flow.note",
-        category: "flow",
+        category: "layout",
         label: "Sticky note",
         blurb: "A comment on the canvas",
         icon: "note",

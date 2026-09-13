@@ -45,7 +45,7 @@ describe("editor shell", () => {
                 "Triggers",
                 "World building",
                 "Communication",
-                "Player replies",
+                "Custom terminal",
                 "Effects",
                 "Flow control",
             ]),

@@ -1,5 +1,5 @@
 /**
- * The Recon-NG example pack (r149): a real tool mod described as pack data.
+ * The Recon-NG example pack (r149): a real addon described as data.
  * The fixture is the fence doc's living half — if it ever stops parsing, or
  * drifts from what the tests pin here, the fence notes lie. See
  * reference/reconng/README.md (fenced: example only, never serviced).

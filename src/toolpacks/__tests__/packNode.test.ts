@@ -157,7 +157,7 @@ describe("pack node emitters", () => {
         const project = packNodeProject({ emitter: "emit", eventName: "E", payload: {} });
         expect(packModsUsed(project).get("Example Tools")).toBe("Example Tools");
         const readme = compileProject(project).files.find((f) => f.path === "README.md")!.content;
-        expect(readme).toContain("Community tools: Example Tools");
+        expect(readme).toContain("Community addons: Example Tools");
     });
 
     it("a bare pack.node warns that it is not set up", () => {
@@ -165,7 +165,7 @@ describe("pack node emitters", () => {
         project.quests[0].title = "Empty mod";
         project.quests[0].graph.nodes = [node("pack.node", { packName: "Example Tools" })];
         const warnings = computeWarnings(project);
-        expect(warnings.some((w) => w.includes("Empty mod") && w.includes("tool pack node is not set up yet"))).toBe(true);
+        expect(warnings.some((w) => w.includes("Empty mod") && w.includes("addon node is not set up yet"))).toBe(true);
     });
 });
 
@@ -207,7 +207,7 @@ describe("community-data node", () => {
         expect(packModsUsed(createProject()).size).toBe(0);
         const compiled = compileProject(packProject());
         const readme = compiled.files.find((f) => f.path === "README.md")!.content;
-        expect(readme).toContain("Community tools: Example Tools");
+        expect(readme).toContain("Community addons: Example Tools");
         expect(readme).toContain("requires those game mods installed");
     });
 

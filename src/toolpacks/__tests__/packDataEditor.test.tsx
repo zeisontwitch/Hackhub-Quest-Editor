@@ -51,8 +51,8 @@ describe("community-data editor", () => {
     it("with no packs loaded it points at the manager", () => {
         const node = addPackNode();
         render(<PackDataEditor node={node} />);
-        expect(screen.getByText(/Load a tool pack first/)).toBeInTheDocument();
-        fireEvent.click(screen.getByRole("button", { name: "Open the tool pack manager" }));
+        expect(screen.getByText(/Load an addon first/)).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Open the addon manager" }));
         expect(useEditor.getState().ui.modal).toBe("toolpacks");
     });
 
@@ -61,7 +61,7 @@ describe("community-data editor", () => {
         const node = addPackNode();
         const { rerender } = render(<PackDataEditor node={node} />);
 
-        fireEvent.change(screen.getByLabelText("Tool pack"), { target: { value: "example-tools" } });
+        fireEvent.change(screen.getByLabelText("Addon"), { target: { value: "example-tools" } });
         let d = nodeNow(node.id).data as NodeOfType<"world.packData">["data"];
         expect(d.packName).toBe("Example Tools");
         expect(d.gameModName).toBe("Example Tools");
@@ -85,7 +85,7 @@ describe("community-data editor", () => {
         const node = addPackNode();
         const { rerender } = render(<PackDataEditor node={node} />);
 
-        fireEvent.change(screen.getByLabelText("Tool pack"), { target: { value: "recon-ng" } });
+        fireEvent.change(screen.getByLabelText("Addon"), { target: { value: "recon-ng" } });
         rerender(<PackDataEditor node={nodeNow(node.id) as NodeOfType<"world.packData">} />);
         fireEvent.change(screen.getByLabelText("Data shape"), { target: { value: "loot" } });
         const d = nodeNow(node.id).data as NodeOfType<"world.packData">["data"];
@@ -226,9 +226,9 @@ describe("editor mods: palette and inspector", () => {
         );
         render(<PackNodeEditor node={nodeNow(node.id) as NodeOfType<"pack.node">} />);
         /* Gamer words, no event name — and the pack banner names the pack. */
-        expect(screen.getByText(/it sends a signal to the tool mod/)).toBeInTheDocument();
+        expect(screen.getByText(/it sends a signal to the addon/)).toBeInTheDocument();
         expect(screen.queryByText(/ExampleTools\.Handover\.Done/)).not.toBeInTheDocument();
-        const banner = screen.getByText((_, el) => el?.tagName === "P" && (el.textContent ?? "").includes("tool pack"));
+        const banner = screen.getByText((_, el) => el?.tagName === "P" && (el.textContent ?? "").includes("From the"));
         expect(banner.textContent).toContain("Example Tools");
         expect(banner.querySelector("strong")?.textContent).toBe("Example Tools");
         fireEvent.change(screen.getByLabelText("Host or IP"), { target: { value: "10.0.0.14" } });
@@ -268,7 +268,7 @@ describe("editor mods: palette and inspector", () => {
         );
         render(<PackNodeEditor node={nodeNow(node.id) as NodeOfType<"pack.node">} />);
         expect(screen.getByText("Tells everyone listening that the handover happened.")).toBeInTheDocument();
-        expect(screen.queryByText(/it sends a signal to the tool mod/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/it sends a signal to the addon/)).not.toBeInTheDocument();
     });
 });
 
@@ -289,12 +289,12 @@ describe("pack events in the trigger picker", () => {
         expect(detail.value).toBe("target");
     });
 
-    it("the picker lists a Community tools group with the pack's labels", { timeout: 30_000 }, () => {
+    it("the picker lists a Community addons group with the pack's labels", { timeout: 30_000 }, () => {
         act(() => usePacks.getState().loadPack(exampleRaw));
         render(<EventPicker value="" onChange={() => {}} />);
         /* fireEvent, not userEvent: Radix popover under jsdom (repo lesson). */
         fireEvent.click(screen.getByText("Choose an event…"));
-        expect(screen.getByText(/Community tools \(2\)/)).toBeInTheDocument();
+        expect(screen.getByText(/Community addons \(2\)/)).toBeInTheDocument();
         /* Rows carry the pack's house-style label, suffixed with the pack. */
         expect(screen.getByText(/Breach: File downloaded/)).toBeInTheDocument();
         expect(screen.getByText("ExampleTools.Breach.FileDownloaded")).toBeInTheDocument();
@@ -320,7 +320,7 @@ describe("pack events in the trigger picker", () => {
         /* The picker's honesty line: the event comes from a pack, and quests
            waiting on it need that pack's game mod. */
         const fired = screen.getAllByText(
-            (_, el) => el?.tagName === "P" && (el.textContent ?? "").includes("Fired by the Example Tools tool mod"),
+            (_, el) => el?.tagName === "P" && (el.textContent ?? "").includes("Fired by the Example Tools addon"),
         );
         expect(fired.length).toBeGreaterThan(0);
     });

@@ -33,7 +33,7 @@ export function PackNodeEditor({ node }: { node: NodeOfType<"pack.node"> }) {
                     <p className="flex items-center gap-1.5 rounded-md border border-cat-community/30 bg-cat-community/10 px-2.5 py-1.5 text-[10.5px] leading-relaxed text-ink-2">
                         <Icon name="package" size={12} className="shrink-0 text-cat-community" />
                         <span>
-                            From the <strong className="font-semibold text-ink">{d.packName}</strong> tool pack
+                            From the <strong className="font-semibold text-ink">{d.packName}</strong> addon
                         </span>
                     </p>
                 )}
@@ -53,7 +53,7 @@ export function PackNodeEditor({ node }: { node: NodeOfType<"pack.node"> }) {
                 <p className="flex items-center gap-1.5 rounded-md border border-cat-community/30 bg-cat-community/10 px-2.5 py-1.5 text-[10.5px] leading-relaxed text-ink-2">
                     <Icon name="package" size={12} className="shrink-0 text-cat-community" />
                     <span>
-                        From the <strong className="font-semibold text-ink">{d.packName}</strong> tool pack
+                        From the <strong className="font-semibold text-ink">{d.packName}</strong> addon
                     </span>
                 </p>
             )}

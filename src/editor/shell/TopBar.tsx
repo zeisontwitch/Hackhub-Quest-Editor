@@ -216,10 +216,10 @@ export function TopBar() {
                 type="button"
                 className="btn-default"
                 onClick={() => setUi({ modal: "toolpacks" })}
-                title="Load community tool packs — extra events and data shapes from game mods"
+                title="Load community addons — extra events and data shapes from game mods"
             >
                 <Icon name="package" size={13} />
-                <span className="hidden lg:inline">Tools</span>
+                <span className="hidden lg:inline">Addons</span>
             </button>
 
             <button

@@ -117,7 +117,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-13.r153";
+export const EDITOR_BUILD = "2026-09-13.r154";
 
 /** Warning severity (r153): info = good to know, warn = could cause issues,
     error = will break or strand the player. */
@@ -534,7 +534,7 @@ function warnCommunityNodes(project: ProjectDocument): CompilerWarning[] {
                 const d = n.data as { packName?: string; storageKey?: string };
                 if (!d.storageKey) {
                     warnings.push({ level: "warn", text: 
-                        `${q.title || q.name}: a “Give data to a tool mod” node is not set up yet${d.packName ? ` (${d.packName})` : ""} — open the node and pick the pack and the data shape, or delete it. As it stands it does nothing.`,
+                        `${q.title || q.name}: a “Give data to an addon” node is not set up yet${d.packName ? ` (${d.packName})` : ""} — open the node and pick the pack and the data shape, or delete it. As it stands it does nothing.`,
  });
                 }
             }
@@ -542,7 +542,7 @@ function warnCommunityNodes(project: ProjectDocument): CompilerWarning[] {
                 const d = n.data as { packName?: string; nodeLabel?: string; nodeId?: string };
                 if (!d.nodeId) {
                     warnings.push({ level: "warn", text: 
-                        `${q.title || q.name}: a tool pack node is not set up yet${d.packName ? ` (${d.packName})` : ""} — add it again from the palette's Editor Mods group, or delete it. As it stands it does nothing.`,
+                        `${q.title || q.name}: an addon node is not set up yet${d.packName ? ` (${d.packName})` : ""} — add it again from the palette's Editor Mods group, or delete it. As it stands it does nothing.`,
  });
                 }
             }
@@ -712,7 +712,7 @@ function buildReadme(project: ProjectDocument, permissions: string[], warnings: 
         `- Websites: ${project.websites.map((w) => w.host).join(", ") || "none"}`,
         ...(packModsUsed(project).size
             ? [
-                  `- Community tools: ${[...packModsUsed(project).keys()].join(", ")} — requires those game mods installed on the player's machine.`,
+                  `- Community addons: ${[...packModsUsed(project).keys()].join(", ")} — requires those game mods installed on the player's machine.`,
               ]
             : []),
         `- Permissions requested: ${permissions.join(", ") || "none"}`,

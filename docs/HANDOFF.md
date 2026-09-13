@@ -1,4 +1,19 @@
-# Handoff — r153
+# Handoff — r154
+
+r154 is the UI-words batch (plan:
+[plans/r154-ui-words.md](plans/r154-ui-words.md)): Sticky note → Layout
+below Group frame (registry order does it free); "Player replies" →
+**Custom terminal** (the category holds one node, a custom terminal
+command; dialogue prose untouched); Tools → **Addons** throughout the
+user copy (button, manager, nodes, picker, README line, format doc).
+Display names only — `toolpack.json`, ids, identifiers, and history docs
+stay. Retires Next-up 3/4/5/7; renumbered 1–6 (old 6→3, 8→4, 9→5, 10→6 —
+earlier HANDOFF references to 9/10 mean today's 5/6). Gates: **1,444
+tests / 71 files**, build clean. Stamp `2026-09-13.r154`. README trimmed
+(r149 → archive).
+
+**Zeis's eyes only:** the palette's new Layout group and Custom terminal
+name, the Addons button + manager, an event picker with a pack loaded.
 
 r153 gives warnings severity (plan:
 [plans/r153-warning-severity.md](plans/r153-warning-severity.md)): Zeis
@@ -580,14 +595,13 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r153 (warning severity) on
+- **HEAD:** r154 (UI words batch) on
   `arena/01a09bf3-hackhub-quest-editor`, committed and pushed. Previous
-  rounds: r152 (warning cards, event labels), r151 (target-matching
-  warnings), r150 (pack UX polish), r149 (Recon-NG example pack), r148
-  (picker/mark-size/stamp). (Sandbox resets have rolled local history back
-  more than once; recovered from the remote tip per the standing
-  fetch-first rule, then `npm ci` when node_modules went with it. The
-  remote is authoritative.)
+  rounds: r153 (warning severity), r152 (warning cards, event labels), r151
+  (target-matching warnings), r150 (pack UX polish), r149 (Recon-NG example
+  pack). (Sandbox resets have rolled local history back more than once;
+  recovered from the remote tip per the standing fetch-first rule, then
+  `npm ci` when node_modules went with it. The remote is authoritative.)
 - **1,444 tests green** across 71 files, typecheck clean, build clean, and —
   since the r138 prep rider — **vitest exits 0**: the 4 long-standing
   unhandled d3-drag errors were diagnosed as load-bearing jsdom noise (they
@@ -595,7 +609,7 @@ banner before acting on any of it.
   tests had been passing *because of* the crash) and fixed in
   `vitest.setup.ts` by giving MouseEvents the view a real browser would.
   r139 also cleared the `pack.node` duplicate-key React warning.
-- **Editor build stamp:** `2026-09-13.r153` (bumps every round since r148 —
+- **Editor build stamp:** `2026-09-13.r154` (bumps every round since r148 —
   the stamp is a version, not a changelog).
 - Tool-pack modules: `src/toolpacks/schema.ts` (format 2 + plain-language
   `parseToolPack`), `src/toolpacks/palette.ts` (pure `packNodeDefs`,

@@ -2077,7 +2077,7 @@ describe("objectives the player completes by playing", () => {
 /**
  * Third-party event contracts (r135 investigation). The trigger node's event
  * field is free-form by design ("a key of the SDK's ModEventMap, or a custom
- * event name") — community tool mods (exploitation frameworks, recon suites)
+ * event name") — community addons (exploitation frameworks, recon suites)
  * emit their own namespaced events, and a quest must be able to complete
  * objectives from them without the editor knowing the vocabulary. Pinned end
  * to end with a payload shaped like the ones such tools document

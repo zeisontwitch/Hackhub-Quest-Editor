@@ -1,0 +1,461 @@
+{
+  "format": 2,
+  "id": "recon-ng",
+  "name": "Recon-NG",
+  "author": "HackHub Quest Editor",
+  "version": "1.0.0",
+  "docsUrl": "https://darkvalnar.github.io/hackhub-reconng/",
+  "gameMod": {
+    "name": "Recon-NG",
+    "note": "By Darkvalnar (https://github.com/Darkvalnar/hackhub-reconng) — an exploitation workspace: the player picks an exploit module, breaches a target, and works inside a persistent session. Quests that use this pack need it installed on the player's machine; list recon-ng under the mod's dependencies too (see the mod's own troubleshooting checklist)."
+  },
+  "events": [
+    {
+      "name": "ReconNg.Breach.SessionOpened",
+      "label": "The player breached a machine (session opened)",
+      "docs": "Fires when the player's exploit lands and a session opens — a foothold is enough for this one. Match the machine by host or IP, or the attack by module.",
+      "fields": [
+        "sessionId",
+        "ip",
+        "host",
+        "moduleId",
+        "privilege",
+        "access"
+      ]
+    },
+    {
+      "name": "ReconNg.Breach.DesktopOpened",
+      "label": "The player gained desktop access on a breach",
+      "docs": "Fires when a session goes desktop-grade through a GUI implant. Match on host or IP; the profile and system say which desktop the player sees.",
+      "fields": [
+        "sessionId",
+        "ip",
+        "host",
+        "moduleId",
+        "os",
+        "profile",
+        "label",
+        "hwid"
+      ]
+    },
+    {
+      "name": "ReconNg.Breach.DirListed",
+      "label": "The player listed a directory in a breach session",
+      "docs": "Fires when the player lists a directory inside a session. (Not on the mod's docs page — confirmed in its source.) Match on host and path.",
+      "fields": [
+        "sessionId",
+        "ip",
+        "host",
+        "path"
+      ]
+    },
+    {
+      "name": "ReconNg.Breach.FileRead",
+      "label": "The player read a file in a breach session",
+      "docs": "Fires when the player reads a file with cat inside a session. Match the file by path or name, the machine by host or IP.",
+      "fields": [
+        "sessionId",
+        "ip",
+        "host",
+        "path",
+        "name"
+      ]
+    },
+    {
+      "name": "ReconNg.Breach.FileDownloaded",
+      "label": "The player downloaded a file from a breach",
+      "docs": "Fires when the player saves a session file to their downloads — the classic bring-me-proof objective. Match the file by path or name.",
+      "fields": [
+        "sessionId",
+        "ip",
+        "host",
+        "path",
+        "name",
+        "localPath"
+      ]
+    },
+    {
+      "name": "ReconNg.Breach.FileDeleted",
+      "label": "The player deleted a file in a breach session",
+      "docs": "Fires when the player removes a file with rm. Only files you planted as deletable can go — match by path or name.",
+      "fields": [
+        "sessionId",
+        "ip",
+        "host",
+        "path",
+        "name"
+      ]
+    },
+    {
+      "name": "ReconNg.Breach.Shutdown",
+      "label": "The player shut down a breached machine",
+      "docs": "Fires when the player runs shutdown, poweroff or halt inside a session — the machine goes dark and the session ends. (Not on the mod's docs page — confirmed in its source.)",
+      "fields": [
+        "sessionId",
+        "ip",
+        "host"
+      ]
+    },
+    {
+      "name": "ReconNg.Breach.SessionClosed",
+      "label": "A breach session ended",
+      "docs": "Fires whenever a session ends for any reason — the player closed it, the story cut it, or the machine went dark. The reason says why: a story kick reports terminated.",
+      "fields": [
+        "sessionId",
+        "ip",
+        "host",
+        "reason"
+      ]
+    },
+    {
+      "name": "ReconNg.UserEnum.Complete",
+      "label": "An SSH username probe recovered accounts",
+      "docs": "Fires when a username probe finishes against a host you registered for probing. (Not on the mod's docs page — confirmed in its source.) Match on host; the users list carries what came back.",
+      "fields": [
+        "ip",
+        "host",
+        "moduleId",
+        "users"
+      ]
+    }
+  ],
+  "storage": [
+    {
+      "id": "loot",
+      "label": "Plant evidence on a host",
+      "key": "reconng.loot",
+      "docs": "Adds a file to the host's breach session: when the player breaches the target, the file is there to read or download. Wire this at quest start, before the player can breach.",
+      "merge": "replace",
+      "mergeBy": "target",
+      "fields": [
+        {
+          "key": "target",
+          "label": "Host or IP",
+          "type": "string",
+          "hint": "The machine the file waits on. A domain name works."
+        },
+        {
+          "key": "path",
+          "label": "File path",
+          "type": "string",
+          "hint": "Where the file sits in the session, like /opt/case/evidence.txt."
+        },
+        {
+          "key": "data",
+          "label": "File contents",
+          "type": "text",
+          "hint": "What the file says — this is where your clue goes."
+        },
+        {
+          "key": "deletable",
+          "label": "The player can delete it",
+          "type": "boolean",
+          "hint": "On lets the player remove the file with rm — drive an objective off the FileDeleted event. Off (the usual) keeps it."
+        }
+      ],
+      "entry": {
+        "target": "{{target}}",
+        "files": [
+          {
+            "path": "{{path}}",
+            "data": "{{data}}\n",
+            "readable": true,
+            "downloadable": true,
+            "deletable": "{{deletable}}"
+          }
+        ]
+      }
+    },
+    {
+      "id": "exploit",
+      "label": "Offer a new exploit module",
+      "key": "reconng.modules",
+      "docs": "Teaches the player's recon-ng a brand-new exploit: the service, port, version and vulnerability it needs, and what privilege it grants. One version string and one vulnerability type per module here — most built-ins need only that. Wire it at quest start.",
+      "merge": "replace",
+      "mergeBy": "id",
+      "fields": [
+        {
+          "key": "id",
+          "label": "Module id",
+          "type": "string",
+          "hint": "Unique name like exploit/http/my_rce. Reusing an id replaces that module."
+        },
+        {
+          "key": "name",
+          "label": "Display name",
+          "type": "string",
+          "hint": "What the player sees in the module list."
+        },
+        {
+          "key": "family",
+          "label": "Kind",
+          "type": "string",
+          "hint": "Exploits breach; post modules run inside a session.",
+          "choices": [
+            {
+              "value": "exploit",
+              "label": "Exploit (breaches a target)"
+            },
+            {
+              "value": "auxiliary",
+              "label": "Auxiliary (scanner, helper)"
+            },
+            {
+              "value": "post",
+              "label": "Post (runs inside a session)"
+            }
+          ]
+        },
+        {
+          "key": "service",
+          "label": "Service",
+          "type": "string",
+          "hint": "The canonical service on the matched port. https and web count as http; mysql, mariadb and postgres count as database.",
+          "choices": [
+            {
+              "value": "http",
+              "label": "http (web)"
+            },
+            {
+              "value": "ftp",
+              "label": "ftp"
+            },
+            {
+              "value": "ssh",
+              "label": "ssh"
+            },
+            {
+              "value": "database",
+              "label": "database"
+            },
+            {
+              "value": "redis",
+              "label": "redis"
+            },
+            {
+              "value": "smb",
+              "label": "smb"
+            },
+            {
+              "value": "smtp",
+              "label": "smtp (mail)"
+            }
+          ]
+        },
+        {
+          "key": "port",
+          "label": "Port",
+          "type": "number",
+          "hint": "The port the service listens on, like 80."
+        },
+        {
+          "key": "version",
+          "label": "Version it matches",
+          "type": "string",
+          "hint": "The port's version must contain this text, like nginx 1.18.0."
+        },
+        {
+          "key": "vuln",
+          "label": "Vulnerability it needs",
+          "type": "string",
+          "hint": "The target's domain must carry this type.",
+          "choices": [
+            {
+              "value": "RCE",
+              "label": "RCE (remote code execution)"
+            },
+            {
+              "value": "LFI",
+              "label": "LFI (local file inclusion)"
+            },
+            {
+              "value": "RFI",
+              "label": "RFI (remote file inclusion)"
+            },
+            {
+              "value": "SSRF",
+              "label": "SSRF (server-side request forgery)"
+            },
+            {
+              "value": "CORS",
+              "label": "CORS (permissive sharing)"
+            },
+            {
+              "value": "XSS",
+              "label": "XSS (cross-site scripting)"
+            },
+            {
+              "value": "SQL_INJECTION",
+              "label": "SQL injection"
+            }
+          ]
+        },
+        {
+          "key": "privilege",
+          "label": "Privilege it grants",
+          "type": "string",
+          "hint": "How powerful the session is after the breach lands.",
+          "choices": [
+            {
+              "value": "guest",
+              "label": "guest"
+            },
+            {
+              "value": "user",
+              "label": "user"
+            },
+            {
+              "value": "www-data",
+              "label": "www-data (web server)"
+            },
+            {
+              "value": "root",
+              "label": "root (full control)"
+            }
+          ]
+        },
+        {
+          "key": "description",
+          "label": "Description",
+          "type": "text",
+          "hint": "One line the player reads about this exploit."
+        }
+      ],
+      "entry": {
+        "id": "{{id}}",
+        "name": "{{name}}",
+        "family": "{{family}}",
+        "service": "{{service}}",
+        "port": "{{port}}",
+        "versions": [
+          "{{version}}"
+        ],
+        "vulnerabilities": [
+          "{{vuln}}"
+        ],
+        "privilege": "{{privilege}}",
+        "description": "{{description}}"
+      }
+    },
+    {
+      "id": "user-enum",
+      "label": "Let username probes work on a host",
+      "key": "reconng.user.enum.targets",
+      "docs": "Registers a host for SSH username probing: the player's user_enum module recovers the account name here. The host also needs an active SSH port with an OpenSSH, Dropbear or libssh version. Wire it at quest start.",
+      "merge": "replace",
+      "mergeBy": "target",
+      "fields": [
+        {
+          "key": "target",
+          "label": "Host or IP",
+          "type": "string",
+          "hint": "The machine that answers probes. A domain name works."
+        },
+        {
+          "key": "username",
+          "label": "Account name it gives up",
+          "type": "string",
+          "hint": "The one username the probe recovers, like svc.backup."
+        }
+      ],
+      "entry": {
+        "target": "{{target}}",
+        "users": [
+          "{{username}}"
+        ]
+      }
+    }
+  ],
+  "targetRules": {
+    "services": [
+      "http",
+      "ftp",
+      "ssh",
+      "database",
+      "redis",
+      "smb",
+      "smtp"
+    ],
+    "versionOnPorts": true,
+    "vulnsOnDomain": true,
+    "vulnTypes": [
+      "RCE",
+      "LFI",
+      "RFI",
+      "SSRF",
+      "CORS",
+      "XSS",
+      "SQL_INJECTION"
+    ],
+    "serviceAliases": {
+      "http": [
+        "https",
+        "web"
+      ],
+      "database": [
+        "mysql",
+        "mariadb",
+        "postgres"
+      ]
+    }
+  },
+  "commandData": [],
+  "nodes": [
+    {
+      "id": "close-session",
+      "label": "Cut the player's breach session",
+      "blurb": "Kicks the player out of the host",
+      "docs": "Ends the player's session on this host when the story reaches the node — a trace kicking in, an admin stepping in, a scripted beat. A blank message cuts silently (pair it with your own notification); anything you write is what the player reads. The SessionClosed event fires with reason terminated, so drive the follow-up off that.",
+      "emitter": "storage",
+      "fields": [
+        {
+          "key": "target",
+          "label": "Host or IP",
+          "type": "string",
+          "hint": "The machine whose session ends. A domain name works."
+        },
+        {
+          "key": "message",
+          "label": "What the player reads",
+          "type": "string",
+          "hint": "Blank cuts silently; written text is shown, like Connection traced. Session terminated."
+        }
+      ],
+      "key": "reconng.session.terminations",
+      "merge": "replace",
+      "mergeBy": "target",
+      "entry": {
+        "target": "{{target}}",
+        "message": "{{message}}"
+      }
+    },
+    {
+      "id": "host-gate",
+      "label": "Open or close a host",
+      "blurb": "Closes a host off — or opens it again",
+      "docs": "Closes a host off entirely when the story reaches the node: while closed, the player cannot recon, check or breach it at all — as if it were not there. Flip it back on to bring a host online mid-story. Use this for a host that should not exist yet; a host the player found and is kept out of is a lock instead (the editor cannot write those yet).",
+      "emitter": "storage",
+      "fields": [
+        {
+          "key": "target",
+          "label": "Host or IP",
+          "type": "string",
+          "hint": "The machine to close or open. A domain name works."
+        },
+        {
+          "key": "open",
+          "label": "Host is open",
+          "type": "boolean",
+          "hint": "Off closes the host off; on opens a host you closed before."
+        }
+      ],
+      "key": "reconng.target.gates",
+      "merge": "replace",
+      "mergeBy": "target",
+      "entry": {
+        "target": "{{target}}",
+        "open": "{{open}}"
+      }
+    }
+  ]
+}

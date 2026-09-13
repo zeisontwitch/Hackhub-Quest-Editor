@@ -188,6 +188,17 @@ hints can speak your language:
 `versionOnPorts` says your tools match a version banner on the port record;
 `vulnsOnDomain` says vulnerabilities can hang off the domain (not just the
 device); `vulnTypes` are the vulnerability types your modules exploit.
+`serviceAliases` (optional) maps a canonical service to the further names
+your matcher accepts as the same thing — e.g. Recon-NG treats `https` and
+`web` as `http`:
+
+```json
+"serviceAliases": {
+  "http": ["https", "web"],
+  "database": ["mysql", "mariadb", "postgres"]
+}
+```
+
 Quest-facing surfaces for these rules arrive with Editor Mods; the editor
 already reads them to keep its own advice honest.
 

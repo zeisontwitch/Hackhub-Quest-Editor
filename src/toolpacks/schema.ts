@@ -63,6 +63,13 @@ export const PackTargetRulesSchema = z.object({
     versionOnPorts: z.boolean().default(false),
     vulnsOnDomain: z.boolean().default(false),
     vulnTypes: z.array(z.string()).default([]),
+    /**
+     * Service names the tool accepts as EQUIVALENT to a canonical one
+     * (r149: Recon-NG matches `https`/`web` as `http`, and
+     * `mysql`/`mariadb`/`postgres` as `database` — verified in its source).
+     * Additive and optional: older packs without it parse unchanged.
+     */
+    serviceAliases: z.record(z.string(), z.array(z.string())).default({}),
 });
 
 /**

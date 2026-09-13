@@ -1,4 +1,54 @@
-# Handoff — r148
+# Handoff — r149
+
+r149 authors the **Recon-NG example pack** (plan:
+[plans/r149-reconng-pack.md](plans/r149-reconng-pack.md)) — the first half
+of Zeis's split: the pack now, the target-matching warnings next round
+after he eyeballs the pack's labels.
+
+- **The second pack is real.** Darkvalnar's Recon-NG (exploitation
+  workspace: pick a module, breach a target, work a persistent session),
+  described as `reference/reconng/toolpack.json` — **fenced** (README
+  banner: example only, never serviced, nothing imported by `src/` or
+  shipped in any export; source pinned at `798f9ee` with the GitHub and
+  docs links in the fence doc). Named explicitly by Zeis's call with the
+  author's permission.
+- **Docs verified against source first.** Four diffs, code wins: their
+  events page lists 5 events, the source emits 9 (`DirListed`, `Shutdown`,
+  `UserEnum.Complete` undocumented anywhere, `SessionClosed` only on the
+  session-control page); vulns are read from `subnet.domain` only
+  (`BreachBackend.ts:1520`) — our compiler already emits the domain +
+  `registerDomain`, so no compiler change (flagged for in-game eyes, not
+  assumed); service aliases code-confirmed (`:477-478`). Recorded in
+  `reference/reconng/NOTES.md` with file+line.
+- **The pack:** 9 events (the three truly-undocumented ones say so),
+  3 data shapes (loot, authored exploit, user-enum target), 2 story-timed
+  session nodes (cut-the-session, open/close-a-host), real target
+  conventions. Deliberately out with reasons: wordlists (grants need a
+  string-list merge mode the format lacks), session locks (`until` is
+  epoch ms — no computed values), access profiles / binary overrides /
+  reverse payloads (need in-game testing), multi-value exploit/enum
+  fields (no string-array kind — YAGNI).
+- **The format's first new field:** optional `targetRules.serviceAliases`
+  (additive, format stays 2, old packs parse unchanged) — without it the
+  pack would misdescribe matching.
+- **Latent bug caught on the way:** untouched toggles emitted the literal
+  string `"{{key}}"` (truthy!) while showing off — the starter pack has no
+  booleans, so nothing tripped it until now. `defaultPackValues()` seeds
+  booleans to `"false"` at snapshot time on both paths (`buildAddData`,
+  `chooseContract`); falsified all three guards by revert.
+- Housekeeping: README "Done recently" trimmed to 5 rows (r130–r144 →
+  `docs/archive/rounds-130-144.md`); "Next up" item 3 updated (pack done,
+  warnings next). Stamp `2026-09-13.r149`.
+- Gates: typecheck clean, **1,412 tests / 68 files**, build clean.
+
+**Zeis's eyes only:** load `reference/reconng/toolpack.json` through
+Tools → Tool packs and read every label/docs/hint as a gamer — the
+warnings round builds on these words. In-game halves it cannot prove:
+whether an editor-built target (domain + `registerDomain`, no
+`setVulnerabilities`) actually matches a module's `check`, and whether
+`addCommandData`-style flows matter here at all (recon-ng is itself a
+command; the pack uses no `commandData`).
+
 
 r148 answers Zeis's r147 review, item for item (plan:
 [plans/r148-picker-marksize-stamp.md](plans/r148-picker-marksize-stamp.md)):

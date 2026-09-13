@@ -7,6 +7,7 @@
 import { FieldShell, SelectInput, TextInput, Toggle } from "@/editor/inspector/primitives";
 import type { NodeOfType } from "@/schema/nodes";
 import type { PackField } from "@/toolpacks/schema";
+import { defaultPackValues } from "@/toolpacks/palette";
 import { useEditor } from "@/store/editor";
 import { usePacks } from "@/store/packs";
 
@@ -49,7 +50,7 @@ export function PackDataEditor({ node }: { node: NodeOfType<"world.packData"> })
             mergeBy: c?.mergeBy,
             entry: c?.entry ? structuredClone(c.entry) : undefined,
             fields: c?.fields ? structuredClone(c.fields) : [],
-            values: {},
+            values: defaultPackValues(c?.fields ?? []),
         });
     };
 

@@ -25,6 +25,9 @@ import { packNodeDefs, usePacks } from "@/store/packs";
 const exampleRaw = JSON.parse(readFileSync(join(process.cwd(), "reference/example-toolpack/toolpack.json"), "utf8")) as Parameters<
     ReturnType<typeof usePacks.getState>["loadPack"]
 >[0];
+const reconngRaw = JSON.parse(readFileSync(join(process.cwd(), "reference/reconng/toolpack.json"), "utf8")) as Parameters<
+    ReturnType<typeof usePacks.getState>["loadPack"]
+>[0];
 
 beforeEach(() => {
     localStorage.clear();
@@ -75,6 +78,18 @@ describe("community-data editor", () => {
             files: [{ path: "{{path}}", data: "{{data}}\n", readable: true, downloadable: true, deletable: false }],
         });
         expect(d.fields.map((f) => f.key)).toEqual(["target", "path", "data"]);
+    });
+
+    it("choosing a shape with a toggle seeds it off (an unseeded boolean would emit truthy garbage)", () => {
+        act(() => usePacks.getState().loadPack(reconngRaw));
+        const node = addPackNode();
+        const { rerender } = render(<PackDataEditor node={node} />);
+
+        fireEvent.change(screen.getByLabelText("Tool pack"), { target: { value: "recon-ng" } });
+        rerender(<PackDataEditor node={nodeNow(node.id) as NodeOfType<"world.packData">} />);
+        fireEvent.change(screen.getByLabelText("Data shape"), { target: { value: "loot" } });
+        const d = nodeNow(node.id).data as NodeOfType<"world.packData">["data"];
+        expect(d.values).toEqual({ deletable: "false" });
     });
 
     it("pack authors' labels and hints ARE the form", () => {

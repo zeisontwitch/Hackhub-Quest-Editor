@@ -6,7 +6,23 @@
  * persistence (AR6, AR10).
  */
 import type { NodeTypeDef } from "@/schema/registry";
-import type { ToolPack } from "./schema";
+import type { PackField, ToolPack } from "./schema";
+
+/**
+ * Starting answers for a pack form.
+ *
+ * Booleans start OFF ("false"): the toggle displays off for an untouched
+ * field, and the runtime skips holes with no value — so an unseeded boolean
+ * would emit the literal string "{{key}}" (truthy!) while showing off. Every
+ * other kind starts empty and fails safe (empty text, 0, "Choose…").
+ */
+export function defaultPackValues(fields: PackField[]): Record<string, string> {
+    const values: Record<string, string> = {};
+    for (const f of fields) {
+        if (f.type === "boolean") values[f.key] = "false";
+    }
+    return values;
+}
 
 /** Deep clone without the JSON.parse(JSON.stringify) dance (A3 DRY). */
 function deepClone<T>(value: T): T {
@@ -67,7 +83,7 @@ function buildAddData(pack: ToolPack, node: ToolPack["nodes"][number]): Record<s
         nodeLabel: node.label,
         emitter: node.emitter,
         fields: deepClone(node.fields ?? []),
-        values: {},
+        values: defaultPackValues(node.fields ?? []),
     };
 
     switch (node.emitter) {

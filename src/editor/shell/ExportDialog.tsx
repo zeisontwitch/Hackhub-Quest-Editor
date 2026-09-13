@@ -9,6 +9,7 @@ import JSZip from "jszip";
 import { compileProject, type CompileResult } from "@/compiler/compile";
 import { Icon } from "@/components/Icon";
 import { useEditor } from "@/store/editor";
+import { usePacks } from "@/store/packs";
 
 export async function buildModZip(result: CompileResult, rootName: string): Promise<JSZip> {
     const zip = new JSZip();
@@ -20,9 +21,10 @@ export async function buildModZip(result: CompileResult, rootName: string): Prom
 export function ExportDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
     const project = useEditor((s) => s.project);
     const toast = useEditor((s) => s.toast);
+    const packs = usePacks((s) => s.packs);
     const [busy, setBusy] = useState(false);
 
-    const result = useMemo(() => (open ? compileProject(project) : null), [open, project]);
+    const result = useMemo(() => (open ? compileProject(project, packs) : null), [open, project, packs]);
 
     const download = async () => {
         if (!result) return;

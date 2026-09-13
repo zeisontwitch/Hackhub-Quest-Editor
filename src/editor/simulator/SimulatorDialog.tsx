@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { simulateProject, type SimObjective, type SimReport } from "@/compiler/simulate";
 import { useEditor } from "@/store/editor";
+import { usePacks } from "@/store/packs";
 
 const PROBE_BADGE: Record<NonNullable<SimObjective["probe"]>, { label: string; className: string }> = {
     match: { label: "would tick", className: "bg-ok/15 text-ok" },
@@ -45,7 +46,7 @@ export function SimulatorDialog({ open, onOpenChange }: { open: boolean; onOpenC
     const run = async () => {
         setRunning(true);
         try {
-            setReport(await simulateProject(useEditor.getState().project));
+            setReport(await simulateProject(useEditor.getState().project, usePacks.getState().packs));
         } finally {
             setRunning(false);
         }

@@ -19,6 +19,7 @@
 import { compileProject, EDITOR_BUILD } from "@/compiler/compile";
 import { PAYLOAD_IS_REALLY_PRIMITIVE, getEvent, payloadFields } from "@/schema/events";
 import type { ProjectDocument, QuestDoc } from "@/schema/project";
+import type { ToolPack } from "@/toolpacks/schema";
 
 export interface TraceEntry {
     kind: string;
@@ -354,8 +355,8 @@ function objectivesOf(quest: QuestDoc): { node: SimObjective; trigger: { event: 
  * Dry-run the whole project. Never throws: every stage captures its own
  * failures into the report — a sim that dies is a *finding*, not a crash.
  */
-export async function simulateProject(project: ProjectDocument): Promise<SimReport> {
-    const compiled = compileProject(project);
+export async function simulateProject(project: ProjectDocument, packs: ToolPack[] = []): Promise<SimReport> {
+    const compiled = compileProject(project, packs);
     const entries: TraceEntry[] = [];
     const errors: string[] = [];
     const harness = recordingSdk(entries);

@@ -12,6 +12,8 @@
  * (runtimeSource.ts) that walks each quest graph at runtime.
  */
 import type { ProjectDocument } from "@/schema/project";
+import type { ToolPack } from "@/toolpacks/schema";
+import { warnTargetMatching } from "@/compiler/targetWarnings";
 import { seedRemoteFiles } from "./seedRemoteFiles";
 import type { NodeDoc } from "@/schema/nodes";
 import type { EdgeDoc } from "@/schema/edges";
@@ -115,7 +117,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-13.r150";
+export const EDITOR_BUILD = "2026-09-13.r151";
 
 export interface CompiledFile {
     path: string;
@@ -585,7 +587,7 @@ function warnWebsites(project: ProjectDocument): string[] {
     return warnings;
 }
 
-export function computeWarnings(project: ProjectDocument): string[] {
+export function computeWarnings(project: ProjectDocument, packs: ToolPack[] = []): string[] {
     return [
         ...warnUnstartableQuests(project),
         ...warnFirewallAndPort(project),
@@ -596,6 +598,7 @@ export function computeWarnings(project: ProjectDocument): string[] {
         ...warnDialogue(project),
         ...warnCommunityNodes(project),
         ...warnWebsites(project),
+        ...warnTargetMatching(project, packs),
     ];
 }
 
@@ -700,7 +703,7 @@ function buildReadme(project: ProjectDocument, permissions: string[], warnings: 
     ].join("\n");
 }
 
-export function compileProject(project: ProjectDocument): CompileResult {
+export function compileProject(project: ProjectDocument, packs: ToolPack[] = []): CompileResult {
     const working: ProjectDocument = structuredClone(project);
 
     const seeded = working.quests.map((q) => ({ quest: q, result: seedRemoteFiles(q) }));
@@ -708,7 +711,7 @@ export function compileProject(project: ProjectDocument): CompileResult {
     for (const { result } of seeded) for (const id of result.absorbed) absorbed.add(id);
 
     const permissions = computePermissions(working);
-    const warnings = computeWarnings(working);
+    const warnings = computeWarnings(working, packs);
 
     for (const { quest, result } of seeded) {
         for (const { reason } of result.unplaced) {

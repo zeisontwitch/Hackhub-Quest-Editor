@@ -1,4 +1,47 @@
-# Handoff — r150
+# Handoff — r151
+
+r151 ships the **target-matching warnings** (plan:
+[plans/r151-target-warnings.md](plans/r151-target-warnings.md)) — the second
+half of Zeis's r149 split — plus a stub rider for the empty inspector his
+QA screenshot caught:
+
+- **Three warnings, intent-gated per quest per pack.** A quest "uses" a pack
+  when it listens for one of the pack's events, hands data to one of the
+  pack's storage keys, or runs one of the pack's nodes — and only then are
+  its own targets checked: unknown services, serviced ports with blank
+  versions, weaknesses nothing lines up with. Never cross-quest (a campaign
+  that sets up in part 1 what part 2 exploits must not cry wolf) and never
+  without targets (a pure-listener quest stays silent). Copy is gamer words
+  throughout — no event names, keys, or calls.
+- **Semantics re-verified against the example mod's current source**
+  (recon-ng `main`, example only): services case-insensitive with aliases,
+  versions a case-insensitive substring (so the editor checks completeness,
+  not correctness), weaknesses case-sensitive exact. The alias read also
+  found a third group (`printer` → jetdirect/raw/raw-print/pjl) no built-in
+  module uses — the pack's service list stays at the 7 module-covered names,
+  recorded in the plan.
+- **Wiring:** new pure `src/compiler/targetWarnings.ts`;
+  `computeWarnings(project, packs = [])` / `compileProject` /
+  `simulateProject` all take optional packs (old call sites compile
+  unchanged and stay silent); ExportDialog and SimulatorDialog pass
+  `usePacks`. Closed ports skipped (inactive device ports, close/remove
+  Change-port nodes).
+- **Stub rider:** a `pack.node` with no action picked renders a stub naming
+  its palette group ("Editor Mods · pack") instead of an empty inspector.
+- **Queued, not built:** Zeis's five screenshot-review items are README
+  "Next up" 4–8 (Sticky note → Layout, Player Replies rename, floating
+  inspector, Tools → Addons, Shortcuts refresh).
+- Process: node_modules was gone after a sandbox reset (`npm ci` brought it
+  back); his screenshot was viewed via `git fetch origin QA-filedump` +
+  `git show FETCH_HEAD:<path>` (no checkout, temp copies deleted) — that is
+  the standing method now `/home/user/uploads/` does not exist here.
+- Gates: typecheck clean, **1,436 tests / 69 files**, build clean, both new
+  guards falsified by revert (alias expansion, intent gate). Stamp
+  `2026-09-13.r151`. README trimmed (r146 → archive).
+
+**Zeis's eyes only:** load the Recon-NG pack, give a quest a `telnet` port
+plus a trigger on any ReconNg event, and export — the warning should read
+like advice, not an error. Then click an unset Tool pack node: the stub.
 
 r150 is Zeis's r149 eyeball feedback as a gamer (plan:
 [plans/r150-pack-ux-polish.md](plans/r150-pack-ux-polish.md)) — the
@@ -493,25 +536,23 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r142 (canvas grid, Roboto fonts) on
-  `arena/01a08ff8-hackhub-quest-editor`, committed and pushed. Previous
-  rounds: r141 (themes, typography), r140 (Settings page), r139 (Clean Code
-  & Architecture pass), r138 (Editor Mods), r137
-  (tool packs, first rail), r136 (campaign template), `423569f` (r130). (A
-  sandbox reset rolled local history back to `c0e511f` mid-r129, and again
-  mid-r134 — that time taking node_modules with it; recovered both times from
-  the remote tip per the standing fetch-first rule (mid-r134 addendum: rescue
-  the round's uncommitted files with plain copies BEFORE `reset --hard`),
-  then `npm ci`. The remote is authoritative.)
-- **1,375 tests green** across 65 files, typecheck clean, build clean, and —
+- **HEAD:** r151 (target-matching warnings) on
+  `arena/01a09bf3-hackhub-quest-editor`, committed and pushed. Previous
+  rounds: r150 (pack UX polish), r149 (Recon-NG example pack), r148
+  (picker/mark-size/stamp), r147 (grid polish), r146 (name-twin grey
+  screen). (Sandbox resets have rolled local history back more than once —
+  most recently taking node_modules mid-r151; recovered from the remote
+  tip per the standing fetch-first rule, then `npm ci`. The remote is
+  authoritative.)
+- **1,436 tests green** across 69 files, typecheck clean, build clean, and —
   since the r138 prep rider — **vitest exits 0**: the 4 long-standing
   unhandled d3-drag errors were diagnosed as load-bearing jsdom noise (they
   aborted every canvas drag handler mid-gesture; four selection-gesture
   tests had been passing *because of* the crash) and fixed in
   `vitest.setup.ts` by giving MouseEvents the view a real browser would.
   r139 also cleared the `pack.node` duplicate-key React warning.
-- **Editor build stamp:** `2026-09-13.r139` (r140 changes nothing the
-  compiler emits, so the stamp did not move — AR13).
+- **Editor build stamp:** `2026-09-13.r151` (bumps every round since r148 —
+  the stamp is a version, not a changelog).
 - Tool-pack modules: `src/toolpacks/schema.ts` (format 2 + plain-language
   `parseToolPack`), `src/toolpacks/palette.ts` (pure `packNodeDefs`,
   `packEvents`, `packEventByName`, `paletteDefKey` — the synthesized palette
@@ -741,10 +782,10 @@ wants the *specific action* named.
    emitters, snapshot portability), starter pack + format spec. **r139**
    cleaned up the debt that rail left (duplicate keys, giant warning
    function, permission gap for pack nodes, clone DRY, module boundaries).
-   **Remaining: the target-rule surfaces** (`targetRules` is parsed and
-   carried; no quest-facing lint reads it yet — deliberately deferred until a
-   real second pack exists to design against, per the design's "deliberately
-   open" list). The campaign template and the Campaign card are DONE (r136).
+   **DONE in r151:** the target-rule surfaces — intent-gated per-quest
+   warnings (unknown services, blank versions, unmatched weaknesses) at
+   export and in Dry run. The campaign template and the Campaign card are
+   DONE (r136).
    The **Kisscord contact lifecycle is parked until the SDK moves** (the
    2026-09-12 patch shipped none).
 

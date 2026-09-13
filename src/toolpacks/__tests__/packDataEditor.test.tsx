@@ -237,6 +237,18 @@ describe("editor mods: palette and inspector", () => {
         expect(screen.getByText(/Players need the Example Tools game mod installed/)).toBeInTheDocument();
     });
 
+    it("shows a stub pointing at the Editor Mods group when no action is picked", () => {
+        let id = "";
+        act(() => {
+            id = useEditor.getState().addNode("pack.node", { x: 0, y: 0 })!;
+            useEditor.getState().updateNodeData(id, { packName: "Example Tools" });
+        });
+        render(<PackNodeEditor node={nodeNow(id) as NodeOfType<"pack.node">} />);
+        expect(screen.getByText(/Not set up yet/)).toBeInTheDocument();
+        expect(screen.getByText(/Editor Mods · Example Tools/)).toBeInTheDocument();
+        expect(screen.getByText(/As it stands it does nothing/)).toBeInTheDocument();
+    });
+
     it("prefers the pack author's own description when the snapshot carries it", () => {
         const node = addPackNode();
         act(() =>

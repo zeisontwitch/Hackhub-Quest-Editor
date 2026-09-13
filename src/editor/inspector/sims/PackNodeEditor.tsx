@@ -24,6 +24,29 @@ export function PackNodeEditor({ node }: { node: NodeOfType<"pack.node"> }) {
     const setValue = (key: string, value: string) =>
         updateNodeData(node.id, { values: { ...d.values, [key]: value } });
 
+    /* No action picked yet (r151): say so and point at the fix instead of an
+       empty panel. Mirrors the compiler warning's pointer. */
+    if (!d.nodeId) {
+        return (
+            <div className="grid gap-2 px-3 pt-1">
+                {d.packName && (
+                    <p className="flex items-center gap-1.5 rounded-md border border-cat-community/30 bg-cat-community/10 px-2.5 py-1.5 text-[10.5px] leading-relaxed text-ink-2">
+                        <Icon name="package" size={12} className="shrink-0 text-cat-community" />
+                        <span>
+                            From the <strong className="font-semibold text-ink">{d.packName}</strong> tool pack
+                        </span>
+                    </p>
+                )}
+                <p className="rounded-md border border-warn/30 bg-warn/10 px-2.5 py-2 text-[10.5px] leading-relaxed text-warn">
+                    Not set up yet — this card doesn&apos;t know which tool action it runs. Delete it and drag
+                    the action in again from the palette&apos;s{" "}
+                    {d.packName ? `“Editor Mods · ${d.packName}”` : "“Editor Mods”"} group. As it stands it
+                    does nothing.
+                </p>
+            </div>
+        );
+    }
+
     return (
         <div className="grid gap-2 px-3 pt-1">
             {d.packName && (

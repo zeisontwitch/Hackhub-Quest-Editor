@@ -129,17 +129,23 @@ archived once it has stayed fixed for a few rounds.
 |---|---|---|
 | 1 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
 | 2 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. The official Cryptographer Hunt (a phone social-engineering scene with a fail route on the wrong choice) is the strongest argument for it — see [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). The shape now ships inside The Long Game (r136, act III: a typed verdict with two endings); whether a standalone template still adds anything is Zeis's call. |
-| 3 | **Tool packs — Editor Mods** | r137 + r138 shipped both halves: a pack is one `toolpack.json` of pure data ([`docs/ToolPack-Format.md`](docs/ToolPack-Format.md), starter pack in `reference/example-toolpack/`). r137: pack events join the trigger picker as a Community group; SharedStorage data shapes become "Community data" nodes. r138: **Editor Mods** — a pack's `nodes[]` grow the palette under "Editor Mods · <pack>" (one generic `pack.node` type carrying a full snapshot; four declarative emitters — `sdk` calls, `emit`, `storage`, `commandData` — never code), with the honesty spine throughout. r149: Recon-NG authored as the genuine second pack (`reference/reconng/`, fenced, source-verified — their docs list 5 events, the source emits 9). Remaining: pack-driven target-rule warnings, next round after Zeis eyeballs the pack's labels. |
+| 3 | **Tool packs — Editor Mods** | r137 + r138 shipped both halves: a pack is one `toolpack.json` of pure data ([`docs/ToolPack-Format.md`](docs/ToolPack-Format.md), starter pack in `reference/example-toolpack/`). r137: pack events join the trigger picker as a Community group; SharedStorage data shapes become "Community data" nodes. r138: **Editor Mods** — a pack's `nodes[]` grow the palette under "Editor Mods · <pack>" (one generic `pack.node` type carrying a full snapshot; four declarative emitters — `sdk` calls, `emit`, `storage`, `commandData` — never code), with the honesty spine throughout. r149: Recon-NG authored as the genuine second pack (`reference/reconng/`, fenced, source-verified — their docs list 5 events, the source emits 9). r151: pack-driven target-matching warnings at export + Dry run, intent-gated per quest per pack. |
+
+| 4 | **Sticky note → Layout, below Group frame** | Queued r151 from Zeis's screenshot review: the Sticky note lives under Flow Control and reads as a story node — move it to the Layout category, below Group frame, with the other canvas furniture. |
+| 5 | **Rename the "Player Replies" category** | Queued r151: the name reads as Dialogue, but the category holds custom-reply / custom-terminal nodes — rename toward "Custom" / "Custom Terminal"-ish. Exact wording Zeis's call at build time. |
+| 6 | **Freely draggable + resizable Inspector drawer** | Queued r151: the inspector is currently fixed-docked — make it a free-floating drawer the author can drag around and resize. |
+| 7 | **Rename Tools → Addons (button + whole feature)** | Queued r151: the top-bar "Tools" button and the entire Tool Packs feature become "Addons" — labels, docs, and user-facing copy throughout. |
+| 8 | **Refresh the Shortcuts cheat sheet** | Queued r151: the Shortcuts panel is stale — audit every entry against what the editor actually does and rewrite. |
 
 ### Done recently
 
 | # | Item | Notes |
 |---|---|---|
+| r151 | **Target-matching warnings + Tool pack node stub** | ([plan](docs/plans/r151-target-warnings.md)) Quests that hand work to a tool mod are now warned — at export and in Dry run — when their targets speak a language the mod can't match: unknown services (case-insensitive, alias-aware, verified against the example mod's matcher), serviced ports with blank versions, and weaknesses no listed type lines up with. Intent-gated per quest per pack (pack event listened for, pack storage key written, or pack node run) — never cross-quest, so multi-part campaigns don't cry wolf. Rider: an unset Tool pack node renders a stub pointing at its "Editor Mods · pack" palette group instead of an empty inspector. Both new guards falsified by revert. |
 | r150 | **Pack UX polish — drop zone, Save, human summaries, renames** | ([plan](docs/plans/r150-pack-ux-polish.md)) Zeis eyeballed r149 as a gamer: the manager list is now a drop zone for toolpack.json files; the footer gained an explicit **Save** (loads still apply instantly — Save is the commit moment, the status line the receipt); pack-node summaries speak gamer words via one shared helper ("sends a signal to the tool mod", never "fires ExampleTools.Handover.Done"), the inspector prefers the pack authors own description (newly snapshotted), and a teal **From the X tool pack** banner tops the inspector; "Community data" → **"Give data to a tool mod"**, "Community node" → **"Tool pack node"**. (His screenshot attachment never arrived in the sandbox — all copy verified against the code instead.) |
 | r149 | **The Recon-NG example pack** | ([plan](docs/plans/r149-reconng-pack.md)) Item #3's missing half arrives as a real thing: Darkvalnar's Recon-NG exploitation workspace described as a second tool pack (`reference/reconng/`, fenced — example only, never serviced; source pinned at `798f9ee` with its GitHub linked from the fence doc). All nine source-verified events (their docs page lists five), three data shapes, two story-timed session nodes, and the real target conventions — which taught the format its first new field: optional `serviceAliases` (their matcher treats `https`/`web` as `http`). Verifying the pack caught a latent r137/r138 bug on the way: untouched toggles emitted the truthy string `"{{key}}"` while showing off — booleans now seed to `"false"` at snapshot time (falsified on both paths). Warnings next round, after Zeis eyeballs the pack's labels. |
 | r148 | **The real colour picker, mark size, free weight, current stamp** | ([plan](docs/plans/r148-picker-marksize-stamp.md)) The grid colour row now embeds the inspector's own ColourPicker (presets, hex field, HSL sliders — no OS dialog); **Mark size** (25–250% of standard) sizes dots, crosses, hexagons and diamonds — hidden for line styles; **Line weight** became a free 0.5–6 slider (quarter steps, reset arrow); and `EDITOR_BUILD` now bumps every round — the debug panel and export headers had read r139 since, well, r139. |
 | r147 | **Grid polish — visible dots, ink and weight** | ([plan](docs/plans/r147-grid-polish.md)) Zeis's first hands-on: dots were genuinely invisible (the library's Dots `size` is the *diameter*; r142's 1.5 meant a 0.75px radius at 100% zoom — sub-pixel ink) — now size 9, crosses span 8 → 11; a circular-arrow reset beside Grid scale; a grid **colour** picker (Theme + six presets + custom hex, strict `#rrggbb`, the accessibility ask) so colourblind or low-vision authors can pick what they see best; and a **line weight** control (Hairline/Thin/Medium/Bold) driving every style. |
-| r146 | **The grey screen, part 3 — the real one: a Windows name twin** | ([plan](docs/plans/r146-grey-screen-name-twin.md)) The grid round shipped `CanvasGrid.tsx` (component) beside `canvasGrid.ts` (preferences) — the same name ignoring case. Windows filenames are case-insensitive, so an extensionless import resolved to the wrong file on Zeis's machine and only his: every gate runs on case-sensitive Linux and stayed green. His Firefox console named the nonexistent `CanvasGrid.ts` and cracked the case; reproduced end-to-end, fixed by renaming the component (`CanvasGridBackground.tsx`, extension spelled out in the import) plus a guard test that fails on any future case-insensitive filename twin. r145's optimizer fix was real but secondary; its "slow machine" framing is retracted in the docs. |
 
 ---
 
@@ -166,15 +172,15 @@ are in the build log at [`docs/02-editor-shell.md`](docs/02-editor-shell.md),
 which is kept as an archive — the bug histories in it explain several of the
 rules the code now follows.
 
-Rounds 130–145 are archived at
-[`docs/archive/rounds-130-145.md`](docs/archive/rounds-130-145.md).
+Rounds 130–146 are archived at
+[`docs/archive/rounds-130-146.md`](docs/archive/rounds-130-146.md).
 
 ### Build status
 
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-13.r150`: **1,416 tests** across 68
+Counted from the code at build `2026-09-13.r151`: **1,436 tests** across 69
 files, **34 node types** in 10 categories (33 in the palette — Wi-Fi is hidden),
 **13 templates** (11 playable + 2 reference sheets), **92 game events**,
 against `@hotbunny/hackhub-content-sdk@0.21.0`.

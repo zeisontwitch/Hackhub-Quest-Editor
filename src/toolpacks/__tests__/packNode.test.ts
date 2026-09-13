@@ -165,7 +165,7 @@ describe("pack node emitters", () => {
         project.quests[0].title = "Empty mod";
         project.quests[0].graph.nodes = [node("pack.node", { packName: "Example Tools" })];
         const warnings = computeWarnings(project);
-        expect(warnings.some((w) => w.includes("Empty mod") && w.includes("Community node is not set up yet"))).toBe(true);
+        expect(warnings.some((w) => w.includes("Empty mod") && w.includes("tool pack node is not set up yet"))).toBe(true);
     });
 });
 
@@ -183,8 +183,9 @@ describe("community-data node", () => {
         });
         const lines = summarize(filled);
         expect(lines[0]).toBe("Plant loot on a machine");
-        expect(lines[1]).toBe("exampletools.loot");
-        expect(lines[2]).toBe("2 values filled in");
+        expect(lines[1]).toBe("2 values filled in");
+        /* No raw storage key on the card (r150) — keys mean nothing to authors. */
+        expect(lines.join("\n")).not.toContain("exampletools.loot");
     });
 
     it("warns when the node was never set up — it would do nothing", () => {

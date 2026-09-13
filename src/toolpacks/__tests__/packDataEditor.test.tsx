@@ -113,7 +113,7 @@ describe("community-data editor", () => {
         /* Hints are ? badges with the pack author's words (tooltip): */
         expect(screen.getByLabelText(/What does .Host or IP. do./)).toBeInTheDocument();
         const replaceNote = screen.getAllByText(
-            (_, el) => el?.tagName === "P" && (el.textContent ?? "").includes("Replaces the pack's previous entry"),
+            (_, el) => el?.tagName === "P" && (el.textContent ?? "").includes("this replaces it; everything else is kept"),
         );
         expect(replaceNote.length).toBeGreaterThan(0);
     });
@@ -225,12 +225,38 @@ describe("editor mods: palette and inspector", () => {
             }),
         );
         render(<PackNodeEditor node={nodeNow(node.id) as NodeOfType<"pack.node">} />);
-        expect(screen.getByText(/it fires the event ExampleTools.Handover.Done/)).toBeInTheDocument();
-        expect(screen.getByText(/Provided by the Example Tools tool pack/)).toBeInTheDocument();
+        /* Gamer words, no event name — and the pack banner names the pack. */
+        expect(screen.getByText(/it sends a signal to the tool mod/)).toBeInTheDocument();
+        expect(screen.queryByText(/ExampleTools\.Handover\.Done/)).not.toBeInTheDocument();
+        const banner = screen.getByText((_, el) => el?.tagName === "P" && (el.textContent ?? "").includes("tool pack"));
+        expect(banner.textContent).toContain("Example Tools");
+        expect(banner.querySelector("strong")?.textContent).toBe("Example Tools");
         fireEvent.change(screen.getByLabelText("Host or IP"), { target: { value: "10.0.0.14" } });
         const d = nodeNow(node.id).data as NodeOfType<"pack.node">["data"];
         expect(d.values).toEqual({ target: "10.0.0.14" });
         expect(screen.getByText(/Players need the Example Tools game mod installed/)).toBeInTheDocument();
+    });
+
+    it("prefers the pack author's own description when the snapshot carries it", () => {
+        const node = addPackNode();
+        act(() =>
+            useEditor.getState().updateNodeData(node.id, {
+                packId: "example-tools",
+                packName: "Example Tools",
+                gameModName: "Example Tools",
+                nodeId: "example-tools/breach-ping",
+                nodeLabel: "Announce the handover",
+                nodeDocs: "Tells everyone listening that the handover happened.",
+                emitter: "emit",
+                eventName: "ExampleTools.Handover.Done",
+                payload: { target: "{{target}}" },
+                fields: [],
+                values: {},
+            }),
+        );
+        render(<PackNodeEditor node={nodeNow(node.id) as NodeOfType<"pack.node">} />);
+        expect(screen.getByText("Tells everyone listening that the handover happened.")).toBeInTheDocument();
+        expect(screen.queryByText(/it sends a signal to the tool mod/)).not.toBeInTheDocument();
     });
 });
 

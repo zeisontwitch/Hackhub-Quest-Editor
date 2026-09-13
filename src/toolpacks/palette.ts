@@ -70,6 +70,31 @@ export function packEvents(
 }
 
 /**
+ * What a pack node does, in gamer words — no event names, storage keys, or
+ * SDK calls (r150: "fires ExampleTools.Handover.Done" means nothing to a
+ * quest author). Shared by the inspector sentence and the canvas card so the
+ * two can never disagree. The commandData command name stays: the player
+ * types it, so it is player vocabulary like nmap, not plumbing.
+ */
+export function describePackNodeAction(data: {
+    emitter?: string;
+    command?: string;
+}): string {
+    switch (data.emitter) {
+        case "sdk":
+            return "runs the tool mod's own actions";
+        case "emit":
+            return "sends a signal to the tool mod";
+        case "storage":
+            return "hands data to the tool mod";
+        case "commandData":
+            return data.command ? `places a scripted answer for the ${data.command} command` : "places a scripted tool answer";
+        default:
+            return "runs the tool mod's own actions";
+    }
+}
+
+/**
  * Build the snapshot payload that a palette entry carries when the author
  * adds it. One entry per pack node, all of type `pack.node`.
  */
@@ -81,6 +106,7 @@ function buildAddData(pack: ToolPack, node: ToolPack["nodes"][number]): Record<s
         gameModName: pack.gameMod?.name ?? "",
         nodeId: `${pack.id}/${node.id}`,
         nodeLabel: node.label,
+        nodeDocs: node.docs ?? "",
         emitter: node.emitter,
         fields: deepClone(node.fields ?? []),
         values: defaultPackValues(node.fields ?? []),

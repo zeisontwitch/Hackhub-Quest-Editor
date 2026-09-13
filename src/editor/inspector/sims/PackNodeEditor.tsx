@@ -5,39 +5,38 @@
  * with the node, so it keeps working where the pack was never loaded.
  */
 import { PackFieldInput } from "./PackDataEditor";
+import { Icon } from "@/components/Icon";
 import type { NodeOfType } from "@/schema/nodes";
 import type { PackField } from "@/toolpacks/schema";
+import { describePackNodeAction } from "@/toolpacks/palette";
 import { useEditor } from "@/store/editor";
-
-/** Plain words for what the node does when the quest reaches it. */
-function emitterSummary(d: NodeOfType<"pack.node">["data"]): string {
-    switch (d.emitter) {
-        case "sdk":
-            return `When the quest reaches this node it calls ${((d.steps ?? []) as { call: string }[])
-                .map((s) => s.call)
-                .join(", ") || "the SDK"}.`;
-        case "emit":
-            return `When the quest reaches this node it fires the event ${d.eventName || "(no event set)"}.`;
-        case "storage":
-            return `When the quest reaches this node it writes the data to ${d.storageKey || "(no key set)"}, where the tool mod reads it.`;
-        case "commandData":
-            return `When the quest reaches this node it places the scripted answer for the ${d.command || "(no command set)"} command.`;
-    }
-}
 
 export function PackNodeEditor({ node }: { node: NodeOfType<"pack.node"> }) {
     const updateNodeData = useEditor((s) => s.updateNodeData);
     const d = node.data;
     const fields = (d.fields ?? []) as PackField[];
+    /* The pack author's own description when this snapshot has one (r150);
+       older snapshots fall back to the generic gamer-words line. Either way
+       no event name, storage key, or SDK call ever shows. */
+    const docs = d.nodeDocs?.trim();
+    const what = docs || `When the quest reaches this node it ${describePackNodeAction(d)}.`;
 
     const setValue = (key: string, value: string) =>
         updateNodeData(node.id, { values: { ...d.values, [key]: value } });
 
     return (
         <div className="grid gap-2 px-3 pt-1">
+            {d.packName && (
+                <p className="flex items-center gap-1.5 rounded-md border border-cat-community/30 bg-cat-community/10 px-2.5 py-1.5 text-[10.5px] leading-relaxed text-ink-2">
+                    <Icon name="package" size={12} className="shrink-0 text-cat-community" />
+                    <span>
+                        From the <strong className="font-semibold text-ink">{d.packName}</strong> tool pack
+                    </span>
+                </p>
+            )}
+
             <p className="rounded-md border border-line/70 bg-surface-2 px-2.5 py-2 text-[10.5px] leading-relaxed text-ink-3">
-                {emitterSummary(d)}
-                {d.packName ? ` Provided by the ${d.packName} tool pack.` : ""}
+                {what}
             </p>
 
             {fields.map((f) => (

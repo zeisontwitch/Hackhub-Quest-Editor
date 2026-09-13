@@ -1,4 +1,37 @@
-# Handoff — r149
+# Handoff — r150
+
+r150 is Zeis's r149 eyeball feedback as a gamer (plan:
+[plans/r150-pack-ux-polish.md](plans/r150-pack-ux-polish.md)) — the
+warnings round moves to r151:
+
+- **Drop zone**: the pack manager's list area accepts dropped
+  `toolpack.json` files (highlight on dragover, same load path, hint
+  updated) — his first instinct, now correct.
+- **Save button**: footer gains explicit Save (closes the dialog). Loads
+  still apply instantly — Save is the commit moment, the status line the
+  receipt. Staged loads deliberately rejected (no new states).
+- **Gamer-words summaries**: one shared `describePackNodeAction()` in
+  `toolpacks/palette.ts` feeds the inspector and the canvas cards —
+  "sends a signal to the tool mod", never "fires
+  ExampleTools.Handover.Done". The inspector prefers the pack author's
+  own `docs` (newly snapshotted as `nodeDocs`, default `""`); cards keep
+  the short line; the data node's card drops its raw storage-key line;
+  the "same {mergeBy}" note is keyless.
+- **Provided-by banner**: teal `From the **X** tool pack` panel tops the
+  node inspector, distinct from the warn honesty line at the bottom. No
+  banner on the data node — its pack dropdown already sits at the top.
+- **Renames**: "Community data" → **"Give data to a tool mod"**,
+  "Community node" → **"Tool pack node"** (labels/blurbs/warning copy
+  only — no type or count changes).
+- Process notes: his screenshot attachment never arrived in the sandbox
+  (`/home/user/uploads/` absent) — all copy verified against the code;
+  and parallel same-file edits silently lost writes this round (registry
+  rename, three imports, two test updates) — every one caught by
+  typecheck/tests and re-applied serially with grep verification. Never
+  parallel-edit one file.
+- Gates: typecheck clean, **1,416 tests / 68 files**, build clean. Stamp
+  `2026-09-13.r150`. README trimmed (r145 → archive).
+
 
 r149 authors the **Recon-NG example pack** (plan:
 [plans/r149-reconng-pack.md](plans/r149-reconng-pack.md)) — the first half

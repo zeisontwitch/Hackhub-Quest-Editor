@@ -115,7 +115,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-13.r149";
+export const EDITOR_BUILD = "2026-09-13.r150";
 
 export interface CompiledFile {
     path: string;
@@ -517,7 +517,7 @@ function warnCommunityNodes(project: ProjectDocument): string[] {
                 const d = n.data as { packName?: string; storageKey?: string };
                 if (!d.storageKey) {
                     warnings.push(
-                        `${q.title || q.name}: a Community data node is not set up yet${d.packName ? ` (${d.packName})` : ""} — open the node and pick the pack and the data shape, or delete it. As it stands it does nothing.`,
+                        `${q.title || q.name}: a “Give data to a tool mod” node is not set up yet${d.packName ? ` (${d.packName})` : ""} — open the node and pick the pack and the data shape, or delete it. As it stands it does nothing.`,
                     );
                 }
             }
@@ -525,7 +525,7 @@ function warnCommunityNodes(project: ProjectDocument): string[] {
                 const d = n.data as { packName?: string; nodeLabel?: string; nodeId?: string };
                 if (!d.nodeId) {
                     warnings.push(
-                        `${q.title || q.name}: a Community node is not set up yet${d.packName ? ` (${d.packName})` : ""} — add it again from the palette's Editor Mods group, or delete it. As it stands it does nothing.`,
+                        `${q.title || q.name}: a tool pack node is not set up yet${d.packName ? ` (${d.packName})` : ""} — add it again from the palette's Editor Mods group, or delete it. As it stands it does nothing.`,
                     );
                 }
             }

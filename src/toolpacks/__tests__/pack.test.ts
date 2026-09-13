@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseToolPack, ToolPackSchema, type ToolPack } from "@/toolpacks/schema";
 import { packEventByName, packEvents, usePacks } from "@/store/packs";
+import { describePackNodeAction } from "@/toolpacks/palette";
 
 const exampleJson = readFileSync(join(process.cwd(), "reference/example-toolpack/toolpack.json"), "utf8");
 const exampleRaw = JSON.parse(exampleJson) as Record<string, unknown>;
@@ -175,6 +176,17 @@ describe("picker helpers", () => {
         expect(file.packName).toBe("Example Tools");
         expect(file.label).toContain("downloaded");
         expect(file.payload).toBe("{ sessionId; ip; host; path; name }");
+    });
+
+    it("describePackNodeAction speaks gamer words, never raw keys", () => {
+        expect(describePackNodeAction({ emitter: "sdk" })).toBe("runs the tool mod's own actions");
+        expect(describePackNodeAction({ emitter: "emit" })).toBe("sends a signal to the tool mod");
+        expect(describePackNodeAction({ emitter: "storage" })).toBe("hands data to the tool mod");
+        expect(describePackNodeAction({ emitter: "commandData", command: "exampletools-scan" })).toBe(
+            "places a scripted answer for the exampletools-scan command",
+        );
+        expect(describePackNodeAction({ emitter: "commandData" })).toBe("places a scripted tool answer");
+        expect(describePackNodeAction({})).toBe("runs the tool mod's own actions");
     });
 
     it("packEventByName serves fields and the honesty line", () => {

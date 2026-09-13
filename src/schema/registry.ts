@@ -684,8 +684,8 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
     "world.packData": {
         type: "world.packData",
         category: "community",
-        label: "Community data",
-        blurb: "Hand quest data to a community tool mod",
+        label: "Give data to a tool mod",
+        blurb: "Pick a data shape from a tool pack and fill it in",
         icon: "package",
         ...io,
         hook: "onStart",
@@ -699,8 +699,8 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
     "pack.node": {
         type: "pack.node",
         category: "community",
-        label: "Community node",
-        blurb: "A node a tool pack provides",
+        label: "Tool pack node",
+        blurb: "A story node from a tool pack — find it under Editor Mods",
         icon: "package",
         ...io,
         hook: "onStart",

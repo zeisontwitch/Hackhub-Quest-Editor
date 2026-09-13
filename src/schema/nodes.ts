@@ -470,6 +470,8 @@ export const PackNodeDataSchema = z.object({
     gameModName: z.string().default(""),
     nodeId: z.string().default(""),
     nodeLabel: z.string().default(""),
+    /** The pack author's own description — the inspector shows it verbatim (r150). */
+    nodeDocs: z.string().default(""),
     emitter: z.enum(["sdk", "emit", "storage", "commandData"]).default("sdk"),
     fields: z.array(z.record(z.string(), z.unknown())).default([]),
     values: z.record(z.string(), z.string()).default({}),

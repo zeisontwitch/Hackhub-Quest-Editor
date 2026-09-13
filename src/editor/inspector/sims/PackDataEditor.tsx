@@ -115,8 +115,8 @@ export function PackDataEditor({ node }: { node: NodeOfType<"world.packData"> })
                     ))}
                     {d.merge === "replace" && d.mergeBy && (
                         <p className="text-[10px] leading-relaxed text-ink-4">
-                            Replaces the pack's previous entry for the same{" "}
-                            <code className="font-mono">{d.mergeBy}</code>, keeping the rest.
+                            If the tool mod already has an entry for the same thing, this replaces it; everything
+                            else is kept.
                         </p>
                     )}
                 </>

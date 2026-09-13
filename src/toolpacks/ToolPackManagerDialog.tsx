@@ -29,6 +29,7 @@ export function ToolPackManagerDialog({ open, onOpenChange }: { open: boolean; o
     /** The load result shown under the button until the next attempt. */
     const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
     const [confirmId, setConfirmId] = useState<string | null>(null);
+    const [dragOver, setDragOver] = useState(false);
 
     const onFiles = (files: FileList | null) => {
         if (!files || !files.length) return;
@@ -86,7 +87,19 @@ export function ToolPackManagerDialog({ open, onOpenChange }: { open: boolean; o
                         </Dialog.Close>
                     </div>
 
-                    <div className="min-h-0 flex-1 overflow-y-auto p-4">
+                    <div
+                        className={`min-h-0 flex-1 overflow-y-auto p-4 ${dragOver ? "bg-accent-soft ring-1 ring-accent ring-inset" : ""}`}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            setDragOver(true);
+                        }}
+                        onDragLeave={() => setDragOver(false)}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            setDragOver(false);
+                            onFiles(e.dataTransfer.files);
+                        }}
+                    >
                         {packs.length === 0 ? (
                             <div className="flex flex-col items-center gap-1.5 py-8 text-center">
                                 <Icon name="package" size={26} className="text-ink-4" />
@@ -94,6 +107,7 @@ export function ToolPackManagerDialog({ open, onOpenChange }: { open: boolean; o
                                 <p className="max-w-[46ch] text-[11.5px] leading-relaxed text-ink-4">
                                     A pack is a <code className="font-mono">toolpack.json</code> file from a tool-mod author —
                                     the starter pack in the editor's repository is a worked example you can rename and fill.
+                                    Load one below, or drop the file anywhere in here.
                                 </p>
                             </div>
                         ) : (
@@ -182,6 +196,13 @@ export function ToolPackManagerDialog({ open, onOpenChange }: { open: boolean; o
                                     e.target.value = "";
                                 }}
                             />
+                            {/* Loads apply the moment they parse; Save is the
+                                explicit "this is right, close" — the status
+                                line above is the receipt it confirms. */}
+                            <div className="flex-1" />
+                            <button type="button" className="btn-default" onClick={() => onOpenChange(false)}>
+                                Save
+                            </button>
                         </div>
                         {result && (
                             <p

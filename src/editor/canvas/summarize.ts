@@ -9,6 +9,7 @@ import type { DialogueKind, NodeDoc } from "@/schema/nodes";
 import type { QuestDoc } from "@/schema/project";
 import { humanEventName } from "@/schema/events";
 import { DEVICE_TYPE_LABELS } from "@/schema/common";
+import { describePackNodeAction } from "@/toolpacks/palette";
 
 export const DIALOGUE_KIND_LABELS: Record<DialogueKind, string> = {
     phone: "Phone call",
@@ -255,7 +256,6 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
         case "world.packData": {
             const lines: string[] = [];
             if (d.contractLabel) lines.push(d.contractLabel);
-            if (d.storageKey) lines.push(d.storageKey);
             const filled = Object.values((d.values as Record<string, string>) ?? {}).filter((v) => v);
             if (filled.length) lines.push(`${filled.length} value${filled.length === 1 ? "" : "s"} filled in`);
             return lines.length ? lines : ["Not set up yet — pick a pack and a data shape"];
@@ -263,15 +263,8 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
 
         case "pack.node": {
             if (!d.nodeId) return ["Not set up yet — add it from the palette's Editor Mods group"];
-            const what =
-                d.emitter === "sdk"
-                    ? `calls ${((d.steps as { call: string }[]) ?? []).map((s) => s.call).join(", ") || "the SDK"}`
-                    : d.emitter === "emit"
-                        ? `fires ${d.eventName || "an event"}`
-                        : d.emitter === "storage"
-                            ? `writes ${d.storageKey || "a storage key"}`
-                            : `answers ${d.command || "a command"}`;
-            const lines = [`${d.nodeLabel || "Community node"} — ${what}`];
+            const what = describePackNodeAction(d as { emitter?: string; command?: string });
+            const lines = [`${d.nodeLabel || "Tool pack node"} — ${what}`];
             if (d.packName) lines.push(`from ${d.packName}`);
             const filled = Object.values((d.values as Record<string, string>) ?? {}).filter((v) => v);
             if (filled.length) lines.push(`${filled.length} value${filled.length === 1 ? "" : "s"} filled in`);

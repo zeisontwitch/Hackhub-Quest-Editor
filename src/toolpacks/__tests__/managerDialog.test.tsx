@@ -3,7 +3,7 @@
  * results, the two-step remove, and persistence across reopenings. userEvent
  * drives the file input (the repo's proven FileReader-safe path).
  */
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
@@ -100,6 +100,24 @@ describe("tool pack manager", () => {
         await userEvent.click(screen.getByRole("button", { name: "Yes" }));
         expect(screen.queryAllByText("Example Tools")).toHaveLength(0);
         expect(usePacks.getState().packs).toHaveLength(0);
+    });
+
+    it("dropping a pack file onto the list loads it like the button does", async () => {
+        fireEvent.drop(screen.getByText("No tool packs loaded."), {
+            dataTransfer: { files: [packFile(exampleJson)] },
+        });
+        expect(await screen.findByText(/Loaded 1 pack\./)).toBeInTheDocument();
+        expect(screen.getAllByText("Example Tools").length).toBeGreaterThan(0);
+    });
+
+    it("Save closes the dialog once the receipt is showing", async () => {
+        await loadFiles(packFile(exampleJson));
+        await screen.findByText(/Loaded 1 pack\./);
+        cleanup();
+        const onOpenChange = vi.fn();
+        render(<ToolPackManagerDialog open onOpenChange={onOpenChange} />);
+        await userEvent.click(screen.getByRole("button", { name: "Save" }));
+        expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 
     it("the remove question can be dismissed without removing", async () => {

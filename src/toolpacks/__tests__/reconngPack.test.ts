@@ -147,6 +147,8 @@ describe("recon-ng pack surfaces", () => {
             "recon-ng/host-gate",
         ]);
         expect(defs[0].def.label).toBe("Cut the player's breach session");
+        /* The inspector shows the pack author's own docs (r150). */
+        expect(defs[0].addData.nodeDocs).toContain("Ends the player's session");
     });
 
     it("keeps palette keys unique across both example packs", () => {

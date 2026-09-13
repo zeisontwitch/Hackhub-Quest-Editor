@@ -107,12 +107,20 @@ export function ExportDialog({ open, onOpenChange }: { open: boolean; onOpenChan
                                         ))}
                                     </ul>
                                 </div>
-                                {result.warnings.length > 0 && (
+                                {result.warningDetails.length > 0 && (
                                     <div>
-                                        <p className="mb-1 text-[10px] font-semibold tracking-wider text-warn uppercase">
-                                            Good to know
+                                        <p
+                                            className={`mb-1 text-[10px] font-semibold tracking-wider uppercase ${
+                                                result.warningDetails.some((w) => w.level === "error")
+                                                    ? "text-danger"
+                                                    : "text-warn"
+                                            }`}
+                                        >
+                                            {result.warningDetails.some((w) => w.level === "error")
+                                                ? "Needs attention"
+                                                : "Good to know"}
                                         </p>
-                                        <WarningList warnings={result.warnings} />
+                                        <WarningList warnings={result.warningDetails} />
                                     </div>
                                 )}
                             </div>

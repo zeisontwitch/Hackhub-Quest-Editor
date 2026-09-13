@@ -13,6 +13,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
 import { Icon } from "@/components/Icon";
 import { simulateProject, type SimObjective, type SimReport } from "@/compiler/simulate";
+import type { CompilerWarning } from "@/compiler/compile";
 import { WarningList } from "@/components/WarningList";
 import { useEditor } from "@/store/editor";
 import { usePacks } from "@/store/packs";
@@ -58,7 +59,9 @@ export function SimulatorDialog({ open, onOpenChange }: { open: boolean; onOpenC
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
-    const problems = report ? [...report.errors, ...report.warnings] : [];
+    const problems: CompilerWarning[] = report
+        ? [...report.errors.map((text) => ({ level: "error" as const, text })), ...report.warningDetails]
+        : [];
 
     return (
         <Dialog.Root open={open} onOpenChange={onOpenChange}>

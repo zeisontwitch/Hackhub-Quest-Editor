@@ -1,4 +1,18 @@
-# Handoff — r152
+# Handoff — r153
+
+r153 gives warnings severity (plan:
+[plans/r153-warning-severity.md](plans/r153-warning-severity.md)): Zeis
+read the amber cards as critical errors. Info (unlisted pages, honesty
+lines, FYIs) renders light-blue, amber stays for could-cause-issues (dead
+nodes, target mismatches, placeholders), red for will-break (unstartable
+quests, the lynx-handle game crash, broken addresses). Levels ride
+`computeWarningDetails()`; `computeWarnings()` stays a string view so no
+test churn; `CompileResult`/`SimReport` carry both. Export heading turns
+"Needs attention" on any red. Gates: **1,444 tests / 71 files**, build
+clean. Stamp `2026-09-13.r153`. README trimmed (r148 → archive).
+
+**Zeis's eyes only:** export anything with warnings — blue FYIs, amber
+maybes, red must-fix, heading flips when red is present.
 
 r152 is Zeis's r151 review (plan:
 [plans/r152-warning-cards-event-labels.md](plans/r152-warning-cards-event-labels.md)).
@@ -566,21 +580,22 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r152 (warning cards, event labels) on
+- **HEAD:** r153 (warning severity) on
   `arena/01a09bf3-hackhub-quest-editor`, committed and pushed. Previous
-  rounds: r151 (target-matching warnings), r150 (pack UX polish), r149
-  (Recon-NG example pack), r148 (picker/mark-size/stamp), r147 (grid
-  polish). (Sandbox resets have rolled local history back more than once;
-  recovered from the remote tip per the standing fetch-first rule, then
-  `npm ci` when node_modules went with it. The remote is authoritative.)
-- **1,438 tests green** across 70 files, typecheck clean, build clean, and —
+  rounds: r152 (warning cards, event labels), r151 (target-matching
+  warnings), r150 (pack UX polish), r149 (Recon-NG example pack), r148
+  (picker/mark-size/stamp). (Sandbox resets have rolled local history back
+  more than once; recovered from the remote tip per the standing
+  fetch-first rule, then `npm ci` when node_modules went with it. The
+  remote is authoritative.)
+- **1,444 tests green** across 71 files, typecheck clean, build clean, and —
   since the r138 prep rider — **vitest exits 0**: the 4 long-standing
   unhandled d3-drag errors were diagnosed as load-bearing jsdom noise (they
   aborted every canvas drag handler mid-gesture; four selection-gesture
   tests had been passing *because of* the crash) and fixed in
   `vitest.setup.ts` by giving MouseEvents the view a real browser would.
   r139 also cleared the `pack.node` duplicate-key React warning.
-- **Editor build stamp:** `2026-09-13.r152` (bumps every round since r148 —
+- **Editor build stamp:** `2026-09-13.r153` (bumps every round since r148 —
   the stamp is a version, not a changelog).
 - Tool-pack modules: `src/toolpacks/schema.ts` (format 2 + plain-language
   `parseToolPack`), `src/toolpacks/palette.ts` (pure `packNodeDefs`,

@@ -117,7 +117,20 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-13.r152";
+export const EDITOR_BUILD = "2026-09-13.r153";
+
+/** Warning severity (r153): info = good to know, warn = could cause issues,
+    error = will break or strand the player. */
+export type WarningLevel = "info" | "warn" | "error";
+export interface CompilerWarning {
+    level: WarningLevel;
+    text: string;
+}
+
+/** Tag a single-level helper's strings at the aggregator. */
+function tag(level: WarningLevel, texts: string[]): CompilerWarning[] {
+    return texts.map((text) => ({ level, text }));
+}
 
 export interface CompiledFile {
     path: string;
@@ -139,6 +152,8 @@ export interface CompileResult {
     files: CompiledFile[];
     permissions: string[];
     warnings: string[];
+    /** Same warnings with severity — the dialogs render this. */
+    warningDetails: CompilerWarning[];
 }
 
 /* ── Permissions ───────────────────────────────────────────────────────── */
@@ -331,8 +346,8 @@ type DeviceNode = {
     ports?: { external?: number; active?: boolean; service?: string; version?: string }[];
 };
 
-function warnNetworkStructure(project: ProjectDocument): string[] {
-    const warnings: string[] = [];
+function warnNetworkStructure(project: ProjectDocument): CompilerWarning[] {
+    const warnings: CompilerWarning[] = [];
     const LOGIN_SERVICES = ["ssh", "ftp", "telnet", "mysql", "rdp", "smb", "vnc"];
 
     for (const q of project.quests) {
@@ -354,19 +369,19 @@ function warnNetworkStructure(project: ProjectDocument): string[] {
             walkStructure((n.data as { device?: DeviceNode }).device ?? {});
 
             if (domains.length) {
-                warnings.push(
+                warnings.push({ level: "warn", text: 
                     `${q.name}: this network claims the domain ${domains.map((d) => `“${d}”`).join(", ")}. Domain names are shared with the whole game, so if the base game or another installed mod already uses one, that one wins and your server will not answer to it. A name nobody else is likely to pick — something tied to your own story — is the safest choice.`,
-                );
+ });
             }
             if (orphans.length) {
-                warnings.push(
+                warnings.push({ level: "error", text: 
                     `${q.name}: ${orphans.join(", ")} has machines behind it, but only a router or a splitter can hold other machines — those machines will not be built. Change the type to Router or Splitter, or move them.`,
-                );
+ });
             }
             if (strays.length) {
-                warnings.push(
+                warnings.push({ level: "error", text: 
                     `${q.name}: ${strays.join(", ")} carries firewall rules, but only a firewall device enforces them — they will be ignored. Put the rules on a Firewall device in front of the machine you want to protect.`,
-                );
+ });
             }
 
             const loginless: string[] = [];
@@ -384,9 +399,9 @@ function warnNetworkStructure(project: ProjectDocument): string[] {
             };
             findLoginless((n.data as { device?: DeviceNode }).device ?? {});
             if (loginless.length) {
-                warnings.push(
+                warnings.push({ level: "error", text: 
                     `${q.name}: ${loginless.join(", ")} has a login service open but no user accounts, so the player cannot break in — metasploit reports “Attack failed. Port 22 could not be accessed.” Add a user to the device, or close the port.`,
-                );
+ });
             }
 
             const badVersions: string[] = [];
@@ -410,9 +425,9 @@ function warnNetworkStructure(project: ProjectDocument): string[] {
             };
             checkPorts((n.data as { device?: DeviceNode }).device ?? {});
             if (badVersions.length) {
-                warnings.push(
+                warnings.push({ level: "error", text: 
                     `${q.name}: ${badVersions.join("; ")}. metasploit needs three numbers (for example "OpenSSH 7.2.0") — it rejects anything else with “Invalid version for option: Version”, and the player cannot run the exploit at all.`,
-                );
+ });
             }
         }
     }
@@ -469,8 +484,8 @@ function warnWifi(project: ProjectDocument): string[] {
     return warnings;
 }
 
-function warnDialogue(project: ProjectDocument): string[] {
-    const warnings: string[] = [];
+function warnDialogue(project: ProjectDocument): CompilerWarning[] {
+    const warnings: CompilerWarning[] = [];
     for (const q of project.quests) {
         for (const n of q.graph.nodes) {
             if (n.type !== "comms.dialogue") continue;
@@ -481,74 +496,74 @@ function warnDialogue(project: ProjectDocument): string[] {
             };
             const mail = d.mail;
             if (d.kind === "mail" && mail?.replyable) {
-                warnings.push(
+                warnings.push({ level: "info", text: 
                     `${q.name}: “${mail.subject || "a mail"}” lets the player reply, so it is sent through Quest.sendMail — the only path that carries a reply flag. If the Reply button does not appear in game, turn the setting off and give the player a hackertyper reply page instead, which is the route the other templates use.`,
-                );
+ });
             }
             if (d.kind === "phone" && q.dialog.some((b) => b.lines.some((l) => l.input))) {
-                warnings.push(
+                warnings.push({ level: "info", text: 
                     `${q.name}: phone lines with typed answers also register a terminal command (qe-…) the player uses to answer.`,
-                );
+ });
             }
             const live = (n.data as { postLive?: boolean }).postLive === true;
             const wired = q.graph.edges.some((e) => e.kind === "flow" && e.target === n.id);
             if (live && (d.kind === "kisscord" || d.kind === "weechat")) {
                 if (!wired) {
-                    warnings.push(
+                    warnings.push({ level: "warn", text: 
                         `${q.name}: a conversation is set to “play when the story reaches this node” but nothing is wired into it — it stays a normal quest conversation.`,
-                    );
+ });
                 } else {
-                    warnings.push(
+                    warnings.push({ level: "warn", text: 
                         `${q.name}: a conversation set to “play when the story reaches this node” is sent live at that moment. Player replies, uploads and “unlocks after” steps are skipped, and the game does not remove live messages with the quest.`,
-                    );
+ });
                 }
             }
             if (d.kind === "kisscord" && d.kisscord?.messages?.some((m) => m.playerAction === "upload")) {
-                warnings.push(`${q.name}: Kisscord uploads compile to a “[uploaded file …]” message.`);
+                warnings.push({ level: "info", text: `${q.name}: Kisscord uploads compile to a “[uploaded file …]” message.` });
             }
         }
     }
     return warnings;
 }
 
-function warnCommunityNodes(project: ProjectDocument): string[] {
-    const warnings: string[] = [];
+function warnCommunityNodes(project: ProjectDocument): CompilerWarning[] {
+    const warnings: CompilerWarning[] = [];
     for (const q of project.quests) {
         for (const n of q.graph.nodes) {
             if (n.type === "world.packData") {
                 const d = n.data as { packName?: string; storageKey?: string };
                 if (!d.storageKey) {
-                    warnings.push(
+                    warnings.push({ level: "warn", text: 
                         `${q.title || q.name}: a “Give data to a tool mod” node is not set up yet${d.packName ? ` (${d.packName})` : ""} — open the node and pick the pack and the data shape, or delete it. As it stands it does nothing.`,
-                    );
+ });
                 }
             }
             if (n.type === "pack.node") {
                 const d = n.data as { packName?: string; nodeLabel?: string; nodeId?: string };
                 if (!d.nodeId) {
-                    warnings.push(
+                    warnings.push({ level: "warn", text: 
                         `${q.title || q.name}: a tool pack node is not set up yet${d.packName ? ` (${d.packName})` : ""} — add it again from the palette's Editor Mods group, or delete it. As it stands it does nothing.`,
-                    );
+ });
                 }
             }
         }
     }
     for (const [packName, gameModName] of packModsUsed(project)) {
-        warnings.push(
+        warnings.push({ level: "info", text: 
             `${packName} community data is used in this quest. It needs the ${gameModName} game mod installed on the player's machine — say so in your quest description, or the player will not know why it does nothing.`,
-        );
+ });
     }
     return warnings;
 }
 
-function warnWebsites(project: ProjectDocument): string[] {
-    const warnings: string[] = [];
+function warnWebsites(project: ProjectDocument): CompilerWarning[] {
+    const warnings: CompilerWarning[] = [];
     for (const w of project.websites) {
         const hidden = w.pages.filter((p) => !p.seo);
         if (hidden.length) {
-            warnings.push(
+            warnings.push({ level: "info", text: 
                 `${w.host}: ${hidden.length} unlisted page${hidden.length > 1 ? "s" : ""} (${hidden.map((p) => p.path).join(", ")}). Nothing links to ${hidden.length > 1 ? "them" : "it"} and the in-game search will not show ${hidden.length > 1 ? "them" : "it"}, so the player reaches ${hidden.length > 1 ? "them" : "it"} only by typing the address or by running dirhunter on the host — which is exactly what makes a good hiding place for a clue. If you meant ${hidden.length > 1 ? "these" : "this"} to be findable normally, turn on “Listed in search” for the page.`,
-            );
+ });
         }
         const seenPaths = new Map<string, number>();
         for (const p of w.pages) {
@@ -556,16 +571,16 @@ function warnWebsites(project: ProjectDocument): string[] {
         }
         for (const [path, count] of seenPaths) {
             if (count > 1) {
-                warnings.push(
+                warnings.push({ level: "error", text: 
                     `${w.host} has ${count} pages at the path ${path}. They ship as two definitions of the same address — give one of them a different path.`,
-                );
+ });
             }
         }
         for (const p of w.pages) {
             if (p.path && !p.path.startsWith("/")) {
-                warnings.push(
+                warnings.push({ level: "error", text: 
                     `${w.host}: the page “${p.title || p.path}” has the path ${p.path}, but paths start at the host root — it should be /${p.path}. The in-game browser and dirhunter address pages from the root.`,
-                );
+ });
             }
         }
     }
@@ -574,32 +589,38 @@ function warnWebsites(project: ProjectDocument): string[] {
     for (const w of project.websites) hosts.set(w.host, (hosts.get(w.host) ?? 0) + 1);
     for (const [host, count] of hosts) {
         if (count > 1) {
-            warnings.push(
+            warnings.push({ level: "error", text: 
                 `${host} is the host of ${count} websites in this mod. Domains are global — two sites on one host will fight over which one answers. Give each site its own distinctive host.`,
-            );
+ });
         }
         if (/^(www\.)?(example\.(com|net|org)|test\.com|localhost)$/i.test(host)) {
-            warnings.push(
+            warnings.push({ level: "warn", text: 
                 `${host} is a placeholder domain, but the export ships it as a real site any player can find (and another mod may already use it). Pick a distinctive host — read it like a domain you would type yourself.`,
-            );
+ });
         }
     }
     return warnings;
 }
 
-export function computeWarnings(project: ProjectDocument, packs: ToolPack[] = []): string[] {
+export function computeWarningDetails(project: ProjectDocument, packs: ToolPack[] = []): CompilerWarning[] {
     return [
-        ...warnUnstartableQuests(project),
-        ...warnFirewallAndPort(project),
+        ...tag("error", warnUnstartableQuests(project)),
+        ...tag("warn", warnFirewallAndPort(project)),
         ...warnNetworkStructure(project),
-        ...warnToolResponse(project),
-        ...warnHandbook(project),
-        ...warnWifi(project),
+        ...tag("error", warnToolResponse(project)),
+        ...tag("warn", warnHandbook(project)),
+        ...tag("warn", warnWifi(project)),
         ...warnDialogue(project),
         ...warnCommunityNodes(project),
         ...warnWebsites(project),
-        ...warnTargetMatching(project, packs),
+        ...tag("warn", warnTargetMatching(project, packs)),
     ];
+}
+
+/** The text view of the details above — kept so string assertions and the
+    export README need no severity awareness. */
+export function computeWarnings(project: ProjectDocument, packs: ToolPack[] = []): string[] {
+    return computeWarningDetails(project, packs).map((w) => w.text);
 }
 
 /* ── Compile ───────────────────────────────────────────────────────────── */
@@ -711,14 +732,16 @@ export function compileProject(project: ProjectDocument, packs: ToolPack[] = [])
     for (const { result } of seeded) for (const id of result.absorbed) absorbed.add(id);
 
     const permissions = computePermissions(working);
-    const warnings = computeWarnings(working, packs);
+    const warningDetails = computeWarningDetails(working, packs);
+    const warnings = warningDetails.map((w) => w.text);
 
     for (const { quest, result } of seeded) {
         for (const { reason } of result.unplaced) {
-            warnings.push(
+            const text =
                 `${quest.name}: a “Place files” node could not be placed — ${reason}. ` +
-                    "Point it at a device this quest creates, or target the player's PC instead.",
-            );
+                "Point it at a device this quest creates, or target the player's PC instead.";
+            warnings.push(text);
+            warningDetails.push({ level: "warn", text });
         }
     }
 
@@ -783,6 +806,7 @@ export function compileProject(project: ProjectDocument, packs: ToolPack[] = [])
     return {
         permissions,
         warnings,
+        warningDetails,
         files: [
             { path: "manifest.json", content: manifestJson },
             { path: "dist/manifest.json", content: manifestJson },

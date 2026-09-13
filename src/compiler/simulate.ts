@@ -16,7 +16,7 @@
  * Pure module: no React, no DOM (AR1/AR2). `Random.sleep` resolves
  * immediately — a dry run collapses waits.
  */
-import { compileProject, EDITOR_BUILD } from "@/compiler/compile";
+import { compileProject, EDITOR_BUILD, type CompilerWarning } from "@/compiler/compile";
 import { PAYLOAD_IS_REALLY_PRIMITIVE, getEvent, payloadFields } from "@/schema/events";
 import type { ProjectDocument, QuestDoc } from "@/schema/project";
 import type { ToolPack } from "@/toolpacks/schema";
@@ -53,6 +53,8 @@ export interface SimReport {
     trace: TraceEntry[];
     quests: SimQuestReport[];
     warnings: string[];
+    /** Same warnings with severity — the dialog renders this. */
+    warningDetails: CompilerWarning[];
     errors: string[];
 }
 
@@ -363,7 +365,7 @@ export async function simulateProject(project: ProjectDocument, packs: ToolPack[
 
     const modJs = compiled.files.find((f) => f.path === "dist/mod.js")?.content;
     if (!modJs) {
-        return { build: EDITOR_BUILD, trace: [], quests: [], warnings: compiled.warnings, errors: ["the compiler produced no dist/mod.js — nothing to dry-run"] };
+        return { build: EDITOR_BUILD, trace: [], quests: [], warnings: compiled.warnings, warningDetails: compiled.warningDetails, errors: ["the compiler produced no dist/mod.js — nothing to dry-run"] };
     }
 
     try {
@@ -469,6 +471,7 @@ export async function simulateProject(project: ProjectDocument, packs: ToolPack[
         trace: entries,
         quests: questReports,
         warnings: [...compiled.warnings],
+        warningDetails: [...compiled.warningDetails],
         errors,
     };
 }

@@ -12,11 +12,8 @@ import { QuestCanvas } from "@/editor/canvas/QuestCanvas";
 import { NodePalette } from "@/editor/palette/NodePalette";
 import { InspectorPanel } from "@/editor/inspector/InspectorPanel";
 import { FloatingInspector } from "@/editor/inspector/FloatingInspector";
-import {
-    floatInspector,
-    inspectorMode,
-    subscribeInspectorLayout,
-} from "@/editor/inspector/drawerLayout";
+import { InspectorDockHandle } from "@/editor/inspector/InspectorDockHandle";
+import { inspectorMode, subscribeInspectorLayout } from "@/editor/inspector/drawerLayout";
 import { StatusBar } from "@/editor/shell/StatusBar";
 import { TopBar } from "@/editor/shell/TopBar";
 import { Overlays, Toast } from "@/editor/shell/Overlays";
@@ -83,29 +80,26 @@ export default function App() {
                             </button>
                         ) : (
                             <>
-                                {/* Float + collapse controls live at the right of
-                                    the tab bar — at the left they sat on top of
-                                    the "Node" tab and made it unclickable. */}
-                                <div className="absolute top-1.5 right-2 z-10 flex items-center gap-0.5">
-                                    <button
-                                        type="button"
-                                        className="btn-icon"
-                                        onClick={floatInspector}
-                                        title="Float the inspector — drag it anywhere"
-                                        aria-label="Float inspector"
-                                    >
-                                        <Icon name="maximize" size={13} />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn-icon"
-                                        onClick={() => setUi({ inspectorCollapsed: true })}
-                                        title="Hide inspector"
-                                        aria-label="Hide inspector"
-                                    >
-                                        <Icon name="panelRight" size={14} />
-                                    </button>
-                                </div>
+                                {/* The grab handle on the left edge — drag it to
+                                    pull the inspector out, or click to float it.
+                                    This is the affordance authors reach for; the
+                                    small icon button that shipped in r158 went
+                                    unfound (r159). */}
+                                <InspectorDockHandle />
+
+                                {/* The collapse control lives at the right of the
+                                    tab bar — at the left it sat on top of the
+                                    "Node" tab and made it unclickable. Floating is
+                                    the left-edge handle's job now. */}
+                                <button
+                                    type="button"
+                                    className="btn-icon absolute top-1.5 right-2 z-10"
+                                    onClick={() => setUi({ inspectorCollapsed: true })}
+                                    title="Hide inspector"
+                                    aria-label="Hide inspector"
+                                >
+                                    <Icon name="panelRight" size={14} />
+                                </button>
                                 <InspectorPanel />
                             </>
                         )}

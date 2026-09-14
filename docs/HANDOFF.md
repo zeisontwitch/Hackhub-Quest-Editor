@@ -1,3 +1,32 @@
+# Handoff — r159
+
+r159 fixes a usability miss in r158 (plan:
+[plans/r159-inspector-dock-handle.md](plans/r159-inspector-dock-handle.md)).
+r158 shipped the float feature behind a small dim maximize icon top-right
+of the inspector — the user loaded it and could not find any way to pull
+the panel out or push it in; they reached for a handle on the edge that
+wasn't there. So r159 adds one: a full-height grab handle on the docked
+inspector's **left edge** (new `src/editor/inspector/InspectorDockHandle.tsx`).
+**Click** it to float in place; **drag** it past a 6px threshold to pull the
+panel out and carry it under the cursor. The redundant top-right float icon
+button is retired (KISS — one obvious way); the collapse chevron stays. The
+handle is a real `<button>` (keyboard-focusable), and its pointermove/up
+listeners bind to `window`, not the handle, because the docked aside — and
+the handle with it — unmounts the instant the panel floats. No change to
+`drawerLayout.ts`, `FloatingInspector.tsx`, the compiler, export, or the
+project document. Gates: **1,470 tests / 75 files** (+1 drag-to-float case
+in floatingInspector.test.tsx), typecheck + build clean. Stamp
+`2026-09-14.r159`. README trimmed (r154 → archive).
+
+**Zeis's eyes only:** the ⋮ grip on the inspector's left edge — click it to
+float, or grab it and drag the panel off the wall. Drag the drawer's title
+bar / bottom-right corner as before; Settings → reset re-docks it.
+
+Roadmap: Next-up is now 1 auto-generate fields, then the two templates last
+(2 contact-driven, 3 branching consequence).
+
+---
+
 # Handoff — r158
 
 r158 makes the inspector a free-floating drawer (plan:

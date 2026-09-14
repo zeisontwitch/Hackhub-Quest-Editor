@@ -145,11 +145,11 @@ export function Field({
             const v = getPath(node.data, siblingPath);
             const text = v === undefined || v === null ? "" : String(v);
             if (!text) continue;
-            if (key.toLowerCase().includes("first")) ctx.firstName = text;
-            else if (key.toLowerCase().includes("last")) ctx.lastName = text;
-            else if (key.toLowerCase().includes("compan") || key.toLowerCase().includes("employer")) {
-                ctx.company = text;
-            }
+            const lower = key.toLowerCase();
+            if (lower.includes("first")) ctx.firstName = text;
+            else if (lower.includes("last")) ctx.lastName = text;
+            else if (lower.includes("service")) ctx.service = text;
+            else if (lower.includes("compan") || lower.includes("employer")) ctx.company = text;
         }
         write(generateField(gen.kind, ctx, { ipFlavour: gen.ipFlavour }));
     };

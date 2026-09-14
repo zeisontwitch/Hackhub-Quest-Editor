@@ -15,14 +15,15 @@ import {
     iban,
     ip,
     serviceVersion,
+    ssid,
     username,
+    versionNumber,
     type Rng,
 } from "@/lib/generate";
 import {
     FIRST_NAMES,
     LAST_NAMES,
     MAIL_PROVIDERS,
-    SERVICE_BANNERS,
 } from "@/lib/generate/wordlists";
 
 /** An rng that walks a fixed sequence, looping — fully deterministic. */
@@ -102,13 +103,38 @@ describe("username", () => {
     });
 });
 
-describe("serviceVersion", () => {
-    it("ends in a three-number version with no letters — the metasploit rule", () => {
-        for (let i = 0; i < SERVICE_BANNERS.length; i++) {
-            const value = serviceVersion(seq([i / SERVICE_BANNERS.length]));
-            const version = value.split(" ").pop()!;
-            expect(version).toMatch(/^\d+\.\d+\.\d+$/);
+describe("versionNumber", () => {
+    it("obeys the game's rule: three parts, first 1-9, rest 0-99", () => {
+        for (let i = 0; i < 200; i++) {
+            const value = versionNumber(seq([(i % 100) / 100, (i * 7 % 100) / 100, (i * 13 % 100) / 100]));
+            expect(value).toMatch(/^[1-9]\.\d{1,2}\.\d{1,2}$/);
+            const [major, minor, patch] = value.split(".").map(Number);
+            expect(major).toBeGreaterThanOrEqual(1);
+            expect(major).toBeLessThanOrEqual(9);
+            expect(minor).toBeLessThanOrEqual(99);
+            expect(patch).toBeLessThanOrEqual(99);
         }
+    });
+});
+
+describe("serviceVersion", () => {
+    it("ends in a rule-compliant version and never a bare letters-only version", () => {
+        for (let i = 0; i < 30; i++) {
+            const value = serviceVersion({}, seq([i / 30, 0.3, 0.6]));
+            const version = value.split(" ").pop()!;
+            expect(version).toMatch(/^[1-9]\.\d{1,2}\.\d{1,2}$/);
+        }
+    });
+
+    it("matches the software to the port's service", () => {
+        expect(serviceVersion({ service: "ssh" }, seq([0.0, 0.5, 0.5, 0.5]))).toMatch(/^OpenSSH /);
+        expect(serviceVersion({ service: "SSH" }, seq([0.0, 0.5, 0.5, 0.5]))).toMatch(/^OpenSSH /);
+        expect(serviceVersion({ service: "mysql" }, seq([0.0, 0.5, 0.5, 0.5]))).toMatch(/^MySQL /);
+    });
+
+    it("falls back to a generic name for an unknown or blank service", () => {
+        const value = serviceVersion({ service: "gopher" }, seq([0.0, 0.5, 0.5, 0.5]));
+        expect(value).toMatch(/^[A-Za-z][\w-]* [1-9]\.\d{1,2}\.\d{1,2}$/);
     });
 });
 
@@ -126,6 +152,13 @@ describe("iban", () => {
     });
 });
 
+describe("ssid", () => {
+    it("has no spaces", () => {
+        expect(ssid(seq([0.1, 0.5]))).not.toContain(" ");
+        expect(ssid(seq([0.1, 0.5])).length).toBeGreaterThan(0);
+    });
+});
+
 describe("determinism", () => {
     it("same rng yields same output", () => {
         expect(generateField("email", { firstName: "A", lastName: "B" }, {}, seq([0.3, 0.4]))).toBe(
@@ -136,7 +169,7 @@ describe("determinism", () => {
 
 describe("wordlists", () => {
     it("are non-empty and de-duplicated", () => {
-        for (const list of [FIRST_NAMES, LAST_NAMES, MAIL_PROVIDERS, SERVICE_BANNERS]) {
+        for (const list of [FIRST_NAMES, LAST_NAMES, MAIL_PROVIDERS]) {
             expect(list.length).toBeGreaterThan(0);
             expect(new Set(list).size).toBe(list.length);
         }

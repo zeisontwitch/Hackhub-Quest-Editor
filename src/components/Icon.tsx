@@ -66,9 +66,6 @@ const PATHS: Record<string, string> = {
     panelLeft: "M3 3h18v18H3z M9 3v18",
     panelRight: "M3 3h18v18H3z M15 3v18",
     grip: "M9 5h.01 M9 12h.01 M9 19h.01 M15 5h.01 M15 12h.01 M15 19h.01",
-    /* A flat line-art die showing the five-face: rounded square with pips at the
-       corners and centre. The `h.01` dots match the `grip` glyph's pip style. */
-    dice: "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z M8 8h.01 M16 8h.01 M12 12h.01 M8 16h.01 M16 16h.01",
     more: "M5 12h.01 M12 12h.01 M19 12h.01",
     maximize: "M8 3H5a2 2 0 0 0-2 2v3 M16 3h3a2 2 0 0 1 2 2v3 M21 16v3a2 2 0 0 1-2 2h-3 M3 16v3a2 2 0 0 0 2 2h3",
     user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",
@@ -88,7 +85,23 @@ const PATHS: Record<string, string> = {
     grid: "M3 9h18 M3 15h18 M9 3v18 M15 3v18",
 };
 
-export type IconName = keyof typeof PATHS;
+/**
+ * Filled glyphs that don't fit the single-stroke line-art model above: they
+ * carry their own `viewBox` and one or more `fill`ed sub-paths (drawn in
+ * `currentColor`, no stroke). The dice reads as "randomize" — a tumbling die —
+ * which a stroked square could not (a plain square looked like a text box).
+ */
+const FILLED_ICONS: Record<string, { viewBox: string; paths: string[] }> = {
+    dice: {
+        viewBox: "0 0 32 32",
+        paths: [
+            "M7.98815 13.8772C8.09168 14.9779 7.50506 15.9307 6.68549 15.9964 5.86592 16.0621 5.11537 15.2243 5.01185 14.1237 4.90832 13.023 5.49494 12.0702 6.31451 12.0045 7.13408 11.9306 7.88463 12.7684 7.98815 13.8772ZM12.6855 25.9964C13.5051 25.9307 14.0917 24.9779 13.9882 23.8773 13.8846 22.7684 13.1341 21.9306 12.3145 22.0045 11.4949 22.0702 10.9083 23.023 11.0118 24.1237 11.1154 25.2243 11.8659 26.0621 12.6855 25.9964ZM25.6855 12.0036C26.5051 12.0693 27.0917 13.0221 26.9882 14.1228 26.8846 15.2316 26.1341 16.0694 25.3145 15.9955 24.4949 15.9298 23.9083 14.977 24.0118 13.8763 24.1154 12.7757 24.8659 11.9379 25.6855 12.0036ZM23.9882 19.1228C24.0917 18.0221 23.5051 17.0693 22.6855 17.0036 21.8659 16.9379 21.1154 17.7757 21.0118 18.8763 20.9083 19.977 21.4949 20.9298 22.3145 20.9955 23.1341 21.0694 23.8846 20.2316 23.9882 19.1228ZM19.6855 22.0036C20.5051 22.0693 21.0917 23.0221 20.9882 24.1227 20.8846 25.2316 20.1341 26.0694 19.3145 25.9955 18.4949 25.9298 17.9083 24.977 18.0118 23.8763 18.1154 22.7757 18.8659 21.9379 19.6855 22.0036Z",
+            "M13.8828 2.45108L4.49429 6.50391C4.27506 6.60214 4.07814 6.73458 3.90475 6.89358C2.84693 7.15621 2 8.10306 2 9.32352V23.4931C2 24.6841 2.70455 25.7624 3.79533 26.2406L13.4961 30.494C13.7933 30.6243 14.0969 30.692 14.3951 30.7049C15.4393 31.0984 16.5607 31.0984 17.6049 30.7049C17.9031 30.692 18.2067 30.6243 18.5039 30.494L28.2047 26.2406C29.2954 25.7624 30 24.6841 30 23.4931V9.32352C30 8.15045 29.2176 7.23015 28.2175 6.92724C28.0446 6.75323 27.8417 6.609 27.6071 6.50391L18.1171 2.45108C16.778 1.84964 15.2408 1.84964 13.8828 2.45108ZM15 14.8091V28.2045C15 28.5652 14.6296 28.8072 14.2992 28.6624L4.59844 24.409C4.23485 24.2495 4 23.8901 4 23.4931V9.32352C4 8.96038 4.37489 8.71836 4.70583 8.86785L13.8233 12.9864C14.5396 13.31 15 14.0231 15 14.8091ZM17 28.2045V14.8091C17 14.0231 17.4604 13.31 18.1767 12.9864L27.2942 8.86785C27.6251 8.71836 28 8.96038 28 9.32352V23.4931C28 23.8901 27.7651 24.2495 27.4016 24.409L17.7008 28.6624C17.3704 28.8072 17 28.5652 17 28.2045ZM16 7.5C14.3431 7.5 13 7.05229 13 6.5C13 5.94771 14.3431 5.5 16 5.5C17.6568 5.5 19 5.94771 19 6.5C19 7.05229 17.6568 7.5 16 7.5Z",
+        ],
+    },
+};
+
+export type IconName = keyof typeof PATHS | keyof typeof FILLED_ICONS;
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, "name"> {
     name: IconName | string;
@@ -96,6 +109,25 @@ interface IconProps extends Omit<SVGProps<SVGSVGElement>, "name"> {
 }
 
 export function Icon({ name, size = 16, ...rest }: IconProps) {
+    const filled = FILLED_ICONS[name];
+    if (filled) {
+        return (
+            <svg
+                width={size}
+                height={size}
+                viewBox={filled.viewBox}
+                fill="currentColor"
+                stroke="none"
+                aria-hidden="true"
+                focusable="false"
+                {...rest}
+            >
+                {filled.paths.map((d, i) => (
+                    <path key={i} d={d} />
+                ))}
+            </svg>
+        );
+    }
     const d = PATHS[name] ?? PATHS.info;
     return (
         <svg

@@ -1,3 +1,41 @@
+# Handoff — r162
+
+r162 finishes the auto-generate feature (plan:
+[plans/r162-dice-icon-and-long-tail.md](plans/r162-dice-icon-and-long-tail.md)),
+three things the user asked for after trying r161:
+
+1. **Real dice icon.** r161's `dice` was a stroked square that read as a text
+   box. `Icon.tsx` gained a `FILLED_ICONS` registry (`{ viewBox, paths[] }`,
+   rendered `fill=currentColor stroke=none`) so the user's filled 32×32 vector
+   die drops in; the old square path is gone.
+2. **Service-aware, rule-compliant Version.** New `versionNumber()` →
+   `[1-9].[0-99].[0-99]` (the game's rule). `serviceVersion(ctx)` reads
+   `ctx.service` via `SERVICE_SOFTWARE` (ssh→OpenSSH/Dropbear, http→Apache/nginx,
+   …; unknown/blank → `GENERIC_SOFTWARE`) and appends a fresh compliant version,
+   so a port's Version banner always matches its Service and never gets rejected.
+   `GenContext` gained `service`; `Field.tsx`'s reuse map learns the `service`
+   key. The old fixed `SERVICE_BANNERS` list is removed.
+3. **Long tail wired.** Port Service (`serviceName`) + Version (`serviceVersion`
+   reusing service); world.port `port.service`; vuln Version; Pay From IBAN
+   (`iban`) + From name (`initialName`); Wi-Fi SSID (new `ssid()` from
+   `SSID_WORDS`/`SSID_SUFFIXES`); sims — Mail from (`email`), Kisscord handle
+   (`username`), WeeChat host (`domain`) + per-line username (`username`).
+
+Still editor-only: nothing reaches the compiler/runtime/export, fieldAudit
+unaffected. Tests: generate.test.ts (+versionNumber/service-match/ssid,
+−fixed-banner) and generateButton.test.tsx (+Version reuses Service). Gates:
+typecheck clean, **1,498 tests / 77 files**, build OK. Stamp
+`2026-09-14.r162`. README trimmed (r157 → archive).
+
+**Zeis's eyes only:** the dice now looks like a die. Create-network → a device →
+Ports → type a Service (e.g. ssh), then roll Version → an OpenSSH banner. Pay
+node From IBAN/From name; Wi-Fi SSID; Mail From; Kisscord/WeeChat handles.
+
+Roadmap: the auto-generate feature is done. Next-up is templates only — 1
+contact-driven story, 2 branching consequence.
+
+---
+
 # Handoff — r161
 
 r161 adds the auto-generate (dice) button, Next-up #1 (plan:

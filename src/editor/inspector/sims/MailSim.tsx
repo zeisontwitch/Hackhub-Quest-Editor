@@ -3,6 +3,8 @@
  * fields, attachment included.
  */
 import { FieldShell, TextArea, TextInput, Toggle } from "@/editor/inspector/primitives";
+import { TextInputWithGenerate } from "@/editor/inspector/GenerateButton";
+import { generateField } from "@/lib/generate";
 import type { MailNodeData } from "@/schema/nodes";
 import { SimFrame } from "./chrome";
 import { mailBodyText } from "@/compiler/mailText";
@@ -43,7 +45,14 @@ export function MailScript({ value, onChange }: { value: MailNodeData; onChange:
                     label="From"
                     hint="The sender address. Make it a domain the player might look up — it is a lead."
                 >
-                    <TextInput ariaLabel="Mail from" value={from} onChange={(f) => onChange({ from: f })} mono />
+                    <TextInputWithGenerate
+                        ariaLabel="Mail from"
+                        value={from}
+                        onChange={(f) => onChange({ from: f })}
+                        onGenerate={() => onChange({ from: generateField("email") })}
+                        generateLabel="e-mail"
+                        mono
+                    />
                 </FieldShell>
                 <FieldShell label="To" hint="Leave blank to send it to the player.">
                     <TextInput ariaLabel="Mail to" value={to ?? ""} onChange={(t) => onChange({ to: t || undefined })} mono />

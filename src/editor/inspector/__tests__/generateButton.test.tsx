@@ -94,6 +94,35 @@ describe("generate (dice) button", () => {
         expect(screen.queryByRole("button", { name: /Generate/ })).not.toBeInTheDocument();
     });
 
+    it("matches the version banner to the port's service beside it", () => {
+        // A network device with one port: service=ssh, version empty. The Version
+        // dice should read the sibling service and produce an OpenSSH banner.
+        const net = makeNode("world.network", { x: 0, y: 0 }, {
+            device: {
+                id: "r1",
+                ip: "10.0.0.1",
+                type: "ROUTER",
+                vulnerabilities: [],
+                users: [],
+                ports: [{ id: "p1", external: 22, internal: 22, active: true, service: "ssh", version: "" }],
+                rules: [],
+                rootFiles: [],
+                children: [],
+            },
+        });
+        loadWith([net]);
+        const portsList = nodeTypeDef("world.wifi").fields.find((f) => "key" in f && f.key === "ports");
+        if (!portsList || portsList.kind !== "list") throw new Error("no ports list");
+        const versionDef = portsList.fields.find((f) => "key" in f && f.key === "version")!;
+        render(<Field def={versionDef} nodeId={net.id} basePath="device.ports.0" />);
+
+        fireEvent.click(screen.getByRole("button", { name: /Generate version/ }));
+        const version = String(getPath(nodeData(net.id), "device.ports.0.version"));
+        // ssh software is OpenSSH or Dropbear — either way it matched the service
+        // (never an unrelated database name) and the version obeys the game's rule.
+        expect(version).toMatch(/^(OpenSSH|Dropbear) [1-9]\.\d{1,2}\.\d{1,2}$/);
+    });
+
     it("reuses the first and last name beside an e-mail field", () => {
         // A wifi router account row: username/first/last/email share a base path.
         const wifi = makeNode("world.wifi", { x: 0, y: 0 }, {

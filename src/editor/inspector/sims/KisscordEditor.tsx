@@ -6,6 +6,8 @@
 import { nanoid } from "nanoid";
 import { Icon } from "@/components/Icon";
 import { FieldShell, NumberInput, SelectInput, TextArea, TextInput } from "@/editor/inspector/primitives";
+import { TextInputWithGenerate } from "@/editor/inspector/GenerateButton";
+import { generateField } from "@/lib/generate";
 import type { KisscordMessage } from "@/schema/nodes";
 import { selectActiveQuest, useEditor } from "@/store/editor";
 import { ItemCard, SimFrame, moved } from "./chrome";
@@ -29,10 +31,12 @@ export function KisscordScript({ value, onChange }: { value: KisscordValue; onCh
                     label="Contact"
                     hint="The Kisscord NPC this conversation happens with. Registered by the quest."
                 >
-                    <TextInput
+                    <TextInputWithGenerate
                         ariaLabel="Kisscord contact"
                         value={value.contactId}
                         onChange={(contactId) => onChange({ contactId })}
+                        onGenerate={() => onChange({ contactId: generateField("username") })}
+                        generateLabel="handle"
                         mono
                         placeholder="handler"
                     />

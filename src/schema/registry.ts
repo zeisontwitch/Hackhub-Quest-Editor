@@ -226,8 +226,8 @@ const io = { targets: [inFlow], sources: [outFlow] };
 const portFields: FieldDef[] = [
     { kind: "number", key: "external", hint: "The port number as seen from outside. This is what nmap reports and what the player connects to.", label: "External port", min: 0, max: 65535 },
     { kind: "number", key: "internal", hint: "The port the service actually listens on inside the machine. Leave equal to the external port unless you are deliberately redirecting.", label: "Internal port", min: 0, max: 65535 },
-    { kind: "text", key: "service", hint: "What nmap prints next to the port, e.g. http, ssh, ftp, mysql. Free text — it is a label, not a real service.", label: "Service", placeholder: "ssh", mono: true },
-    { kind: "text", key: "version", hint: "The banner nmap -sV prints. Use three numbers and no letters — metasploit refuses \"7.2\" and \"7.2p2\", leaving the player unable to run the exploit. Blank omits the version line.", label: "Version", placeholder: "OpenSSH 8.9.0", mono: true },
+    { kind: "text", key: "service", hint: "What nmap prints next to the port, e.g. http, ssh, ftp, mysql. Free text — it is a label, not a real service.", label: "Service", placeholder: "ssh", mono: true, generate: { kind: "serviceName", label: "service" } },
+    { kind: "text", key: "version", hint: "The banner nmap -sV prints. Use three numbers and no letters — metasploit refuses \"7.2\" and \"7.2p2\", leaving the player unable to run the exploit. Blank omits the version line.", label: "Version", placeholder: "OpenSSH 8.9.0", mono: true, generate: { kind: "serviceVersion", reuse: ["service"], label: "version" } },
     { kind: "toggle", key: "active", label: "Open", hint: "Closed ports show as filtered to nmap." },
 ];
 
@@ -247,7 +247,7 @@ const vulnFields: FieldDef[] = [
         label: "Type",
         options: VULNERABILITY_TYPES.map((t) => ({ value: t, label: `${t} (${VULNERABILITY_BLURBS[t]})` })),
     },
-    { kind: "text", key: "version", hint: "The affected component's version, e.g. \"WordPress 5.8\". Cosmetic unless a trigger matches on it.", label: "Version", placeholder: "optional", mono: true },
+    { kind: "text", key: "version", hint: "The affected component's version, e.g. \"WordPress 5.8\". Cosmetic unless a trigger matches on it.", label: "Version", placeholder: "optional", mono: true, generate: { kind: "serviceVersion", label: "version" } },
 ];
 
 /**
@@ -518,7 +518,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         hook: "onStart",
         fields: [
             { kind: "note", tone: "warn", text: "The mod SDK (0.21.0) has no wireless API yet, so this node exports as a regular router network: the player reaches it by IP address, not through the in-game Wi-Fi list. The SSID and passphrase are stored in the mod and start working if the game opens that up." },
-            { kind: "text", key: "ssid", hint: "The network name shown in the in-game Wi-Fi list.", label: "Network name (SSID)", mono: true },
+            { kind: "text", key: "ssid", hint: "The network name shown in the in-game Wi-Fi list.", label: "Network name (SSID)", mono: true, generate: { kind: "ssid", label: "network name" } },
             { kind: "text", key: "password", label: "WPA passphrase", mono: true, hint: "The passphrase the player must discover. Make sure some node in your quest reveals it." },
             { kind: "slider", key: "signal", label: "Signal strength", min: 0, max: 3, step: 1, hint: "The game's Wi-Fi scale: 0 = weakest, 3 = strongest (it also drives how long joining takes). The current mod SDK does not read it yet — it is kept for when wireless support lands." },
             { kind: "text", key: "model", label: "Router model", mono: true, generate: { kind: "routerModel", label: "router model" }, hint: "Enables the in-game `fern` recovery route. Leave blank to disable it." },
@@ -614,7 +614,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
             },
             { kind: "number", key: "port.external", hint: "The port number as seen from outside — what nmap reports.", label: "External port", min: 0, max: 65535 },
             { kind: "number", key: "port.internal", hint: "The port the service listens on inside the machine.", label: "Internal port", min: 0, max: 65535 },
-            { kind: "text", key: "port.service", hint: "What nmap prints next to the port, e.g. http, ssh, mysql.", label: "Service", mono: true },
+            { kind: "text", key: "port.service", hint: "What nmap prints next to the port, e.g. http, ssh, mysql.", label: "Service", mono: true, generate: { kind: "serviceName", label: "service" } },
             { kind: "toggle", key: "port.active", hint: "Turn off to make the port appear closed.", label: "Open" },
             { kind: "toggle", key: "restoreOnComplete", hint: "Put the port back the way it was when the quest ends.", label: "Restore when the quest ends" },
         ],
@@ -845,8 +845,8 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         fields: [
             { kind: "number", key: "amount", hint: "Credits deposited into the player's bank account.", label: "Amount", min: 0 },
             { kind: "text", key: "description", hint: "The label on the bank statement line.", label: "Description" },
-            { kind: "text", key: "fromIBAN", hint: "The sending account, shown in the transfer details.", label: "From IBAN", mono: true },
-            { kind: "text", key: "fromName", hint: "The sender's name on the statement.", label: "From name" },
+            { kind: "text", key: "fromIBAN", hint: "The sending account, shown in the transfer details.", label: "From IBAN", mono: true, generate: { kind: "iban", label: "IBAN" } },
+            { kind: "text", key: "fromName", hint: "The sender's name on the statement.", label: "From name", generate: { kind: "initialName", label: "sender name" } },
             /* Percent-of-balance on a payment was removed from new nodes (it is
                the Charge node's job). Old projects that used it still run as
                written — this note is the only trace left. */

@@ -82,13 +82,44 @@ export const SERVICE_NAMES = [
 ] as const;
 
 /**
- * Realistic service banners. Each ends in a three-number version and no letters
- * inside the version — the Version field's own rule (metasploit refuses "7.2"
- * and "7.2p2"), so a generated banner is always usable.
+ * The software a service commonly runs, keyed by the bare service label an
+ * author types (what nmap prints). The version generator picks a name from here
+ * to match the port's service, then appends a freshly rolled, rule-compliant
+ * version — so the banner reads like a real `nmap -sV` line (e.g. "OpenSSH
+ * 8.4.71" for an ssh port).
  */
-export const SERVICE_BANNERS = [
-    "OpenSSH 8.9.0", "OpenSSH 7.2.0", "OpenSSH 6.4.0", "nginx 1.14.2",
-    "nginx 1.18.0", "Apache 2.4.41", "Apache 2.4.29", "ProFTPD 1.3.5",
-    "vsftpd 3.0.3", "MySQL 5.7.31", "PostgreSQL 9.6.23", "PostgreSQL 12.9.0",
-    "Redis 6.2.6", "Exim 4.94.0", "Postfix 3.4.14",
+export const SERVICE_SOFTWARE: Record<string, readonly string[]> = {
+    ssh: ["OpenSSH", "Dropbear"],
+    http: ["Apache", "nginx", "lighttpd"],
+    https: ["Apache", "nginx"],
+    ftp: ["vsftpd", "ProFTPD", "Pure-FTPd"],
+    ftps: ["vsftpd", "ProFTPD"],
+    mysql: ["MySQL", "MariaDB"],
+    postgresql: ["PostgreSQL"],
+    postgres: ["PostgreSQL"],
+    smtp: ["Postfix", "Exim", "Sendmail"],
+    dns: ["BIND", "dnsmasq"],
+    redis: ["Redis"],
+    telnet: ["Linux telnetd"],
+    rdp: ["xrdp"],
+    vnc: ["TightVNC", "RealVNC"],
+    smb: ["Samba"],
+    imap: ["Dovecot"],
+    pop3: ["Dovecot"],
+};
+
+/** Fallback software names when the service is blank or unrecognised. */
+export const GENERIC_SOFTWARE = [
+    "OpenSSH", "nginx", "Apache", "vsftpd", "MySQL", "PostgreSQL", "Redis",
+    "Postfix", "Samba", "Dovecot",
 ] as const;
+
+/** Wi-Fi network name (SSID) stems — the human-visible part before a suffix. */
+export const SSID_WORDS = [
+    "HOME", "NETGEAR", "LINKSYS", "TP-LINK", "XFINITY", "ORBI", "PROXIMUS",
+    "NEIGHBOUR", "OFFICE", "GUEST", "SKYNET", "DOCKNET", "PORTSIDE", "ATRIUM",
+    "BLUEBOX", "FIBRE", "HOTSPOT", "WARDEN", "STUDIO", "LOFT",
+] as const;
+
+/** Suffixes appended to an SSID, the way real access points name themselves. */
+export const SSID_SUFFIXES = ["_5G", "_5Ghz", "_2.4G", "-Guest", "_EXT", "", ""] as const;

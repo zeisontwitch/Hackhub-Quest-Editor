@@ -17,12 +17,15 @@ import {
     COMPANY_HEADS,
     COMPANY_TAILS,
     FIRST_NAMES,
+    GENERIC_SOFTWARE,
     HOSTNAME_WORDS,
     LAST_NAMES,
     MAIL_PROVIDERS,
     ROUTER_MODELS,
-    SERVICE_BANNERS,
     SERVICE_NAMES,
+    SERVICE_SOFTWARE,
+    SSID_SUFFIXES,
+    SSID_WORDS,
     TLDS,
 } from "./wordlists";
 
@@ -44,6 +47,7 @@ export type GeneratorKind =
     | "serviceName"
     | "serviceVersion"
     | "companyName"
+    | "ssid"
     | "iban";
 
 /** Public targets read as real addresses; private ones as internal devices. */
@@ -58,6 +62,8 @@ export interface GenContext {
     firstName?: string;
     lastName?: string;
     company?: string;
+    /** The port's service label, so a version banner can match it (e.g. ssh). */
+    service?: string;
 }
 
 /* ── list helpers ─────────────────────────────────────────────────────────── */
@@ -185,15 +191,37 @@ export function ip(flavour: IpFlavour = "public", rng: Rng = Math.random): strin
     return `${first}.${int(0, 255, rng)}.${int(0, 255, rng)}.${int(1, 254, rng)}`;
 }
 
+/** A Wi-Fi network name, e.g. "DOCKNET_5Ghz" or "NETGEAR-Guest". */
+export function ssid(rng: Rng = Math.random): string {
+    return `${pick(SSID_WORDS, rng)}${pick(SSID_SUFFIXES, rng)}`;
+}
+
 /* ── services & finance ───────────────────────────────────────────────────── */
 
 export function serviceName(rng: Rng = Math.random): string {
     return pick(SERVICE_NAMES, rng);
 }
 
-/** A service banner like "OpenSSH 8.9.0" — always a metasploit-safe version. */
-export function serviceVersion(rng: Rng = Math.random): string {
-    return pick(SERVICE_BANNERS, rng);
+/**
+ * A version number obeying the game's rule: three parts, the first 1–9 (never
+ * a leading 0) and the rest 0–99, e.g. "2.4.71". Kept separate from the banner
+ * so a bare Version field (no software name) can use it directly.
+ */
+export function versionNumber(rng: Rng = Math.random): string {
+    return `${int(1, 9, rng)}.${int(0, 99, rng)}.${int(0, 99, rng)}`;
+}
+
+/**
+ * A service banner like "OpenSSH 8.4.71". When `ctx.service` names a known
+ * service the software matches it (an ssh port gets OpenSSH/Dropbear); otherwise
+ * a generic name is used. The version always follows the game's rule via
+ * `versionNumber`, so a generated banner is never rejected.
+ */
+export function serviceVersion(ctx: GenContext = {}, rng: Rng = Math.random): string {
+    const key = (ctx.service ?? "").trim().toLowerCase();
+    const software = SERVICE_SOFTWARE[key];
+    const name = software && software.length ? pick(software, rng) : pick(GENERIC_SOFTWARE, rng);
+    return `${name} ${versionNumber(rng)}`;
 }
 
 /** A plausible IBAN, e.g. "DE44 5001 0517 5407 3249 31" (format only). */
@@ -247,9 +275,11 @@ export function generateField(
         case "serviceName":
             return serviceName(rng);
         case "serviceVersion":
-            return serviceVersion(rng);
+            return serviceVersion(ctx, rng);
         case "companyName":
             return companyName(rng);
+        case "ssid":
+            return ssid(rng);
         case "iban":
             return iban(rng);
         default: {

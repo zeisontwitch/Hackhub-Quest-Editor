@@ -5,6 +5,8 @@
  */
 import { nanoid } from "nanoid";
 import { FieldShell, NumberInput, SelectInput, TextArea, TextInput, Toggle } from "@/editor/inspector/primitives";
+import { TextInputWithGenerate } from "@/editor/inspector/GenerateButton";
+import { generateField } from "@/lib/generate";
 import type { WeeChatMessage } from "@/schema/nodes";
 import { ItemCard, SimFrame, moved } from "./chrome";
 import { PlayerInputFields } from "./PlayerInputFields";
@@ -31,10 +33,12 @@ export function WeeChatScript({ value, onChange }: { value: WeeChatValue; onChan
         <div className="pt-1">
             <div className="grid grid-cols-2 gap-2 px-3 pt-2">
                 <FieldShell label="Server host" hint="The IRC server the player connects to.">
-                    <TextInput
+                    <TextInputWithGenerate
                         ariaLabel="WeeChat host"
                         value={value.host}
                         onChange={(host) => onChange({ host })}
+                        onGenerate={() => onChange({ host: generateField("domain") })}
+                        generateLabel="server host"
                         mono
                         placeholder="irc.darknet.org"
                     />
@@ -139,10 +143,12 @@ export function WeeChatScript({ value, onChange }: { value: WeeChatValue; onChan
                                 />
                                 <div className="grid grid-cols-2 gap-2">
                                     <FieldShell label="Username" hint="The nick speaking this line. Ignored when sent by the player.">
-                                        <TextInput
+                                        <TextInputWithGenerate
                                             ariaLabel={`Username ${i + 1}`}
                                             value={m.username ?? ""}
                                             onChange={(username) => patch(m.id, { username })}
+                                            onGenerate={() => patch(m.id, { username: generateField("username") })}
+                                            generateLabel="username"
                                             mono
                                             placeholder="informant"
                                         />

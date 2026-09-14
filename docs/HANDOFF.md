@@ -1,3 +1,41 @@
+# Handoff — r163
+
+r163 ships a proper **standalone user manual** (plan:
+[plans/r163-user-manual.md](plans/r163-user-manual.md)) — the user asked for a
+simple standalone HTML file documenting every feature, step, and item of the
+editor. Structure inspiration only: https://fuibar.xo.je/manual.html (single
+page, sticky section nav, key-cap tables, dense prose). Content is entirely
+ours and verified against the code.
+
+**Deliverable:** [`public/manual.html`](../public/manual.html) — one
+self-contained file, inline CSS, no JS, no build step; opens off disk or ships
+with the app (Vite copies `public/` verbatim, confirmed at `dist/manual.html`).
+Sticky left-nav, 18 numbered sections: introduction, getting started, the
+workspace (top bar/quest strip, palette, canvas, inspector, status/issues),
+building a quest, a full node reference of all **34** node types across their
+**10** categories, sockets & wires, Dialogues, Websites, the **92** events (ten
+groups), Generate (dice) & tags, Addons, the **13** templates, Dry run, export
+(zip contents), Settings (6 themes, 7 fonts, canvas grid, wires), the complete
+keyboard/mouse cheat sheet (mirrors `SHORTCUT_GROUPS`), saving, and notes/limits
+(Wi-Fi and On-quest-complete caveats).
+
+**Counts re-verified from code, not the stale r148 doc:** 34 node types
+(`registry.ts`), 10 categories (`CATEGORIES`), 13 templates
+(`templates/index.ts`), 92 events + SDK 0.21.0
+(`reference/hackhub-events.json`), shortcuts (`shell/Overlays.tsx`), export
+files (`compile.ts`/`ExportDialog.tsx`), themes/fonts
+(`settings/theme.ts`,`uiFont.ts`).
+
+Documentation only — no compiler output touched, so `EDITOR_BUILD` stays
+`2026-09-14.r162`. Gates: typecheck clean, **1,498 tests / 77 files**, build OK.
+README trimmed (r158 → archive).
+
+Roadmap unchanged: Next-up is templates only (1 contact-driven story, 2
+branching consequence), both **postponed by the user** until the game + SDK
+properly update.
+
+---
+
 # Handoff — r162
 
 r162 finishes the auto-generate feature (plan:

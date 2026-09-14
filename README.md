@@ -127,22 +127,19 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
-| 1 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
-| 2 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. The official Cryptographer Hunt (a phone social-engineering scene with a fail route on the wrong choice) is the strongest argument for it — see [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). The shape now ships inside The Long Game (r136, act III: a typed verdict with two endings); whether a standalone template still adds anything is Zeis's call. |
-
-| 3 | **Freely draggable + resizable Inspector drawer** | Queued r151: the inspector is currently fixed-docked — make it a free-floating drawer the author can drag around and resize. |
-| 4 | **Refresh the Shortcuts cheat sheet** | Queued r151: the Shortcuts panel is stale — audit every entry against what the editor actually does and rewrite. |
-| 5 | **Auto-generate button for name/IP-like fields** | Queued r152: a QoL dice button on fields like IP Address, Hostname, Domain, Router Model — generates a plausible random value **in the editor** (exports hardcoded, not a tag). Needs curated name/number lists to pull from or piece together. Open question for the build round: does the Create-network IP field accept the game's own random-IP tag? Any field that accepts tags should get the tag-insertion button, limited to the tags that field can actually use — audit all of them. |
+| 1 | **Auto-generate button for name/IP-like fields** | Queued r152: a QoL dice button on fields like IP Address, Hostname, Domain, Router Model — generates a plausible random value **in the editor** (exports hardcoded, not a tag). Needs curated name/number lists to pull from or piece together. Open question for the build round: does the Create-network IP field accept the game's own random-IP tag? Any field that accepts tags should get the tag-insertion button, limited to the tags that field can actually use — audit all of them. |
+| 2 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
+| 3 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. The official Cryptographer Hunt (a phone social-engineering scene with a fail route on the wrong choice) is the strongest argument for it — see [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). The shape now ships inside The Long Game (r136, act III: a typed verdict with two endings); whether a standalone template still adds anything is Zeis's call. |
 
 ### Done recently
 
 | # | Item | Notes |
 |---|---|---|
+| r158 | **Freely draggable + resizable Inspector drawer** | ([plan](docs/plans/r158-floating-inspector-drawer.md)) Next-up #1: the inspector can now be popped out of its right-edge dock into a free-floating drawer — drag the title bar to move it, drag the bottom-right grip to resize it, click Dock to snap it back. Layout is a per-author editor preference (`drawerLayout.ts`, same `useSyncExternalStore` + localStorage shape as snap/wire prefs), never in the project document; a `clampRect` invariant keeps the panel on screen so the drag handle can't be lost past an edge. Docked stays the shipped default and is unchanged. Reset-all-preferences re-docks it. |
+| r157 | **Shortcuts cheat sheet refresh** | ([plan](docs/plans/r157-shortcuts-cheat-sheet-refresh.md)) Next-up #2, no behaviour change: the stale flat list is rebuilt as grouped sections (Editing · Add nodes · Select · Wiring · Move around), keys drawn as key caps and mouse gestures as plain italic text. Adds the shipped-but-undocumented gestures — Shift+A / right-click node search, drag-a-wire-to-empty create, double-click-a-wire reroute, box select, pan (middle/right-drag), scroll-zoom, frame title-bar drag, Ctrl+Y redo. Every row audited against the code that implements it; a new test drives the documented keys through the real hook so a future stale row fails CI (falsified by revert). |
+| r156 | **Full-program Clean Code & Architecture audit** | ([plan](docs/plans/r156-full-program-clean-code-audit.md)) First whole-tree review since r139: the core is clean — no React/DOM/store in `schema`/`analysis`/`compiler` (AR1/AR2), no `getState()` in pure code (AR8), no cross-layer import cycle (AR3, the lone `Field↔ListEditor↔DeviceTree` one is essential form recursion), boundary `safeParse` intact (AR12), declarative permissions (AR17), escaping contained (AR16); zero `console.log`/`as any`/`TODO`. One direct fix: `store/editor.ts` now uses the existing `activeQuestOf` helper instead of eight inlined active-quest lookups (A3 DRY). Behaviour-neutral; two deferred recommendations logged (tighten `tokenPermissions` token matching, wire up ESLint/Prettier scripts). |
 | r155 | **Telnet/HTTPS presets + vuln display descriptions** | ([plan](docs/plans/r155-ports-vuln-labels.md)) Queue #6, no behaviour change: "Add a common port" gains Telnet (23) and HTTPS (443, already authored in templates) with blank versions per the no-invention rule; the vulnerability dropdown shows "RCE (run any command)"-style descriptions while values stay the raw enum, so exports are byte-identical. |
 | r154 | **UI words: sticky move, Custom terminal, Tools → Addons** | ([plan](docs/plans/r154-ui-words.md)) Queue batch, no behaviour change: Sticky note moves from Flow Control to Layout below Group frame; the "Player replies" category (one node: a custom terminal command) becomes **Custom terminal**; the Tools button and the whole Tool Packs feature become **Addons** ("Addon node", "Give data to an addon", "Community addons", manager, picker, README line, format doc). File format (`toolpack.json`), ids, and code identifiers stay — display names only. Retires roadmap items 3, 4, 5, 7 (Next-up renumbered; old 6/8/9/10 are now 3/4/5/6). |
-| r153 | **Warning severity: blue / amber / red** | ([plan](docs/plans/r153-warning-severity.md)) Amber cards read as critical errors — now info renders light-blue (unlisted pages, honesty lines, pure FYIs), amber stays for could-cause-issues (dead nodes, target mismatches), red for will-break (unstartable quests, game-crashing lynx handles, broken addresses). Levels ride a new `warningDetails` shape; the string view stays untouched. The export heading turns "Needs attention" when any red is present. |
-| r152 | **Warning cards + house-style pack event labels** | ([plan](docs/plans/r152-warning-cards-event-labels.md)) Zeis's r151 review, first two points: warnings now render as one amber card each with the quest/host context semibold (shared `WarningList`, export + Dry run) instead of a grey bullet wall; and both packs' event labels were rewritten from sentences to the built-in "Group: Thing" form ("Breach: File downloaded", "Scan: Finished") so they match "Terminal: Cat" and stop truncating — the sentences stay in `docs`, the spec now teaches short labels, and picker rows carry `title` hovers. His other two points are queued as Next-up 9–10. |
-| r151 | **Target-matching warnings + Tool pack node stub** | ([plan](docs/plans/r151-target-warnings.md)) Quests that hand work to a tool mod are now warned — at export and in Dry run — when their targets speak a language the mod can't match: unknown services (case-insensitive, alias-aware, verified against the example mod's matcher), serviced ports with blank versions, and weaknesses no listed type lines up with. Intent-gated per quest per pack (pack event listened for, pack storage key written, or pack node run) — never cross-quest, so multi-part campaigns don't cry wolf. Rider: an unset Tool pack node renders a stub pointing at its "Editor Mods · pack" palette group instead of an empty inspector. Both new guards falsified by revert. |
 
 ---
 
@@ -169,7 +166,7 @@ are in the build log at [`docs/02-editor-shell.md`](docs/02-editor-shell.md),
 which is kept as an archive — the bug histories in it explain several of the
 rules the code now follows.
 
-Rounds 130–150 are archived at
+Rounds 130–153 are archived at
 [`docs/archive/rounds-130-150.md`](docs/archive/rounds-130-150.md).
 
 ### Build status
@@ -177,7 +174,7 @@ Rounds 130–150 are archived at
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-13.r155`: **1,446 tests** across 72
+Counted from the code at build `2026-09-14.r158`: **1,469 tests** across 75
 files, **34 node types** in 10 categories (33 in the palette — Wi-Fi is hidden),
 **13 templates** (11 playable + 2 reference sheets), **92 game events**,
 against `@hotbunny/hackhub-content-sdk@0.21.0`.

@@ -13,6 +13,7 @@ import { DEFAULT_CANVAS_GRID, setCanvasGrid } from "@/editor/canvas/canvasGrid";
 import { DOT_PERIOD_S, setDotPeriod, setWireMotion } from "@/editor/canvas/wireMotion";
 import { defaultWirePhysics, setWirePhysicsEnabled } from "@/editor/canvas/wirePhysicsPref";
 import { resetWireTuning } from "@/editor/canvas/wireTuning";
+import { resetInspectorLayout } from "@/editor/inspector/drawerLayout";
 import { setTheme } from "./theme";
 import { setUiFont } from "./uiFont";
 
@@ -28,4 +29,5 @@ export function resetEditorPreferences(): void {
     setWirePhysicsEnabled(defaultWirePhysics());
     resetWireTuning();
     setDotPeriod(DOT_PERIOD_S);
+    resetInspectorLayout();
 }

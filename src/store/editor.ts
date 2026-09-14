@@ -379,7 +379,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
 
         updateNodeData: (nodeId, patch) =>
             mutate((project) => {
-                const quest = project.quests.find((q) => q.id === project.editor.activeQuestId);
+                const quest = activeQuestOf(project);
                 const node = quest?.graph.nodes.find((n) => n.id === nodeId);
                 if (!node || !quest) return;
                 for (const [path, value] of Object.entries(patch)) {
@@ -406,14 +406,14 @@ export const useEditor = create<EditorStore>()((set, get) => {
 
         setNodePosition: (nodeId, position) =>
             mutate((project) => {
-                const quest = project.quests.find((q) => q.id === project.editor.activeQuestId);
+                const quest = activeQuestOf(project);
                 const node = quest?.graph.nodes.find((n) => n.id === nodeId);
                 if (node) node.position = position;
             }, { history: false }),
 
         setNodePositions: (positions) =>
             mutate((project) => {
-                const quest = project.quests.find((q) => q.id === project.editor.activeQuestId);
+                const quest = activeQuestOf(project);
                 if (!quest) return;
                 for (const node of quest.graph.nodes) {
                     const next = positions[node.id];
@@ -423,7 +423,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
 
         removeNodes: (ids) =>
             mutate((project) => {
-                const quest = project.quests.find((q) => q.id === project.editor.activeQuestId);
+                const quest = activeQuestOf(project);
                 if (!quest) return;
                 const doomed = new Set(ids);
                 quest.graph.nodes = quest.graph.nodes.filter((n) => !doomed.has(n.id));
@@ -435,7 +435,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
         arrangeNodes: (positions) => {
             if (Object.keys(positions).length === 0) return;
             mutate((project) => {
-                const quest = project.quests.find((q) => q.id === project.editor.activeQuestId);
+                const quest = activeQuestOf(project);
                 if (!quest) return;
                 for (const node of quest.graph.nodes) {
                     const next = positions[node.id];
@@ -446,7 +446,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
 
         applyLayout: () => {
             const project = get().project;
-            const quest = project.quests.find((q) => q.id === project.editor.activeQuestId);
+            const quest = activeQuestOf(project);
             if (!quest) return;
             const positions = layeredLayout(quest.graph.nodes, quest.graph.edges);
             if (Object.keys(positions).length === 0) return;
@@ -462,7 +462,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
 
         connect: ({ source, sourceHandle, target, targetHandle }) => {
             const project = get().project;
-            const quest = project.quests.find((q) => q.id === project.editor.activeQuestId);
+            const quest = activeQuestOf(project);
             if (!quest) return false;
             if (source === target) return false;
 
@@ -531,7 +531,7 @@ export const useEditor = create<EditorStore>()((set, get) => {
 
         removeEdges: (ids) =>
             mutate((project) => {
-                const quest = project.quests.find((q) => q.id === project.editor.activeQuestId);
+                const quest = activeQuestOf(project);
                 if (!quest) return;
                 const doomed = new Set(ids);
                 quest.graph.edges = quest.graph.edges.filter((e) => !doomed.has(e.id));

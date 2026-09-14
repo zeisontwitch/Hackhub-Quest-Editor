@@ -1,3 +1,80 @@
+# Handoff — r158
+
+r158 makes the inspector a free-floating drawer (plan:
+[plans/r158-floating-inspector-drawer.md](plans/r158-floating-inspector-drawer.md)),
+Next-up #1. A **Float** button (maximize icon) beside the docked
+inspector's collapse control pops it out; drag the title bar to move it,
+drag the bottom-right grip to resize, click **Dock** to snap it back. The
+layout (`docked | floating`, plus the float rect) is a per-author editor
+preference in new `src/editor/inspector/drawerLayout.ts` — the same
+module + `useSyncExternalStore` + localStorage shape as snap/wire prefs,
+deliberately **not** in the project document (no export, no undo entry). A
+`clampRect` invariant keeps the whole panel on screen so the title-bar
+handle can never be dragged off an edge and lost. Floating and docked wrap
+the *same* `<InspectorPanel />`, so there's one inspector, two frames — no
+duplicated fields. Docked stays the shipped default and is byte-for-byte
+unchanged; "reset all editor preferences" re-docks it. Gates: **1,469
+tests / 75 files** (+15 in 2 new files; the clamp guard is falsified by
+revert), typecheck + build clean. Stamp `2026-09-14.r158`. README trimmed
+(r153 → archive).
+
+**Zeis's eyes only:** the Float button top-right of the inspector; drag the
+drawer's title bar and its bottom-right corner; Settings → reset re-docks it.
+
+Roadmap: Next-up is now 1 auto-generate fields, then the two templates last
+(2 contact-driven, 3 branching consequence).
+
+---
+
+# Handoff — r157
+
+r157 refreshes the Shortcuts cheat sheet (plan:
+[plans/r157-shortcuts-cheat-sheet-refresh.md](plans/r157-shortcuts-cheat-sheet-refresh.md)),
+Next-up #2. The stale flat 12-row list is rebuilt as grouped sections
+(Editing · Add nodes · Select · Wiring · Move around), keys drawn as key
+caps and mouse gestures as plain italic text. Adds every shipped-but-
+undocumented gesture — Shift+A and right-click node search, drag-a-wire-to-
+empty create, double-click-a-wire reroute, box select, pan (middle/right-
+drag), scroll zoom, frame title-bar drag, Ctrl+Y redo — each audited
+against the code that implements it (the hook, `QuestCanvas`, React Flow
+config), nothing from memory. New `shortcuts.test.tsx` drives the
+documented keys through the real `useKeyboardShortcuts` hook so a future
+stale row fails CI (falsified by reverting: a bogus Ctrl+Q row goes red).
+No behaviour change. Gates: **1,454 tests / 73 files**, typecheck + build
+clean. Stamp `2026-09-14.r157`. README trimmed (r152 → archive).
+
+**Zeis's eyes only:** open the Shortcuts button — it now reads "Shortcuts &
+gestures", grouped, with mouse actions in italics.
+
+Roadmap note: per Zeis, the two templates are pinned to the end of Next-up.
+Order is now 1 draggable inspector, 2 auto-generate fields, 3 contact-driven
+template, 4 branching-consequence template.
+
+---
+
+# Handoff — r156
+
+r156 is a full-program Clean Code & Architecture audit (plan:
+[plans/r156-full-program-clean-code-audit.md](plans/r156-full-program-clean-code-audit.md)) —
+the first whole-tree pass since r139. Finding: the codebase is in very
+good shape. Macro gates all clean — pure core has no React/DOM/store
+imports (AR1/AR2), no `getState()` in pure code (AR8), the only import
+cycle is essential inspector-form recursion (`Field↔ListEditor↔DeviceTree`,
+intra-folder, AR3-safe), boundary `safeParse` intact (AR12), permissions
+declarative (AR17), escaping contained (AR16). Micro: zero
+`console.log`/`as any`/`TODO`/`@ts-ignore`. One direct edit:
+`store/editor.ts` now calls the existing `activeQuestOf` helper instead of
+eight inlined active-quest lookups (A3 DRY, behaviour-neutral). Two
+recommendations deferred (not guessed at): tighten `tokenPermissions` to
+match full `{{…}}` tokens; wire ESLint/Prettier as real scripts. Gates:
+**1,446 tests / 72 files**, typecheck + build clean. Stamp
+`2026-09-14.r156`. README trimmed (r151 → archive).
+
+**Zeis's eyes only:** nothing user-visible changed — the export is
+byte-identical; the debug panel and export headers now read `r156`.
+
+---
+
 # Handoff — r155
 
 r155 closes queue #6 (plan:

@@ -58,6 +58,21 @@ import { TARGET_IP_TOKEN, VULNERABILITY_BLURBS, VULNERABILITY_TYPES } from "./co
  */
 export type FieldShowWhen = { key: string; equals: string | readonly string[] };
 
+/**
+ * Opt a field into the auto-generate (dice) button (r161). `kind` picks the
+ * generator; `ipFlavour` chooses public vs private for IP fields; `reuse` names
+ * sibling field keys (relative to the field's base path) the generator may read
+ * to stay coherent — e.g. an e-mail built from the first/last name beside it.
+ * The dice only ever writes its own field; siblings are read, never touched.
+ */
+export type FieldGenerate = {
+    kind: import("@/lib/generate").GeneratorKind;
+    ipFlavour?: import("@/lib/generate").IpFlavour;
+    reuse?: readonly string[];
+    /** Short noun for the button's accessible name, e.g. "e-mail". */
+    label?: string;
+};
+
 export type FieldDef =
     | {
           kind: "text";
@@ -68,6 +83,8 @@ export type FieldDef =
           mono?: boolean;
           /** Offer the `{{data.targetIp}}` token menu. */
           tokens?: boolean;
+          /** Offer the auto-generate (dice) button. */
+          generate?: FieldGenerate;
           showWhen?: FieldShowWhen;
       }
     | {
@@ -78,6 +95,7 @@ export type FieldDef =
           placeholder?: string;
           mono?: boolean;
           tokens?: boolean;
+          generate?: FieldGenerate;
           rows?: number;
           showWhen?: FieldShowWhen;
       }
@@ -101,6 +119,8 @@ export type FieldDef =
           mono?: boolean;
           /** Offer the token menu in the custom box. */
           tokens?: boolean;
+          /** Offer the auto-generate (dice) button in the custom box. */
+          generate?: FieldGenerate;
           /**
            * Fixed choices. Anything else falls through to the custom box.
            * `meaning` explains a choice's stored value in words, for when the
@@ -212,11 +232,11 @@ const portFields: FieldDef[] = [
 ];
 
 const userFields: FieldDef[] = [
-    { kind: "text", key: "username", hint: "The login name for ssh, ftp or a web login page.", label: "Username", mono: true },
+    { kind: "text", key: "username", hint: "The login name for ssh, ftp or a web login page.", label: "Username", mono: true, generate: { kind: "username", reuse: ["firstName", "lastName"], label: "username" } },
     { kind: "text", key: "password", label: "Password", mono: true, hint: "Leave blank to let the game pick one." },
-    { kind: "text", key: "firstName", hint: "Shown on the account's profile page and in whois results.", label: "First name" },
-    { kind: "text", key: "lastName", hint: "Shown on the account's profile page and in whois results.", label: "Last name" },
-    { kind: "text", key: "emailAddress", hint: "The account's e-mail address. Useful as a lead the player can mail.", label: "E-mail", mono: true },
+    { kind: "text", key: "firstName", hint: "Shown on the account's profile page and in whois results.", label: "First name", generate: { kind: "firstName", label: "first name" } },
+    { kind: "text", key: "lastName", hint: "Shown on the account's profile page and in whois results.", label: "Last name", generate: { kind: "lastName", label: "last name" } },
+    { kind: "text", key: "emailAddress", hint: "The account's e-mail address. Useful as a lead the player can mail.", label: "E-mail", mono: true, generate: { kind: "email", reuse: ["firstName", "lastName"], label: "e-mail" } },
     { kind: "toggle", key: "acceptReverseTCP", hint: "Lets the player open a connection from this account back to their own machine. Turn on only if your quest needs it.", label: "Accepts reverse TCP" },
 ];
 
@@ -501,7 +521,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
             { kind: "text", key: "ssid", hint: "The network name shown in the in-game Wi-Fi list.", label: "Network name (SSID)", mono: true },
             { kind: "text", key: "password", label: "WPA passphrase", mono: true, hint: "The passphrase the player must discover. Make sure some node in your quest reveals it." },
             { kind: "slider", key: "signal", label: "Signal strength", min: 0, max: 3, step: 1, hint: "The game's Wi-Fi scale: 0 = weakest, 3 = strongest (it also drives how long joining takes). The current mod SDK does not read it yet — it is kept for when wireless support lands." },
-            { kind: "text", key: "model", label: "Router model", mono: true, hint: "Enables the in-game `fern` recovery route. Leave blank to disable it." },
+            { kind: "text", key: "model", label: "Router model", mono: true, generate: { kind: "routerModel", label: "router model" }, hint: "Enables the in-game `fern` recovery route. Leave blank to disable it." },
             {
                 kind: "list",
                 key: "users", hint: "Accounts on the access point's own system. Their files land in /home/<username>/.",
@@ -542,6 +562,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                 label: "Protected IP",
                 mono: true,
                 tokens: true,
+                generate: { kind: "ip", ipFlavour: "public", label: "IP address" },
                 placeholder: "45.33.32.156",
                 options: [
                     {
@@ -578,7 +599,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         hook: "onStart",
         fields: [
             { kind: "note", tone: "info", text: "Adjusts a machine that already exists — one your “Create network” node built. To add the machine itself, use “Create network”; to open, close, add or remove one of its ports later in the story, use this." },
-            { kind: "text", key: "ip", label: "Device IP", mono: true, tokens: true, hint: "A router IP or any device behind it." },
+            { kind: "text", key: "ip", label: "Device IP", mono: true, tokens: true, generate: { kind: "ip", ipFlavour: "private", label: "IP address" }, hint: "A router IP or any device behind it." },
             {
                 kind: "select",
                 key: "action",
@@ -613,8 +634,8 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            { kind: "text", key: "domain", hint: "The hostname the player types, e.g. vault.corp-internal.net.", label: "Domain", mono: true },
-            { kind: "text", key: "ip", hint: "The address it resolves to. nslookup and dig will report this.", label: "Resolves to", mono: true, tokens: true },
+            { kind: "text", key: "domain", hint: "The hostname the player types, e.g. vault.corp-internal.net.", label: "Domain", mono: true, generate: { kind: "domain", label: "domain" } },
+            { kind: "text", key: "ip", hint: "The address it resolves to. nslookup and dig will report this.", label: "Resolves to", mono: true, tokens: true, generate: { kind: "ip", ipFlavour: "public", label: "IP address" } },
             {
                 kind: "list",
                 key: "vulnerabilities",
@@ -639,8 +660,8 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            { kind: "text", key: "host", hint: "The address the player points a database client at.", label: "Host IP", mono: true, tokens: true },
-            { kind: "text", key: "user", hint: "The login sqlmap or a client uses.", label: "Username", mono: true },
+            { kind: "text", key: "host", hint: "The address the player points a database client at.", label: "Host IP", mono: true, tokens: true, generate: { kind: "ip", ipFlavour: "public", label: "IP address" } },
+            { kind: "text", key: "user", hint: "The login sqlmap or a client uses.", label: "Username", mono: true, generate: { kind: "username", label: "username" } },
             { kind: "text", key: "password", hint: "The password. Give the player a way to find it — a config file, a leaked dump, a cracked hash.", label: "Password", mono: true },
             { kind: "tables", key: "tables", hint: "The data inside: tables holding rows of named values, ready for the player's SQL.", label: "Tables" },
             { kind: "toggle", key: "removeOnComplete", hint: "Drop the database when the quest ends.", label: "Remove when the quest ends" },
@@ -666,7 +687,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                     { value: "device", label: "A remote device" },
                 ],
             },
-            { kind: "text", key: "ip", label: "Device IP", mono: true, tokens: true, hint: "Only used for a remote device. Use the same {{data.targetIp}} token you gave the network, and the files are mounted on that machine before the player ever connects." },
+            { kind: "text", key: "ip", label: "Device IP", mono: true, tokens: true, generate: { kind: "ip", ipFlavour: "private", label: "IP address" }, hint: "Only used for a remote device. Use the same {{data.targetIp}} token you gave the network, and the files are mounted on that machine before the player ever connects." },
             { kind: "text", key: "parentPath", hint: "Where the files are mounted. Folders named etc, home, logs or lib are merged into the existing ones rather than replacing them.", label: "Parent folder", mono: true, placeholder: "~/" },
             {
                 kind: "list",

@@ -66,6 +66,9 @@ const PATHS: Record<string, string> = {
     panelLeft: "M3 3h18v18H3z M9 3v18",
     panelRight: "M3 3h18v18H3z M15 3v18",
     grip: "M9 5h.01 M9 12h.01 M9 19h.01 M15 5h.01 M15 12h.01 M15 19h.01",
+    /* A flat line-art die showing the five-face: rounded square with pips at the
+       corners and centre. The `h.01` dots match the `grip` glyph's pip style. */
+    dice: "M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z M8 8h.01 M16 8h.01 M12 12h.01 M8 16h.01 M16 16h.01",
     more: "M5 12h.01 M12 12h.01 M19 12h.01",
     maximize: "M8 3H5a2 2 0 0 0-2 2v3 M16 3h3a2 2 0 0 1 2 2v3 M21 16v3a2 2 0 0 1-2 2h-3 M3 16v3a2 2 0 0 0 2 2h3",
     user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z",

@@ -1,3 +1,42 @@
+# Handoff — r161
+
+r161 adds the auto-generate (dice) button, Next-up #1 (plan:
+[plans/r161-autogen-dice-button.md](plans/r161-autogen-dice-button.md)). A flat
+`dice` glyph beside name/IP/domain fields fills them with a realistic
+**hardcoded** value in the editor — distinct from the existing sparkle/tag
+button, which inserts a runtime `{{…}}` tag; IP-type fields now show both. The
+engine is pure and seedable: `src/lib/generate/wordlists.ts` (curated lists) +
+`index.ts` (`generateField(kind, ctx, options, rng)`), composing values from the
+lists rather than a flat product, and reusing sibling values (first/last name,
+company) to stay coherent — it *reads* siblings but only ever *writes* its own
+field, so one click is one undo step. IPs come `"public"` or `"private"`
+(RFC-1918) per field.
+
+Fields opt in with a `generate` descriptor on `FieldDef`
+(`{ kind, ipFlavour?, reuse?, label? }`), rendered by `Field.tsx` via a new
+`GenerateButton`; a `trailing` slot was threaded through
+`TokenInsert`/`SelectOrCustom` so a field can carry sparkle + dice. Hand-written
+surfaces (quest Employer in `InspectorPanel`, the device tree) use the
+`TextInputWithGenerate` wrapper. Wired: employer (first/last/e-mail, reuse),
+devices (IP-private/hostname/domain/router-model), user rows
+(username/first/last/e-mail, reuse), and every IP/host field (network device,
+port, files, firewall, domain resolves-to, database host) + domain node domain +
+database username. Nothing reaches the compiler/runtime/export — the dice writes
+plain text through the normal path, so `fieldAudit` is unaffected. Tests:
+`lib/generate/__tests__/generate.test.ts` (13, stubbed rng) +
+`inspector/__tests__/generateButton.test.tsx` (5). Gates: typecheck clean,
+**1,493 tests / 77 files**, build OK. Stamp `2026-09-14.r161`. README trimmed
+(r156 → archive).
+
+**Zeis's eyes only:** Quest tab → Employer → roll First/Last, then E-mail (it
+picks up the names). Create-network → a device → the dice on IP / Hostname /
+Domain / Router model. Any IP field shows the dice next to the sparkle.
+
+Roadmap: Next-up is now 1 the dice **long tail** (service/version, IBAN, SSID,
+sims handles), then the two templates last (2 contact-driven, 3 branching).
+
+---
+
 # Handoff — r160
 
 r160 reworks the inspector edge handle into a real drawer pull (plan:

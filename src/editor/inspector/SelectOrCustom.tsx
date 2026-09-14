@@ -3,7 +3,7 @@
  * underneath when none of them fits. Stored values are always plain strings —
  * picking "Anywhere" writes `*`, never a marker.
  */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { SelectInput, TextInput } from "./primitives";
 import { TokenTextInput } from "./TokenInsert";
 import type { TokenSuggestion } from "./tokenSuggestions";
@@ -22,6 +22,7 @@ export function SelectOrCustomInput({
     placeholder,
     mono,
     tokenSuggestions,
+    trailing,
 }: {
     ariaLabel: string;
     value: string;
@@ -36,6 +37,8 @@ export function SelectOrCustomInput({
     mono?: boolean;
     /** When present, the custom box gets the tag picker. */
     tokenSuggestions?: TokenSuggestion[];
+    /** An extra control beside the custom box, e.g. the dice generate button. */
+    trailing?: ReactNode;
 }) {
     const [customising, setCustomising] = useState(false);
     const matchedOption = options.find((o) => o.value === value);
@@ -90,7 +93,21 @@ export function SelectOrCustomInput({
                             placeholder={placeholder}
                             mono={mono}
                             suggestions={tokenSuggestions}
+                            trailing={trailing}
                         />
+                    ) : trailing ? (
+                        <div className="flex items-start gap-1">
+                            <div className="min-w-0 flex-1">
+                                <TextInput
+                                    ariaLabel={`${ariaLabel} (custom)`}
+                                    value={value}
+                                    onChange={onChange}
+                                    placeholder={placeholder}
+                                    mono={mono}
+                                />
+                            </div>
+                            {trailing}
+                        </div>
                     ) : (
                         <TextInput
                             ariaLabel={`${ariaLabel} (custom)`}

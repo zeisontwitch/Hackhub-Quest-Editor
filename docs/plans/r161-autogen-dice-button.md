@@ -237,6 +237,21 @@ for user-account rows too (each row reuses its own row's names).
 
 ---
 
+## Shipped (r161)
+
+The whole highest-value set landed as planned. Files:
+`src/lib/generate/wordlists.ts` + `index.ts` (pure, seedable), a flat `dice`
+glyph in `Icon.tsx`, `GenerateButton.tsx` (dice + `TextInputWithGenerate`
+wrapper for hand-written surfaces), `FieldGenerate` on `FieldDef`, and a
+`trailing` slot threaded through `TokenInsert`/`SelectOrCustom`/`Field`. Wired:
+quest Employer (first/last/e-mail, e-mail reuses the names), device tree
+(IP/hostname/domain/router-model), user-account rows (username/first/last/e-mail
+with reuse), and every IP-ish field (network device, port, files, firewall,
+domain resolves-to, database host) plus the domain node's domain and the
+database username. Tests: `generate.test.ts` (13) + `generateButton.test.tsx`
+(5). Gates: typecheck clean, **1,493 tests / 77 files**, build OK. Stamp
+`2026-09-14.r161`. The **Long tail** below is r162.
+
 ## Rollout
 
 Two rounds keeps each reviewable and honours YAGNI:

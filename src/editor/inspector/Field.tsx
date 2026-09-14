@@ -21,7 +21,10 @@ import { HANDBOOK_ARTICLES } from "@/schema/handbookArticles";
 import { SelectOrCustomInput } from "./SelectOrCustom";
 import { TablesEditor } from "./TablesEditor";
 import { TokenTextInput } from "./TokenInsert";
+import { GenerateButton } from "./GenerateButton";
 import { listTokenSuggestions } from "./tokenSuggestions";
+import { generateField, type GenContext } from "@/lib/generate";
+import type { FieldGenerate } from "@/schema/registry";
 import {
     FieldShell,
     NumberInput,
@@ -128,13 +131,42 @@ export function Field({
     const raw = getPath(node.data, path);
 
     const write = (value: unknown) => updateNodeData(nodeId, { [path]: value });
+
+    /**
+     * Roll a value for this field's dice button. Reads any `reuse` siblings
+     * (relative to this field's base path) so e.g. an e-mail can be built from
+     * the first/last name beside it — but writes only this field, keeping one
+     * click to one undo step.
+     */
+    const runGenerate = (gen: FieldGenerate) => {
+        const ctx: GenContext = {};
+        for (const key of gen.reuse ?? []) {
+            const siblingPath = basePath ? `${basePath}.${key}` : key;
+            const v = getPath(node.data, siblingPath);
+            const text = v === undefined || v === null ? "" : String(v);
+            if (!text) continue;
+            if (key.toLowerCase().includes("first")) ctx.firstName = text;
+            else if (key.toLowerCase().includes("last")) ctx.lastName = text;
+            else if (key.toLowerCase().includes("compan") || key.toLowerCase().includes("employer")) {
+                ctx.company = text;
+            }
+        }
+        write(generateField(gen.kind, ctx, { ipFlavour: gen.ipFlavour }));
+    };
+
     const asString = (value: unknown) => (value === undefined || value === null ? "" : String(value));
     const asNumber = (value: unknown) => (typeof value === "number" ? value : Number(value) || 0);
     const asBool = (value: unknown) => value === true;
     const asArray = (value: unknown) => (Array.isArray(value) ? (value as Record<string, unknown>[]) : []);
 
     switch (def.kind) {
-        case "text":
+        case "text": {
+            const dice = def.generate ? (
+                <GenerateButton
+                    label={def.generate.label ?? def.label.toLowerCase()}
+                    onGenerate={() => runGenerate(def.generate!)}
+                />
+            ) : null;
             return (
                 <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     {def.tokens ? (
@@ -145,7 +177,21 @@ export function Field({
                             placeholder={def.placeholder}
                             mono={def.mono}
                             suggestions={listTokenSuggestions(quest, nodeId)}
+                            trailing={dice}
                         />
+                    ) : dice ? (
+                        <div className="flex items-start gap-1">
+                            <div className="min-w-0 flex-1">
+                                <TextInput
+                                    ariaLabel={def.label}
+                                    value={asString(raw)}
+                                    onChange={write}
+                                    placeholder={def.placeholder}
+                                    mono={def.mono}
+                                />
+                            </div>
+                            {dice}
+                        </div>
                     ) : (
                         <TextInput
                             ariaLabel={def.label}
@@ -157,6 +203,7 @@ export function Field({
                     )}
                 </FieldShell>
             );
+        }
 
         case "date":
             return (
@@ -303,6 +350,14 @@ export function Field({
                         placeholder={def.placeholder}
                         mono={def.mono}
                         tokenSuggestions={def.tokens ? listTokenSuggestions(quest, nodeId) : undefined}
+                        trailing={
+                            def.generate ? (
+                                <GenerateButton
+                                    label={def.generate.label ?? def.label.toLowerCase()}
+                                    onGenerate={() => runGenerate(def.generate!)}
+                                />
+                            ) : undefined
+                        }
                     />
                 </FieldShell>
             );

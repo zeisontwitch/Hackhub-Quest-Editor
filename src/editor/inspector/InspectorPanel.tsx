@@ -11,6 +11,8 @@ import { categoryOf, nodeTypeDef } from "@/schema/registry";
 import { selectActiveQuest, selectSelectedNode, useEditor } from "@/store/editor";
 import { analyseGraph } from "@/analysis/graph";
 import { Field } from "./Field";
+import { TextInputWithGenerate } from "./GenerateButton";
+import { generateField } from "@/lib/generate";
 import { ImagePickerField, TagInput } from "./ModFields";
 import { FieldShell, NumberInput, SelectInput, TextArea, TextInput, Toggle } from "./primitives";
 import { NODE_SIM_EDITORS } from "./sims";
@@ -285,24 +287,40 @@ function QuestInspector() {
 
             <Section>Employer</Section>
             <FieldShell label="First name" hint="Left blank, the game generates an employer for you.">
-                <TextInput
+                <TextInputWithGenerate
                     ariaLabel="Employer first name"
                     value={quest.employer.firstName ?? ""}
                     onChange={(firstName) => write({ employer: { ...quest.employer, firstName } })}
+                    onGenerate={() => write({ employer: { ...quest.employer, firstName: generateField("firstName") } })}
+                    generateLabel="first name"
                 />
             </FieldShell>
             <FieldShell label="Last name">
-                <TextInput
+                <TextInputWithGenerate
                     ariaLabel="Employer last name"
                     value={quest.employer.lastName ?? ""}
                     onChange={(lastName) => write({ employer: { ...quest.employer, lastName } })}
+                    onGenerate={() => write({ employer: { ...quest.employer, lastName: generateField("lastName") } })}
+                    generateLabel="last name"
                 />
             </FieldShell>
             <FieldShell label="E-mail">
-                <TextInput
+                <TextInputWithGenerate
                     ariaLabel="Employer e-mail"
                     value={quest.employer.email ?? ""}
                     onChange={(email) => write({ employer: { ...quest.employer, email } })}
+                    onGenerate={() =>
+                        write({
+                            employer: {
+                                ...quest.employer,
+                                email: generateField("email", {
+                                    firstName: quest.employer.firstName,
+                                    lastName: quest.employer.lastName,
+                                }),
+                            },
+                        })
+                    }
+                    generateLabel="e-mail"
                     mono
                 />
             </FieldShell>

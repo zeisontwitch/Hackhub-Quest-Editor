@@ -17,6 +17,8 @@ import { PORT_PRESETS } from "@/schema/portPresets";
 import { FIELD_GROUPS } from "@/schema/registry";
 import { useEditor } from "@/store/editor";
 import { ListEditor } from "./ListEditor";
+import { TextInputWithGenerate } from "./GenerateButton";
+import { generateField } from "@/lib/generate";
 import { FieldShell, SelectInput, TextInput, Toggle } from "./primitives";
 
 const TYPE_OPTIONS = DEVICE_TYPES.map((t) => ({ value: t, label: DEVICE_TYPE_LABELS[t] }));
@@ -91,30 +93,36 @@ export function DeviceEditor({
                     </FieldShell>
                 ) : (
                     <FieldShell label="IP address" hint="The address of this machine on the network behind the router.">
-                        <TextInput
+                        <TextInputWithGenerate
                             ariaLabel="IP address"
                             value={device.ip}
                             onChange={(ip) => write({ ip })}
+                            onGenerate={() => write({ ip: generateField("ip", {}, { ipFlavour: "private" }) })}
+                            generateLabel="IP address"
                             mono
                         />
                     </FieldShell>
                 )}
 
                 <FieldShell label="Hostname">
-                    <TextInput
+                    <TextInputWithGenerate
                         ariaLabel="Hostname"
                         value={device.name ?? ""}
                         onChange={(name) => write({ name })}
+                        onGenerate={() => write({ name: generateField("hostname") })}
+                        generateLabel="hostname"
                         mono
                         placeholder="optional"
                     />
                 </FieldShell>
 
                 <FieldShell label="Domain">
-                    <TextInput
+                    <TextInputWithGenerate
                         ariaLabel="Domain"
                         value={device.domainName ?? ""}
                         onChange={(domainName) => write({ domainName })}
+                        onGenerate={() => write({ domainName: generateField("domain") })}
+                        generateLabel="domain"
                         mono
                         placeholder="optional"
                     />
@@ -126,10 +134,12 @@ export function DeviceEditor({
                             label="Router model"
                             hint="Enables the in-game `fern` recovery route: the player runs fern “<model>” to recover the password. Leave blank to disable that route."
                         >
-                            <TextInput
+                            <TextInputWithGenerate
                                 ariaLabel="Router model"
                                 value={device.model ?? ""}
                                 onChange={(model) => write({ model })}
+                                onGenerate={() => write({ model: generateField("routerModel") })}
+                                generateLabel="router model"
                                 mono
                                 placeholder="TP-Link Archer C6"
                             />

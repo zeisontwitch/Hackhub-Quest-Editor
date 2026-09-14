@@ -14,6 +14,7 @@
 
 const MODE_KEY = "qe.inspector.mode";
 const RECT_KEY = "qe.inspector.floatRect";
+const DOCKED_WIDTH_KEY = "qe.inspector.dockedWidth";
 
 export type InspectorMode = "docked" | "floating";
 
@@ -30,8 +31,14 @@ export const MIN_FLOAT_WIDTH = 280;
 export const MAX_FLOAT_WIDTH = 640;
 export const MIN_FLOAT_HEIGHT = 220;
 
-/** The docked width, shared with the docked `<aside>` so float⇄dock is seamless. */
+/**
+ * The docked drawer's width. `DOCKED_WIDTH` is the shipped default (and the
+ * floor) — a fresh author sees the exact same 340px panel as before. Authors
+ * can pull the edge handle to widen it up to `MAX_DOCKED_WIDTH`; pulling past
+ * that is what tears the panel off the wall into a floating drawer (r160).
+ */
 export const DOCKED_WIDTH = 340;
+export const MAX_DOCKED_WIDTH = 640;
 
 /** A sensible first-float rectangle: docked-width, near the top-right corner. */
 export const DEFAULT_FLOAT_RECT: FloatRect = {
@@ -50,6 +57,21 @@ function readStoredMode(): InspectorMode {
     } catch {
         return "docked";
     }
+}
+
+function readStoredDockedWidth(): number {
+    try {
+        const raw = localStorage.getItem(DOCKED_WIDTH_KEY);
+        if (!raw) return DOCKED_WIDTH;
+        return clampDockedWidth(Number(raw));
+    } catch {
+        return DOCKED_WIDTH;
+    }
+}
+
+/** Keep the docked width between its floor and ceiling (NaN → the default). */
+export function clampDockedWidth(width: number): number {
+    return clamp(width, DOCKED_WIDTH, MAX_DOCKED_WIDTH);
 }
 
 function readStoredRect(): FloatRect {
@@ -99,6 +121,7 @@ function clamp(value: number, min: number, max: number): number {
 
 let mode: InspectorMode = readStoredMode();
 let rect: FloatRect = readStoredRect();
+let dockedWidth: number = readStoredDockedWidth();
 
 /** Docked or floating? */
 export function inspectorMode(): InspectorMode {
@@ -108,6 +131,11 @@ export function inspectorMode(): InspectorMode {
 /** The floating drawer's current rectangle. */
 export function inspectorFloatRect(): FloatRect {
     return rect;
+}
+
+/** The docked drawer's current width, in CSS pixels. */
+export function inspectorDockedWidth(): number {
+    return dockedWidth;
 }
 
 function persistMode(): void {
@@ -121,6 +149,14 @@ function persistMode(): void {
 function persistRect(): void {
     try {
         localStorage.setItem(RECT_KEY, JSON.stringify(rect));
+    } catch {
+        /* not being able to remember it is not a reason to fail */
+    }
+}
+
+function persistDockedWidth(): void {
+    try {
+        localStorage.setItem(DOCKED_WIDTH_KEY, String(dockedWidth));
     } catch {
         /* not being able to remember it is not a reason to fail */
     }
@@ -152,13 +188,24 @@ export function setInspectorFloatRect(next: Partial<FloatRect>): void {
     for (const l of listeners) l();
 }
 
+/** Resize the docked drawer, clamped between its floor and ceiling. */
+export function setInspectorDockedWidth(width: number): void {
+    const next = clampDockedWidth(width);
+    if (next === dockedWidth) return;
+    dockedWidth = next;
+    persistDockedWidth();
+    for (const l of listeners) l();
+}
+
 /** Put the inspector back to the shipped default (docked). Used by the
     settings sheet's "reset all editor preferences". */
 export function resetInspectorLayout(): void {
     mode = "docked";
     rect = { ...DEFAULT_FLOAT_RECT };
+    dockedWidth = DOCKED_WIDTH;
     persistMode();
     persistRect();
+    persistDockedWidth();
     for (const l of listeners) l();
 }
 
@@ -174,5 +221,6 @@ export function subscribeInspectorLayout(listener: Listener): () => void {
 export function resetInspectorLayoutForTests(): void {
     mode = "docked";
     rect = { ...DEFAULT_FLOAT_RECT };
+    dockedWidth = DOCKED_WIDTH;
     listeners.clear();
 }

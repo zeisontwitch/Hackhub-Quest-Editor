@@ -1,45 +1,90 @@
 /**
- * The grab handle on the docked inspector's left edge (r159).
+ * The drawer-pull handle on the docked inspector's left edge (r159, reworked
+ * r160).
  *
- * r158 shipped the float/dock feature behind a small icon button that nobody
- * found — the affordance people reach for is a handle on the edge they want to
- * pull. This is it: a full-height grip on the inspector's left border.
+ * r158 hid float/dock behind a small icon nobody found; r159 gave the edge a
+ * grip; r160 makes it behave like a real drawer pull, which is what the author
+ * annotated for:
  *
- *  - **Click** it to float the inspector where it last was.
- *  - **Drag** it (past a small threshold) to pull the panel out and carry it
- *    under the cursor — the tactile "pull it off the wall" gesture.
+ *  - **Drag it left** → the docked panel *widens*, up to `MAX_DOCKED_WIDTH`.
+ *    The canvas (and its minimap) reflow to the left as it grows, for free,
+ *    because the panel is a flex sibling of the canvas.
+ *  - **Pull past that ceiling** (the invisible threshold the author drew as a
+ *    red line) → the panel tears off the wall into a floating drawer and
+ *    follows the cursor.
+ *  - **Click** it (no drag) → float in place; also the keyboard path, since
+ *    this is a real focusable `<button>`.
  *
- * The drag listens on `window`, not the handle, because the handle unmounts the
- * instant the panel floats (the docked aside is removed) — a handle-bound
- * listener would die mid-gesture. The threshold keeps a plain click from
- * jumping the panel to the pointer.
+ * The move/up listeners bind to `window`, not the handle, because when the panel
+ * floats the docked aside — and this handle with it — unmounts mid-gesture; a
+ * handle-bound listener would die on the spot.
  */
 import { useCallback, useRef } from "react";
-import { floatInspector, setInspectorFloatRect } from "./drawerLayout";
+import {
+    MAX_DOCKED_WIDTH,
+    floatInspector,
+    inspectorDockedWidth,
+    setInspectorDockedWidth,
+    setInspectorFloatRect,
+} from "./drawerLayout";
 
 /** Farther than this between press and release counts as a drag, not a click. */
 const DRAG_THRESHOLD = 6;
 
 /** Where the pointer sits on the panel once it pops out: just inside the title
-    bar, so the cursor is already "holding" the drag handle. */
+    bar, so the cursor is already "holding" the drawer's own drag zone. */
 const GRAB_OFFSET_X = 44;
 const GRAB_OFFSET_Y = 14;
 
+interface DragState {
+    /** Pointer x at press. */
+    x: number;
+    /** Pointer y at press. */
+    y: number;
+    /** Docked width at press — the base every widen is measured from. */
+    width: number;
+    /** Moved past DRAG_THRESHOLD yet? Distinguishes a widen from a click. */
+    dragging: boolean;
+    /** Torn off into a floating drawer yet? */
+    floated: boolean;
+}
+
 export function InspectorDockHandle() {
-    const drag = useRef<{ x: number; y: number; floated: boolean } | null>(null);
+    const drag = useRef<DragState | null>(null);
 
     const onMove = useCallback((event: PointerEvent) => {
         const start = drag.current;
         if (!start) return;
-        if (!start.floated) {
+
+        // Once floated, the panel just follows the cursor (offset onto its own
+        // title bar) — the docked width no longer applies.
+        if (start.floated) {
+            setInspectorFloatRect({ x: event.clientX - GRAB_OFFSET_X, y: event.clientY - GRAB_OFFSET_Y });
+            return;
+        }
+
+        if (!start.dragging) {
             const moved =
                 Math.abs(event.clientX - start.x) >= DRAG_THRESHOLD ||
                 Math.abs(event.clientY - start.y) >= DRAG_THRESHOLD;
             if (!moved) return;
+            start.dragging = true;
+        }
+
+        // Dragging left (smaller clientX) widens the right-docked panel.
+        const desired = start.width + (start.x - event.clientX);
+        if (desired > MAX_DOCKED_WIDTH) {
+            // Past the ceiling: tear it off the wall.
             start.floated = true;
             floatInspector();
+            setInspectorFloatRect({
+                x: event.clientX - GRAB_OFFSET_X,
+                y: event.clientY - GRAB_OFFSET_Y,
+                width: MAX_DOCKED_WIDTH,
+            });
+            return;
         }
-        setInspectorFloatRect({ x: event.clientX - GRAB_OFFSET_X, y: event.clientY - GRAB_OFFSET_Y });
+        setInspectorDockedWidth(desired);
     }, []);
 
     const onUp = useCallback(() => {
@@ -47,14 +92,21 @@ export function InspectorDockHandle() {
         window.removeEventListener("pointerup", onUp);
         const start = drag.current;
         drag.current = null;
-        // A press that never crossed the threshold is a click: float in place.
-        if (start && !start.floated) floatInspector();
+        // A press that never became a drag is a click: float in place. A drag
+        // that only widened the panel keeps the new width and does nothing more.
+        if (start && !start.dragging && !start.floated) floatInspector();
     }, [onMove]);
 
     const onPointerDown = useCallback(
         (event: React.PointerEvent) => {
             event.preventDefault();
-            drag.current = { x: event.clientX, y: event.clientY, floated: false };
+            drag.current = {
+                x: event.clientX,
+                y: event.clientY,
+                width: inspectorDockedWidth(),
+                dragging: false,
+                floated: false,
+            };
             window.addEventListener("pointermove", onMove);
             window.addEventListener("pointerup", onUp);
         },
@@ -65,19 +117,20 @@ export function InspectorDockHandle() {
         <button
             type="button"
             aria-label="Float inspector"
-            title="Drag to float the inspector — or click to pop it out"
+            title="Drag to widen the inspector — pull further to float it, or click to pop it out"
             onPointerDown={onPointerDown}
-            className="group absolute top-0 left-0 z-20 flex h-full w-3 cursor-grab touch-none items-center justify-center border-r border-line/0 hover:bg-accent-soft/40 active:cursor-grabbing"
+            className="group absolute top-0 left-0 z-20 flex h-full w-3 cursor-ew-resize touch-none items-center justify-center border-r border-line/0 hover:bg-accent-soft/40 active:cursor-grabbing"
         >
-            {/* A grip that sits quietly until hovered, so it reads as "grab me"
-                without drawing the eye away from the fields. */}
-            <span className="flex flex-col gap-[3px] text-ink-4 group-hover:text-accent">
-                <span className="h-0.5 w-0.5 rounded-full bg-current" />
-                <span className="h-0.5 w-0.5 rounded-full bg-current" />
-                <span className="h-0.5 w-0.5 rounded-full bg-current" />
-                <span className="h-0.5 w-0.5 rounded-full bg-current" />
-                <span className="h-0.5 w-0.5 rounded-full bg-current" />
-                <span className="h-0.5 w-0.5 rounded-full bg-current" />
+            {/* A protruding pull tab, centred on the edge — the "grab me" the
+                author drew. It sits quietly and brightens on hover so it reads
+                as a handle without stealing the eye from the fields. */}
+            <span className="pointer-events-none absolute left-0 flex h-14 w-3 items-center justify-center rounded-r-md border border-l-0 border-line bg-surface-2 text-ink-4 shadow-sm transition-colors group-hover:bg-accent-soft group-hover:text-accent">
+                <span className="flex flex-col gap-[3px]">
+                    <span className="h-0.5 w-0.5 rounded-full bg-current" />
+                    <span className="h-0.5 w-0.5 rounded-full bg-current" />
+                    <span className="h-0.5 w-0.5 rounded-full bg-current" />
+                    <span className="h-0.5 w-0.5 rounded-full bg-current" />
+                </span>
             </span>
         </button>
     );

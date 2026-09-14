@@ -10,15 +10,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     DEFAULT_FLOAT_RECT,
     DOCKED_WIDTH,
+    MAX_DOCKED_WIDTH,
     MAX_FLOAT_WIDTH,
     MIN_FLOAT_HEIGHT,
     MIN_FLOAT_WIDTH,
+    clampDockedWidth,
     clampRect,
     dockInspector,
     floatInspector,
+    inspectorDockedWidth,
     inspectorFloatRect,
     inspectorMode,
     resetInspectorLayout,
+    setInspectorDockedWidth,
     setInspectorFloatRect,
     subscribeInspectorLayout,
 } from "@/editor/inspector/drawerLayout";
@@ -114,12 +118,45 @@ describe("setInspectorFloatRect", () => {
     });
 });
 
+describe("docked width", () => {
+    it("ships at the default width", () => {
+        expect(inspectorDockedWidth()).toBe(DOCKED_WIDTH);
+    });
+
+    it("widens within bounds, persisting and notifying", () => {
+        let count = 0;
+        const unsub = subscribeInspectorLayout(() => count++);
+        setInspectorDockedWidth(500);
+        expect(inspectorDockedWidth()).toBe(500);
+        expect(localStorage.getItem("qe.inspector.dockedWidth")).toBe("500");
+        expect(count).toBe(1);
+        unsub();
+    });
+
+    it("clamps below the floor and above the ceiling", () => {
+        expect(clampDockedWidth(10)).toBe(DOCKED_WIDTH);
+        expect(clampDockedWidth(9999)).toBe(MAX_DOCKED_WIDTH);
+        expect(clampDockedWidth(NaN)).toBe(DOCKED_WIDTH);
+    });
+
+    it("is idempotent — setting the same width fires no change", () => {
+        setInspectorDockedWidth(500);
+        let count = 0;
+        const unsub = subscribeInspectorLayout(() => count++);
+        setInspectorDockedWidth(500);
+        expect(count).toBe(0);
+        unsub();
+    });
+});
+
 describe("reset", () => {
-    it("returns to docked at the default rect", () => {
+    it("returns to docked at the default rect and width", () => {
         floatInspector();
         setInspectorFloatRect({ x: 400, y: 300 });
+        setInspectorDockedWidth(600);
         resetInspectorLayout();
         expect(inspectorMode()).toBe("docked");
         expect(inspectorFloatRect()).toEqual(DEFAULT_FLOAT_RECT);
+        expect(inspectorDockedWidth()).toBe(DOCKED_WIDTH);
     });
 });

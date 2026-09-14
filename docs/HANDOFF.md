@@ -1,3 +1,33 @@
+# Handoff — r160
+
+r160 reworks the inspector edge handle into a real drawer pull (plan:
+[plans/r160-inspector-drawer-pull.md](plans/r160-inspector-drawer-pull.md)),
+from the user's annotated screenshot. The r159 grip becomes a protruding pull
+tab centred on the docked inspector's left edge. **Drag it left → the docked
+panel widens** (340px default/floor, up to a 640px ceiling); **pull past that
+ceiling → it tears off the wall into a floating drawer** and follows the
+cursor; a plain click still pops it out in place. Docked width is a new
+persisted per-author preference in `drawerLayout.ts`
+(`inspectorDockedWidth`/`setInspectorDockedWidth`/`clampDockedWidth`, same
+`useSyncExternalStore` + localStorage shape as the float rect, never in the
+mod); `App.tsx` applies it as an inline width on the expanded `<aside>` (width
+transition dropped while expanded so a drag tracks the cursor). Reset re-docks
+at 340px. The canvas minimap "follows the panel while docked, returns to base
+when floated" needed **no code** — it already lives inside the flex-sibling
+`<main>`, so it reflows for free as the panel grows/leaves (YAGNI). Gates:
+**1,475 tests / 75 files** (+5), typecheck + build clean. Stamp
+`2026-09-14.r160`. README trimmed (r155 → archive).
+
+**Zeis's eyes only:** grab the pull tab on the inspector's left edge — a short
+drag left makes the panel wider (watch the canvas + minimap reflow), keep
+pulling to tear it off into a floating drawer, or just click it to pop out.
+Settings → reset re-docks at the default width.
+
+Roadmap: Next-up is now 1 auto-generate fields, then the two templates last
+(2 contact-driven, 3 branching consequence).
+
+---
+
 # Handoff — r159
 
 r159 fixes a usability miss in r158 (plan:

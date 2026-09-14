@@ -1,11 +1,13 @@
 /**
- * The floating inspector, from the shell (r158, handle added r159).
+ * The floating inspector, from the shell (r158, handle added r159, drawer-pull
+ * resize added r160).
  *
  * The pure layout maths lives in drawerLayout.test.ts; this exercises the wiring
- * — the left-edge "Float inspector" handle pops it out (click, or drag), the
- * drawer carries the same inspector, and "Dock inspector" snaps it back. jsdom
- * has no layout, so the drag/resize *pixels* are tested on the pure module; here
- * we prove the mode flips and the right frame renders.
+ * — the left-edge "Float inspector" handle pops it out (click, or a long pull),
+ * a short pull *widens* the docked panel, the drawer carries the same inspector,
+ * and "Dock inspector" snaps it back. jsdom has no layout, so the drag/resize
+ * *pixels* are tested on the pure module; here we prove the mode flips, the width
+ * tracks, and the right frame renders.
  */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act, render, screen } from "@testing-library/react";
@@ -13,7 +15,13 @@ import userEvent from "@testing-library/user-event";
 import App from "@/App";
 import { useEditor } from "@/store/editor";
 import { createProject } from "@/schema/project";
-import { inspectorFloatRect, inspectorMode, resetInspectorLayout } from "@/editor/inspector/drawerLayout";
+import {
+    DOCKED_WIDTH,
+    inspectorDockedWidth,
+    inspectorFloatRect,
+    inspectorMode,
+    resetInspectorLayout,
+} from "@/editor/inspector/drawerLayout";
 
 /** A pointer event jsdom understands (it has no PointerEvent constructor). */
 function pointer(type: string, x: number, y: number): PointerEvent {
@@ -66,11 +74,25 @@ describe("floating inspector", () => {
         expect(screen.getAllByRole("complementary", { name: "Inspector" })).toHaveLength(1);
     });
 
-    it("floats and moves to the pointer when the handle is dragged", () => {
+    it("widens the docked panel on a short pull — without floating it", () => {
         render(<App />);
         const handle = screen.getByRole("button", { name: "Float inspector" });
 
-        // Press, move well past the threshold, release — a drag, not a click.
+        // Press at the edge (~x 1240) and pull 120px left. That stays under the
+        // widen ceiling (640 − 340 = 300px of headroom), so it must NOT float.
+        act(() => handle.dispatchEvent(pointer("pointerdown", 1240, 300)));
+        act(() => window.dispatchEvent(pointer("pointermove", 1120, 300)));
+        act(() => window.dispatchEvent(pointer("pointerup", 1120, 300)));
+
+        expect(inspectorMode()).toBe("docked");
+        expect(inspectorDockedWidth()).toBe(DOCKED_WIDTH + 120);
+    });
+
+    it("floats and moves to the pointer when the handle is pulled past the ceiling", () => {
+        render(<App />);
+        const handle = screen.getByRole("button", { name: "Float inspector" });
+
+        // Press, pull far past the widen ceiling (well over 300px), release.
         act(() => handle.dispatchEvent(pointer("pointerdown", 1200, 100)));
         act(() => window.dispatchEvent(pointer("pointermove", 700, 400)));
         act(() => window.dispatchEvent(pointer("pointerup", 700, 400)));

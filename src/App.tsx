@@ -13,7 +13,11 @@ import { NodePalette } from "@/editor/palette/NodePalette";
 import { InspectorPanel } from "@/editor/inspector/InspectorPanel";
 import { FloatingInspector } from "@/editor/inspector/FloatingInspector";
 import { InspectorDockHandle } from "@/editor/inspector/InspectorDockHandle";
-import { inspectorMode, subscribeInspectorLayout } from "@/editor/inspector/drawerLayout";
+import {
+    inspectorDockedWidth,
+    inspectorMode,
+    subscribeInspectorLayout,
+} from "@/editor/inspector/drawerLayout";
 import { StatusBar } from "@/editor/shell/StatusBar";
 import { TopBar } from "@/editor/shell/TopBar";
 import { Overlays, Toast } from "@/editor/shell/Overlays";
@@ -26,6 +30,11 @@ export default function App() {
     const setUi = useEditor((s) => s.setUi);
     const mode = useSyncExternalStore(subscribeInspectorLayout, inspectorMode, inspectorMode);
     const floating = mode === "floating";
+    const dockedWidth = useSyncExternalStore(
+        subscribeInspectorLayout,
+        inspectorDockedWidth,
+        inspectorDockedWidth,
+    );
     const nodeCount = useEditor((s) => {
         const quest = s.project.quests.find((q) => q.id === s.project.editor.activeQuestId);
         return quest?.graph.nodes.length ?? 0;
@@ -61,9 +70,13 @@ export default function App() {
                     <aside
                         aria-label="Inspector"
                         className={cn(
-                            "relative flex shrink-0 flex-col border-l border-line bg-surface transition-[width] duration-200",
-                            inspectorCollapsed ? "w-10" : "w-[340px]",
+                            "relative flex shrink-0 flex-col border-l border-line bg-surface",
+                            // A dragged resize must track the cursor frame-for-
+                            // frame, so no width transition while expanded; the
+                            // collapse toggle keeps its slide.
+                            inspectorCollapsed && "w-10 transition-[width] duration-200",
                         )}
+                        style={inspectorCollapsed ? undefined : { width: dockedWidth }}
                     >
                         {inspectorCollapsed ? (
                             <button

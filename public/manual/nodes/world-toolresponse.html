@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tool response — HackHub Quest Editor handbook</title>
+<link rel="stylesheet" href="../manual.css" />
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="Handbook contents">
+  <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
+  <p class="build">Handbook · build 2026-09-14.r162</p>
+  <div class="search">
+    <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
+    <div class="results" role="listbox" aria-label="Search results"></div>
+  </div>
+  <ol>
+    <li><a href="../index.html">Start here</a></li>
+    <li><a href="../tutorial.html">Your first quest</a></li>
+    <li><a href="../concepts.html">How a quest works</a></li>
+    <li><a href="../nodes.html">Node reference</a>
+      <ul class="sub">
+        <li><a href="../nodes.html#cat-entry"><span class="cat-dot" style="background:var(--cat-entry)"></span>Quest lifecycle</a></li>
+        <li><a href="../nodes.html#cat-objective"><span class="cat-dot" style="background:var(--cat-objective)"></span>Objectives</a></li>
+        <li><a href="../nodes.html#cat-trigger"><span class="cat-dot" style="background:var(--cat-trigger)"></span>Triggers</a></li>
+        <li><a href="../nodes.html#cat-world"><span class="cat-dot" style="background:var(--cat-world)"></span>World building</a></li>
+        <li><a href="../nodes.html#cat-comms"><span class="cat-dot" style="background:var(--cat-comms)"></span>Communication</a></li>
+        <li><a href="../nodes.html#cat-reply"><span class="cat-dot" style="background:var(--cat-reply)"></span>Custom terminal</a></li>
+        <li><a href="../nodes.html#cat-effect"><span class="cat-dot" style="background:var(--cat-effect)"></span>Effects</a></li>
+        <li><a href="../nodes.html#cat-community"><span class="cat-dot" style="background:var(--cat-community)"></span>Community addons</a></li>
+        <li><a href="../nodes.html#cat-flow"><span class="cat-dot" style="background:var(--cat-flow)"></span>Flow control</a></li>
+        <li><a href="../nodes.html#cat-layout"><span class="cat-dot" style="background:var(--cat-layout)"></span>Layout</a></li>
+      </ul>
+    </li>
+    <li><a href="../guides.html">Feature guides</a></li>
+    <li><a href="../how-do-i.html">How do I…</a></li>
+    <li><a href="../checking.html">Checking your quest</a></li>
+    <li><a href="../export.html">Exporting and installing</a></li>
+    <li><a href="../troubleshooting.html">When something goes wrong</a></li>
+    <li><a href="../appendices.html">Glossary and limits</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <h1><span class="cat-dot" style="background:var(--cat-world)"></span>Tool response</h1>
+  <p class="tag"><span class="badge" style="color:var(--cat-world)">World building</span>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">world.toolResponse</code></p>
+</header>
+
+<section id="node-world-toolresponse-page">
+
+<h2>What it does</h2>
+<p>Overrides what one of the game's tools prints, so a scan or a lookup answers with what your story needs.</p>
+
+<h2>When you'd use it</h2>
+<p>Use it when the player runs a real command and the answer has to be one you wrote: the scan that reveals the target, the lookup that names its owner.</p>
+<p>Key it to what the player types. A response that answers every input hands them the target on their first random try.</p>
+
+<h2>In the game, this looks like</h2>
+<p>The player runs the command and reads your response instead of the game's own.</p>
+
+<h2>Fields</h2>
+
+<h3 id="node-world-toolresponse-field-command">Tool</h3>
+<blockquote class="blurb">Pick the in-game command this overrides, like nmap or whois. When the player runs it on your input, they see your text instead of the usual result.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The command this overrides.</dd>
+  <dt class="dt-mute">Default</dt><dd><code>"nmap"</code></dd>
+  <dt>Limits</dt><dd>One of the 11 listed below.</dd>
+  <dt class="dt-warn">Watch out</dt><dd>The override lasts until the quest ends or you take it down. Every other command the player runs is untouched.</dd>
+</dl>
+<table>
+  <thead><tr><th>Choice</th><th>What it is stored as</th></tr></thead>
+  <tbody>
+    <tr><td class="name">nmap</td><td><code>nmap</code></td></tr>
+    <tr><td class="name">hydra</td><td><code>hydra</code></td></tr>
+    <tr><td class="name">whois</td><td><code>whois</code></td></tr>
+    <tr><td class="name">nslookup</td><td><code>nslookup</code></td></tr>
+    <tr><td class="name">mxlookup</td><td><code>mxlookup</code></td></tr>
+    <tr><td class="name">ping</td><td><code>ping</code></td></tr>
+    <tr><td class="name">lynx</td><td><code>lynx</code></td></tr>
+    <tr><td class="name">geoip</td><td><code>geoip</code></td></tr>
+    <tr><td class="name">ssh</td><td><code>ssh</code></td></tr>
+    <tr><td class="name">ftp</td><td><code>ftp</code></td></tr>
+    <tr><td class="name">weechat</td><td><code>weechat</code></td></tr>
+  </tbody>
+</table>
+
+<h3 id="node-world-toolresponse-field-input">Keyed by</h3>
+<blockquote class="blurb">What the player types after the command — the IP, domain or name it answers for. The tool only responds to this exact input. hydra/ssh/ftp use the user + target fields below instead.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>What the player types after the command — the address, domain or name it answers for.</dd>
+  <dt>Example</dt><dd><code>{{data.targetIp}}</code></dd>
+  <dt class="dt-mute">Default</dt><dd>empty</dd>
+  <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>There is nothing to match, so the response never fires.</dd>
+</dl>
+
+<h3 id="node-world-toolresponse-field-inputUser">User</h3>
+<blockquote class="blurb">Only match when the player ran the command against this user.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Only match when the player ran the command against this user.</dd>
+</dl>
+
+<h3 id="node-world-toolresponse-field-inputTarget">Target</h3>
+<blockquote class="blurb">Only match when the player ran the command against this host.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Only match when the player ran it against this host.</dd>
+  <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
+</dl>
+
+<h3 id="node-world-toolresponse-field-dataText">Response</h3>
+<blockquote class="blurb">One “Label: value” per line. The editor turns them into exactly what that tool shows in-game — add a line for each thing you want the player to see.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>One label and value per line. The editor turns them into the shape that tool really prints.</dd>
+  <dt>Example</dt><dd><code>PORT: 22  STATE: open  SERVICE: ssh</code></dd>
+  <dt class="dt-mute">Default</dt><dd>empty</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>The command answers with nothing, which reads to the player as a dead host.</dd>
+</dl>
+
+<h3 id="node-world-toolresponse-field-removeOnComplete">Remove when the quest ends</h3>
+<blockquote class="blurb">Stop intercepting the command when the quest ends.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Turn this on to stop intercepting the command when the quest ends.</dd>
+  <dt class="dt-mute">Default</dt><dd>on</dd>
+  <dt>Limits</dt><dd>On or off.</dd>
+</dl>
+
+
+
+<h2>Wires</h2>
+<table>
+  <thead><tr><th>Socket</th><th>Direction</th><th>What to connect</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="name kind-flow">In</td><td>input</td>
+      <td>Whatever should run immediately before this node.</td>
+    </tr>
+    <tr>
+      <td class="name kind-flow">Out</td><td>output</td>
+      <td>Whatever should happen after this node runs.</td>
+    </tr>
+  </tbody>
+</table>
+<p class="wire-legend">
+  <span class="wire-chip kind-flow"><i></i><b>Then</b> runs next</span>
+  <span class="wire-chip kind-condition"><i></i><b>When</b> tests a condition</span>
+  <span class="wire-chip kind-unlock"><i></i><b>Unlocks</b> opens an objective</span>
+  <span class="wire-chip kind-data"><i></i><b>Data</b> carries a value</span>
+</p>
+<p>A wire only joins two sockets of the same colour, and the editor draws the
+wire in that colour. That is what the colours are for: match the colours and
+the connection takes, mismatch them and it will not.</p>
+
+
+
+<figure>
+  <img src="../img/node-world-toolresponse-inspector.png"
+       alt="The Tool response node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>Tool response</b>.</figcaption>
+</figure>
+
+<h2>Common mistakes</h2>
+<ul class="plain">
+  <li><b>The response answers anything.</b> Key it to a specific input, or the player's first careless scan gives them the answer.</li>
+  <li><b>The response is left running.</b> Leave <b class="ui">Remove when the quest ends</b> on, or the command keeps answering with your text in every later quest.</li>
+</ul>
+
+<h2>Messages you might see</h2>
+<ul class="plain">
+  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so the response is never registered</li>
+</ul>
+
+<h2>Related nodes</h2>
+<ul class="plain">
+  <li><a href="world-network.html">Create network</a> — Builds the machines the player breaks into.</li>
+  <li><a href="world-firewall.html">Firewall rule</a> — Allows or blocks a port.</li>
+  <li><a href="world-port.html">Change port</a> — Opens, closes, adds or removes a port.</li>
+  <li><a href="world-domain.html">Register domain</a> — Points a hostname at an address.</li>
+  <li><a href="world-database.html">Create database</a> — Data for the player to dig out.</li>
+  <li><a href="world-files.html">Place files</a> — Drops files on a machine.</li>
+</ul>
+
+</section>
+
+<div class="pagefoot">
+  <a href="pack-node.html">← Addon node</a>
+  <a class="next" href="comms-dialogue.html">Dialogue →</a>
+</div>
+
+<a class="totop" href="#node-world-toolresponse-page">↑ back to top</a>
+
+<footer class="colophon">
+  HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·
+  field labels, hints, defaults and limits on this page are taken from the
+  editor's own node definitions.
+</footer>
+
+</main>
+</div>
+<script src="../search-index.js"></script>
+<script src="../manual.js"></script>
+</body>
+</html>

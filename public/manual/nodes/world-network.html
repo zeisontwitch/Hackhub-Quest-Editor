@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Create network — HackHub Quest Editor handbook</title>
+<link rel="stylesheet" href="../manual.css" />
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="Handbook contents">
+  <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
+  <p class="build">Handbook · build 2026-09-14.r162</p>
+  <div class="search">
+    <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
+    <div class="results" role="listbox" aria-label="Search results"></div>
+  </div>
+  <ol>
+    <li><a href="../index.html">Start here</a></li>
+    <li><a href="../tutorial.html">Your first quest</a></li>
+    <li><a href="../concepts.html">How a quest works</a></li>
+    <li><a href="../nodes.html">Node reference</a>
+      <ul class="sub">
+        <li><a href="../nodes.html#cat-entry"><span class="cat-dot" style="background:var(--cat-entry)"></span>Quest lifecycle</a></li>
+        <li><a href="../nodes.html#cat-objective"><span class="cat-dot" style="background:var(--cat-objective)"></span>Objectives</a></li>
+        <li><a href="../nodes.html#cat-trigger"><span class="cat-dot" style="background:var(--cat-trigger)"></span>Triggers</a></li>
+        <li><a href="../nodes.html#cat-world"><span class="cat-dot" style="background:var(--cat-world)"></span>World building</a></li>
+        <li><a href="../nodes.html#cat-comms"><span class="cat-dot" style="background:var(--cat-comms)"></span>Communication</a></li>
+        <li><a href="../nodes.html#cat-reply"><span class="cat-dot" style="background:var(--cat-reply)"></span>Custom terminal</a></li>
+        <li><a href="../nodes.html#cat-effect"><span class="cat-dot" style="background:var(--cat-effect)"></span>Effects</a></li>
+        <li><a href="../nodes.html#cat-community"><span class="cat-dot" style="background:var(--cat-community)"></span>Community addons</a></li>
+        <li><a href="../nodes.html#cat-flow"><span class="cat-dot" style="background:var(--cat-flow)"></span>Flow control</a></li>
+        <li><a href="../nodes.html#cat-layout"><span class="cat-dot" style="background:var(--cat-layout)"></span>Layout</a></li>
+      </ul>
+    </li>
+    <li><a href="../guides.html">Feature guides</a></li>
+    <li><a href="../how-do-i.html">How do I…</a></li>
+    <li><a href="../checking.html">Checking your quest</a></li>
+    <li><a href="../export.html">Exporting and installing</a></li>
+    <li><a href="../troubleshooting.html">When something goes wrong</a></li>
+    <li><a href="../appendices.html">Glossary and limits</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <h1><span class="cat-dot" style="background:var(--cat-world)"></span>Create network</h1>
+  <p class="tag"><span class="badge" style="color:var(--cat-world)">World building</span>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">world.network</code></p>
+</header>
+
+<section id="node-world-network-page">
+
+<h2>What it does</h2>
+<p>Creates a network in the game's world: a router at the root, and every machine behind it, with their ports, users and weaknesses.</p>
+
+<h2>When you'd use it</h2>
+<p>Use it for any quest where the player has to break into something. The machines exist because your quest put them there.</p>
+<p>Build the shape of the network in the <b class="ui">Devices</b> editor: the router first, then the machines the player has to reach behind it.</p>
+<p>Leave the player a way in. A network with every port closed and no weakness to exploit is a wall, not a puzzle.</p>
+
+<h2>In the game, this looks like</h2>
+<p>The network appears in the game's world. The player can scan it, find what is open, and connect.</p>
+
+<h2>Fields</h2>
+
+<h3 id="node-world-network-field-device">Devices</h3>
+<blockquote class="blurb">The router at the root of the network, plus everything behind it. Routers and splitters carry children; firewalls carry rules.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The router at the root, and every machine behind it. The editor beside this field is where you add them.</dd>
+  <dt class="dt-mute">Default</dt><dd>a starter set</dd>
+  <dt class="dt-warn">Watch out</dt><dd>The player needs a route in. If the router exposes nothing and has no weakness, nothing behind it can be reached.</dd>
+</dl>
+
+<h3 id="node-world-network-field-destroyOnComplete">Also remove this network when the quest is completed</h3>
+<blockquote class="blurb">Off by default: the network stays in the world after the quest, the way a real company would. It is also safer, because deleting a machine the player is still connected to can hang the game. Abandoning the quest removes it either way.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Turn this on to take the network back out of the world when the quest completes.</dd>
+  <dt class="dt-mute">Default</dt><dd>off</dd>
+  <dt>Limits</dt><dd>On or off.</dd>
+</dl>
+
+
+
+<h2>Wires</h2>
+<table>
+  <thead><tr><th>Socket</th><th>Direction</th><th>What to connect</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="name kind-flow">In</td><td>input</td>
+      <td>Whatever should run immediately before this node.</td>
+    </tr>
+    <tr>
+      <td class="name kind-flow">Out</td><td>output</td>
+      <td>Whatever should happen after this node runs.</td>
+    </tr>
+  </tbody>
+</table>
+<p class="wire-legend">
+  <span class="wire-chip kind-flow"><i></i><b>Then</b> runs next</span>
+  <span class="wire-chip kind-condition"><i></i><b>When</b> tests a condition</span>
+  <span class="wire-chip kind-unlock"><i></i><b>Unlocks</b> opens an objective</span>
+  <span class="wire-chip kind-data"><i></i><b>Data</b> carries a value</span>
+</p>
+<p>A wire only joins two sockets of the same colour, and the editor draws the
+wire in that colour. That is what the colours are for: match the colours and
+the connection takes, mismatch them and it will not.</p>
+
+<h2>Step by step: add this node to a quest</h2>
+<ol class="plain">
+  <li>Find <b class="ui">Create network</b> under <b>World building</b> in the palette.</li>
+  <li>Drag it onto the canvas early, before anything that depends on the machines existing.</li>
+  <li>Open <b class="ui">Devices</b> and build the network: the router, then what sits behind it.</li>
+  <li>Give the player a way in — an open port, or a weakness a scanner will report.</li>
+  <li>Point later nodes at the machines with the address you stored in quest data.</li>
+</ol>
+
+<figure>
+  <img src="../img/node-world-network-inspector.png"
+       alt="The Create network node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>Create network</b>.</figcaption>
+</figure>
+
+<h2>Common mistakes</h2>
+<ul class="plain">
+  <li><b>No route in.</b> The player can see the network and cannot touch it. Open one port, or leave one weakness to find.</li>
+  <li><b>The network is created after the node that uses it.</b> Wire it first. A node that targets a machine which does not exist yet finds nothing.</li>
+</ul>
+
+<h2>Messages you might see</h2>
+<ul class="plain">
+  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so the network is never created</li>
+</ul>
+
+<h2>Related nodes</h2>
+<ul class="plain">
+  <li><a href="world-firewall.html">Firewall rule</a> — Allows or blocks a port.</li>
+  <li><a href="world-port.html">Change port</a> — Opens, closes, adds or removes a port.</li>
+  <li><a href="world-domain.html">Register domain</a> — Points a hostname at an address.</li>
+  <li><a href="world-database.html">Create database</a> — Data for the player to dig out.</li>
+  <li><a href="world-files.html">Place files</a> — Drops files on a machine.</li>
+  <li><a href="world-toolresponse.html">Tool response</a> — Scripts what a tool reports.</li>
+</ul>
+
+</section>
+
+<div class="pagefoot">
+  <a href="trigger-event.html">← When event</a>
+  <a class="next" href="world-firewall.html">Firewall rule →</a>
+</div>
+
+<a class="totop" href="#node-world-network-page">↑ back to top</a>
+
+<footer class="colophon">
+  HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·
+  field labels, hints, defaults and limits on this page are taken from the
+  editor's own node definitions.
+</footer>
+
+</main>
+</div>
+<script src="../search-index.js"></script>
+<script src="../manual.js"></script>
+</body>
+</html>

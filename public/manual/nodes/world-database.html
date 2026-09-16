@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Create database — HackHub Quest Editor handbook</title>
+<link rel="stylesheet" href="../manual.css" />
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="Handbook contents">
+  <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
+  <p class="build">Handbook · build 2026-09-14.r162</p>
+  <div class="search">
+    <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
+    <div class="results" role="listbox" aria-label="Search results"></div>
+  </div>
+  <ol>
+    <li><a href="../index.html">Start here</a></li>
+    <li><a href="../tutorial.html">Your first quest</a></li>
+    <li><a href="../concepts.html">How a quest works</a></li>
+    <li><a href="../nodes.html">Node reference</a>
+      <ul class="sub">
+        <li><a href="../nodes.html#cat-entry"><span class="cat-dot" style="background:var(--cat-entry)"></span>Quest lifecycle</a></li>
+        <li><a href="../nodes.html#cat-objective"><span class="cat-dot" style="background:var(--cat-objective)"></span>Objectives</a></li>
+        <li><a href="../nodes.html#cat-trigger"><span class="cat-dot" style="background:var(--cat-trigger)"></span>Triggers</a></li>
+        <li><a href="../nodes.html#cat-world"><span class="cat-dot" style="background:var(--cat-world)"></span>World building</a></li>
+        <li><a href="../nodes.html#cat-comms"><span class="cat-dot" style="background:var(--cat-comms)"></span>Communication</a></li>
+        <li><a href="../nodes.html#cat-reply"><span class="cat-dot" style="background:var(--cat-reply)"></span>Custom terminal</a></li>
+        <li><a href="../nodes.html#cat-effect"><span class="cat-dot" style="background:var(--cat-effect)"></span>Effects</a></li>
+        <li><a href="../nodes.html#cat-community"><span class="cat-dot" style="background:var(--cat-community)"></span>Community addons</a></li>
+        <li><a href="../nodes.html#cat-flow"><span class="cat-dot" style="background:var(--cat-flow)"></span>Flow control</a></li>
+        <li><a href="../nodes.html#cat-layout"><span class="cat-dot" style="background:var(--cat-layout)"></span>Layout</a></li>
+      </ul>
+    </li>
+    <li><a href="../guides.html">Feature guides</a></li>
+    <li><a href="../how-do-i.html">How do I…</a></li>
+    <li><a href="../checking.html">Checking your quest</a></li>
+    <li><a href="../export.html">Exporting and installing</a></li>
+    <li><a href="../troubleshooting.html">When something goes wrong</a></li>
+    <li><a href="../appendices.html">Glossary and limits</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <h1><span class="cat-dot" style="background:var(--cat-world)"></span>Create database</h1>
+  <p class="tag"><span class="badge" style="color:var(--cat-world)">World building</span>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">world.database</code></p>
+</header>
+
+<section id="node-world-database-page">
+
+<h2>What it does</h2>
+<p>Creates a database in the game's world, with a login and whatever tables you put in it.</p>
+
+<h2>When you'd use it</h2>
+<p>Use it when the player should dig something out of a system rather than read it in a file.</p>
+<p>Give the player a way to find the password. A login nobody can discover is a dead end, not a puzzle.</p>
+
+<h2>In the game, this looks like</h2>
+<p>The player connects with a database client and queries the tables you built.</p>
+
+<h2>Fields</h2>
+
+<h3 id="node-world-database-field-host">Host IP</h3>
+<blockquote class="blurb">The address the player points a database client at.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The address the player points their client at.</dd>
+  <dt>Example</dt><dd><code>{{data.targetIp}}</code></dd>
+  <dt class="dt-mute">Default</dt><dd>empty</dd>
+  <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
+</dl>
+
+<h3 id="node-world-database-field-user">Username</h3>
+<blockquote class="blurb">The login sqlmap or a client uses.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The login the player uses.</dd>
+  <dt>Example</dt><dd><code>admin</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>"admin"</code></dd>
+</dl>
+
+<h3 id="node-world-database-field-password">Password</h3>
+<blockquote class="blurb">The password. Give the player a way to find it — a config file, a leaked dump, a cracked hash.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The password. Put it somewhere the player can find it: a config file, a leaked dump, a note.</dd>
+  <dt class="dt-mute">Default</dt><dd><code>"secret123"</code></dd>
+  <dt class="dt-warn">Watch out</dt><dd>The default is a placeholder. Leave it in place and the player can guess their way in without playing.</dd>
+</dl>
+
+<h3 id="node-world-database-field-tables">Tables</h3>
+<blockquote class="blurb">The data inside: tables holding rows of named values, ready for the player's SQL.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The data inside: tables holding rows of named values.</dd>
+  <dt class="dt-mute">Default</dt><dd>an empty list</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>The database exists and holds nothing, so there is nothing to find.</dd>
+</dl>
+
+<h3 id="node-world-database-field-removeOnComplete">Remove when the quest ends</h3>
+<blockquote class="blurb">Drop the database when the quest ends.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Turn this on to drop the database when the quest ends.</dd>
+  <dt class="dt-mute">Default</dt><dd>on</dd>
+  <dt>Limits</dt><dd>On or off.</dd>
+</dl>
+
+
+
+<h2>Wires</h2>
+<table>
+  <thead><tr><th>Socket</th><th>Direction</th><th>What to connect</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="name kind-flow">In</td><td>input</td>
+      <td>Whatever should run immediately before this node.</td>
+    </tr>
+    <tr>
+      <td class="name kind-flow">Out</td><td>output</td>
+      <td>Whatever should happen after this node runs.</td>
+    </tr>
+  </tbody>
+</table>
+<p class="wire-legend">
+  <span class="wire-chip kind-flow"><i></i><b>Then</b> runs next</span>
+  <span class="wire-chip kind-condition"><i></i><b>When</b> tests a condition</span>
+  <span class="wire-chip kind-unlock"><i></i><b>Unlocks</b> opens an objective</span>
+  <span class="wire-chip kind-data"><i></i><b>Data</b> carries a value</span>
+</p>
+<p>A wire only joins two sockets of the same colour, and the editor draws the
+wire in that colour. That is what the colours are for: match the colours and
+the connection takes, mismatch them and it will not.</p>
+
+
+
+<figure>
+  <img src="../img/node-world-database-inspector.png"
+       alt="The Create database node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>Create database</b>.</figcaption>
+</figure>
+
+<h2>Common mistakes</h2>
+<ul class="plain">
+  <li><b>No route to the password.</b> The player finds the database and cannot open it. Hide the password somewhere they can reach.</li>
+</ul>
+
+<h2>Messages you might see</h2>
+<ul class="plain">
+  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so the database is never created</li>
+</ul>
+
+<h2>Related nodes</h2>
+<ul class="plain">
+  <li><a href="world-network.html">Create network</a> — Builds the machines the player breaks into.</li>
+  <li><a href="world-firewall.html">Firewall rule</a> — Allows or blocks a port.</li>
+  <li><a href="world-port.html">Change port</a> — Opens, closes, adds or removes a port.</li>
+  <li><a href="world-domain.html">Register domain</a> — Points a hostname at an address.</li>
+  <li><a href="world-files.html">Place files</a> — Drops files on a machine.</li>
+  <li><a href="world-toolresponse.html">Tool response</a> — Scripts what a tool reports.</li>
+</ul>
+
+</section>
+
+<div class="pagefoot">
+  <a href="world-domain.html">← Register domain</a>
+  <a class="next" href="world-files.html">Place files →</a>
+</div>
+
+<a class="totop" href="#node-world-database-page">↑ back to top</a>
+
+<footer class="colophon">
+  HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·
+  field labels, hints, defaults and limits on this page are taken from the
+  editor's own node definitions.
+</footer>
+
+</main>
+</div>
+<script src="../search-index.js"></script>
+<script src="../manual.js"></script>
+</body>
+</html>

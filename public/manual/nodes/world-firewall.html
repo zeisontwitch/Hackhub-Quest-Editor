@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Firewall rule — HackHub Quest Editor handbook</title>
+<link rel="stylesheet" href="../manual.css" />
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="Handbook contents">
+  <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
+  <p class="build">Handbook · build 2026-09-14.r162</p>
+  <div class="search">
+    <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
+    <div class="results" role="listbox" aria-label="Search results"></div>
+  </div>
+  <ol>
+    <li><a href="../index.html">Start here</a></li>
+    <li><a href="../tutorial.html">Your first quest</a></li>
+    <li><a href="../concepts.html">How a quest works</a></li>
+    <li><a href="../nodes.html">Node reference</a>
+      <ul class="sub">
+        <li><a href="../nodes.html#cat-entry"><span class="cat-dot" style="background:var(--cat-entry)"></span>Quest lifecycle</a></li>
+        <li><a href="../nodes.html#cat-objective"><span class="cat-dot" style="background:var(--cat-objective)"></span>Objectives</a></li>
+        <li><a href="../nodes.html#cat-trigger"><span class="cat-dot" style="background:var(--cat-trigger)"></span>Triggers</a></li>
+        <li><a href="../nodes.html#cat-world"><span class="cat-dot" style="background:var(--cat-world)"></span>World building</a></li>
+        <li><a href="../nodes.html#cat-comms"><span class="cat-dot" style="background:var(--cat-comms)"></span>Communication</a></li>
+        <li><a href="../nodes.html#cat-reply"><span class="cat-dot" style="background:var(--cat-reply)"></span>Custom terminal</a></li>
+        <li><a href="../nodes.html#cat-effect"><span class="cat-dot" style="background:var(--cat-effect)"></span>Effects</a></li>
+        <li><a href="../nodes.html#cat-community"><span class="cat-dot" style="background:var(--cat-community)"></span>Community addons</a></li>
+        <li><a href="../nodes.html#cat-flow"><span class="cat-dot" style="background:var(--cat-flow)"></span>Flow control</a></li>
+        <li><a href="../nodes.html#cat-layout"><span class="cat-dot" style="background:var(--cat-layout)"></span>Layout</a></li>
+      </ul>
+    </li>
+    <li><a href="../guides.html">Feature guides</a></li>
+    <li><a href="../how-do-i.html">How do I…</a></li>
+    <li><a href="../checking.html">Checking your quest</a></li>
+    <li><a href="../export.html">Exporting and installing</a></li>
+    <li><a href="../troubleshooting.html">When something goes wrong</a></li>
+    <li><a href="../appendices.html">Glossary and limits</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <h1><span class="cat-dot" style="background:var(--cat-world)"></span>Firewall rule</h1>
+  <p class="tag"><span class="badge" style="color:var(--cat-world)">World building</span>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">world.firewall</code></p>
+</header>
+
+<section id="node-world-firewall-page">
+
+<h2>What it does</h2>
+<p>Adds a firewall rule to a machine, so a port is open or closed to whoever you name.</p>
+
+<h2>When you'd use it</h2>
+<p>Use it to shut a door the player has to find another way through, or to open one at the right moment in the story.</p>
+<p>Point it at the quest's own network, or at one machine you name.</p>
+
+<h2>In the game, this looks like</h2>
+<p>The player's scans show the port as blocked or reachable, depending on the rule.</p>
+
+<h2>Fields</h2>
+
+<h3 id="node-world-firewall-field-ip">Protected IP</h3>
+<blockquote class="blurb">The machine these rules protect: the quest's own network, or one machine you name.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The machine these rules protect. Pick the quest's own network, or type the address of one machine.</dd>
+  <dt class="dt-mute">Default</dt><dd><code>"{{data.targetIp}}"</code></dd>
+  <dt>Limits</dt><dd>One of the 1 listed below.</dd>
+  <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
+</dl>
+<table>
+  <thead><tr><th>Choice</th><th>What it is stored as</th></tr></thead>
+  <tbody>
+    <tr><td class="name">Random — the quest's network</td><td><code>{{data.targetIp}}</code></td></tr>
+  </tbody>
+</table>
+
+<h3 id="node-world-firewall-field-removeOnComplete">Remove when the quest ends</h3>
+<blockquote class="blurb">Drop the firewall when the quest ends so the machine is reachable afterwards.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Turn this on to drop the rule when the quest ends, so the machine is reachable afterwards.</dd>
+  <dt class="dt-mute">Default</dt><dd>on</dd>
+  <dt>Limits</dt><dd>On or off.</dd>
+</dl>
+
+<h3>Rule</h3>
+<h4 id="node-world-firewall-field-port">Port</h4>
+<blockquote class="blurb">The port this rule applies to.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The port this rule applies to.</dd>
+  <dt>Example</dt><dd><code>22</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>22</code></dd>
+  <dt>Limits</dt><dd>0 to 65535.</dd>
+</dl>
+
+<h4 id="node-world-firewall-field-allowed">Allowed</h4>
+<blockquote class="blurb">Off means the port is blocked by the firewall.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Turn this on to let traffic through. Off blocks the port.</dd>
+  <dt class="dt-mute">Default</dt><dd>off</dd>
+  <dt>Limits</dt><dd>On or off.</dd>
+</dl>
+
+<h4 id="node-world-firewall-field-source">Source</h4>
+<blockquote class="blurb">Which machines the rule applies to: anywhere on the internet, or one machine you name.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Which machines the rule applies to. An asterisk means anywhere on the internet.</dd>
+  <dt class="dt-mute">Default</dt><dd><code>"*"</code></dd>
+  <dt>Limits</dt><dd>One of the 1 listed below.</dd>
+</dl>
+<table>
+  <thead><tr><th>Choice</th><th>What it is stored as</th></tr></thead>
+  <tbody>
+    <tr><td class="name">Anywhere</td><td><code>*</code></td></tr>
+  </tbody>
+</table>
+
+<h4 id="node-world-firewall-field-destination">Destination</h4>
+<blockquote class="blurb">The machine the rule protects — usually the one in “Protected IP” above. Picking it copies that address; changing it later won't follow.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The machine the rule protects. It usually matches &lt;b class="ui"&gt;Protected IP&lt;/b&gt;.</dd>
+  <dt class="dt-mute">Default</dt><dd><code>"{{data.targetIp}}"</code></dd>
+</dl>
+
+<h4 id="node-world-firewall-field-locked">Locked</h4>
+<blockquote class="blurb">The player cannot remove a locked rule.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Turn this on and the player cannot remove the rule from inside the game.</dd>
+  <dt>Limits</dt><dd>On or off.</dd>
+  <dt class="dt-warn">Watch out</dt><dd>A locked rule with no way around it stops the quest. Leave the player another route.</dd>
+</dl>
+
+<h2>Wires</h2>
+<table>
+  <thead><tr><th>Socket</th><th>Direction</th><th>What to connect</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="name kind-flow">In</td><td>input</td>
+      <td>Whatever should run immediately before this node.</td>
+    </tr>
+    <tr>
+      <td class="name kind-flow">Out</td><td>output</td>
+      <td>Whatever should happen after this node runs.</td>
+    </tr>
+  </tbody>
+</table>
+<p class="wire-legend">
+  <span class="wire-chip kind-flow"><i></i><b>Then</b> runs next</span>
+  <span class="wire-chip kind-condition"><i></i><b>When</b> tests a condition</span>
+  <span class="wire-chip kind-unlock"><i></i><b>Unlocks</b> opens an objective</span>
+  <span class="wire-chip kind-data"><i></i><b>Data</b> carries a value</span>
+</p>
+<p>A wire only joins two sockets of the same colour, and the editor draws the
+wire in that colour. That is what the colours are for: match the colours and
+the connection takes, mismatch them and it will not.</p>
+
+
+
+<figure>
+  <img src="../img/node-world-firewall-inspector.png"
+       alt="The Firewall rule node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>Firewall rule</b>.</figcaption>
+</figure>
+
+<h2>Common mistakes</h2>
+<ul class="plain">
+  <li><b>The rule blocks the only way in.</b> The player cannot finish. Either leave a route open, or make working around the block the puzzle.</li>
+</ul>
+
+<h2>Messages you might see</h2>
+<ul class="plain">
+  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so the rule is never applied</li>
+</ul>
+
+<h2>Related nodes</h2>
+<ul class="plain">
+  <li><a href="world-network.html">Create network</a> — Builds the machines the player breaks into.</li>
+  <li><a href="world-port.html">Change port</a> — Opens, closes, adds or removes a port.</li>
+  <li><a href="world-domain.html">Register domain</a> — Points a hostname at an address.</li>
+  <li><a href="world-database.html">Create database</a> — Data for the player to dig out.</li>
+  <li><a href="world-files.html">Place files</a> — Drops files on a machine.</li>
+  <li><a href="world-toolresponse.html">Tool response</a> — Scripts what a tool reports.</li>
+</ul>
+
+</section>
+
+<div class="pagefoot">
+  <a href="world-network.html">← Create network</a>
+  <a class="next" href="world-port.html">Change port →</a>
+</div>
+
+<a class="totop" href="#node-world-firewall-page">↑ back to top</a>
+
+<footer class="colophon">
+  HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·
+  field labels, hints, defaults and limits on this page are taken from the
+  editor's own node definitions.
+</footer>
+
+</main>
+</div>
+<script src="../search-index.js"></script>
+<script src="../manual.js"></script>
+</body>
+</html>

@@ -77,10 +77,35 @@ ${cats}
 
 /* ── Values ─────────────────────────────────────────────────────────────── */
 
-/** How a default is spoken about. Never invent one: absent means "empty". */
-function defaultValue(node, key) {
-    if (!node.defaults || !(key in node.defaults)) return null;
-    const v = node.defaults[key];
+/**
+ * How a default is spoken about. Never invent one: absent means "empty".
+ *
+ * Fields do not always sit at the top of the defaults object. A firewall rule's
+ * children are keyed "port" but seeded under defaults.rule.port, so the lookup
+ * falls back to the field's path and then to a single unambiguous nesting. It
+ * only takes that last step when exactly one place holds the key, because
+ * guessing between two would be worse than showing no default at all.
+ */
+function defaultValue(node, f) {
+    const key = f.key;
+    const d = node.defaults;
+    if (!d) return null;
+    let v;
+    if (key in d) v = d[key];
+    else {
+        const byPath = String(f.path ?? "").split(".").reduce(
+            (o, part) => (o && typeof o === "object" ? o[part] : undefined),
+            d,
+        );
+        if (byPath !== undefined) v = byPath;
+        else {
+            const holders = Object.values(d).filter(
+                (o) => o && typeof o === "object" && !Array.isArray(o) && key in o,
+            );
+            if (holders.length !== 1) return null;
+            v = holders[0][key];
+        }
+    }
     if (v === "") return { text: "empty" };
     if (v === false) return { text: "off" };
     if (v === true) return { text: "on" };
@@ -152,7 +177,7 @@ function fieldBlock(node, f, vfield, depth = 0) {
     else if (f.kind === "toggle") rows.push(["What it does", esc(f.hint || "")]);
     if (fv.example) rows.push(["Example", `<code>${esc(fv.example)}</code>`]);
 
-    const d = renderDefault(defaultValue(node, f.key));
+    const d = renderDefault(defaultValue(node, f));
     if (d) rows.push(["Default", d, "dt-mute"]);
 
     const lim = fv.limits || limitsFor(f);
@@ -226,6 +251,18 @@ function socketRow(s, dir, note) {
 }
 
 function wiresTable(node, v) {
+    /* Socket keys in the voice file are ids, not the labels shown on screen —
+       Branch's outputs are labelled Yes and No but keyed true and false. A key
+       that matches nothing used to fall through to the generic sentence with no
+       complaint, which is how a page ends up saying nothing in particular. */
+    const ids = new Set([...node.targets, ...node.sources].map((s) => s.id));
+    for (const key of Object.keys(v.sockets ?? {})) {
+        if (!ids.has(key)) {
+            throw new Error(
+                `${node.type}: voice socket "${key}" is not one of its sockets (${[...ids].join(", ")})`,
+            );
+        }
+    }
     const rows = [];
     for (const t of node.targets) {
         rows.push(socketRow(t, "input", v.sockets?.[t.id]?.in ?? "Whatever should run immediately before this node."));
@@ -282,7 +319,10 @@ function page(node, v) {
     const fieldsSection =
         fields.trim() || sections.trim()
             ? `<h2>Fields</h2>\n\n${fields}\n\n${sections}`
-            : `<h2>Fields</h2>\n<p>This node has nothing to configure. It marks a moment in the story and runs whatever is wired after it.</p>`;
+            : `<h2>Fields</h2>\n<p>${
+                  v.noFields ??
+                  "This node has nothing to configure. It marks a moment in the story and runs whatever is wired after it."
+              }</p>`;
 
     const steps = (v.steps ?? [])
         .map((s) => `  <li>${s}</li>`)

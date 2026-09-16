@@ -14,7 +14,7 @@ not typed by hand, so a node cannot be misnamed.
 | | |
 |---|---|
 | **Folder** | `public/manual/img/` |
-| **Format** | `.png` |
+| **Format** | `.png` — see §7 for the WebP question |
 | **Theme** | **Midnight** (the default — `theme.ts:120`) |
 | **Font** | **System** (the default) |
 | **Cropping** | crop to what the shot is about — see §2 |
@@ -269,3 +269,45 @@ say so in one line.
 page at all now, by your call, so it needs no image. See
 the structure proposal's *Why 33 node pages and not 34*
 ([r164-manual-structure-proposal.md](r164-manual-structure-proposal.md)).
+
+---
+
+## 7. PNG or WebP?
+
+Measured, not guessed. A synthetic 440 × 620 dark-UI panel — flat background,
+field labels, mono values, bordered inputs, the shape of a real node inspector —
+encoded four ways with the ImageMagick on this machine (libwebp 1.2.4):
+
+| Format | Bytes | vs PNG | Fidelity |
+|---|---|---|---|
+| PNG, optimised | 14,207 | — | — |
+| **WebP, lossless** | **4,656** | **67.2% smaller** | **0 differing pixels** |
+| WebP, quality 95 | 7,892 | 44.4% smaller | lossy |
+| WebP, quality 80 | 5,228 | 63.2% smaller | 272,780 of 272,800 pixels differ |
+
+The lossless result is the one that matters: **two thirds smaller and
+bit-exact**, so there is no text-artifact risk — the usual objection to WebP on
+screenshots only applies to the *lossy* modes, and those are off the table.
+
+**Caveat on the number:** that panel is synthetic and very compressible — flat
+fills, one typeface, no antialiased sub-pixel detail. Real screenshots will not
+hit 67%; expect something in the 30–50% range. The direction is not in
+question, the magnitude is.
+
+### Recommendation
+
+**You capture PNG. Whether we ship PNG or lossless WebP is a separate call, and
+it should not change what you do** — every screenshot tool produces PNG, and I
+can convert on ingest with the ImageMagick already here, so the drop-a-file-in
+workflow survives either way.
+
+- **Ship PNG** (default): zero conversion, ~6.7 MB raw and ~4–5 MB optimised,
+  which is fine for a manual that is opened from local disk and never crosses a
+  network. This is what I'll do unless you say otherwise.
+- **Ship lossless WebP**: same images at roughly half the size or less, bit
+  identical. Costs one mechanical step — a conversion pass plus `.webp` in the
+  `src` attributes — and gate G8 has to accept either extension.
+
+Converting later is a five-minute reversible change, so there is no cost to
+starting with PNG and revisiting once the real images exist and we can measure
+the actual ratio instead of a proxy.

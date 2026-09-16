@@ -9,6 +9,7 @@ Not current documentation. For how the editor works today, see
 
 | Round | Investigation | What it established |
 |---|---|---|
+| r170 | Ask player prompt node | `UI.prompt` becomes a small Effects node: one-line question, optional masked input/default/example text, optional save-to-data, Submitted/Correct/Wrong/Cancelled routing, and handbook coverage. |
 | r75 | Stale IPs in the save | Mod-created networks persist after uninstall, and an older build's network wins over a new one at the same address. Led to game-allocated addresses everywhere. |
 | r94 | Selection gestures | React Flow clears the selection at the start of every box drag with no modifier check; ctrl+drag-to-deselect does not exist upstream at all. |
 | r98 | Alignment, first pass | Snapping each corner after centring pushes differently-sized cards back off the shared line. |

@@ -152,7 +152,7 @@ function stubSdk(calls: string[], listeners: [string, (d: unknown) => void][]) {
         })(),
         Events: { emit: (e: string) => calls.push(`emit:${e}`), on: () => {} },
         Shell: { addCommandData: (c: string) => calls.push(`cmdData:${c}`) },
-        UI: { notify: (m: string) => calls.push(`notify:${m}`), toast: (m: string) => calls.push(`toast:${m}`) },
+        UI: { notify: (m: string) => calls.push(`notify:${m}`), toast: (m: string) => calls.push(`toast:${m}`), prompt: () => Promise.resolve("") },
         Bank: {},
         __registered: registered,
     };
@@ -189,10 +189,14 @@ describe("compile", () => {
         expect(manifest.permissions).toContain("network");
     });
 
-    it("grants UI permission when a debug probe asks for an on-screen toast", () => {
+    it("grants UI permission for on-screen UI", () => {
         const loud = createProject();
         loud.quests[0].graph.nodes = [node("flow.debug", { toast: true })];
         expect(computePermissions(loud)).toContain("ui");
+
+        const prompt = createProject();
+        prompt.quests[0].graph.nodes = [node("fx.prompt")];
+        expect(computePermissions(prompt)).toContain("ui");
 
         const quiet = createProject();
         quiet.quests[0].graph.nodes = [node("flow.debug", { toast: false })];
@@ -1852,9 +1856,144 @@ describe("SDK effect calls", () => {
 
     it("gives a toast its tone", async () => {
         const calls = await playOne("fx.notify", { message: "careful", variant: "toast", tone: "warning" }, (sdk, c) => {
-            sdk.UI = { toast: (m: string, t: string) => c.push(`toast:${m}:${t}`), notify: () => {} };
+            sdk.UI = { toast: (m: string, t: string) => c.push(`toast:${m}:${t}`), notify: () => {}, prompt: () => Promise.resolve("") };
         });
         expect(calls).toContain("toast:careful:warning");
+    });
+
+    it("asks the player for text, saves it and follows the matching output", async () => {
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        const seenOptions: unknown[] = [];
+        sdk.UI.prompt = (options: unknown) => {
+            seenOptions.push(options);
+            calls.push(`prompt:${JSON.stringify(options)}`);
+            return Promise.resolve("ABCD-1234");
+        };
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const ask = node("fx.prompt", {
+            title: "Security check",
+            label: "Enter the recovery code:",
+            placeholder: "ABCD-1234",
+            defaultValue: "ABCD-",
+            password: true,
+            storeAs: "recoveryCode",
+            matchMode: "exact",
+            expected: "ABCD-1234",
+        });
+        const ok = node("fx.notify", { message: "accepted {{data.recoveryCode}}", variant: "notify" });
+        const wrong = node("fx.notify", { message: "denied", variant: "notify" });
+        p.quests[0].graph.nodes = [entry, ask, ok, wrong];
+        p.quests[0].graph.edges = [
+            edge(entry.id, ask.id, "flow"),
+            edge(ask.id, ok.id, "flow", "success"),
+            edge(ask.id, wrong.id, "flow", "failure"),
+        ];
+
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = q.CreateData();
+        q.OnStart();
+        await settle();
+
+        expect(seenOptions).toEqual([
+            {
+                title: "Security check",
+                label: "Enter the recovery code:",
+                placeholder: "ABCD-1234",
+                defaultValue: "ABCD-",
+                password: true,
+            },
+        ]);
+        expect(calls).toContain("setData:recoveryCode=ABCD-1234");
+        expect(calls).toContain("notify:accepted ABCD-1234");
+        expect(calls).not.toContain("notify:denied");
+    });
+
+    it("follows Cancelled when the prompt is closed without an answer", async () => {
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        sdk.UI.prompt = () => Promise.resolve(null);
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const ask = node("fx.prompt", { label: "Continue?", storeAs: "answer" });
+        const submitted = node("fx.notify", { message: "submitted", variant: "notify" });
+        const cancelled = node("fx.notify", { message: "cancelled", variant: "notify" });
+        p.quests[0].graph.nodes = [entry, ask, submitted, cancelled];
+        p.quests[0].graph.edges = [
+            edge(entry.id, ask.id, "flow"),
+            edge(ask.id, submitted.id, "flow", "success"),
+            edge(ask.id, cancelled.id, "flow", "cancel"),
+        ];
+
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = q.CreateData();
+        q.OnStart();
+        await settle();
+
+        expect(calls).toContain("notify:cancelled");
+        expect(calls).not.toContain("notify:submitted");
+        expect(calls.some((c) => c.startsWith("setData:answer="))).toBe(false);
+    });
+
+    it("treats an empty prompt answer as submitted text, not cancel", async () => {
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        sdk.UI.prompt = () => Promise.resolve("");
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const ask = node("fx.prompt", { label: "Optional note:", storeAs: "note" });
+        const submitted = node("fx.notify", { message: "submitted", variant: "notify" });
+        const cancelled = node("fx.notify", { message: "cancelled", variant: "notify" });
+        p.quests[0].graph.nodes = [entry, ask, submitted, cancelled];
+        p.quests[0].graph.edges = [
+            edge(entry.id, ask.id, "flow"),
+            edge(ask.id, submitted.id, "flow", "success"),
+            edge(ask.id, cancelled.id, "flow", "cancel"),
+        ];
+
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = q.CreateData();
+        q.OnStart();
+        await settle();
+
+        expect(calls).toContain("setData:note=");
+        expect(calls).toContain("notify:submitted");
+        expect(calls).not.toContain("notify:cancelled");
+    });
+
+    it("routes checked prompts with a blank accepted answer to Wrong and warns the author", async () => {
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        sdk.UI.prompt = () => Promise.resolve("");
+        const p = createProject();
+        p.quests[0].autoStart = true;
+        const entry = node("entry.start");
+        const ask = node("fx.prompt", { label: "Password?", matchMode: "contains", expected: "   " });
+        const right = node("fx.notify", { message: "right", variant: "notify" });
+        const wrong = node("fx.notify", { message: "wrong", variant: "notify" });
+        p.quests[0].graph.nodes = [entry, ask, right, wrong];
+        p.quests[0].graph.edges = [
+            edge(entry.id, ask.id, "flow"),
+            edge(ask.id, right.id, "flow", "success"),
+            edge(ask.id, wrong.id, "flow", "failure"),
+        ];
+
+        expect(computeWarnings(p).join("\n")).toContain("Answer to accept");
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = q.CreateData();
+        q.OnStart();
+        await settle();
+
+        expect(calls).toContain("notify:wrong");
+        expect(calls).not.toContain("notify:right");
     });
 });
 

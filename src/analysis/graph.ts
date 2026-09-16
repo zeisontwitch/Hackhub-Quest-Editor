@@ -101,6 +101,7 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
         if (
             node.type === "flow.branch" ||
             node.type === "reply.input" ||
+            node.type === "fx.prompt" ||
             node.type === "flow.sequence"
         ) {
             const outputs = sourcesOf(node);
@@ -121,13 +122,17 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
                             ? `The “${names}” output goes nowhere, so that step of the sequence does nothing. Wire it up or remove the output.`
                             : node.type === "reply.input"
                               ? `The “${names}” outcome goes nowhere, so a wrong answer just shows the failure message and the player tries again. That retry loop is the usual design — wire it only if a wrong answer should do something more.`
-                              : `The “${names}” outcome goes nowhere, so the quest stalls if the player takes it.`,
+                              : node.type === "fx.prompt"
+                                ? `The “${names}” outcome goes nowhere. That is fine if the story should stop there; wire it if the player should see a follow-up.`
+                                : `The “${names}” outcome goes nowhere, so the quest stalls if the player takes it.`,
                     nextStep:
                         node.type === "flow.sequence"
                             ? `Wire the “${names}” step to the node that should run at that point, or remove the step.`
                             : node.type === "reply.input"
                               ? `Leave it if retrying is the design, or wire the “${names}” answer to the node that should run on a wrong answer.`
-                              : `Wire the “${names}” outcome to the node that should run down that path.`,
+                              : node.type === "fx.prompt"
+                                ? `Wire the “${names}” outcome to the node that should run next, or leave it empty if stopping there is intentional.`
+                                : `Wire the “${names}” outcome to the node that should run down that path.`,
                     severity: "warn",
                 });
             }

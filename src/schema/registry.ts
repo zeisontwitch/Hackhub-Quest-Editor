@@ -32,6 +32,7 @@ import {
     ObjectiveDataSchema,
     PayNodeDataSchema,
     PortNodeDataSchema,
+    PromptNodeDataSchema,
     RandomPickNodeDataSchema,
     RetireQuestNodeDataSchema,
     SetDataNodeDataSchema,
@@ -219,6 +220,8 @@ const unlockIn: HandleSpec = { id: "unlocked-by", kind: "unlock", label: "Unlock
 const doneOut: HandleSpec = { id: "done", kind: "flow", label: "On complete" };
 const successOut: HandleSpec = { id: "success", kind: "flow", label: "Correct" };
 const failureOut: HandleSpec = { id: "failure", kind: "flow", label: "Wrong" };
+const submittedOut: HandleSpec = { id: "success", kind: "flow", label: "Submitted" };
+const cancelledOut: HandleSpec = { id: "cancel", kind: "flow", label: "Cancelled" };
 const trueOut: HandleSpec = { id: "true", kind: "flow", label: "Yes" };
 const falseOut: HandleSpec = { id: "false", kind: "flow", label: "No" };
 
@@ -921,6 +924,52 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         create: () => seed(NotifyNodeDataSchema),
     },
 
+    "fx.prompt": {
+        type: "fx.prompt",
+        category: "effect",
+        label: "Ask player",
+        blurb: "Ask for one line of text",
+        icon: "message",
+        targets: [inFlow],
+        sources: [submittedOut, failureOut, cancelledOut],
+        dynamicSources: (data) => promptSockets(data),
+        hook: "onStart",
+        fields: [
+            {
+                kind: "note",
+                tone: "info",
+                text: "Shows one question when the story reaches this node. The top output fires when the player submits text; Cancelled fires when they close it without answering.",
+            },
+            { kind: "text", key: "title", label: "Title", hint: "The heading at the top of the question box. Leave blank if the question itself is enough.", tokens: true, placeholder: "Security check" },
+            { kind: "text", key: "label", label: "Question", hint: "The sentence above the answer box — what you want the player to answer.", tokens: true, placeholder: "Enter the recovery code:" },
+            { kind: "text", key: "placeholder", label: "Example text", hint: "Grey hint inside an empty answer box. It disappears as soon as the player types.", tokens: true, placeholder: "ABCD-1234" },
+            { kind: "text", key: "defaultValue", label: "Starts filled with", hint: "Text already in the answer box when it opens. Leave blank when the player should type from scratch.", tokens: true },
+            { kind: "toggle", key: "password", label: "Mask typing", hint: "Hides what the player types, like a password box. Use for passphrases, keys and private codes." },
+            { kind: "text", key: "storeAs", label: "Save answer as", hint: "Optional name for the answer. If you type playerAnswer here, later nodes can read it with {{data.playerAnswer}}. Leave blank if only this choice matters.", mono: true, placeholder: "playerAnswer" },
+            {
+                kind: "select",
+                key: "matchMode",
+                label: "Accept",
+                hint: "Choose whether any submitted text continues, or whether the answer must match something you set.",
+                options: [
+                    { value: "any", label: "Any submitted text" },
+                    { value: "exact", label: "Exactly this answer" },
+                    { value: "contains", label: "Contains these words" },
+                    { value: "regex", label: "Matches a pattern" },
+                ],
+            },
+            { kind: "text", key: "expected", label: "Answer to accept", hint: "The text that counts as the right answer. Tags are filled before the check, so a saved password can be accepted too.", mono: true, tokens: true, showWhen: { key: "matchMode", equals: ["exact", "contains", "regex"] } },
+            { kind: "toggle", key: "caseSensitive", label: "Case sensitive", hint: "Turn off to accept any capitalisation. Turn on only when upper and lower case are part of the puzzle.", showWhen: { key: "matchMode", equals: ["exact", "contains", "regex"] } },
+            { kind: "note", tone: "warn", showWhen: { key: "matchMode", equals: "regex" }, text: "Pattern matching is powerful but easy to make unfair. Prefer exact or contains unless several different answers should count." },
+        ],
+        create: () =>
+            seed(PromptNodeDataSchema, {
+                title: "Answer needed",
+                label: "Type your answer:",
+                matchMode: "any",
+            }),
+    },
+
     "fx.setData": {
         type: "fx.setData",
         category: "effect",
@@ -1295,6 +1344,13 @@ export function storyBeatSockets(data: unknown): HandleSpec[] {
             label: c.label?.trim() || `Choice ${i + 1}`,
         })),
     ];
+}
+
+/** The Ask player outputs change labels when the author asks for a checked answer. */
+export function promptSockets(data: unknown): HandleSpec[] {
+    const mode = (data as { matchMode?: string })?.matchMode ?? "any";
+    if (mode === "any") return [submittedOut, cancelledOut];
+    return [successOut, failureOut, cancelledOut];
 }
 
 /**

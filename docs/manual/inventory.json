@@ -1,14 +1,14 @@
 {
   "generatedBy": "scripts/extract-manual-inventory.mjs",
-  "editorBuild": "2026-09-16.r169",
+  "editorBuild": "2026-09-17.r170",
   "sdkVersion": "0.24.0",
   "counts": {
-    "nodeTypes": 37,
-    "obtainableNodeTypes": 37,
+    "nodeTypes": 38,
+    "obtainableNodeTypes": 38,
     "categories": 10,
-    "editableFields": 124,
-    "editableFieldsExcludingLists": 117,
-    "sockets": 68,
+    "editableFields": 133,
+    "editableFieldsExcludingLists": 126,
+    "sockets": 72,
     "events": 99,
     "eventGroups": 10
   },
@@ -2070,6 +2070,196 @@
         "message": "",
         "variant": "notify",
         "tone": "info"
+      }
+    },
+    {
+      "type": "fx.prompt",
+      "slug": "fx-prompt",
+      "label": "Ask player",
+      "blurb": "Ask for one line of text",
+      "icon": "message",
+      "category": "effect",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "success",
+          "kind": "flow",
+          "label": "Submitted"
+        },
+        {
+          "id": "failure",
+          "kind": "flow",
+          "label": "Wrong"
+        },
+        {
+          "id": "cancel",
+          "kind": "flow",
+          "label": "Cancelled"
+        }
+      ],
+      "hasDynamicSockets": true,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "Shows one question when the story reaches this node. The top output fires when the player submits text; Cancelled fires when they close it without answering."
+        },
+        {
+          "depth": 0,
+          "path": "title",
+          "kind": "text",
+          "key": "title",
+          "label": "Title",
+          "hint": "The heading at the top of the question box. Leave blank if the question itself is enough.",
+          "placeholder": "Security check",
+          "tokens": true
+        },
+        {
+          "depth": 0,
+          "path": "label",
+          "kind": "text",
+          "key": "label",
+          "label": "Question",
+          "hint": "The sentence above the answer box — what you want the player to answer.",
+          "placeholder": "Enter the recovery code:",
+          "tokens": true
+        },
+        {
+          "depth": 0,
+          "path": "placeholder",
+          "kind": "text",
+          "key": "placeholder",
+          "label": "Example text",
+          "hint": "Grey hint inside an empty answer box. It disappears as soon as the player types.",
+          "placeholder": "ABCD-1234",
+          "tokens": true
+        },
+        {
+          "depth": 0,
+          "path": "defaultValue",
+          "kind": "text",
+          "key": "defaultValue",
+          "label": "Starts filled with",
+          "hint": "Text already in the answer box when it opens. Leave blank when the player should type from scratch.",
+          "tokens": true
+        },
+        {
+          "depth": 0,
+          "path": "password",
+          "kind": "toggle",
+          "key": "password",
+          "label": "Mask typing",
+          "hint": "Hides what the player types, like a password box. Use for passphrases, keys and private codes."
+        },
+        {
+          "depth": 0,
+          "path": "storeAs",
+          "kind": "text",
+          "key": "storeAs",
+          "label": "Save answer as",
+          "hint": "Optional name for the answer. If you type playerAnswer here, later nodes can read it with {{data.playerAnswer}}. Leave blank if only this choice matters.",
+          "placeholder": "playerAnswer",
+          "mono": true
+        },
+        {
+          "depth": 0,
+          "path": "matchMode",
+          "kind": "select",
+          "key": "matchMode",
+          "label": "Accept",
+          "hint": "Choose whether any submitted text continues, or whether the answer must match something you set.",
+          "options": [
+            {
+              "value": "any",
+              "label": "Any submitted text"
+            },
+            {
+              "value": "exact",
+              "label": "Exactly this answer"
+            },
+            {
+              "value": "contains",
+              "label": "Contains these words"
+            },
+            {
+              "value": "regex",
+              "label": "Matches a pattern"
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "expected",
+          "kind": "text",
+          "key": "expected",
+          "label": "Answer to accept",
+          "hint": "The text that counts as the right answer. Tags are filled before the check, so a saved password can be accepted too.",
+          "mono": true,
+          "tokens": true,
+          "showWhen": {
+            "key": "matchMode",
+            "equals": [
+              "exact",
+              "contains",
+              "regex"
+            ]
+          }
+        },
+        {
+          "depth": 0,
+          "path": "caseSensitive",
+          "kind": "toggle",
+          "key": "caseSensitive",
+          "label": "Case sensitive",
+          "hint": "Turn off to accept any capitalisation. Turn on only when upper and lower case are part of the puzzle.",
+          "showWhen": {
+            "key": "matchMode",
+            "equals": [
+              "exact",
+              "contains",
+              "regex"
+            ]
+          }
+        },
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "showWhen": {
+            "key": "matchMode",
+            "equals": "regex"
+          },
+          "tone": "warn",
+          "text": "Pattern matching is powerful but easy to make unfair. Prefer exact or contains unless several different answers should count."
+        }
+      ],
+      "editableFieldCount": 9,
+      "defaults": {
+        "title": "Answer needed",
+        "label": "Type your answer:",
+        "placeholder": "",
+        "defaultValue": "",
+        "password": false,
+        "storeAs": "",
+        "matchMode": "any",
+        "expected": "",
+        "caseSensitive": false
       }
     },
     {

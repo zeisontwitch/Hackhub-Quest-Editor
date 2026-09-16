@@ -384,6 +384,105 @@
       ]
     ]
   },
+  "fx.prompt": {
+    "oneliner": "Asks the player a one-line question.",
+    "what": "Opens a question box, waits for the player to type one line, then sends the story onward. It can accept any answer, check for one expected answer, save what the player typed, or treat closing the box as its own path.",
+    "when": [
+      "Use it when the quest needs the player to give a name, code, verdict, passphrase or confirmation outside a terminal command.",
+      "Use Manual input instead when the player should type a custom command first. Use Ask player when the question itself should appear at this point in the story.",
+      "Save the answer when later mail, notifications or branches need to mention it again. If the answer only chooses the next path, you can leave saving off."
+    ],
+    "game": "A question box appears over the game. The player types one line and submits it, or closes the box. Password mode hides their typing.",
+    "fields": {
+      "title": {
+        "example": "Security check",
+        "emptySafe": "The box can still read well if the question says enough on its own."
+      },
+      "label": {
+        "example": "Enter the recovery code:",
+        "empty": "The player sees an input box with little context. Usually this should ask the actual question."
+      },
+      "placeholder": {
+        "put": "A sample shape helps when the answer has dashes, spaces or a special format.",
+        "example": "ABCD-1234",
+        "emptySafe": "Nothing grey appears inside the empty box. That is fine for plain questions."
+      },
+      "defaultValue": {
+        "put": "Use this when editing an answer is faster than typing it from scratch.",
+        "example": "MSKU-",
+        "emptySafe": "The answer box starts empty. That is the normal choice."
+      },
+      "password": {
+        "put": "Turn it on for secrets the player should not see echoed back on screen."
+      },
+      "storeAs": {
+        "put": "Use a short name such as verdict, handle or recoveryCode.",
+        "example": "recoveryCode",
+        "emptySafe": "The answer is not kept after this node. That is fine when the outgoing wire is all you need.",
+        "watch": "If later text says {{data.recoveryCode}}, this field must say recoveryCode."
+      },
+      "matchMode": {
+        "put": "Pick Any submitted text for open questions. Pick one of the checked choices when a specific answer should unlock the next beat.",
+        "watch": "Once you choose a checked answer, the node grows a Wrong output. Wire it if a miss should do more than stop this beat."
+      },
+      "expected": {
+        "example": "ABCD-1234",
+        "empty": "Every typed answer misses. Fill this in, or switch Accept back to Any submitted text.",
+        "watch": "The accepted answer needs a clue somewhere in the quest. Without that, the player is guessing."
+      },
+      "caseSensitive": {
+        "watch": "Left on, apple and Apple are different answers. Keep it off unless capitals matter."
+      }
+    },
+    "sockets": {
+      "in": {
+        "in": "Whatever should happen right before the question appears."
+      },
+      "success": {
+        "out": "The path after a submitted answer. When Accept checks for a specific answer, this is the Correct path."
+      },
+      "failure": {
+        "out": "The path for a submitted answer that does not match. This socket appears only after Accept checks for a specific answer."
+      },
+      "cancel": {
+        "out": "The path for closing the question without submitting text."
+      }
+    },
+    "steps": [
+      "Find <b class=\"ui\">Ask player</b> under <b>Effects</b> in the palette.",
+      "Wire it to the story beat that should ask the question.",
+      "Write the title and question the player will see.",
+      "Decide whether any answer continues, or whether one answer is required.",
+      "If later nodes need the answer, fill in <b class=\"ui\">Save answer as</b>.",
+      "Wire Submitted or Correct onward, and wire Cancelled if closing the box should recover."
+    ],
+    "mistakes": [
+      [
+        "The accepted answer is blank.",
+        "The node is set to check the answer but has nothing to check against. Fill in <b class=\"ui\">Answer to accept</b>."
+      ],
+      [
+        "The answer is saved under one name and read under another.",
+        "If the field says recoveryCode, later text must use {{data.recoveryCode}} exactly."
+      ],
+      [
+        "Cancelled goes nowhere by accident.",
+        "If closing the box should remind, punish or retry, wire <b class=\"ui\">Cancelled</b> to that follow-up."
+      ]
+    ],
+    "messages": [
+      [
+        "Dead end",
+        "msg-dead-end",
+        "one of the question's outcomes has no follow-up"
+      ],
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the question never appears"
+      ]
+    ]
+  },
   "fx.withdraw": {
     "oneliner": "Takes money out of the player's account.",
     "what": "Takes money out of the player's bank account. Either a fixed sum, or a slice of whatever they currently have.",

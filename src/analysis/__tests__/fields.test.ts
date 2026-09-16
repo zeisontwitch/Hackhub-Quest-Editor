@@ -38,6 +38,20 @@ const device = (over: Partial<NetworkDevice> = {}): NetworkDevice =>
 const networkWith = (dev: NetworkDevice) => makeNode("world.network", { x: 100, y: 0 }, { device: dev });
 
 describe("fieldWarnings", () => {
+    it("warns when Ask player checks an answer but no accepted answer is filled in", () => {
+        const prompt = makeNode("fx.prompt", { x: 0, y: 0 }, { matchMode: "exact", expected: "" });
+        const quest = questWith(prompt);
+        const warning = fieldWarnings(quest, prompt).find((w) => w.path === "expected");
+        expect(warning).toBeDefined();
+        expect(warning!.nextStep).toMatch(/Answer to accept/);
+    });
+
+    it("does not warn when Ask player accepts any submitted text", () => {
+        const prompt = makeNode("fx.prompt", { x: 0, y: 0 }, { matchMode: "any", expected: "" });
+        const quest = questWith(prompt);
+        expect(fieldWarnings(quest, prompt)).toEqual([]);
+    });
+
     it("warns on a Change port with an IP but no network node in the quest", () => {
         const port = makeNode("world.port", { x: 0, y: 0 }, { ip: "45.33.32.156", port: { external: 22, internal: 22, active: true, service: "ssh" } });
         const quest = questWith(port);

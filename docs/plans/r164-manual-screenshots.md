@@ -152,6 +152,7 @@ Load *Node Reference*, click the node, screenshot. Same three steps every time.
 | `node-fx-pay-inspector.png` | Pay the player | `fx.pay` |
 | `node-fx-withdraw-inspector.png` | Charge the player | `fx.withdraw` |
 | `node-fx-notify-inspector.png` | Notify | `fx.notify` |
+| `node-fx-prompt-inspector.png` | Ask player | `fx.prompt` |
 | `node-fx-setdata-inspector.png` | Set quest data | `fx.setData` |
 | `node-fx-claimquest-inspector.png` | Claim another quest | `fx.claimQuest` |
 | `node-fx-completequest-inspector.png` | Complete quest | `fx.completeQuest` |

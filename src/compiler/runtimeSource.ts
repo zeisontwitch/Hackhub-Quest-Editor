@@ -150,6 +150,19 @@ var __QE = (function () {
         }
         return a === e;
     }
+    function matchPrompt(input, answer, scope) {
+        var mode = input.matchMode || "any";
+        if (mode === "any") return true;
+        var expected = fill(input.expected || "", scope);
+        if (String(expected).trim().length === 0) return false;
+        var a = input.caseSensitive ? String(answer) : String(answer).toLowerCase();
+        var e = input.caseSensitive ? String(expected) : String(expected).toLowerCase();
+        if (mode === "contains") return a.indexOf(e) >= 0;
+        if (mode === "regex") {
+            try { return new RegExp(String(expected), input.caseSensitive ? "" : "i").test(String(answer)); } catch (err) { return false; }
+        }
+        return a === e;
+    }
     /* Never let an optional lookup take a quest down with it: a missing
        permission, a missing API or a throwing getter all become "". */
     function safe(fn) {
@@ -281,7 +294,7 @@ var __QE = (function () {
         });
         return JSON.parse(fill(json, scope));
     }
-    return { getPath: getPath, fill: fill, packText: packText, packFill: packFill, htmlToText: htmlToText, matchAll: matchAll, matchInput: matchInput, sleep: sleep, seq: seq, describe: describe, wait: wait, ageStringFromDate: ageStringFromDate, safe: safe, log: log };
+    return { getPath: getPath, fill: fill, packText: packText, packFill: packFill, htmlToText: htmlToText, matchAll: matchAll, matchInput: matchInput, matchPrompt: matchPrompt, sleep: sleep, seq: seq, describe: describe, wait: wait, ageStringFromDate: ageStringFromDate, safe: safe, log: log };
 })();
 
 function __qeRegisterProject(sdk, PROJECT) {
@@ -1470,6 +1483,44 @@ function __qeRegisterProject(sdk, PROJECT) {
                         else if (sdk.UI.notify) sdk.UI.notify(notifyMsg);
                     }
                     return next();
+                }
+                case "fx.prompt": {
+                    var runPromptOut = function (handle, nextCtx) {
+                        return __QE.seq(flowOuts(nodeId).filter(function (e) { return e.sourceHandle === handle; }), function (e) {
+                            return runFlow(e.target, nextCtx, depth + 1);
+                        }, function (e) {
+                            __QE.log("flow after Ask player stopped: " + (e && e.message ? e.message : e));
+                        });
+                    };
+                    var promptOptions = {};
+                    var title = __QE.fill(d.title || "", scope).trim();
+                    var label = __QE.fill(d.label || "", scope).trim();
+                    var placeholder = __QE.fill(d.placeholder || "", scope);
+                    var defaultValue = __QE.fill(d.defaultValue || "", scope);
+                    if (title) promptOptions.title = title;
+                    if (label) promptOptions.label = label;
+                    if (placeholder) promptOptions.placeholder = placeholder;
+                    if (defaultValue) promptOptions.defaultValue = defaultValue;
+                    if (d.password) promptOptions.password = true;
+                    if (sdk.UI && sdk.UI.prompt) {
+                        return Promise.resolve(sdk.UI.prompt(promptOptions)).then(function (answer) {
+                            if (answer === null || answer === undefined) return runPromptOut("cancel", ctx);
+                            var text = String(answer);
+                            var key = String(d.storeAs || "").trim();
+                            if (key && questRef && questRef.SetData) questRef.SetData(key, text);
+                            var nextCtx = {
+                                payload: ctx && ctx.payload ? ctx.payload : {},
+                                vars: Object.assign({}, (ctx && ctx.vars) || {}, { answer: text }),
+                            };
+                            var handle = __QE.matchPrompt(d, text, scopeOf(nextCtx)) ? "success" : "failure";
+                            return runPromptOut(handle, nextCtx);
+                        }, function (e) {
+                            __QE.log("Ask player failed: " + (e && e.message ? e.message : e));
+                            return runPromptOut("cancel", ctx);
+                        });
+                    }
+                    __QE.log("Ask player skipped: UI.prompt is unavailable");
+                    return runPromptOut("cancel", ctx);
                 }
                 case "fx.handbook": {
                     /* No permission needed: the SDK's permission list has no

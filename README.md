@@ -36,7 +36,7 @@ Only relevant to coders, if you just want to use the tool you can ignore this.
 
 ```bash
 npm run typecheck    # tsc --noEmit
-npm test             # 1,548 tests (vitest)
+npm test             # 1,560 tests (vitest)
 npm run build        # typecheck + vite build → dist/
 ```
 
@@ -120,29 +120,28 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
-| 1 | **SDK 0.24 follow-up choices** | Wi-Fi is exposed, and phone end-flow / quest-ending APIs landed in r169 after raw QA. Current queue: UI.prompt options, mail cleanup/replyability QA, Twotter update/remove QA, then Scheduler/Time design. HTTP/curl/DNS collaborator nodes stay fenced until SteelWaffe answers the upstream gaps. See [`docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md`](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md). |
+| 1 | **SDK 0.24 follow-up choices** | Wi-Fi, phone end-flow / quest-ending APIs, and the `Ask player` prompt node are exposed. Current queue: mail cleanup/replyability QA, Twotter update/remove QA, then Scheduler/Time design. HTTP/curl/DNS collaborator nodes stay fenced until SteelWaffe answers the upstream gaps. See [`docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md`](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md). |
 | 2 | **Date deprecation warning (`moment` RFC2822)** | Only appears with a quest-editor mod installed, 30–90s after a mail is sent, when a browser or app screen is opened. The stack is the game's own date formatting and we never set a date on anything — question 10 in the bug report. |
 
 ### Next up
 
 | # | Item | Notes |
 |---|---|---|
-| 1 | **UI.prompt options** | Low-risk SDK 0.24 surface: `UI.prompt({ title, label, placeholder, password, defaultValue })` returns the player's text or `null`. Likely editor shape: a branchable prompt node with success/cancel outputs and optional save-to-data. Start with one raw in-game smoke test, then expose it. |
-| 2 | **Mail cleanup / replyable mail QA** | Focused QA first: `Mail.send()` id shape, `Mail.remove(id)` timing, whether `QuestMailDefinition.replyable` actually renders a Reply button, what event a reply raises, and cleanup on complete/unload. Then turn the verified parts into authoring. |
-| 3 | **Twotter update/remove QA** | SDK 0.24 now declares `Twotter.updateUser(id, patch)` and `Twotter.removeUser(id)`, with cleanup semantics in the docs. Verify in game that they repair/remove save records, posts, follows and search safely before restoring Twotter authoring. |
-| 4 | **Scheduler / Time design pass** | r166 proved Scheduler survives reload in a raw probe. Design the editor surface around game-time delays, due dates, cancellation, and handler registration before adding nodes. |
-| 5 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
-| 6 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. The official Cryptographer Hunt (a phone social-engineering scene with a fail route on the wrong choice) is the strongest argument for it — see [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). The shape now ships inside The Long Game (r136, act III: a typed verdict with two endings); whether a standalone template still adds anything is Zeis's call. |
+| 1 | **Mail cleanup / replyable mail QA** | Focused QA first: `Mail.send()` id shape, `Mail.remove(id)` timing, whether `QuestMailDefinition.replyable` actually renders a Reply button, what event a reply raises, and cleanup on complete/unload. Then turn the verified parts into authoring. |
+| 2 | **Twotter update/remove QA** | SDK 0.24 now declares `Twotter.updateUser(id, patch)` and `Twotter.removeUser(id)`, with cleanup semantics in the docs. Verify in game that they repair/remove save records, posts, follows and search safely before restoring Twotter authoring. |
+| 3 | **Scheduler / Time design pass** | r166 proved Scheduler survives reload in a raw probe. Design the editor surface around game-time delays, due dates, cancellation, and handler registration before adding nodes. |
+| 4 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
+| 5 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. The official Cryptographer Hunt (a phone social-engineering scene with a fail route on the wrong choice) is the strongest argument for it — see [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). The shape now ships inside The Long Game (r136, act III: a typed verdict with two endings); whether a standalone template still adds anything is Zeis's call. |
 
 ### Done recently
 
 | # | Item | Notes |
 |---|---|---|
+| r170 | **Ask player prompt node** | ([plan](docs/plans/r170-ui-prompt-node.md)) `UI.prompt` is now exposed as **Ask player** under Effects. It asks one line of text, can prefill/mask/save the answer, and branches through Submitted/Cancelled or Correct/Wrong/Cancelled. Runtime treats empty text as a real submission, saves it to quest data when requested, and guards blank accepted-answer checks. Handbook/manual counts are regenerated at 38 node types. |
 | r169 | **Phone end flow + quest-ending nodes** | ([plan](docs/plans/r169-phone-end-flow-and-quest-endings.md)) Phone Dialogue nodes now choose when **Out** fires: default when the call ends via SDK `QuestDialogSpeech.onEnd` / ending-option `onSelect`, or immediately for the old timing. `Complete quest`, `Retire quest`, and `Unclaim quest` return as terminal effect nodes and compile to `this.complete()`, `this.retire()`, and `Quest.unclaim(name)`. Handbook/manual counts are regenerated at 37 node types. |
 | r168 | **Phone `onEnd` completion QA probes** | ([plan](docs/plans/r168-phone-onend-completion-qa.md)) Added raw harness commands for phone-line `onEnd -> completeObjective` auto-complete and `onEnd -> this.complete()`. Zeis ran both in game and reported they worked, which cleared the r169 authoring surface. |
 | r167 | **Create Wi-Fi exposed** | ([plan](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md)) `world.wifi` is palette-visible, searchable, covered by the reference template and handbook, and exports through SDK 0.24's native Wi-Fi creator with BSSID/channel/WPS support. The remaining Bettercap `SSID: undefined` display wart is documented as an info note, not a blocker. Wi-Fi-specific dice outputs now generate BSSIDs and WPA-style passphrases. |
 | r166 | **SDK 0.24 in-game QA harness** | ([plan](docs/plans/r166-sdk-0.24-ingame-qa.md)) Adds the evidence-only checklist plus installable raw/editor QA harnesses under `reference/sdk-0.24-qa/`. The green native Wi-Fi rows became the r167 Create Wi-Fi exposure; HTTP/curl/DNS collaborator, Scheduler and mail/Twotter follow-ups remain separately gated. |
-| r165 | **SDK 0.24 declaration and event-catalogue upgrade** | ([plan](docs/plans/r165-sdk-0.24-assessment.md)) Pins `@hotbunny/hackhub-content-sdk@0.24.0`, regenerates the 99-event catalogue/manual appendix, and records which new surfaces still require game verification before product exposure. |
 
 ---
 
@@ -179,8 +178,8 @@ Older **Done recently** rows are archived at
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-16.r169`: **1,548 tests** across 79
-files, **37 node types** in 10 categories (all palette-visible), **13 templates**
+Counted from the code at build `2026-09-17.r170`: **1,560 tests** across 79
+files, **38 node types** in 10 categories (all palette-visible), **13 templates**
 (11 playable + 2 reference sheets), **99 game events**, against
 `@hotbunny/hackhub-content-sdk@0.24.0`.
 

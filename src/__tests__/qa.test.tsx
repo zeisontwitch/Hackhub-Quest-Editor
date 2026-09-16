@@ -46,7 +46,7 @@ function stubSdk() {
             },
             Events: { emit: () => {}, on: () => {} },
             Shell: { addCommandData: () => {} },
-            UI: { notify: () => {}, toast: () => {} },
+            UI: { notify: () => {}, toast: () => {}, prompt: () => Promise.resolve("") },
             Bank: {},
         },
     };

@@ -207,6 +207,14 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
         case "fx.notify":
             return [d.message ? clip(String(d.message), 60) : "no message yet"];
 
+        case "fx.prompt": {
+            const mode = d.matchMode === "any" ? "any answer" : "checked answer";
+            return [
+                d.label ? clip(String(d.label), 60) : d.title ? clip(String(d.title), 60) : "no question yet",
+                d.storeAs ? `saves as ${d.storeAs}` : mode,
+            ];
+        }
+
         case "fx.setData":
             return [d.key ? `${d.key} = ${d.value ?? ""}` : "no key yet"];
 

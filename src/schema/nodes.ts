@@ -434,6 +434,21 @@ export const NotifyNodeDataSchema = z.object({
     tone: z.enum(["success", "error", "warning", "info"]).default("info"),
 });
 
+export const PromptMatchModeSchema = z.enum(["any", "exact", "contains", "regex"]);
+export type PromptMatchMode = z.infer<typeof PromptMatchModeSchema>;
+
+export const PromptNodeDataSchema = z.object({
+    title: z.string().default(""),
+    label: z.string().default(""),
+    placeholder: z.string().default(""),
+    defaultValue: z.string().default(""),
+    password: z.boolean().default(false),
+    storeAs: z.string().default(""),
+    matchMode: PromptMatchModeSchema.default("any"),
+    expected: z.string().default(""),
+    caseSensitive: z.boolean().default(false),
+});
+
 export const SetDataNodeDataSchema = z.object({
     key: z.string().default(""),
     value: z.string().default(""),
@@ -649,6 +664,7 @@ export const NodeSchema = z.discriminatedUnion("type", [
     node("fx.pay", PayNodeDataSchema),
     node("fx.withdraw", PayNodeDataSchema),
     node("fx.notify", NotifyNodeDataSchema),
+    node("fx.prompt", PromptNodeDataSchema),
     node("fx.setData", SetDataNodeDataSchema),
     node("fx.claimQuest", ClaimQuestNodeDataSchema),
     node("fx.completeQuest", CompleteQuestNodeDataSchema),

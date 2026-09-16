@@ -206,6 +206,12 @@ function recordingSdk(entries: TraceEntry[]) {
             UI: {
                 notify: (m: string) => log("notify", `Notification: ${m}`),
                 toast: (m: string) => log("notify", `Toast: ${m}`),
+                prompt: (options: { title?: string; label?: string; placeholder?: string; password?: boolean; defaultValue?: string }) => {
+                    const label = options?.label || options?.title || "question";
+                    const answer = options?.defaultValue ?? "simulated answer";
+                    log("prompt", `Ask player: ${label} → ${answer}`);
+                    return Promise.resolve(answer);
+                },
             },
             Handbook: {
                 open: (id: string) => log("handbook", `Handbook opens "${id}"`),

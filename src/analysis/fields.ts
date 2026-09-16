@@ -89,6 +89,20 @@ export function fieldWarnings(quest: QuestDoc | undefined, node: NodeDoc): Field
     // or export drops the files. This is the SAME check the compiler runs
     // (placementFor), so the warning appears while editing instead of after
     // export — when the files are already gone.
+    if (node.type === "fx.prompt") {
+        const mode = String(d.matchMode ?? "any");
+        const expected = String(d.expected ?? "").trim();
+        if (mode !== "any" && !expected) {
+            out.push({
+                path: "expected",
+                severity: "warn",
+                detail: "This question is set to check the answer, but no accepted answer is filled in yet.",
+                nextStep:
+                    "Fill in “Answer to accept”, or change “Accept” back to “Any submitted text” if every answer should continue.",
+            });
+        }
+    }
+
     if (node.type === "world.files" && d.target === "device") {
         const files = Array.isArray(d.files) ? d.files : [];
         // Nothing to place, nothing to warn about: an untouched node stays quiet.

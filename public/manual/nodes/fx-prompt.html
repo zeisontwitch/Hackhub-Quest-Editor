@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ask player — HackHub Quest Editor handbook</title>
+<link rel="stylesheet" href="../manual.css" />
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="Handbook contents">
+  <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
+  <p class="build">Handbook · build 2026-09-17.r170</p>
+  <div class="search">
+    <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
+    <div class="results" role="listbox" aria-label="Search results"></div>
+  </div>
+  <ol>
+    <li><a href="../index.html">Start here</a></li>
+    <li><a href="../tutorial.html">Your first quest</a></li>
+    <li><a href="../concepts.html">How a quest works</a></li>
+    <li><a href="../nodes.html">Node reference</a>
+      <ul class="sub">
+        <li><a href="../nodes.html#cat-entry"><span class="cat-dot" style="background:var(--cat-entry)"></span>Quest lifecycle</a></li>
+        <li><a href="../nodes.html#cat-objective"><span class="cat-dot" style="background:var(--cat-objective)"></span>Objectives</a></li>
+        <li><a href="../nodes.html#cat-trigger"><span class="cat-dot" style="background:var(--cat-trigger)"></span>Triggers</a></li>
+        <li><a href="../nodes.html#cat-world"><span class="cat-dot" style="background:var(--cat-world)"></span>World building</a></li>
+        <li><a href="../nodes.html#cat-comms"><span class="cat-dot" style="background:var(--cat-comms)"></span>Communication</a></li>
+        <li><a href="../nodes.html#cat-reply"><span class="cat-dot" style="background:var(--cat-reply)"></span>Custom terminal</a></li>
+        <li><a href="../nodes.html#cat-effect"><span class="cat-dot" style="background:var(--cat-effect)"></span>Effects</a></li>
+        <li><a href="../nodes.html#cat-community"><span class="cat-dot" style="background:var(--cat-community)"></span>Community addons</a></li>
+        <li><a href="../nodes.html#cat-flow"><span class="cat-dot" style="background:var(--cat-flow)"></span>Flow control</a></li>
+        <li><a href="../nodes.html#cat-layout"><span class="cat-dot" style="background:var(--cat-layout)"></span>Layout</a></li>
+      </ul>
+    </li>
+    <li><a href="../guides.html">Feature guides</a></li>
+    <li><a href="../how-do-i.html">How do I…</a></li>
+    <li><a href="../checking.html">Checking your quest</a></li>
+    <li><a href="../export.html">Exporting and installing</a></li>
+    <li><a href="../troubleshooting.html">When something goes wrong</a></li>
+    <li><a href="../appendices.html">Glossary and limits</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <h1><span class="cat-dot" style="background:var(--cat-effect)"></span>Ask player</h1>
+  <p class="tag"><span class="badge" style="color:var(--cat-effect)">Effects</span>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">fx.prompt</code></p>
+</header>
+
+<section id="node-fx-prompt-page">
+
+<h2>What it does</h2>
+<p>Opens a question box, waits for the player to type one line, then sends the story onward. It can accept any answer, check for one expected answer, save what the player typed, or treat closing the box as its own path.</p>
+
+<h2>When you'd use it</h2>
+<p>Use it when the quest needs the player to give a name, code, verdict, passphrase or confirmation outside a terminal command.</p>
+<p>Use Manual input instead when the player should type a custom command first. Use Ask player when the question itself should appear at this point in the story.</p>
+<p>Save the answer when later mail, notifications or branches need to mention it again. If the answer only chooses the next path, you can leave saving off.</p>
+
+<h2>In the game, this looks like</h2>
+<p>A question box appears over the game. The player types one line and submits it, or closes the box. Password mode hides their typing.</p>
+
+<h2>Fields</h2>
+
+<h3 id="node-fx-prompt-field-title">Title</h3>
+<blockquote class="blurb">The heading at the top of the question box. Leave blank if the question itself is enough.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>Security check</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>"Answer needed"</code></dd>
+  <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
+  <dt class="dt-mute">If you leave it empty</dt><dd>The box can still read well if the question says enough on its own.</dd>
+</dl>
+
+<h3 id="node-fx-prompt-field-label">Question</h3>
+<blockquote class="blurb">The sentence above the answer box — what you want the player to answer.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>Enter the recovery code:</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>"Type your answer:"</code></dd>
+  <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>The player sees an input box with little context. Usually this should ask the actual question.</dd>
+</dl>
+
+<h3 id="node-fx-prompt-field-placeholder">Example text</h3>
+<blockquote class="blurb">Grey hint inside an empty answer box. It disappears as soon as the player types.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>A sample shape helps when the answer has dashes, spaces or a special format.</dd>
+  <dt>Example</dt><dd><code>ABCD-1234</code></dd>
+  <dt class="dt-mute">Default</dt><dd>empty</dd>
+  <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
+  <dt class="dt-mute">If you leave it empty</dt><dd>Nothing grey appears inside the empty box. That is fine for plain questions.</dd>
+</dl>
+
+<h3 id="node-fx-prompt-field-defaultValue">Starts filled with</h3>
+<blockquote class="blurb">Text already in the answer box when it opens. Leave blank when the player should type from scratch.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Use this when editing an answer is faster than typing it from scratch.</dd>
+  <dt>Example</dt><dd><code>MSKU-</code></dd>
+  <dt class="dt-mute">Default</dt><dd>empty</dd>
+  <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
+  <dt class="dt-mute">If you leave it empty</dt><dd>The answer box starts empty. That is the normal choice.</dd>
+</dl>
+
+<h3 id="node-fx-prompt-field-password">Mask typing</h3>
+<blockquote class="blurb">Hides what the player types, like a password box. Use for passphrases, keys and private codes.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Turn it on for secrets the player should not see echoed back on screen.</dd>
+  <dt class="dt-mute">Default</dt><dd>off</dd>
+  <dt>Limits</dt><dd>On or off.</dd>
+</dl>
+
+<h3 id="node-fx-prompt-field-storeAs">Save answer as</h3>
+<blockquote class="blurb">Optional name for the answer. If you type playerAnswer here, later nodes can read it with {{data.playerAnswer}}. Leave blank if only this choice matters.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Use a short name such as verdict, handle or recoveryCode.</dd>
+  <dt>Example</dt><dd><code>recoveryCode</code></dd>
+  <dt class="dt-mute">Default</dt><dd>empty</dd>
+  <dt class="dt-mute">If you leave it empty</dt><dd>The answer is not kept after this node. That is fine when the outgoing wire is all you need.</dd>
+  <dt class="dt-warn">Watch out</dt><dd>If later text says {{data.recoveryCode}}, this field must say recoveryCode.</dd>
+</dl>
+
+<h3 id="node-fx-prompt-field-matchMode">Accept</h3>
+<blockquote class="blurb">Choose whether any submitted text continues, or whether the answer must match something you set.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Pick Any submitted text for open questions. Pick one of the checked choices when a specific answer should unlock the next beat.</dd>
+  <dt class="dt-mute">Default</dt><dd><code>"any"</code></dd>
+  <dt>Limits</dt><dd>One of the 4 listed below.</dd>
+  <dt class="dt-warn">Watch out</dt><dd>Once you choose a checked answer, the node grows a Wrong output. Wire it if a miss should do more than stop this beat.</dd>
+</dl>
+<table>
+  <thead><tr><th>Choice</th><th>What it is stored as</th></tr></thead>
+  <tbody>
+    <tr><td class="name">Any submitted text</td><td><code>any</code></td></tr>
+    <tr><td class="name">Exactly this answer</td><td><code>exact</code></td></tr>
+    <tr><td class="name">Contains these words</td><td><code>contains</code></td></tr>
+    <tr><td class="name">Matches a pattern</td><td><code>regex</code></td></tr>
+  </tbody>
+</table>
+
+<h3 id="node-fx-prompt-field-expected">Answer to accept</h3>
+<blockquote class="blurb">The text that counts as the right answer. Tags are filled before the check, so a saved password can be accepted too.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>ABCD-1234</code></dd>
+  <dt class="dt-mute">Default</dt><dd>empty</dd>
+  <dt class="dt-mute">When it appears</dt><dd>Only once <b class="ui">Accept</b> is set. Until then the field is hidden.</dd>
+  <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>Every typed answer misses. Fill this in, or switch Accept back to Any submitted text.</dd>
+  <dt class="dt-warn">Watch out</dt><dd>The accepted answer needs a clue somewhere in the quest. Without that, the player is guessing.</dd>
+</dl>
+
+<h3 id="node-fx-prompt-field-caseSensitive">Case sensitive</h3>
+<blockquote class="blurb">Turn off to accept any capitalisation. Turn on only when upper and lower case are part of the puzzle.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Default</dt><dd>off</dd>
+  <dt>Limits</dt><dd>On or off.</dd>
+  <dt class="dt-mute">When it appears</dt><dd>Only once <b class="ui">Accept</b> is set. Until then the field is hidden.</dd>
+  <dt class="dt-warn">Watch out</dt><dd>Left on, apple and Apple are different answers. Keep it off unless capitals matter.</dd>
+</dl>
+
+
+
+<h2>Wires</h2>
+<table>
+  <thead><tr><th>Socket</th><th>Direction</th><th>What to connect</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="name kind-flow">In</td><td>input</td>
+      <td>Whatever should happen right before the question appears.</td>
+    </tr>
+    <tr>
+      <td class="name kind-flow">Submitted</td><td>output</td>
+      <td>The path after a submitted answer. When Accept checks for a specific answer, this is the Correct path.</td>
+    </tr>
+    <tr>
+      <td class="name kind-flow">Wrong</td><td>output</td>
+      <td>The path for a submitted answer that does not match. This socket appears only after Accept checks for a specific answer.</td>
+    </tr>
+    <tr>
+      <td class="name kind-flow">Cancelled</td><td>output</td>
+      <td>The path for closing the question without submitting text.</td>
+    </tr>
+  </tbody>
+</table>
+<p class="wire-legend">
+  <span class="wire-chip kind-flow"><i></i><b>Then</b> runs next</span>
+  <span class="wire-chip kind-condition"><i></i><b>When</b> tests a condition</span>
+  <span class="wire-chip kind-unlock"><i></i><b>Unlocks</b> opens an objective</span>
+  <span class="wire-chip kind-data"><i></i><b>Data</b> carries a value</span>
+</p>
+<p>A wire only joins two sockets of the same colour, and the editor draws the
+wire in that colour. That is what the colours are for: match the colours and
+the connection takes, mismatch them and it will not.</p>
+
+<h2>Step by step: add this node to a quest</h2>
+<ol class="plain">
+  <li>Find <b class="ui">Ask player</b> under <b>Effects</b> in the palette.</li>
+  <li>Wire it to the story beat that should ask the question.</li>
+  <li>Write the title and question the player will see.</li>
+  <li>Decide whether any answer continues, or whether one answer is required.</li>
+  <li>If later nodes need the answer, fill in <b class="ui">Save answer as</b>.</li>
+  <li>Wire Submitted or Correct onward, and wire Cancelled if closing the box should recover.</li>
+</ol>
+
+<figure>
+  <img src="../img/node-fx-prompt-inspector.png"
+       alt="The Ask player node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>Ask player</b>.</figcaption>
+</figure>
+
+<h2>Common mistakes</h2>
+<ul class="plain">
+  <li><b>The accepted answer is blank.</b> The node is set to check the answer but has nothing to check against. Fill in <b class="ui">Answer to accept</b>.</li>
+  <li><b>The answer is saved under one name and read under another.</b> If the field says recoveryCode, later text must use {{data.recoveryCode}} exactly.</li>
+  <li><b>Cancelled goes nowhere by accident.</b> If closing the box should remind, punish or retry, wire <b class="ui">Cancelled</b> to that follow-up.</li>
+</ul>
+
+<h2>Messages you might see</h2>
+<ul class="plain">
+  <li><a href="../checking.html#msg-dead-end">Dead end</a> — one of the question's outcomes has no follow-up</li>
+  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so the question never appears</li>
+</ul>
+
+<h2>Related nodes</h2>
+<ul class="plain">
+  <li><a href="fx-pay.html">Pay the player</a> — Deposits money in the player's bank.</li>
+  <li><a href="fx-withdraw.html">Charge the player</a> — Takes money out of the player's account.</li>
+  <li><a href="fx-notify.html">Notify</a> — Puts a message on the player's screen.</li>
+  <li><a href="fx-setdata.html">Set quest data</a> — Stores a value for later.</li>
+  <li><a href="fx-claimquest.html">Claim another quest</a> — Starts the next quest.</li>
+  <li><a href="fx-completequest.html">Complete quest</a> — Finishes the current quest.</li>
+  <li><a href="fx-retirequest.html">Retire quest</a> — Removes the current quest without completion.</li>
+  <li><a href="fx-unclaimquest.html">Unclaim quest</a> — Removes a claimed quest.</li>
+  <li><a href="fx-shell.html">Run terminal command</a> — Runs a command in the player's terminal.</li>
+  <li><a href="fx-handbook.html">Open handbook</a> — Opens an in-game article.</li>
+</ul>
+
+</section>
+
+<div class="pagefoot">
+  <a href="fx-notify.html">← Notify</a>
+  <a class="next" href="fx-setdata.html">Set quest data →</a>
+</div>
+
+<a class="totop" href="#node-fx-prompt-page">↑ back to top</a>
+
+<footer class="colophon">
+  HackHub Quest Editor handbook · documents editor build 2026-09-17.r170 ·
+  field labels, hints, defaults and limits on this page are taken from the
+  editor's own node definitions.
+</footer>
+
+</main>
+</div>
+<script src="../search-index.js"></script>
+<script src="../manual.js"></script>
+</body>
+</html>

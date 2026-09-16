@@ -1,3 +1,53 @@
+# Handoff — r170
+
+r170 exposes SDK `UI.prompt` as a small author-facing Effects node named
+**Ask player**.
+
+Current shipped state:
+
+- Editor build stamp is `2026-09-17.r170`; SDK remains
+  `@hotbunny/hackhub-content-sdk@0.24.0`.
+- Manual inventory reports **38 node types / 38 obtainable**, **133 editable
+  fields**, **72 sockets**, **10 categories**, **99 events**, and no manual
+  exclusions.
+- `fx.prompt` is palette-visible under Effects as **Ask player**. It asks the
+  player for one line of text with optional title, question, example text,
+  pre-filled answer and masked typing.
+- The node can save the submitted answer to quest data, so later text can use
+  `{{data.name}}`-style tags.
+- In open mode the node exposes **Submitted** and **Cancelled**. In checked mode
+  it exposes **Correct**, **Wrong** and **Cancelled**. Checked modes support exact
+  answer, contains and pattern matching; blank accepted answers are warned about
+  and never match at runtime.
+- Runtime calls `sdk.UI.prompt(options)`, treats only `null`/`undefined` as
+  cancel, and treats an empty string as a real submitted answer.
+- Dry run stubs `UI.prompt`, logs the simulated answer, and continues the graph;
+  export permissions now include `ui` when Ask player is used.
+- The generated handbook/manual has a new Ask player page and the public manual
+  indexes/Node Reference counts are regenerated for r170.
+
+Validation for this pass: `npm run gen:manual`, targeted Vitest for
+schema/compiler/analysis/qa/templates/simulator/manual coverage,
+`npm run typecheck`, `npm test` (**1,560 tests / 79 files**), `npm run build`,
+and `git diff --check`.
+
+Supporting notes:
+
+- [`plans/r170-ui-prompt-node.md`](plans/r170-ui-prompt-node.md)
+- [`plans/r169-phone-end-flow-and-quest-endings.md`](plans/r169-phone-end-flow-and-quest-endings.md)
+- [`plans/r167-wifi-exposure-and-sdk024-roadmap.md`](plans/r167-wifi-exposure-and-sdk024-roadmap.md)
+
+Next-up from the SDK 0.24 comparison: focused Mail QA for `Mail.send()` ids,
+`Mail.remove()` and `replyable`; fresh Twotter update/remove QA; a deliberate
+Scheduler/Time design pass; then the contact/branching template queue. HTTP
+nodes stay fenced until SteelWaffe clarifies/fixes `curl`, DNS-only collaborator
+hits and static-site HTTP event semantics. Suspicion/log-forensics and SMS remain
+absent from the pinned SDK.
+
+Older handoff sections below are retained as history.
+
+---
+
 # Handoff — r169
 
 r169 implements the two surfaces cleared by SDK 0.24 / game 1.3.0 QA:
@@ -965,12 +1015,12 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r169 (phone end flow + quest-ending nodes) on
+- **HEAD:** r170 (Ask player prompt node) on
   `arena/01a0aaee-hackhub-quest-editor`, committed and pushed after validation.
-  Previous rounds: r168 phone `onEnd` completion QA probes, r167 Create Wi-Fi,
-  r166 SDK 0.24 in-game QA, r165 SDK 0.24 declaration/event upgrade.
-- **1,548 tests green** across 79 files, typecheck clean, build clean.
-- **Editor build stamp:** `2026-09-16.r169` (bumps every round since r148 — the
+  Previous rounds: r169 phone end flow + quest-ending nodes, r168 phone `onEnd`
+  completion QA probes, r167 Create Wi-Fi, r166 SDK 0.24 in-game QA.
+- **1,560 tests green** across 79 files, typecheck clean, build clean.
+- **Editor build stamp:** `2026-09-17.r170` (bumps every round since r148 — the
   stamp is a version, not a changelog).
 - Tool-pack modules: `src/toolpacks/schema.ts` (format 2 + plain-language
   `parseToolPack`), `src/toolpacks/palette.ts` (pure `packNodeDefs`,
@@ -1163,20 +1213,23 @@ wants the *specific action* named.
    `Mail.remove(id)`, and `QuestMailDefinition.replyable`. Do a focused in-game
    pass before exposing cleanup/remove-mail authoring: id shape, remove timing,
    reply-button behavior, and unload/complete cleanup.
-2. **Scheduler/Time design pass.** r166 proved Scheduler/Time can survive reload
+2. **Twotter update/remove QA.** SDK 0.24.0 declares `Twotter.updateUser(id, patch)`
+   and `Twotter.removeUser(id)`, but old Twotter save/search behavior was brittle.
+   Verify repair/removal semantics in game before restoring authoring.
+3. **Scheduler/Time design pass.** r166 proved Scheduler/Time can survive reload
    in a raw probe. Design the editor surface deliberately rather than dropping a
    generic timer node into the palette.
-3. **HTTP/curl/DNS collaborator remain fenced.** Static editor websites loaded
+4. **HTTP/curl/DNS collaborator remain fenced.** Static editor websites loaded
    in game, but `http-request`/`http-response` objectives did not complete;
    `curl` was missing as a terminal command; DNS-only collaborator hits produced
    no result. Wait for SteelWaffe clarification or fresh in-game proof before
    exposing authoring nodes.
-4. **"Contact-driven story" template.** Cold Call covers the conversation shape;
+5. **"Contact-driven story" template.** Cold Call covers the conversation shape;
    the phone-brief + objective-gated-drip variant is still open.
-5. **"Two Ways Out" template.** Approved branching consequence shape, possibly
+6. **"Two Ways Out" template.** Approved branching consequence shape, possibly
    morally grey. The Long Game includes a typed verdict with two endings, but a
-   standalone template may still be useful.
-6. **Data requests / eyes-on checks.** SMTP/POP3/IMAP version banners + ports;
+   standalone template may still be useful after the feature queue settles.
+7. **Data requests / eyes-on checks.** SMTP/POP3/IMAP version banners + ports;
    Apache metasploit module for 2.4.49/50 or flavour; Handbook title/category
    screenshot + id jump test; eyes on the preview; the Harbour `scp` hint fix.
 

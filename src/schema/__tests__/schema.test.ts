@@ -28,6 +28,7 @@ import {
     NODE_TYPES_REGISTRY,
     PALETTE_HIDDEN_TYPES,
     paletteGroups,
+    promptSockets,
     storyBeatSockets,
     type FieldDef,
     type NodeTypeDef,
@@ -40,8 +41,8 @@ describe("registry ↔ node union", () => {
         expect([...NODE_TYPES].sort()).toEqual([...ALL_TYPES].sort());
     });
 
-    it("has 37 node types", () => {
-        expect(NODE_TYPES).toHaveLength(37);
+    it("has 38 node types", () => {
+        expect(NODE_TYPES).toHaveLength(38);
     });
 
     it.each(ALL_TYPES)("creates valid default data for %s", (type) => {
@@ -183,6 +184,23 @@ describe("connection rules", () => {
         for (const kind of EDGE_KINDS as readonly EdgeKind[]) {
             expect(canConnect(kind, kind)).toBe(true);
         }
+    });
+});
+
+describe("ask-player sockets", () => {
+    it("shows Submitted and Cancelled when any answer is accepted", () => {
+        expect(promptSockets({ matchMode: "any" }).map((s) => [s.id, s.label])).toEqual([
+            ["success", "Submitted"],
+            ["cancel", "Cancelled"],
+        ]);
+    });
+
+    it("shows Correct, Wrong and Cancelled when the answer is checked", () => {
+        expect(promptSockets({ matchMode: "exact" }).map((s) => [s.id, s.label])).toEqual([
+            ["success", "Correct"],
+            ["failure", "Wrong"],
+            ["cancel", "Cancelled"],
+        ]);
     });
 });
 

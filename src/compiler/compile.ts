@@ -117,7 +117,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-16.r169";
+export const EDITOR_BUILD = "2026-09-17.r170";
 
 /** Warning severity (r153): info = good to know, warn = could cause issues,
     error = will break or strand the player. */
@@ -189,6 +189,7 @@ const PERMISSIONS_BY_NODE_TYPE: Record<string, string[]> = {
     "fx.pay": ["bank"],
     "fx.withdraw": ["bank"],
     "fx.notify": ["ui"],
+    "fx.prompt": ["ui"],
 };
 
 /** Permissions implied by a pack.node's declarative emitter. */
@@ -460,6 +461,22 @@ function warnToolResponse(project: ProjectDocument): string[] {
     return warnings;
 }
 
+function warnPrompt(project: ProjectDocument): string[] {
+    const warnings: string[] = [];
+    for (const q of project.quests) {
+        for (const n of q.graph.nodes) {
+            if (n.type !== "fx.prompt") continue;
+            const d = n.data as { matchMode?: string; expected?: string; label?: string; title?: string };
+            if ((d.matchMode ?? "any") !== "any" && !String(d.expected ?? "").trim()) {
+                warnings.push(
+                    `${q.name}: an “Ask player” node${d.label || d.title ? ` (${d.label || d.title})` : ""} checks the answer, but “Answer to accept” is blank. Fill it in, or change “Accept” to “Any submitted text”.`,
+                );
+            }
+        }
+    }
+    return warnings;
+}
+
 function warnHandbook(project: ProjectDocument): string[] {
     const warnings: string[] = [];
     for (const q of project.quests) {
@@ -617,6 +634,7 @@ export function computeWarningDetails(project: ProjectDocument, packs: ToolPack[
         ...warnNetworkStructure(project),
         ...tag("error", warnToolResponse(project)),
         ...tag("warn", warnHandbook(project)),
+        ...tag("warn", warnPrompt(project)),
         ...warnWifi(project),
         ...warnDialogue(project),
         ...warnCommunityNodes(project),

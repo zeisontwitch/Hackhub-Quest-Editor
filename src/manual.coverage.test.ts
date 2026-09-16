@@ -1,0 +1,312 @@
+/**
+ * The documentation coverage gate.
+ *
+ * The manual is a build artifact, so it gets the same treatment as the schema:
+ * a test that fails when it drifts from the code. This spec reads the registry
+ * and every file under `public/manual/`, and fails when a node, field, socket
+ * or image the manual promises is missing — or when the manual documents
+ * something the code no longer has.
+ *
+ * Landed FAILING in r164 on purpose. The manual is being written page by page,
+ * so G1 reports 32 missing node pages on day one and the count falls to zero as
+ * they land. A gate nobody has seen fail is a gate nobody can trust — the house
+ * rule (docs/HANDOFF.md, "Falsify every guard").
+ *
+ * Gates not yet implemented, and what they wait on:
+ *   G4  app deep-links into manual anchors — no app code links yet (audit §4).
+ *   G7  message index coverage — lands with the message extraction in r164 Phase 4.
+ *   G9  quoted UI strings still exist in source — needs the `.ui` markup
+ *       convention established across the pages first.
+ */
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
+import { describe, expect, it } from "vitest";
+import { NODE_TYPES_REGISTRY, PALETTE_HIDDEN_TYPES, type FieldDef } from "@/schema/registry";
+import type { NodeType } from "@/schema/nodes";
+
+const ROOT = resolve(__dirname, "..");
+const MANUAL = join(ROOT, "public", "manual");
+
+/* ── Reading the manual ─────────────────────────────────────────────────── */
+
+function walk(dir: string, out: string[] = []): string[] {
+    if (!existsSync(dir)) return out;
+    for (const entry of readdirSync(dir)) {
+        const full = join(dir, entry);
+        if (statSync(full).isDirectory()) walk(full, out);
+        else if (entry.endsWith(".html")) out.push(full);
+    }
+    return out;
+}
+
+const PAGES = walk(MANUAL);
+const rel = (p: string) => relative(ROOT, p).split("\\").join("/");
+const read = (p: string) => readFileSync(p, "utf8");
+
+/** The page a node type is documented on, whether or not it exists yet. */
+const nodePage = (type: string) => join(MANUAL, "nodes", `${type.replace(/\./g, "-").toLowerCase()}.html`);
+
+/** Registry types the manual deliberately does not document, by decision. */
+const EXCLUDED = PALETTE_HIDDEN_TYPES;
+
+/** Every field key an author interacts with, matching schema.test.ts's allFields. */
+function editableKeys(fields: FieldDef[]): string[] {
+    return fields.flatMap((f) => {
+        if (f.kind === "section") return editableKeys(f.fields);
+        if (f.kind === "list") return [f.key, ...editableKeys(f.fields)];
+        if (f.kind === "note") return [];
+        return [f.key];
+    });
+}
+
+/* ── G1: every obtainable node type has a page ──────────────────────────── */
+
+describe("manual coverage — G1: node pages", () => {
+    const missing = (Object.keys(NODE_TYPES_REGISTRY) as NodeType[])
+        .filter((t) => !EXCLUDED.has(t))
+        .filter((t) => !existsSync(nodePage(t)))
+        .map((t) => `${t} → public/manual/nodes/${t.replace(/\./g, "-").toLowerCase()}.html`);
+
+    it("documents every obtainable node type", () => {
+        expect(
+            missing,
+            `${missing.length} node pages still to write:\n  ${missing.join("\n  ")}`,
+        ).toEqual([]);
+    });
+
+    it("lists every obtainable node type on the node index page", () => {
+        // nodes.html is the reader's way in. A node page that exists but is not
+        // listed there is a page nobody can reach (COV8).
+        const index = join(MANUAL, "nodes.html");
+        if (!existsSync(index)) return; // G1 covers the missing index
+        const html = read(index);
+        const unlisted = (Object.keys(NODE_TYPES_REGISTRY) as NodeType[])
+            .filter((t) => !EXCLUDED.has(t))
+            .filter((t) => !html.includes(`nodes/${t.replace(/\./g, "-").toLowerCase()}.html`));
+        expect(
+            unlisted,
+            `nodes.html does not link to: ${unlisted.join(", ")}`,
+        ).toEqual([]);
+    });
+
+    it("keeps the exclusion list to types that really are unobtainable", () => {
+        // The exclusion is a decision, not a loophole: anything on it must be
+        // hidden from the palette, or the gate is hiding a missing page.
+        for (const type of EXCLUDED) {
+            expect(NODE_TYPES_REGISTRY[type], `${type} is excluded but not registered`).toBeDefined();
+        }
+    });
+});
+
+/* ── G2: every field on a documented node has an entry ──────────────────── */
+
+describe("manual coverage — G2: field entries", () => {
+    const documented = (Object.keys(NODE_TYPES_REGISTRY) as NodeType[]).filter(
+        (t) => !EXCLUDED.has(t) && existsSync(nodePage(t)),
+    );
+
+    it("gives every field on a documented node its own anchored heading", () => {
+        const gaps: string[] = [];
+        for (const type of documented) {
+            const html = read(nodePage(type));
+            for (const key of editableKeys(NODE_TYPES_REGISTRY[type].fields)) {
+                const anchor = `node-${type.replace(/\./g, "-").toLowerCase()}-field-${key}`;
+                if (!html.includes(`id="${anchor}"`)) {
+                    gaps.push(`${type}.${key} → #${anchor}`);
+                }
+            }
+        }
+        expect(
+            gaps,
+            `${gaps.length} fields with no entry:\n  ${gaps.join("\n  ")}`,
+        ).toEqual([]);
+    });
+});
+
+/* ── G3: the manual documents nothing the registry no longer has ────────── */
+
+describe("manual coverage — G3: no stale documentation", () => {
+    it("references no node type that has left the registry", () => {
+        const known = new Set(Object.keys(NODE_TYPES_REGISTRY));
+        const stale: string[] = [];
+        for (const page of PAGES) {
+            for (const m of read(page).matchAll(/id="node-([a-z0-9-]+?)-(?:field-|page)/g)) {
+                const type = m[1].replace(/^(entry|objective|trigger|world|comms|reply|fx|flow|pack|layout)-/, "$1.");
+                if (!known.has(type)) stale.push(`${rel(page)}: #node-${m[1]}`);
+            }
+        }
+        expect(stale, stale.join("\n")).toEqual([]);
+    });
+
+    it("references no field that has left its node", () => {
+        const stale: string[] = [];
+        for (const type of Object.keys(NODE_TYPES_REGISTRY) as NodeType[]) {
+            const page = nodePage(type);
+            if (!existsSync(page)) continue;
+            const keys = new Set(editableKeys(NODE_TYPES_REGISTRY[type].fields));
+            const slug = type.replace(/\./g, "-").toLowerCase();
+            for (const m of read(page).matchAll(new RegExp(`id="node-${slug}-field-([a-zA-Z0-9_.-]+)"`, "g"))) {
+                if (!keys.has(m[1])) stale.push(`${rel(page)}: field "${m[1]}" is not on ${type}`);
+            }
+        }
+        expect(stale, stale.join("\n")).toEqual([]);
+    });
+});
+
+/* ── G5: every internal link resolves ───────────────────────────────────── */
+
+/**
+ * Pages the manual is *supposed* to have, whether written yet or not. A link to
+ * one of these that is not on disk yet is G1's business, not G5's — otherwise
+ * G5 stays red for the whole build-out and stops being useful. A link to
+ * anything else that is missing is a typo, and G5 fails on it.
+ */
+const EXPECTED_PAGES = new Set<string>([
+    ...(Object.keys(NODE_TYPES_REGISTRY) as NodeType[])
+        .filter((t) => !EXCLUDED.has(t))
+        .map((t) => `nodes/${t.replace(/\./g, "-").toLowerCase()}.html`),
+    "index.html",
+    "tutorial.html",
+    "concepts.html",
+    "nodes.html",
+    "guides.html",
+    "recipes.html",
+    "checking.html",
+    "export.html",
+    "troubleshooting.html",
+    "appendices.html",
+]);
+
+describe("manual coverage — G5: internal links", () => {
+    it("points at files and anchors that exist", () => {
+        const broken: string[] = [];
+        for (const page of PAGES) {
+            const html = read(page);
+            for (const m of html.matchAll(/href="([^"#]+)(?:#([^"]*))?"/g)) {
+                const [, href, hash] = m;
+                if (/^(https?:|mailto:)/.test(href)) continue;
+                const target = resolve(dirname(page), href);
+                const targetRel = relative(MANUAL, target).split("\\").join("/");
+                if (!existsSync(target)) {
+                    // Not yet written, and G1 is already reporting it.
+                    if (EXPECTED_PAGES.has(targetRel)) continue;
+                    broken.push(`${rel(page)} → ${href} (no such page, and none planned)`);
+                    continue;
+                }
+                if (hash && target.endsWith(".html")) {
+                    if (!read(target).includes(`id="${hash}"`)) {
+                        broken.push(`${rel(page)} → ${href}#${hash}`);
+                    }
+                }
+            }
+        }
+        expect(broken, `${broken.length} broken links:\n  ${broken.join("\n  ")}`).toEqual([]);
+    });
+});
+
+/* ── G6: the jargon ceiling ─────────────────────────────────────────────── */
+
+/**
+ * The project's own enforced list (schema.test.ts gates every field hint with
+ * it), extended for manual prose per docs/plans/r164-manual-structure-proposal.md §5.
+ */
+const JARGON =
+    /\b(JSON|schema|node type|d\.ts|Zod|esbuild|prop drill|nested path|apiVersion|minSdkVersion|runtime source|mod package|aggregate|declarative|descriptor|source map|compile|boolean|enum|string|integer|float|array|null|undefined|nullable|parse|serialize|deserialize|instantiate|initialise|deterministic|callback|API|SDK|interface|deprecated|regex|asynchronous)\b/;
+
+/** Deliberate exceptions: filenames, and UI text quoted verbatim. */
+const JARGON_ALLOWLIST = ["package.json", "tsconfig.json", "esbuild.config.mjs", "manifest.json"];
+
+const FILLERS =
+    /\b(simply|just|easy|easily|obviously|trivial|trivially|merely|clearly|basically|essentially)\b/i;
+
+/** Strip tags, script, style and code spans, then collapse whitespace. */
+function prose(html: string): string {
+    return html
+        .replace(/<script[\s\S]*?<\/script>/gi, " ")
+        .replace(/<style[\s\S]*?<\/style>/gi, " ")
+        .replace(/<(code|kbd)[^>]*>[\s\S]*?<\/\1>/gi, " ")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&[a-z]+;/gi, " ")
+        .replace(/\s+/g, " ");
+}
+
+describe("manual coverage — G6: language", () => {
+    it("keeps developer jargon out of reader-facing prose", () => {
+        const hits: string[] = [];
+        for (const page of PAGES) {
+            const text = prose(read(page));
+            for (const m of text.matchAll(new RegExp(JARGON.source, "gi"))) {
+                const word = m[0];
+                const around = text.slice(Math.max(0, m.index! - 40), m.index! + 40);
+                if (JARGON_ALLOWLIST.some((a) => around.includes(a))) continue;
+                hits.push(`${rel(page)}: "${word}" in "…${around.trim()}…"`);
+            }
+        }
+        expect(hits, `${hits.length} jargon hits:\n  ${hits.join("\n  ")}`).toEqual([]);
+    });
+
+    it("keeps the banned filler words out", () => {
+        const hits: string[] = [];
+        for (const page of PAGES) {
+            const text = prose(read(page));
+            for (const m of text.matchAll(new RegExp(FILLERS.source, "gi"))) {
+                const around = text.slice(Math.max(0, m.index! - 40), m.index! + 40);
+                hits.push(`${rel(page)}: "${m[0]}" in "…${around.trim()}…"`);
+            }
+        }
+        expect(hits, `${hits.length} filler words:\n  ${hits.join("\n  ")}`).toEqual([]);
+    });
+});
+
+/* ── G8: images ─────────────────────────────────────────────────────────── */
+
+/**
+ * The filenames the shot list declares, whether captured yet or not. Same
+ * principle as G5: a screenshot that is planned but not yet taken is the shot
+ * list's business, a filename that appears on no list is a typo.
+ * Source: docs/plans/r164-manual-screenshots.md.
+ */
+const DECLARED_SHOTS = new Set(
+    (readFileSync(join(ROOT, "docs/plans/r164-manual-screenshots.md"), "utf8").match(
+        /[a-z0-9][a-z0-9-]*\.png/g,
+    ) ?? []),
+);
+
+describe("manual coverage — G8: screenshots", () => {
+    const imgDir = join(MANUAL, "img");
+
+    it("ships every image a page references", () => {
+        const unknown: string[] = [];
+        const pending = new Set<string>();
+        for (const page of PAGES) {
+            for (const m of read(page).matchAll(/<img[^>]+src="([^"]+)"/g)) {
+                if (existsSync(resolve(dirname(page), m[1]))) continue;
+                const name = m[1].split("/").pop()!;
+                if (DECLARED_SHOTS.has(name)) {
+                    pending.add(name);
+                    continue;
+                }
+                unknown.push(`${rel(page)} → ${m[1]} (not in the shot list)`);
+            }
+        }
+        expect(
+            unknown,
+            `${unknown.length} images referenced that no page will ever get:\n  ${unknown.join("\n  ")}`,
+        ).toEqual([]);
+        // Informational: how many shots are still outstanding.
+        if (pending.size) console.log(`  manual: ${pending.size} screenshots still to capture`);
+    });
+
+    it("references every image that sits in img/", () => {
+        if (!existsSync(imgDir)) return;
+        const onDisk = new Set(readdirSync(imgDir).filter((f) => f.endsWith(".png")));
+        const referenced = new Set<string>();
+        for (const page of PAGES) {
+            for (const m of read(page).matchAll(/<img[^>]+src="[^"]*img\/([^"]+)"/g)) {
+                referenced.add(m[1]);
+            }
+        }
+        const orphans = [...onDisk].filter((f) => !referenced.has(f));
+        expect(orphans, `unreferenced files in public/manual/img/: ${orphans.join(", ")}`).toEqual([]);
+    });
+});

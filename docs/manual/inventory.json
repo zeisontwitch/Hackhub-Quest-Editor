@@ -1,0 +1,2784 @@
+{
+  "generatedBy": "scripts/extract-manual-inventory.mjs",
+  "editorBuild": "2026-09-14.r162",
+  "sdkVersion": "0.21.0",
+  "counts": {
+    "nodeTypes": 34,
+    "obtainableNodeTypes": 33,
+    "categories": 10,
+    "editableFields": 120,
+    "editableFieldsExcludingLists": 113,
+    "sockets": 65,
+    "events": 92,
+    "eventGroups": 10
+  },
+  "manualExclusions": [
+    "world.wifi"
+  ],
+  "categories": [
+    {
+      "id": "entry",
+      "label": "Quest lifecycle",
+      "hex": "#a78bfa"
+    },
+    {
+      "id": "objective",
+      "label": "Objectives",
+      "hex": "#fbbf24"
+    },
+    {
+      "id": "trigger",
+      "label": "Triggers",
+      "hex": "#22d3ee"
+    },
+    {
+      "id": "world",
+      "label": "World building",
+      "hex": "#34d399"
+    },
+    {
+      "id": "comms",
+      "label": "Communication",
+      "hex": "#f472b6"
+    },
+    {
+      "id": "reply",
+      "label": "Custom terminal",
+      "hex": "#fb923c"
+    },
+    {
+      "id": "effect",
+      "label": "Effects",
+      "hex": "#60a5fa"
+    },
+    {
+      "id": "community",
+      "label": "Community addons",
+      "hex": "#2dd4bf"
+    },
+    {
+      "id": "flow",
+      "label": "Flow control",
+      "hex": "#94a3b8"
+    },
+    {
+      "id": "layout",
+      "label": "Layout",
+      "hex": "#64748b"
+    }
+  ],
+  "edgeKinds": [
+    "flow",
+    "condition",
+    "unlock",
+    "data"
+  ],
+  "eventGroups": [
+    {
+      "id": "recon",
+      "label": "Reconnaissance & terminal"
+    },
+    {
+      "id": "web",
+      "label": "Directory brute-force & browser"
+    },
+    {
+      "id": "access",
+      "label": "Access & exploitation"
+    },
+    {
+      "id": "cracking",
+      "label": "Cracking & vuln scanning"
+    },
+    {
+      "id": "wifi",
+      "label": "Bettercap & Wi-Fi"
+    },
+    {
+      "id": "network",
+      "label": "Network & infrastructure"
+    },
+    {
+      "id": "files",
+      "label": "Files"
+    },
+    {
+      "id": "mail",
+      "label": "E-mail"
+    },
+    {
+      "id": "social",
+      "label": "Social & chat"
+    },
+    {
+      "id": "world",
+      "label": "Bank, quest & misc"
+    }
+  ],
+  "nodes": [
+    {
+      "type": "entry.start",
+      "slug": "entry-start",
+      "label": "Quest start",
+      "blurb": "Runs once when the quest begins. Setup goes here.",
+      "icon": "flag",
+      "category": "entry",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "Each lifecycle node is an independent starting point — they never connect to each other. Wire the chain that should run when this moment happens. Event listeners belong under “On start & reload”; anything wired to “Quest start” is wiped when the player reloads."
+        }
+      ],
+      "editableFieldCount": 0,
+      "defaults": {}
+    },
+    {
+      "type": "entry.load",
+      "slug": "entry-load",
+      "label": "On start & reload",
+      "blurb": "Runs on claim and every load. Listeners go here.",
+      "icon": "refresh",
+      "category": "entry",
+      "hook": "onObjectivesStart",
+      "obtainable": true,
+      "targets": [],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "Each lifecycle node is an independent starting point — they never connect to each other. Wire the chain that should run when this moment happens. Event listeners belong under “On start & reload”; anything wired to “Quest start” is wiped when the player reloads."
+        }
+      ],
+      "editableFieldCount": 0,
+      "defaults": {}
+    },
+    {
+      "type": "entry.complete",
+      "slug": "entry-complete",
+      "label": "On quest complete",
+      "blurb": "Only runs if the quest completes — with auto-complete off and no Complete button (the default) that never happens. End the story from the last objective instead.",
+      "icon": "check",
+      "category": "entry",
+      "hook": "onComplete",
+      "obtainable": true,
+      "targets": [],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "Each lifecycle node is an independent starting point — they never connect to each other. Wire the chain that should run when this moment happens. Event listeners belong under “On start & reload”; anything wired to “Quest start” is wiped when the player reloads."
+        }
+      ],
+      "editableFieldCount": 0,
+      "defaults": {}
+    },
+    {
+      "type": "entry.abandon",
+      "slug": "entry-abandon",
+      "label": "On quest abandoned",
+      "blurb": "Runs if the player gives up. Cleanup goes here.",
+      "icon": "x",
+      "category": "entry",
+      "hook": "onAbandon",
+      "obtainable": true,
+      "targets": [],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "Each lifecycle node is an independent starting point — they never connect to each other. Wire the chain that should run when this moment happens. Event listeners belong under “On start & reload”; anything wired to “Quest start” is wiped when the player reloads."
+        }
+      ],
+      "editableFieldCount": 0,
+      "defaults": {}
+    },
+    {
+      "type": "objective",
+      "slug": "objective",
+      "label": "Objective",
+      "blurb": "A task the player must complete",
+      "icon": "target",
+      "category": "objective",
+      "hook": "declarative",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        },
+        {
+          "id": "trigger",
+          "kind": "condition",
+          "label": "Trigger"
+        },
+        {
+          "id": "unlocked-by",
+          "kind": "unlock",
+          "label": "Unlocked by"
+        }
+      ],
+      "sources": [
+        {
+          "id": "done",
+          "kind": "flow",
+          "label": "On complete"
+        },
+        {
+          "id": "unlock",
+          "kind": "unlock",
+          "label": "Unlocks"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "name",
+          "kind": "text",
+          "key": "name",
+          "label": "Identifier",
+          "hint": "A short unique name for this objective so other nodes can refer to it. Lowercase with dashes reads well.",
+          "mono": true
+        },
+        {
+          "depth": 0,
+          "path": "description",
+          "kind": "textarea",
+          "key": "description",
+          "label": "Shown to the player",
+          "hint": "The line shown in the player's quest journal. A clear instruction tends to read well, but any wording that fits your quest works.",
+          "rows": 2
+        },
+        {
+          "depth": 0,
+          "path": "hint",
+          "kind": "textarea",
+          "key": "hint",
+          "label": "Hint",
+          "hint": "Revealed only if the player asks for help. As gentle or as cryptic as you want it to be.",
+          "rows": 2
+        },
+        {
+          "depth": 0,
+          "path": "info",
+          "kind": "textarea",
+          "key": "info",
+          "label": "Extra info",
+          "hint": "Extra detail in the journal's expanded view. Good for lore or background.",
+          "rows": 2
+        },
+        {
+          "depth": 0,
+          "path": "terminalCommand",
+          "kind": "text",
+          "key": "terminalCommand",
+          "label": "Suggested command",
+          "hint": "Suggested command shown in the journal. It runs nothing — it is a copy-pasteable nudge.",
+          "mono": true
+        },
+        {
+          "depth": 0,
+          "path": "hidden",
+          "kind": "toggle",
+          "key": "hidden",
+          "label": "Hidden until unlocked",
+          "hint": "Keep the objective out of the journal until another objective unlocks it. Use for twists."
+        }
+      ],
+      "editableFieldCount": 6,
+      "defaults": {
+        "name": "",
+        "description": "",
+        "hidden": false
+      }
+    },
+    {
+      "type": "trigger.event",
+      "slug": "trigger-event",
+      "label": "When event",
+      "blurb": "React to something the player does",
+      "icon": "zap",
+      "category": "trigger",
+      "hook": "declarative",
+      "obtainable": true,
+      "targets": [],
+      "sources": [
+        {
+          "id": "when",
+          "kind": "condition",
+          "label": "When"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "event",
+          "kind": "event",
+          "key": "event",
+          "label": "Game event",
+          "hint": "All 92 HackHub events, listed with the details each one carries."
+        },
+        {
+          "depth": 0,
+          "path": "conditions",
+          "kind": "conditions",
+          "key": "conditions",
+          "label": "Only when",
+          "hint": "Leave empty to fire on any occurrence."
+        }
+      ],
+      "editableFieldCount": 2,
+      "defaults": {
+        "event": "",
+        "conditions": []
+      }
+    },
+    {
+      "type": "world.network",
+      "slug": "world-network",
+      "label": "Create network",
+      "blurb": "Routers, devices, firewalls and ports",
+      "icon": "network",
+      "category": "world",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "device",
+          "kind": "deviceTree",
+          "key": "device",
+          "label": "Devices",
+          "hint": "The router at the root of the network, plus everything behind it. Routers and splitters carry children; firewalls carry rules."
+        },
+        {
+          "depth": 0,
+          "path": "destroyOnComplete",
+          "kind": "toggle",
+          "key": "destroyOnComplete",
+          "label": "Also remove this network when the quest is completed",
+          "hint": "Off by default: the network stays in the world after the quest, the way a real company would. It is also safer, because deleting a machine the player is still connected to can hang the game. Abandoning the quest removes it either way."
+        }
+      ],
+      "editableFieldCount": 2,
+      "defaults": {
+        "ipMode": "random",
+        "device": {
+          "id": "shUJxS6T",
+          "ip": "45.33.32.156",
+          "type": "ROUTER",
+          "vulnerabilities": [],
+          "users": [],
+          "ports": [
+            {
+              "id": "KYPFkl8F",
+              "external": 80,
+              "internal": 80,
+              "active": true,
+              "service": "http"
+            }
+          ],
+          "rules": [],
+          "rootFiles": [],
+          "children": []
+        },
+        "destroyOnComplete": false
+      }
+    },
+    {
+      "type": "world.wifi",
+      "slug": "world-wifi",
+      "label": "Create Wi-Fi",
+      "blurb": "A crackable access point",
+      "icon": "wifi",
+      "category": "world",
+      "hook": "onStart",
+      "obtainable": false,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "warn",
+          "text": "The mod SDK (0.21.0) has no wireless API yet, so this node exports as a regular router network: the player reaches it by IP address, not through the in-game Wi-Fi list. The SSID and passphrase are stored in the mod and start working if the game opens that up."
+        },
+        {
+          "depth": 0,
+          "path": "ssid",
+          "kind": "text",
+          "key": "ssid",
+          "label": "Network name (SSID)",
+          "hint": "The network name shown in the in-game Wi-Fi list.",
+          "mono": true,
+          "generate": {
+            "kind": "ssid",
+            "label": "network name"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "password",
+          "kind": "text",
+          "key": "password",
+          "label": "WPA passphrase",
+          "hint": "The passphrase the player must discover. Make sure some node in your quest reveals it.",
+          "mono": true
+        },
+        {
+          "depth": 0,
+          "path": "signal",
+          "kind": "slider",
+          "key": "signal",
+          "label": "Signal strength",
+          "hint": "The game's Wi-Fi scale: 0 = weakest, 3 = strongest (it also drives how long joining takes). The current mod SDK does not read it yet — it is kept for when wireless support lands.",
+          "min": 0,
+          "max": 3,
+          "step": 1
+        },
+        {
+          "depth": 0,
+          "path": "model",
+          "kind": "text",
+          "key": "model",
+          "label": "Router model",
+          "hint": "Enables the in-game `fern` recovery route. Leave blank to disable it.",
+          "mono": true,
+          "generate": {
+            "kind": "routerModel",
+            "label": "router model"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "users",
+          "kind": "list",
+          "key": "users",
+          "label": "Router accounts",
+          "hint": "Accounts on the access point's own system. Their files land in /home/<username>/.",
+          "addLabel": "Add account",
+          "fields": [
+            {
+              "depth": 1,
+              "path": "users.username",
+              "kind": "text",
+              "key": "username",
+              "label": "Username",
+              "hint": "The login name for ssh, ftp or a web login page.",
+              "mono": true,
+              "generate": {
+                "kind": "username",
+                "reuse": [
+                  "firstName",
+                  "lastName"
+                ],
+                "label": "username"
+              }
+            },
+            {
+              "depth": 1,
+              "path": "users.password",
+              "kind": "text",
+              "key": "password",
+              "label": "Password",
+              "hint": "Leave blank to let the game pick one.",
+              "mono": true
+            },
+            {
+              "depth": 1,
+              "path": "users.firstName",
+              "kind": "text",
+              "key": "firstName",
+              "label": "First name",
+              "hint": "Shown on the account's profile page and in whois results.",
+              "generate": {
+                "kind": "firstName",
+                "label": "first name"
+              }
+            },
+            {
+              "depth": 1,
+              "path": "users.lastName",
+              "kind": "text",
+              "key": "lastName",
+              "label": "Last name",
+              "hint": "Shown on the account's profile page and in whois results.",
+              "generate": {
+                "kind": "lastName",
+                "label": "last name"
+              }
+            },
+            {
+              "depth": 1,
+              "path": "users.emailAddress",
+              "kind": "text",
+              "key": "emailAddress",
+              "label": "E-mail",
+              "hint": "The account's e-mail address. Useful as a lead the player can mail.",
+              "mono": true,
+              "generate": {
+                "kind": "email",
+                "reuse": [
+                  "firstName",
+                  "lastName"
+                ],
+                "label": "e-mail"
+              }
+            },
+            {
+              "depth": 1,
+              "path": "users.acceptReverseTCP",
+              "kind": "toggle",
+              "key": "acceptReverseTCP",
+              "label": "Accepts reverse TCP",
+              "hint": "Lets the player open a connection from this account back to their own machine. Turn on only if your quest needs it."
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "ports",
+          "kind": "list",
+          "key": "ports",
+          "label": "Router ports",
+          "hint": "Open ports on the access point itself.",
+          "addLabel": "Add port",
+          "fields": [
+            {
+              "depth": 1,
+              "path": "ports.external",
+              "kind": "number",
+              "key": "external",
+              "label": "External port",
+              "hint": "The port number as seen from outside. This is what nmap reports and what the player connects to.",
+              "min": 0,
+              "max": 65535
+            },
+            {
+              "depth": 1,
+              "path": "ports.internal",
+              "kind": "number",
+              "key": "internal",
+              "label": "Internal port",
+              "hint": "The port the service actually listens on inside the machine. Leave equal to the external port unless you are deliberately redirecting.",
+              "min": 0,
+              "max": 65535
+            },
+            {
+              "depth": 1,
+              "path": "ports.service",
+              "kind": "text",
+              "key": "service",
+              "label": "Service",
+              "hint": "What nmap prints next to the port, e.g. http, ssh, ftp, mysql. Free text — it is a label, not a real service.",
+              "placeholder": "ssh",
+              "mono": true,
+              "generate": {
+                "kind": "serviceName",
+                "label": "service"
+              }
+            },
+            {
+              "depth": 1,
+              "path": "ports.version",
+              "kind": "text",
+              "key": "version",
+              "label": "Version",
+              "hint": "The banner nmap -sV prints. Use three numbers and no letters — metasploit refuses \"7.2\" and \"7.2p2\", leaving the player unable to run the exploit. Blank omits the version line.",
+              "placeholder": "OpenSSH 8.9.0",
+              "mono": true,
+              "generate": {
+                "kind": "serviceVersion",
+                "reuse": [
+                  "service"
+                ],
+                "label": "version"
+              }
+            },
+            {
+              "depth": 1,
+              "path": "ports.active",
+              "kind": "toggle",
+              "key": "active",
+              "label": "Open",
+              "hint": "Closed ports show as filtered to nmap."
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "children",
+          "kind": "deviceTree",
+          "key": "children",
+          "label": "Devices behind the access point",
+          "hint": "Machines reachable through this access point. Add a router here to build a second network hop."
+        },
+        {
+          "depth": 0,
+          "path": "destroyOnComplete",
+          "kind": "toggle",
+          "key": "destroyOnComplete",
+          "label": "Also remove this access point when the quest is completed",
+          "hint": "Off by default: the access point stays in the world after the quest. Abandoning the quest removes it either way."
+        }
+      ],
+      "editableFieldCount": 19,
+      "defaults": {
+        "ssid": "NEIGHBOUR_5Ghz",
+        "password": "letmein123",
+        "signal": 2,
+        "ipMode": "random",
+        "users": [],
+        "ports": [],
+        "children": [],
+        "destroyOnComplete": false
+      }
+    },
+    {
+      "type": "world.firewall",
+      "slug": "world-firewall",
+      "label": "Firewall rule",
+      "blurb": "Allow or block a port",
+      "icon": "shield",
+      "category": "world",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "ip",
+          "kind": "selectOrCustom",
+          "key": "ip",
+          "label": "Protected IP",
+          "hint": "The machine these rules protect: the quest's own network, or one machine you name.",
+          "placeholder": "45.33.32.156",
+          "mono": true,
+          "tokens": true,
+          "generate": {
+            "kind": "ip",
+            "ipFlavour": "public",
+            "label": "IP address"
+          },
+          "options": [
+            {
+              "value": "{{data.targetIp}}",
+              "label": "Random — the quest's network",
+              "meaning": "the address the game gave your network"
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "section",
+          "kind": "section",
+          "key": null,
+          "label": "Rule",
+          "hint": null,
+          "fields": [
+            {
+              "depth": 1,
+              "path": "section.port",
+              "kind": "number",
+              "key": "port",
+              "label": "Port",
+              "hint": "The port this rule applies to.",
+              "min": 0,
+              "max": 65535
+            },
+            {
+              "depth": 1,
+              "path": "section.allowed",
+              "kind": "toggle",
+              "key": "allowed",
+              "label": "Allowed",
+              "hint": "Off means the port is blocked by the firewall."
+            },
+            {
+              "depth": 1,
+              "path": "section.source",
+              "kind": "selectOrCustom",
+              "key": "source",
+              "label": "Source",
+              "hint": "Which machines the rule applies to: anywhere on the internet, or one machine you name.",
+              "placeholder": "45.33.32.156",
+              "mono": true,
+              "options": [
+                {
+                  "value": "*",
+                  "label": "Anywhere",
+                  "meaning": "matches every machine on the internet"
+                }
+              ]
+            },
+            {
+              "depth": 1,
+              "path": "section.destination",
+              "kind": "selectOrCustom",
+              "key": "destination",
+              "label": "Destination",
+              "hint": "The machine the rule protects — usually the one in “Protected IP” above. Picking it copies that address; changing it later won't follow.",
+              "placeholder": "45.33.32.156",
+              "mono": true,
+              "options": []
+            },
+            {
+              "depth": 1,
+              "path": "section.locked",
+              "kind": "toggle",
+              "key": "locked",
+              "label": "Locked",
+              "hint": "The player cannot remove a locked rule."
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "removeOnComplete",
+          "kind": "toggle",
+          "key": "removeOnComplete",
+          "label": "Remove when the quest ends",
+          "hint": "Drop the firewall when the quest ends so the machine is reachable afterwards."
+        }
+      ],
+      "editableFieldCount": 7,
+      "defaults": {
+        "ip": "{{data.targetIp}}",
+        "rule": {
+          "id": "8G-Valn1",
+          "allowed": false,
+          "port": 22,
+          "source": "*",
+          "destination": "{{data.targetIp}}"
+        },
+        "removeOnComplete": true
+      }
+    },
+    {
+      "type": "world.port",
+      "slug": "world-port",
+      "label": "Change port",
+      "blurb": "Open, close, add or remove a port",
+      "icon": "plug",
+      "category": "world",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "Adjusts a machine that already exists — one your “Create network” node built. To add the machine itself, use “Create network”; to open, close, add or remove one of its ports later in the story, use this."
+        },
+        {
+          "depth": 0,
+          "path": "ip",
+          "kind": "text",
+          "key": "ip",
+          "label": "Device IP",
+          "hint": "A router IP or any device behind it.",
+          "mono": true,
+          "tokens": true,
+          "generate": {
+            "kind": "ip",
+            "ipFlavour": "private",
+            "label": "IP address"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "action",
+          "kind": "select",
+          "key": "action",
+          "label": "Action",
+          "hint": "Open makes an existing port reachable. Close blocks it. Add creates a new service; Remove deletes it entirely.",
+          "options": [
+            {
+              "value": "open",
+              "label": "Open"
+            },
+            {
+              "value": "close",
+              "label": "Close",
+              "hint": "Closing internal port 22 also drops live SSH sessions."
+            },
+            {
+              "value": "add",
+              "label": "Add"
+            },
+            {
+              "value": "remove",
+              "label": "Remove"
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "port.external",
+          "kind": "number",
+          "key": "port.external",
+          "label": "External port",
+          "hint": "The port number as seen from outside — what nmap reports.",
+          "min": 0,
+          "max": 65535
+        },
+        {
+          "depth": 0,
+          "path": "port.internal",
+          "kind": "number",
+          "key": "port.internal",
+          "label": "Internal port",
+          "hint": "The port the service listens on inside the machine.",
+          "min": 0,
+          "max": 65535
+        },
+        {
+          "depth": 0,
+          "path": "port.service",
+          "kind": "text",
+          "key": "port.service",
+          "label": "Service",
+          "hint": "What nmap prints next to the port, e.g. http, ssh, mysql.",
+          "mono": true,
+          "generate": {
+            "kind": "serviceName",
+            "label": "service"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "port.active",
+          "kind": "toggle",
+          "key": "port.active",
+          "label": "Open",
+          "hint": "Turn off to make the port appear closed."
+        },
+        {
+          "depth": 0,
+          "path": "restoreOnComplete",
+          "kind": "toggle",
+          "key": "restoreOnComplete",
+          "label": "Restore when the quest ends",
+          "hint": "Put the port back the way it was when the quest ends."
+        }
+      ],
+      "editableFieldCount": 7,
+      "defaults": {
+        "ip": "",
+        "action": "open",
+        "port": {
+          "id": "MtJLp5Bc",
+          "external": 22,
+          "internal": 22,
+          "active": true,
+          "service": "ssh"
+        },
+        "restoreOnComplete": false
+      }
+    },
+    {
+      "type": "world.domain",
+      "slug": "world-domain",
+      "label": "Register domain",
+      "blurb": "Point a hostname at an IP",
+      "icon": "globe",
+      "category": "world",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "domain",
+          "kind": "text",
+          "key": "domain",
+          "label": "Domain",
+          "hint": "The hostname the player types, e.g. vault.corp-internal.net.",
+          "mono": true,
+          "generate": {
+            "kind": "domain",
+            "label": "domain"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "ip",
+          "kind": "text",
+          "key": "ip",
+          "label": "Resolves to",
+          "hint": "The address it resolves to. nslookup and dig will report this.",
+          "mono": true,
+          "tokens": true,
+          "generate": {
+            "kind": "ip",
+            "ipFlavour": "public",
+            "label": "IP address"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "vulnerabilities",
+          "kind": "list",
+          "key": "vulnerabilities",
+          "label": "Vulnerabilities",
+          "hint": "Weaknesses on the host behind this name. In-game scanners report them when the player probes it.",
+          "addLabel": "Add vulnerability",
+          "fields": [
+            {
+              "depth": 1,
+              "path": "vulnerabilities.type",
+              "kind": "select",
+              "key": "type",
+              "label": "Type",
+              "hint": "The kind of weakness this machine has. The in-game scanners report it when the player probes the machine.",
+              "options": [
+                {
+                  "value": "SQL_INJECTION",
+                  "label": "SQL_INJECTION (steal from the database)"
+                },
+                {
+                  "value": "XSS",
+                  "label": "XSS (script in web pages)"
+                },
+                {
+                  "value": "CORS",
+                  "label": "CORS (read other sites' data)"
+                },
+                {
+                  "value": "SSRF",
+                  "label": "SSRF (make the server fetch)"
+                },
+                {
+                  "value": "LFI",
+                  "label": "LFI (read the server's files)"
+                },
+                {
+                  "value": "RFI",
+                  "label": "RFI (load a file from your URL)"
+                },
+                {
+                  "value": "RCE",
+                  "label": "RCE (run any command)"
+                }
+              ]
+            },
+            {
+              "depth": 1,
+              "path": "vulnerabilities.version",
+              "kind": "text",
+              "key": "version",
+              "label": "Version",
+              "hint": "The affected component's version, e.g. \"WordPress 5.8\". Cosmetic unless a trigger matches on it.",
+              "placeholder": "optional",
+              "mono": true,
+              "generate": {
+                "kind": "serviceVersion",
+                "label": "version"
+              }
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "removeOnComplete",
+          "kind": "toggle",
+          "key": "removeOnComplete",
+          "label": "Remove when the quest ends",
+          "hint": "Drop the DNS entry when the quest ends."
+        }
+      ],
+      "editableFieldCount": 6,
+      "defaults": {
+        "domain": "",
+        "ip": "",
+        "vulnerabilities": [],
+        "removeOnComplete": true
+      }
+    },
+    {
+      "type": "world.database",
+      "slug": "world-database",
+      "label": "Create database",
+      "blurb": "Content for sqlmap and DatabaseManager",
+      "icon": "database",
+      "category": "world",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "host",
+          "kind": "text",
+          "key": "host",
+          "label": "Host IP",
+          "hint": "The address the player points a database client at.",
+          "mono": true,
+          "tokens": true,
+          "generate": {
+            "kind": "ip",
+            "ipFlavour": "public",
+            "label": "IP address"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "user",
+          "kind": "text",
+          "key": "user",
+          "label": "Username",
+          "hint": "The login sqlmap or a client uses.",
+          "mono": true,
+          "generate": {
+            "kind": "username",
+            "label": "username"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "password",
+          "kind": "text",
+          "key": "password",
+          "label": "Password",
+          "hint": "The password. Give the player a way to find it — a config file, a leaked dump, a cracked hash.",
+          "mono": true
+        },
+        {
+          "depth": 0,
+          "path": "tables",
+          "kind": "tables",
+          "key": "tables",
+          "label": "Tables",
+          "hint": "The data inside: tables holding rows of named values, ready for the player's SQL."
+        },
+        {
+          "depth": 0,
+          "path": "removeOnComplete",
+          "kind": "toggle",
+          "key": "removeOnComplete",
+          "label": "Remove when the quest ends",
+          "hint": "Drop the database when the quest ends."
+        }
+      ],
+      "editableFieldCount": 5,
+      "defaults": {
+        "host": "",
+        "user": "admin",
+        "password": "secret123",
+        "tables": [],
+        "removeOnComplete": true
+      }
+    },
+    {
+      "type": "world.files",
+      "slug": "world-files",
+      "label": "Place files",
+      "blurb": "Drop files on a PC or a remote device",
+      "icon": "folder",
+      "category": "world",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "target",
+          "kind": "select",
+          "key": "target",
+          "label": "Where",
+          "hint": "Whose filesystem to write to. The player's own machine is written when the flow reaches this node; a remote device is mounted with the machine, under the account the player lands in, so the files are already there when they break in.",
+          "options": [
+            {
+              "value": "player",
+              "label": "The player's PC"
+            },
+            {
+              "value": "device",
+              "label": "A remote device"
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "ip",
+          "kind": "text",
+          "key": "ip",
+          "label": "Device IP",
+          "hint": "Only used for a remote device. Use the same {{data.targetIp}} token you gave the network, and the files are mounted on that machine before the player ever connects.",
+          "mono": true,
+          "tokens": true,
+          "generate": {
+            "kind": "ip",
+            "ipFlavour": "private",
+            "label": "IP address"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "parentPath",
+          "kind": "text",
+          "key": "parentPath",
+          "label": "Parent folder",
+          "hint": "Where the files are mounted. Folders named etc, home, logs or lib are merged into the existing ones rather than replacing them.",
+          "placeholder": "~/",
+          "mono": true
+        },
+        {
+          "depth": 0,
+          "path": "files",
+          "kind": "list",
+          "key": "files",
+          "label": "Files",
+          "hint": "The files and folders to create. A folder named etc, home, logs or lib merges with the machine's existing one.",
+          "addLabel": "Add file",
+          "fields": [
+            {
+              "depth": 1,
+              "path": "files.name",
+              "kind": "text",
+              "key": "name",
+              "label": "Name",
+              "hint": "The file or folder name, exactly as it appears in ls.",
+              "mono": true
+            },
+            {
+              "depth": 1,
+              "path": "files.extension",
+              "kind": "text",
+              "key": "extension",
+              "label": "Extension",
+              "hint": "The extension, e.g. txt, log, conf. Leave blank for folders.",
+              "placeholder": "txt",
+              "mono": true
+            },
+            {
+              "depth": 1,
+              "path": "files.isFolder",
+              "kind": "toggle",
+              "key": "isFolder",
+              "label": "Folder",
+              "hint": "Mark this entry as a directory rather than a file."
+            },
+            {
+              "depth": 1,
+              "path": "files.hidden",
+              "kind": "toggle",
+              "key": "hidden",
+              "label": "Hidden",
+              "hint": "Prefix the name with a dot so a plain ls does not show it."
+            },
+            {
+              "depth": 1,
+              "path": "files.data",
+              "kind": "textarea",
+              "key": "data",
+              "label": "Contents",
+              "hint": "The file's contents. This is where clues live — a config file, a log excerpt, a leaked password.",
+              "rows": 4,
+              "mono": true
+            }
+          ]
+        }
+      ],
+      "editableFieldCount": 9,
+      "defaults": {
+        "target": "player",
+        "parentPath": "~/",
+        "files": []
+      }
+    },
+    {
+      "type": "world.packData",
+      "slug": "world-packdata",
+      "label": "Give data to an addon",
+      "blurb": "Pick a data shape from an addon and fill it in",
+      "icon": "package",
+      "category": "community",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [],
+      "editableFieldCount": 0,
+      "defaults": {
+        "packId": "",
+        "packName": "",
+        "gameModName": "",
+        "contractId": "",
+        "contractLabel": "",
+        "storageKey": "",
+        "merge": "replace",
+        "fields": [],
+        "values": {}
+      }
+    },
+    {
+      "type": "pack.node",
+      "slug": "pack-node",
+      "label": "Addon node",
+      "blurb": "A story node from an addon — find it under Editor Mods",
+      "icon": "package",
+      "category": "community",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [],
+      "editableFieldCount": 0,
+      "defaults": {
+        "packId": "",
+        "packName": "",
+        "packVersion": "",
+        "gameModName": "",
+        "nodeId": "",
+        "nodeLabel": "",
+        "nodeDocs": "",
+        "emitter": "sdk",
+        "fields": [],
+        "values": {},
+        "steps": [],
+        "eventName": "",
+        "storageKey": "",
+        "merge": "replace",
+        "command": "",
+        "input": ""
+      }
+    },
+    {
+      "type": "world.toolResponse",
+      "slug": "world-toolresponse",
+      "label": "Tool response",
+      "blurb": "Script what a recon tool reports",
+      "icon": "terminal",
+      "category": "world",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "command",
+          "kind": "select",
+          "key": "command",
+          "label": "Tool",
+          "hint": "Pick the in-game command this overrides, like nmap or whois. When the player runs it on your input, they see your text instead of the usual result.",
+          "options": [
+            {
+              "value": "nmap",
+              "label": "nmap"
+            },
+            {
+              "value": "hydra",
+              "label": "hydra"
+            },
+            {
+              "value": "whois",
+              "label": "whois"
+            },
+            {
+              "value": "nslookup",
+              "label": "nslookup"
+            },
+            {
+              "value": "mxlookup",
+              "label": "mxlookup"
+            },
+            {
+              "value": "ping",
+              "label": "ping"
+            },
+            {
+              "value": "lynx",
+              "label": "lynx"
+            },
+            {
+              "value": "geoip",
+              "label": "geoip"
+            },
+            {
+              "value": "ssh",
+              "label": "ssh"
+            },
+            {
+              "value": "ftp",
+              "label": "ftp"
+            },
+            {
+              "value": "weechat",
+              "label": "weechat"
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "input",
+          "kind": "text",
+          "key": "input",
+          "label": "Keyed by",
+          "hint": "What the player types after the command — the IP, domain or name it answers for. The tool only responds to this exact input. hydra/ssh/ftp use the user + target fields below instead.",
+          "mono": true,
+          "tokens": true
+        },
+        {
+          "depth": 0,
+          "path": "inputUser",
+          "kind": "text",
+          "key": "inputUser",
+          "label": "User",
+          "hint": "Only match when the player ran the command against this user.",
+          "mono": true
+        },
+        {
+          "depth": 0,
+          "path": "inputTarget",
+          "kind": "text",
+          "key": "inputTarget",
+          "label": "Target",
+          "hint": "Only match when the player ran the command against this host.",
+          "mono": true,
+          "tokens": true
+        },
+        {
+          "depth": 0,
+          "path": "dataText",
+          "kind": "textarea",
+          "key": "dataText",
+          "label": "Response",
+          "hint": "One “Label: value” per line. The editor turns them into exactly what that tool shows in-game — add a line for each thing you want the player to see.",
+          "rows": 8,
+          "mono": true
+        },
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "What each tool reads: whois → domain, ip, registrant, email · lynx → web, email, phone, social, address (anything else is shown as extra detail) · geoip → country, city, latitude, longitude · hydra → username, password · nslookup / mxlookup → ip. nmap is different: write one port per line, like “22 open ssh OpenSSH 8.9.0” — always three numbers. Tags work here too: {{data.targetIp}} is the address the game gave your network, {{data.name}} anything you saved with “Set quest data”, {{player.username}} the player's login, and {{random.password}} a fresh password."
+        },
+        {
+          "depth": 0,
+          "path": "removeOnComplete",
+          "kind": "toggle",
+          "key": "removeOnComplete",
+          "label": "Remove when the quest ends",
+          "hint": "Stop intercepting the command when the quest ends."
+        }
+      ],
+      "editableFieldCount": 6,
+      "defaults": {
+        "command": "nmap",
+        "input": "",
+        "dataText": "",
+        "removeOnComplete": true
+      }
+    },
+    {
+      "type": "comms.dialogue",
+      "slug": "comms-dialogue",
+      "label": "Dialogue",
+      "blurb": "A conversation with the player — phone call, Kisscord, e-mail or WeeChat",
+      "icon": "message",
+      "category": "comms",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        },
+        {
+          "id": "failure",
+          "kind": "flow",
+          "label": "Wrong"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [],
+      "editableFieldCount": 0,
+      "defaults": {
+        "kind": "phone",
+        "phone": {
+          "branch": "default",
+          "startIndex": 0
+        },
+        "kisscord": {
+          "contactId": "",
+          "messages": []
+        },
+        "mail": {
+          "from": "",
+          "subject": "",
+          "content": "",
+          "replyable": false
+        },
+        "weechat": {
+          "host": "",
+          "password": "",
+          "registerServer": true,
+          "messages": []
+        },
+        "postLive": false
+      }
+    },
+    {
+      "type": "reply.input",
+      "slug": "reply-input",
+      "label": "Manual input",
+      "blurb": "The player types a passphrase",
+      "icon": "key",
+      "category": "reply",
+      "hook": "onObjectivesStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "success",
+          "kind": "flow",
+          "label": "Correct"
+        },
+        {
+          "id": "failure",
+          "kind": "flow",
+          "label": "Wrong"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "This makes a new command the player can type in the terminal. Wire the green “Correct” socket for a right answer and the red “Wrong” socket for a wrong one."
+        },
+        {
+          "depth": 0,
+          "path": "commandName",
+          "kind": "text",
+          "key": "commandName",
+          "label": "Command name",
+          "hint": "The terminal command the player runs, e.g. decrypt. It appears in help output.",
+          "placeholder": "decrypt",
+          "mono": true
+        },
+        {
+          "depth": 0,
+          "path": "commandDescription",
+          "kind": "text",
+          "key": "commandDescription",
+          "label": "Help text",
+          "hint": "The one-line description shown next to the command in help."
+        },
+        {
+          "depth": 0,
+          "path": "prompt",
+          "kind": "text",
+          "key": "prompt",
+          "label": "Prompt",
+          "hint": "The text printed before the cursor, e.g. \"Passphrase >\".",
+          "placeholder": "Passphrase >"
+        },
+        {
+          "depth": 0,
+          "path": "mask",
+          "kind": "toggle",
+          "key": "mask",
+          "label": "Mask the input",
+          "hint": "Hides typing behind * — the player sees “Passphrase > ****” instead of their answer, like a password box. Use it when the answer is a secret."
+        },
+        {
+          "depth": 0,
+          "path": "matchMode",
+          "kind": "select",
+          "key": "matchMode",
+          "label": "Match",
+          "hint": "Exactly equals checks the whole answer. Contains accepts it anywhere in what the player types. Matches pattern is for advanced authors who want to accept a whole family of answers at once.",
+          "options": [
+            {
+              "value": "exact",
+              "label": "Exactly equals"
+            },
+            {
+              "value": "contains",
+              "label": "Contains"
+            },
+            {
+              "value": "regex",
+              "label": "Matches pattern"
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "expected",
+          "kind": "text",
+          "key": "expected",
+          "label": "Expected answer",
+          "hint": "The answer that counts as correct — or the pattern, if you chose “Matches pattern” above.",
+          "mono": true
+        },
+        {
+          "depth": 0,
+          "path": "caseSensitive",
+          "kind": "toggle",
+          "key": "caseSensitive",
+          "label": "Case sensitive",
+          "hint": "Turn off to accept any capitalisation. Recommended unless case is part of the puzzle."
+        },
+        {
+          "depth": 0,
+          "path": "successMessage",
+          "kind": "text",
+          "key": "successMessage",
+          "label": "Success message",
+          "hint": "Printed on a match, then the green “Correct” socket fires."
+        },
+        {
+          "depth": 0,
+          "path": "failureMessage",
+          "kind": "text",
+          "key": "failureMessage",
+          "label": "Failure message",
+          "hint": "Printed on a miss, then the red “Wrong” socket fires. The player can run the command again."
+        }
+      ],
+      "editableFieldCount": 9,
+      "defaults": {
+        "commandName": "decrypt",
+        "commandDescription": "Decrypt the intercepted payload",
+        "prompt": "Passphrase >",
+        "mask": false,
+        "matchMode": "exact",
+        "expected": "",
+        "caseSensitive": false,
+        "successMessage": "Decrypted.",
+        "failureMessage": "Wrong passphrase."
+      }
+    },
+    {
+      "type": "fx.pay",
+      "slug": "fx-pay",
+      "label": "Pay the player",
+      "blurb": "Deposit money",
+      "icon": "coin",
+      "category": "effect",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "amount",
+          "kind": "number",
+          "key": "amount",
+          "label": "Amount",
+          "hint": "Credits deposited into the player's bank account.",
+          "min": 0
+        },
+        {
+          "depth": 0,
+          "path": "description",
+          "kind": "text",
+          "key": "description",
+          "label": "Description",
+          "hint": "The label on the bank statement line."
+        },
+        {
+          "depth": 0,
+          "path": "fromIBAN",
+          "kind": "text",
+          "key": "fromIBAN",
+          "label": "From IBAN",
+          "hint": "The sending account, shown in the transfer details.",
+          "mono": true,
+          "generate": {
+            "kind": "iban",
+            "label": "IBAN"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "fromName",
+          "kind": "text",
+          "key": "fromName",
+          "label": "From name",
+          "hint": "The sender's name on the statement.",
+          "generate": {
+            "kind": "initialName",
+            "label": "sender name"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "showWhen": {
+            "key": "amountMode",
+            "equals": "percent"
+          },
+          "tone": "info",
+          "text": "Kept from an earlier version: this pays a percentage of the player's balance. It still works."
+        }
+      ],
+      "editableFieldCount": 4,
+      "defaults": {
+        "amountMode": "fixed",
+        "amount": 100,
+        "percent": 10,
+        "description": "Job payment"
+      }
+    },
+    {
+      "type": "fx.withdraw",
+      "slug": "fx-withdraw",
+      "label": "Charge the player",
+      "blurb": "Withdraw money",
+      "icon": "coin",
+      "category": "effect",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "amountMode",
+          "kind": "select",
+          "key": "amountMode",
+          "label": "Amount type",
+          "hint": "A fixed sum, or a slice of whatever the player currently has in the bank.",
+          "options": [
+            {
+              "value": "fixed",
+              "label": "Fixed amount"
+            },
+            {
+              "value": "percent",
+              "label": "Percentage of balance"
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "amount",
+          "kind": "number",
+          "key": "amount",
+          "label": "Amount",
+          "hint": "Credits taken from the player's account.",
+          "min": 0
+        },
+        {
+          "depth": 0,
+          "path": "percent",
+          "kind": "number",
+          "key": "percent",
+          "label": "Percent",
+          "hint": "Percentage of the player's current balance, taken when this node runs.",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "depth": 0,
+          "path": "description",
+          "kind": "text",
+          "key": "description",
+          "label": "Description",
+          "hint": "The label on the bank statement line."
+        }
+      ],
+      "editableFieldCount": 4,
+      "defaults": {
+        "amountMode": "fixed",
+        "amount": 100,
+        "percent": 10,
+        "description": "Purchase"
+      }
+    },
+    {
+      "type": "fx.notify",
+      "slug": "fx-notify",
+      "label": "Notify",
+      "blurb": "A popup or toast",
+      "icon": "bell",
+      "category": "effect",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "message",
+          "kind": "textarea",
+          "key": "message",
+          "label": "Message",
+          "hint": "The text on the popup. Type {{data.name}} to insert a value you saved earlier.",
+          "rows": 2,
+          "tokens": true
+        },
+        {
+          "depth": 0,
+          "path": "variant",
+          "kind": "select",
+          "key": "variant",
+          "label": "Style",
+          "hint": "A notification is a persistent popup; a toast slides in and fades on its own.",
+          "options": [
+            {
+              "value": "notify",
+              "label": "Notification popup"
+            },
+            {
+              "value": "toast",
+              "label": "Toast"
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "tone",
+          "kind": "select",
+          "key": "tone",
+          "label": "Tone",
+          "hint": "Sets the colour and icon: info, success, warning or error.",
+          "options": [
+            {
+              "value": "info",
+              "label": "Info"
+            },
+            {
+              "value": "success",
+              "label": "Success"
+            },
+            {
+              "value": "warning",
+              "label": "Warning"
+            },
+            {
+              "value": "error",
+              "label": "Error"
+            }
+          ]
+        }
+      ],
+      "editableFieldCount": 3,
+      "defaults": {
+        "message": "",
+        "variant": "notify",
+        "tone": "info"
+      }
+    },
+    {
+      "type": "fx.setData",
+      "slug": "fx-setdata",
+      "label": "Set quest data",
+      "blurb": "Store a value for later",
+      "icon": "save",
+      "category": "effect",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "key",
+          "kind": "text",
+          "key": "key",
+          "label": "Key",
+          "hint": "A name you choose, like doorCode. Use the same name later to read this value back.",
+          "mono": true
+        },
+        {
+          "depth": 0,
+          "path": "value",
+          "kind": "text",
+          "key": "value",
+          "label": "Value",
+          "hint": "Any text is fine — a word, a number, an address. It is just stored, so nothing here can error. You can also insert a live value by typing {{data.name}} for something you saved earlier.",
+          "mono": true,
+          "tokens": true
+        }
+      ],
+      "editableFieldCount": 2,
+      "defaults": {
+        "key": "",
+        "value": ""
+      }
+    },
+    {
+      "type": "fx.claimQuest",
+      "slug": "fx-claimquest",
+      "label": "Claim another quest",
+      "blurb": "Chain into the next quest",
+      "icon": "link",
+      "category": "effect",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "questName",
+          "kind": "text",
+          "key": "questName",
+          "label": "Quest",
+          "hint": "The identifier of the quest to start next. It must exist in this mod or another installed one.",
+          "mono": true
+        }
+      ],
+      "editableFieldCount": 1,
+      "defaults": {
+        "questName": ""
+      }
+    },
+    {
+      "type": "fx.shell",
+      "slug": "fx-shell",
+      "label": "Run terminal command",
+      "blurb": "Execute in the terminal",
+      "icon": "terminal",
+      "category": "effect",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "Runs a command the moment the story reaches this node, as if the player had typed it — for things the story should do that the player hasn't. Example: “nmap {{data.targetIp}}” runs a scan the player can read."
+        },
+        {
+          "depth": 0,
+          "path": "command",
+          "kind": "text",
+          "key": "command",
+          "label": "Command",
+          "hint": "The command executed in the player's terminal, as if they had typed it. Tags like {{data.targetIp}} are filled in first.",
+          "mono": true,
+          "tokens": true
+        }
+      ],
+      "editableFieldCount": 1,
+      "defaults": {
+        "command": ""
+      }
+    },
+    {
+      "type": "fx.handbook",
+      "slug": "fx-handbook",
+      "label": "Open handbook",
+      "blurb": "Jump to an in-game article",
+      "icon": "book",
+      "category": "effect",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "articleId",
+          "kind": "handbookArticle",
+          "key": "articleId",
+          "label": "Article",
+          "hint": "The in-game article the player lands on. Pick a known page, or type any article id."
+        },
+        {
+          "depth": 0,
+          "path": "category",
+          "kind": "text",
+          "key": "category",
+          "label": "Category",
+          "hint": "The handbook section the article sits under."
+        }
+      ],
+      "editableFieldCount": 2,
+      "defaults": {}
+    },
+    {
+      "type": "flow.branch",
+      "slug": "flow-branch",
+      "label": "Branch",
+      "blurb": "Split on a condition",
+      "icon": "branch",
+      "category": "flow",
+      "hook": "onObjectivesStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        },
+        {
+          "id": "trigger",
+          "kind": "condition",
+          "label": "Trigger"
+        }
+      ],
+      "sources": [
+        {
+          "id": "true",
+          "kind": "flow",
+          "label": "Yes"
+        },
+        {
+          "id": "false",
+          "kind": "flow",
+          "label": "No"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "source",
+          "kind": "select",
+          "key": "source",
+          "label": "Test against",
+          "hint": "Test against details from the event that fired, or against quest data you stored earlier with a “Set quest data” node.",
+          "options": [
+            {
+              "value": "event",
+              "label": "Details from the event"
+            },
+            {
+              "value": "data",
+              "label": "Quest data"
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "conditions",
+          "kind": "conditions",
+          "key": "conditions",
+          "label": "Take the “Yes” path when",
+          "hint": "All clauses must hold for the “Yes” path. Otherwise the “No” path runs."
+        }
+      ],
+      "editableFieldCount": 2,
+      "defaults": {
+        "conditions": [],
+        "source": "event"
+      }
+    },
+    {
+      "type": "flow.delay",
+      "slug": "flow-delay",
+      "label": "Wait",
+      "blurb": "Pause before continuing",
+      "icon": "clock",
+      "category": "flow",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "seconds",
+          "kind": "number",
+          "key": "seconds",
+          "label": "Seconds",
+          "hint": "How long the story pauses here. Fractions are fine — 0.5 waits half a second.",
+          "min": 0,
+          "step": 0.5
+        }
+      ],
+      "editableFieldCount": 1,
+      "defaults": {
+        "seconds": 1
+      }
+    },
+    {
+      "type": "flow.reroute",
+      "slug": "flow-reroute",
+      "label": "Reroute",
+      "blurb": "Split or tidy a wire",
+      "icon": "shuffle",
+      "category": "flow",
+      "hook": "declarative",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "A tidy point for your wires: run a connection through here to fan it out to several nodes or to route it around clutter. It has no effect on the story itself. Tip: double-click any wire on the canvas to drop one in automatically."
+        }
+      ],
+      "editableFieldCount": 0,
+      "defaults": {}
+    },
+    {
+      "type": "layout.group",
+      "slug": "layout-group",
+      "label": "Group frame",
+      "blurb": "A named box that moves its nodes",
+      "icon": "layers",
+      "category": "layout",
+      "hook": "declarative",
+      "obtainable": true,
+      "targets": [],
+      "sources": [],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "Draw a box around part of your quest to keep it tidy. Drag the frame and everything inside moves with it. It has no effect on how the mod runs."
+        },
+        {
+          "depth": 0,
+          "path": "label",
+          "kind": "text",
+          "key": "label",
+          "label": "Name",
+          "hint": "Shown in the frame's title bar — name the cluster after what it does, e.g. “Act 1: recon”."
+        },
+        {
+          "depth": 0,
+          "path": "color",
+          "kind": "color",
+          "key": "color",
+          "label": "Title bar colour",
+          "hint": "Colour-code your frames however you like — e.g. one colour per act, or per character. It only changes how the frame looks in the editor."
+        },
+        {
+          "depth": 0,
+          "path": "comment",
+          "kind": "textarea",
+          "key": "comment",
+          "label": "Comment",
+          "hint": "A note to future-you about what this cluster does.",
+          "rows": 3
+        }
+      ],
+      "editableFieldCount": 3,
+      "defaults": {
+        "label": "Group",
+        "comment": "",
+        "w": 360,
+        "h": 240,
+        "color": "#64748b"
+      }
+    },
+    {
+      "type": "flow.random",
+      "slug": "flow-random",
+      "label": "Random pick",
+      "blurb": "Choose one option at random",
+      "icon": "shuffle",
+      "category": "flow",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "options",
+          "kind": "list",
+          "key": "options",
+          "label": "Options",
+          "hint": "One of these is picked at random and stored. Add as many as you like.",
+          "addLabel": "Add option",
+          "fields": [
+            {
+              "depth": 1,
+              "path": "options.label",
+              "kind": "text",
+              "key": "label",
+              "label": "Value",
+              "hint": "The value stored if this option is picked."
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "storeAs",
+          "kind": "text",
+          "key": "storeAs",
+          "label": "Store the result as",
+          "hint": "A name you choose. The picked value is saved under it so you can read it back later with {{data.name}}.",
+          "mono": true
+        }
+      ],
+      "editableFieldCount": 3,
+      "defaults": {
+        "options": []
+      }
+    },
+    {
+      "type": "flow.sequence",
+      "slug": "flow-sequence",
+      "label": "Sequence",
+      "blurb": "Fire several outputs one after another",
+      "icon": "list",
+      "category": "flow",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [],
+      "hasDynamicSockets": true,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "One input, as many outputs as you like. When the story reaches this node the outputs fire from top to bottom, waiting the pause you set before each one. Add or remove outputs below — each row is a socket on the node."
+        },
+        {
+          "depth": 0,
+          "path": "steps",
+          "kind": "list",
+          "key": "steps",
+          "label": "Outputs, in order",
+          "hint": "They fire top to bottom. Drag the rows' ✕ to remove an output — any wire attached to it is removed too.",
+          "addLabel": "Add output",
+          "fields": [
+            {
+              "depth": 1,
+              "path": "steps.label",
+              "kind": "text",
+              "key": "label",
+              "label": "Name",
+              "hint": "Free text — whatever helps you recognise this output on the canvas, e.g. “lights out” or “call Mara”."
+            },
+            {
+              "depth": 1,
+              "path": "steps.delayMs",
+              "kind": "number",
+              "key": "delayMs",
+              "label": "Wait before firing (milliseconds)",
+              "hint": "How long to pause before this output fires, counted from the previous one. 0 fires it immediately; 1000 is one second.",
+              "min": 0,
+              "step": 100
+            }
+          ]
+        }
+      ],
+      "editableFieldCount": 3,
+      "defaults": {
+        "steps": [
+          {
+            "id": "xhzYFPYn",
+            "label": "1",
+            "delayMs": 0
+          },
+          {
+            "id": "2NxSkDuT",
+            "label": "2",
+            "delayMs": 1000
+          }
+        ]
+      }
+    },
+    {
+      "type": "flow.debug",
+      "slug": "flow-debug",
+      "label": "Debug probe",
+      "blurb": "Print what is happening here",
+      "icon": "bug",
+      "category": "flow",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "label",
+          "kind": "text",
+          "key": "label",
+          "label": "Label",
+          "hint": "Names itself after whatever you wire it to — socket, node and detail. Type your own to override it.",
+          "placeholder": "named when you connect it"
+        },
+        {
+          "depth": 0,
+          "path": "includeData",
+          "kind": "toggle",
+          "key": "includeData",
+          "label": "Include saved values",
+          "hint": "Print everything the quest has saved with a “Remember a value” node."
+        },
+        {
+          "depth": 0,
+          "path": "includePayload",
+          "kind": "toggle",
+          "key": "includePayload",
+          "label": "Include the event",
+          "hint": "Also print the details the game passed to this point, so you can see the real values instead of guessing what arrived."
+        },
+        {
+          "depth": 0,
+          "path": "toast",
+          "kind": "toggle",
+          "key": "toast",
+          "label": "Show on screen too",
+          "hint": "Also show it on screen, so you can test without reading the log file."
+        }
+      ],
+      "editableFieldCount": 4,
+      "defaults": {
+        "label": "",
+        "labelAuto": false,
+        "toast": false,
+        "includeData": true,
+        "includePayload": true
+      }
+    },
+    {
+      "type": "flow.note",
+      "slug": "flow-note",
+      "label": "Sticky note",
+      "blurb": "A comment on the canvas",
+      "icon": "note",
+      "category": "layout",
+      "hook": "declarative",
+      "obtainable": true,
+      "targets": [],
+      "sources": [],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "text",
+          "kind": "textarea",
+          "key": "text",
+          "label": "Note",
+          "hint": "Shown on the canvas only. Notes are never exported into the mod.",
+          "rows": 6
+        },
+        {
+          "depth": 0,
+          "path": "width",
+          "kind": "number",
+          "key": "width",
+          "label": "Width",
+          "hint": "How wide the note is on the canvas, in pixels.",
+          "min": 160,
+          "max": 640,
+          "step": 20
+        }
+      ],
+      "editableFieldCount": 2,
+      "defaults": {
+        "text": "",
+        "width": 240
+      }
+    },
+    {
+      "type": "flow.beat",
+      "slug": "flow-beat",
+      "label": "Story Beat",
+      "blurb": "Plan a story beat — colour it, preview it",
+      "icon": "flag",
+      "category": "layout",
+      "hook": "declarative",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": true,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "Planning only. This node is stripped from the exported mod and never runs. Wire it among reroute, branch and sequence to sketch a flow; the story passes through it unchanged."
+        },
+        {
+          "depth": 0,
+          "path": "title",
+          "kind": "text",
+          "key": "title",
+          "label": "Headline",
+          "hint": "A short name for this beat, e.g. “Act 2 — the firewall”. It is the card's title bar."
+        },
+        {
+          "depth": 0,
+          "path": "text",
+          "kind": "textarea",
+          "key": "text",
+          "label": "Beat text",
+          "hint": "The key content of the beat. The card previews the top ~800 characters and expands into a scrollable panel for the rest.",
+          "rows": 8
+        },
+        {
+          "depth": 0,
+          "path": "choices",
+          "kind": "list",
+          "key": "choices",
+          "label": "Branch choices",
+          "hint": "Add a row for each path the story can take. Each gets its own output socket on the card, so you can wire each branch onward while planning.",
+          "addLabel": "Add choice",
+          "fields": [
+            {
+              "depth": 1,
+              "path": "choices.label",
+              "kind": "text",
+              "key": "label",
+              "label": "Choice",
+              "hint": "Short title for this path, e.g. “Go in through the front door”."
+            },
+            {
+              "depth": 1,
+              "path": "choices.note",
+              "kind": "textarea",
+              "key": "note",
+              "label": "What happens",
+              "hint": "One line on where this path leads, so a branching beat reads at a glance.",
+              "rows": 2
+            }
+          ]
+        },
+        {
+          "depth": 0,
+          "path": "width",
+          "kind": "number",
+          "key": "width",
+          "label": "Width (px)",
+          "hint": "How wide the card is on the canvas, in pixels.",
+          "min": 200,
+          "max": 640,
+          "step": 20
+        },
+        {
+          "depth": 0,
+          "path": "color",
+          "kind": "color",
+          "key": "color",
+          "label": "Card colour",
+          "hint": "Pick any colour. Colour-coding by act, character or branch is usually the clearest."
+        }
+      ],
+      "editableFieldCount": 7,
+      "defaults": {
+        "title": "",
+        "text": "",
+        "color": "#64748b",
+        "width": 280,
+        "choices": []
+      }
+    }
+  ]
+}

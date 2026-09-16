@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pay the player — HackHub Quest Editor handbook</title>
+<link rel="stylesheet" href="../manual.css" />
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="Handbook contents">
+  <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
+  <p class="build">Handbook · build 2026-09-14.r162</p>
+  <div class="search">
+    <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
+    <div class="results" role="listbox" aria-label="Search results"></div>
+  </div>
+  <ol>
+    <li><a href="../index.html">Start here</a></li>
+    <li><a href="../tutorial.html">Your first quest</a></li>
+    <li><a href="../concepts.html">How a quest works</a></li>
+    <li><a href="../nodes.html">Node reference</a>
+      <ul class="sub">
+        <li><a href="../nodes.html#cat-entry">Quest lifecycle</a></li>
+        <li><a href="../nodes.html#cat-objective">Objectives</a></li>
+        <li><a href="../nodes.html#cat-trigger">Triggers</a></li>
+        <li><a href="../nodes.html#cat-world">World building</a></li>
+        <li><a href="../nodes.html#cat-comms">Communication</a></li>
+        <li><a href="../nodes.html#cat-reply">Custom terminal</a></li>
+        <li><a href="../nodes.html#cat-effect">Effects</a></li>
+        <li><a href="../nodes.html#cat-community">Community addons</a></li>
+        <li><a href="../nodes.html#cat-flow">Flow control</a></li>
+        <li><a href="../nodes.html#cat-layout">Layout</a></li>
+      </ul>
+    </li>
+    <li><a href="../guides.html">Feature guides</a></li>
+    <li><a href="../recipes.html">Recipes</a></li>
+    <li><a href="../checking.html">Checking your quest</a></li>
+    <li><a href="../export.html">Exporting and installing</a></li>
+    <li><a href="../troubleshooting.html">When something goes wrong</a></li>
+    <li><a href="../appendices.html">Glossary and limits</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <h1><span class="cat-dot" style="background:var(--cat-effect)"></span>Pay the player</h1>
+  <p class="tag"><span class="badge" style="color:var(--cat-effect)">Effects</span>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">fx.pay</code></p>
+</header>
+
+<section id="node-fx-pay-page">
+
+<h2>What it does</h2>
+<p>Puts money into the player's bank account.</p>
+
+<h2>When you'd use it</h2>
+<p>Use it when the story pays off. A client wires you a fee after you hand over
+the file. A employer settles up once the last objective ticks. A refund arrives
+after the player fixes something they broke.</p>
+<p>Most quests pay once, near the end. If the money is the reward for one
+specific step, wire this node directly after the objective that earns it, so a
+player who takes a different route does not get paid for work they skipped.</p>
+
+<h2>In the game, this looks like</h2>
+<p>The player's balance goes up by the amount you set. Their bank statement
+gains one line, reading whatever you typed in <b class="ui">Description</b>,
+sent by whoever you named in <b class="ui">From name</b>.</p>
+<p>Nothing pops up on screen by default. If you want the player to notice the
+payment as it lands, add a <a href="fx-notify.html">Notify</a> node beside
+this one — a balance that changes with nothing on screen gets overlooked.</p>
+
+<h2>Fields</h2>
+
+<h3 id="node-fx-pay-field-amount">Amount</h3>
+<blockquote class="blurb">Credits deposited into the player's bank account.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>A whole number of credits. The fee, the bounty, the settlement.</dd>
+  <dt>Example</dt><dd><code>2500</code></dd>
+  <dt>Default</dt><dd><code>100</code></dd>
+  <dt>Limits</dt><dd>0 or more. Decimals are not accepted.</dd>
+  <dt>If you leave it empty</dt><dd><b>The payment never happens, and nothing tells you.</b> The exported mod skips the whole transaction when the amount is not above zero — no error, no warning, no line in the bank statement. Check this first when a payment does not arrive.</dd>
+</dl>
+
+<h3 id="node-fx-pay-field-description">Description</h3>
+<blockquote class="blurb">The label on the bank statement line.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The words the player reads on their statement. Write it the way a bank would, because the player reads it as evidence that the job paid out.</dd>
+  <dt>Example</dt><dd><code>Meridian Capital — contract settlement</code></dd>
+  <dt>Default</dt><dd><code>Job payment</code></dd>
+  <dt>Limits</dt><dd>Any text.</dd>
+  <dt>If you leave it empty</dt><dd>The statement line has no label, so the player sees money appear from nowhere.</dd>
+  <dt>Watch out</dt><dd>This is a good place for a runtime tag if the amount should read differently per player — see <a href="../guides.html#generate-tags">Generate and tags</a>.</dd>
+</dl>
+
+<h3 id="node-fx-pay-field-fromIBAN">From IBAN</h3>
+<blockquote class="blurb">The sending account, shown in the transfer details.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The account number the money came from. Players who dig into the transfer see it, so it works as a clue.</dd>
+  <dt>Example</dt><dd><code>DE89370400440532013000</code></dd>
+  <dt>Default</dt><dd>empty</dd>
+  <dt>Limits</dt><dd>Any text. The editor does not check that it is a real account number.</dd>
+  <dt>If you leave it empty</dt><dd>The transfer details show no sending account.</dd>
+  <dt>Watch out</dt><dd>The dice button beside this field writes a plausible account number, so you do not have to invent one that looks right.</dd>
+</dl>
+
+<h3 id="node-fx-pay-field-fromName">From name</h3>
+<blockquote class="blurb">The sender's name on the statement.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Who the player should believe sent the money. A person, a company, or the client's handle from earlier in the story.</dd>
+  <dt>Example</dt><dd><code>Meridian Capital</code></dd>
+  <dt>Default</dt><dd>empty</dd>
+  <dt>Limits</dt><dd>Any text.</dd>
+  <dt>If you leave it empty</dt><dd>The statement names no sender. Filling in one of <b class="ui">From name</b> or <b class="ui">From IBAN</b> is enough for the game to attach a sender to the transfer — but a statement with an account number and no name looks unfinished, so fill in both.</dd>
+  <dt>Watch out</dt><dd>Keep this consistent with whoever hired the player. A payment from a name the story never mentioned reads as a mistake, not a mystery.</dd>
+</dl>
+
+<div class="note"><b>An older kind of payment.</b> If you open a project made
+before this build, a <b>Pay the player</b> node in it may pay a percentage of
+the player's balance instead of a fixed sum. Those still work exactly as they
+were written, and the node shows a note saying so. You cannot set that up on a
+new node — a percentage is now the job of
+<a href="fx-withdraw.html">Charge the player</a>, which takes money out.</div>
+
+<h2>Wires</h2>
+<table>
+  <thead><tr><th>Socket</th><th>Direction</th><th>What to connect</th><th>Required?</th><th>If left unconnected</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="name">In</td><td>input</td>
+      <td>The node that should run immediately before the payment — usually an <a href="objective.html">Objective</a> or a <a href="flow-branch.html">Branch</a>.</td>
+      <td>Yes</td>
+      <td>The node is unreachable and never runs. The editor flags it — see <a href="../checking.html#msg-unreachable">Unreachable</a>.</td>
+    </tr>
+    <tr>
+      <td class="name">Out</td><td>output</td>
+      <td>Whatever should happen after the money lands — a closing line, a <a href="fx-notify.html">Notify</a>, the next objective.</td>
+      <td>No</td>
+      <td>The payment still happens, and the quest stops here. That is the right shape for a final payout.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Step by step: add this node to a quest</h2>
+<ol class="plain">
+  <li>Find <b class="ui">Pay the player</b> under <b>Effects</b> in the palette on the left.</li>
+  <li>Drag it onto the canvas, near the node that earns the payment.</li>
+  <li>Drag a wire from that node's <b class="ui">Out</b> socket into this node's <b class="ui">In</b> socket. The wire turns the flow colour, which means the two are the same kind of connection.</li>
+  <li>Select the node and type the amount. <b>2500</b> is a reasonable first fee.</li>
+  <li>Type a statement label — something a bank would print.</li>
+  <li>Roll the dice beside <b class="ui">From IBAN</b> and <b class="ui">From name</b> to fill in a believable sender, then edit the name to match your client.</li>
+  <li>Look at the status bar. It should show no issues for this node. If it says <b>Unreachable</b>, the wire in step 3 did not take.</li>
+</ol>
+
+<figure>
+  <img src="../img/node-fx-pay-inspector.png"
+       alt="The Pay the player node selected on the canvas, with its inspector open on the right showing the Amount field set to 2500, a Description reading Meridian Capital — contract settlement, and a From IBAN and From name filled in." />
+  <figcaption>The inspector for <b>Pay the player</b>, with all four fields
+  filled in. Notice the dice button beside <b>From IBAN</b> and <b>From
+  name</b> — one click writes a believable sender.</figcaption>
+</figure>
+
+<h2>Common mistakes</h2>
+<ul class="plain">
+  <li><b>The amount is 0 or blank, so nothing happens.</b> There is no warning for this. Open the node and check <b class="ui">Amount</b> before anything else.</li>
+  <li><b>The node is not wired in.</b> A payment floating on its own never runs. Wire something into <b class="ui">In</b>.</li>
+  <li><b>The sender is half filled in.</b> An account number with no name, or a name with no account, makes the statement look broken. Fill in both.</li>
+  <li><b>The player never notices.</b> The balance changes with nothing on screen. Add a <a href="fx-notify.html">Notify</a> if the payment is the payoff of the whole quest.</li>
+  <li><b>You wanted a percentage.</b> This node pays a fixed sum. Taking a slice of the balance is <a href="fx-withdraw.html">Charge the player</a>.</li>
+</ul>
+
+<h2>Messages you might see</h2>
+<ul class="plain">
+  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so it never runs.</li>
+</ul>
+
+<h2>Related nodes</h2>
+<ul class="plain">
+  <li><a href="fx-withdraw.html">Charge the player</a> — takes money out instead, and can take a percentage of the balance.</li>
+  <li><a href="fx-notify.html">Notify</a> — tells the player the payment landed.</li>
+  <li><a href="objective.html">Objective</a> — the task the payment rewards. Wire its completion into this node's <b class="ui">In</b>.</li>
+  <li><a href="fx-setdata.html">Set quest data</a> — remember how much you paid, so a later quest can refer to it.</li>
+</ul>
+
+</section>
+
+<div class="pagefoot">
+  <a href="fx-withdraw.html">← Charge the player</a>
+  <a class="next" href="fx-notify.html">Notify →</a>
+</div>
+
+<a class="totop" href="#node-fx-pay-page">↑ back to top</a>
+
+<footer class="colophon">
+  HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·
+  field labels, hints, defaults and limits on this page are taken from the
+  editor's own node definitions.
+</footer>
+
+</main>
+</div>
+<script src="../search-index.js"></script>
+<script src="../manual.js"></script>
+</body>
+</html>

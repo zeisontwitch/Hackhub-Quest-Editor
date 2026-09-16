@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Node reference — HackHub Quest Editor handbook</title>
+<link rel="stylesheet" href="manual.css" />
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Handbook contents">
+  <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
+  <p class="build">Handbook · build 2026-09-14.r162</p>
+  <div class="search">
+    <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
+    <div class="results" role="listbox" aria-label="Search results"></div>
+  </div>
+  <ol>
+    <li><a href="index.html">Start here</a></li>
+    <li><a href="tutorial.html">Your first quest</a></li>
+    <li><a href="concepts.html">How a quest works</a></li>
+    <li><a href="nodes.html">Node reference</a></li>
+    <li><a href="guides.html">Feature guides</a></li>
+    <li><a href="recipes.html">Recipes</a></li>
+    <li><a href="checking.html">Checking your quest</a></li>
+    <li><a href="export.html">Exporting and installing</a></li>
+    <li><a href="troubleshooting.html">When something goes wrong</a></li>
+    <li><a href="appendices.html">Glossary and limits</a></li>
+  </ol>
+</nav>
+<main>
+<header class="hero">
+  <h1>Node reference</h1>
+  <p class="tag">All 33 node types you can add, grouped the way the palette groups them.</p>
+</header>
+<section id="node-index">
+<p>Every page here follows the same shape: what the node does, when you would
+use it, what the player experiences, every setting it has, what to wire into
+it, how to add it, and the ways it usually goes wrong.</p>
+<div class="note warn"><b>Being written.</b> This page is scaffolding
+from the Phase 3 skeleton — the structure and anchors are final, the prose lands
+in Phase 4. Nothing here is a claim about the editor yet.</div>
+  <h3 id="cat-entry"><span class="cat-dot" style="background:#a78bfa"></span>Quest lifecycle</h3>
+  <table>
+    <thead><tr><th>Node</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td class="name"><a href="nodes/entry-start.html">Quest start</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">entry.start</span></td><td>Runs once when the quest begins. Setup goes here.</td></tr>
+      <tr><td class="name"><a href="nodes/entry-load.html">On start & reload</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">entry.load</span></td><td>Runs on claim and every load. Listeners go here.</td></tr>
+      <tr><td class="name"><a href="nodes/entry-complete.html">On quest complete</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">entry.complete</span></td><td>Only runs if the quest completes — with auto-complete off and no Complete button (the default) that never happens. End the story from the last objective instead.</td></tr>
+      <tr><td class="name"><a href="nodes/entry-abandon.html">On quest abandoned</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">entry.abandon</span></td><td>Runs if the player gives up. Cleanup goes here.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="cat-objective"><span class="cat-dot" style="background:#fbbf24"></span>Objectives</h3>
+  <table>
+    <thead><tr><th>Node</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td class="name"><a href="nodes/objective.html">Objective</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">objective</span></td><td>A task the player must complete</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="cat-trigger"><span class="cat-dot" style="background:#22d3ee"></span>Triggers</h3>
+  <table>
+    <thead><tr><th>Node</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td class="name"><a href="nodes/trigger-event.html">When event</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">trigger.event</span></td><td>React to something the player does</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="cat-world"><span class="cat-dot" style="background:#34d399"></span>World building</h3>
+  <table>
+    <thead><tr><th>Node</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td class="name"><a href="nodes/world-network.html">Create network</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">world.network</span></td><td>Routers, devices, firewalls and ports</td></tr>
+      <tr><td class="name"><a href="nodes/world-firewall.html">Firewall rule</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">world.firewall</span></td><td>Allow or block a port</td></tr>
+      <tr><td class="name"><a href="nodes/world-port.html">Change port</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">world.port</span></td><td>Open, close, add or remove a port</td></tr>
+      <tr><td class="name"><a href="nodes/world-domain.html">Register domain</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">world.domain</span></td><td>Point a hostname at an IP</td></tr>
+      <tr><td class="name"><a href="nodes/world-database.html">Create database</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">world.database</span></td><td>Content for sqlmap and DatabaseManager</td></tr>
+      <tr><td class="name"><a href="nodes/world-files.html">Place files</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">world.files</span></td><td>Drop files on a PC or a remote device</td></tr>
+      <tr><td class="name"><a href="nodes/world-toolresponse.html">Tool response</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">world.toolResponse</span></td><td>Script what a recon tool reports</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="cat-comms"><span class="cat-dot" style="background:#f472b6"></span>Communication</h3>
+  <table>
+    <thead><tr><th>Node</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td class="name"><a href="nodes/comms-dialogue.html">Dialogue</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">comms.dialogue</span></td><td>A conversation with the player — phone call, Kisscord, e-mail or WeeChat</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="cat-reply"><span class="cat-dot" style="background:#fb923c"></span>Custom terminal</h3>
+  <table>
+    <thead><tr><th>Node</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td class="name"><a href="nodes/reply-input.html">Manual input</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">reply.input</span></td><td>The player types a passphrase</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="cat-effect"><span class="cat-dot" style="background:#60a5fa"></span>Effects</h3>
+  <table>
+    <thead><tr><th>Node</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td class="name"><a href="nodes/fx-pay.html">Pay the player</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.pay</span></td><td>Deposit money</td></tr>
+      <tr><td class="name"><a href="nodes/fx-withdraw.html">Charge the player</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.withdraw</span></td><td>Withdraw money</td></tr>
+      <tr><td class="name"><a href="nodes/fx-notify.html">Notify</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.notify</span></td><td>A popup or toast</td></tr>
+      <tr><td class="name"><a href="nodes/fx-setdata.html">Set quest data</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.setData</span></td><td>Store a value for later</td></tr>
+      <tr><td class="name"><a href="nodes/fx-claimquest.html">Claim another quest</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.claimQuest</span></td><td>Chain into the next quest</td></tr>
+      <tr><td class="name"><a href="nodes/fx-shell.html">Run terminal command</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.shell</span></td><td>Execute in the terminal</td></tr>
+      <tr><td class="name"><a href="nodes/fx-handbook.html">Open handbook</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.handbook</span></td><td>Jump to an in-game article</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="cat-community"><span class="cat-dot" style="background:#2dd4bf"></span>Community addons</h3>
+  <table>
+    <thead><tr><th>Node</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td class="name"><a href="nodes/world-packdata.html">Give data to an addon</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">world.packData</span></td><td>Pick a data shape from an addon and fill it in</td></tr>
+      <tr><td class="name"><a href="nodes/pack-node.html">Addon node</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">pack.node</span></td><td>A story node from an addon — find it under Editor Mods</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="cat-flow"><span class="cat-dot" style="background:#94a3b8"></span>Flow control</h3>
+  <table>
+    <thead><tr><th>Node</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td class="name"><a href="nodes/flow-branch.html">Branch</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">flow.branch</span></td><td>Split on a condition</td></tr>
+      <tr><td class="name"><a href="nodes/flow-delay.html">Wait</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">flow.delay</span></td><td>Pause before continuing</td></tr>
+      <tr><td class="name"><a href="nodes/flow-reroute.html">Reroute</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">flow.reroute</span></td><td>Split or tidy a wire</td></tr>
+      <tr><td class="name"><a href="nodes/flow-random.html">Random pick</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">flow.random</span></td><td>Choose one option at random</td></tr>
+      <tr><td class="name"><a href="nodes/flow-sequence.html">Sequence</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">flow.sequence</span></td><td>Fire several outputs one after another</td></tr>
+      <tr><td class="name"><a href="nodes/flow-debug.html">Debug probe</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">flow.debug</span></td><td>Print what is happening here</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="cat-layout"><span class="cat-dot" style="background:#64748b"></span>Layout</h3>
+  <table>
+    <thead><tr><th>Node</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td class="name"><a href="nodes/layout-group.html">Group frame</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">layout.group</span></td><td>A named box that moves its nodes</td></tr>
+      <tr><td class="name"><a href="nodes/flow-note.html">Sticky note</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">flow.note</span></td><td>A comment on the canvas</td></tr>
+      <tr><td class="name"><a href="nodes/flow-beat.html">Story Beat</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">flow.beat</span></td><td>Plan a story beat — colour it, preview it</td></tr>
+    </tbody>
+  </table>
+
+</section>
+
+<div class="pagefoot"><a href="concepts.html">← How a quest works</a><a class="next" href="guides.html">Feature guides →</a></div>
+<footer class="colophon">
+  HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·
+  every figure on these pages is taken from the editor's own source.
+</footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="manual.js"></script>
+</body>
+</html>

@@ -104,7 +104,7 @@ Three heading levels, one-line purpose per section, estimated words.
 - **2.9 Dry run it** — walking the quest before exporting.
 - **2.10 Export, install, play** — the `.zip`, where it goes in the game, and
   the first thing to look for when it loads.
-- **2.11 What you just built** — the recap, mapping each step back to a concept.
+- **2.11 What you built** — the recap, mapping each step back to a concept.
 - **2.12 If your screen doesn't look like this** — the three steps most likely
   to diverge, each with the recovery.
 

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Recipes — HackHub Quest Editor handbook</title>
+<link rel="stylesheet" href="manual.css" />
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Handbook contents">
+  <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
+  <p class="build">Handbook · build 2026-09-14.r162</p>
+  <div class="search">
+    <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
+    <div class="results" role="listbox" aria-label="Search results"></div>
+  </div>
+  <ol>
+    <li><a href="index.html">Start here</a></li>
+    <li><a href="tutorial.html">Your first quest</a></li>
+    <li><a href="concepts.html">How a quest works</a></li>
+    <li><a href="nodes.html">Node reference</a></li>
+    <li><a href="guides.html">Feature guides</a></li>
+    <li><a href="recipes.html">Recipes</a></li>
+    <li><a href="checking.html">Checking your quest</a></li>
+    <li><a href="export.html">Exporting and installing</a></li>
+    <li><a href="troubleshooting.html">When something goes wrong</a></li>
+    <li><a href="appendices.html">Glossary and limits</a></li>
+  </ol>
+</nav>
+<main>
+<header class="hero">
+  <h1>Recipes</h1>
+  <p class="tag">Sixteen arrangements that work, each solving one thing an author actually wants.</p>
+</header>
+<section id="recipes-list">
+<p>Each recipe names the nodes it uses, how long it takes, why the arrangement
+works, and the two or three ways it usually goes wrong. They are drawn from the
+built-in templates and from how the game's own quests are put together.</p>
+<div class="note warn"><b>Being written.</b> This page is scaffolding
+from the Phase 3 skeleton — the structure and anchors are final, the prose lands
+in Phase 4. Nothing here is a claim about the editor yet.</div>
+</section>
+
+<section id="recipe-objective-that-ticks">
+<h2>Give the player an objective, and make it tick</h2>
+<dl class="facts-list">
+  <dt>You'll need</dt><dd><a href="nodes/objective.html">Objective</a> · <a href="nodes/trigger-event.html">When event</a></dd>
+  <dt>Takes</dt><dd>About five minutes</dd>
+</dl>
+
+<h3>The idea</h3>
+<p>An objective on its own is a line in the player's journal that never ticks.
+It has no idea what completing it means. The node that knows is <b>When
+event</b> — it listens to the game, and when the thing you asked about happens,
+it fires. Wire the two together and the objective finishes itself.</p>
+<p>This is the single most common shape in a quest, and the one thing the
+editor refuses to let you forget: an objective with nothing wired into its
+<b class="ui">Trigger</b> socket is flagged as an error, because the player can
+never finish the quest.</p>
+
+<h3>Steps</h3>
+<ol class="plain">
+  <li>Drag an <b class="ui">Objective</b> from <b>Objectives</b> onto the canvas.</li>
+  <li>Select it and fill in <b class="ui">Shown to the player</b> — the line that appears in the journal. Write it as an instruction: <code>Download the manifest from the warehouse server</code>.</li>
+  <li>Give it an <b class="ui">Identifier</b> — a short name only other nodes see, like <code>get-manifest</code>. You will not need it here, but later objectives can unlock behind this one.</li>
+  <li>Drag a <b class="ui">When event</b> from <b>Triggers</b> onto the canvas, beside the objective.</li>
+  <li>Select it and open <b class="ui">Game event</b>. Pick the event that means the player did the thing — for a downloaded file over ssh, <code>Terminal.SSH.FileDownload</code>.</li>
+  <li>Add a condition under <b class="ui">Only when</b> so any file download does not count. Set the field to <code>name</code>, the rule to <b class="ui">contains</b>, and the value to <code>manifest</code>.</li>
+  <li>Drag a wire from the <b class="ui">When</b> socket on the trigger into the <b class="ui">Trigger</b> socket on the objective. This wire is a different colour from a flow wire, because it is a different kind of connection.</li>
+  <li>Check the status bar. The error should be gone.</li>
+</ol>
+
+<figure>
+  <img src="img/recipe-01-objective.png"
+       alt="An Objective node and a When event node side by side, joined by a single condition-coloured wire running from the trigger's When socket into the objective's Trigger socket." />
+  <figcaption>The finished pair. One wire, and it goes into <b>Trigger</b> —
+  not into <b>In</b>, which is a different kind of connection and will refuse
+  the wire.</figcaption>
+</figure>
+
+<h3>Variations</h3>
+<ul class="plain">
+  <li><b>Several things must happen first.</b> Add a second <b>When event</b> and wire both into the same <b class="ui">Trigger</b> socket. The objective ticks when any one of them fires — so for "do all three", gate them behind each other instead.</li>
+  <li><b>Hide it until later.</b> Turn on <b class="ui">Hidden until unlocked</b> on the objective and wire another objective's <b class="ui">Unlocks</b> socket into its <b class="ui">Unlocked by</b> socket. It stays out of the journal until then.</li>
+  <li><b>Run something when it ticks.</b> Wire the objective's <b class="ui">On complete</b> socket to whatever should happen next — a payment, a phone call, the next objective.</li>
+</ul>
+
+<h3>If it doesn't work</h3>
+<ul class="plain">
+  <li><b>The objective still shows an error.</b> The wire went into <b class="ui">In</b> instead of <b class="ui">Trigger</b>. Delete it and try again — the two sockets are different colours for exactly this reason.</li>
+  <li><b>It ticks too early, or on the wrong file.</b> The condition is too loose, or missing. Narrow it, or add a second clause.</li>
+  <li><b>It never ticks even though the player did the thing.</b> The event you picked is not the one the game fires for that action. A file pulled over ssh raises two events, and listening to only one is a common miss — see <a href="troubleshooting.html#objective-never-ticks">the objective never ticks</a>.</li>
+</ul>
+</section>
+
+<div class="pagefoot"><a href="guides.html">← Feature guides</a><a class="next" href="checking.html">Checking your quest →</a></div>
+<footer class="colophon">
+  HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·
+  every figure on these pages is taken from the editor's own source.
+</footer>
+</main>
+</div>
+<script src="search-index.js"></script>
+<script src="manual.js"></script>
+</body>
+</html>

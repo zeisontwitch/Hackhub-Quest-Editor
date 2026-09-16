@@ -22,6 +22,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { NODE_TYPES_REGISTRY, PALETTE_HIDDEN_TYPES, type FieldDef } from "@/schema/registry";
+import { EDITOR_BUILD } from "@/compiler/compile";
 import type { NodeType } from "@/schema/nodes";
 
 const ROOT = resolve(__dirname, "..");
@@ -509,5 +510,100 @@ describe("manual coverage — G12: furniture nodes", () => {
         // flow.note is the one furniture node with no export effect at all —
         // planningComments() filters on layout.group only.
         expect(page("flow-note")).toMatch(/never runs|ships nothing|drawing aid/i);
+    });
+});
+
+/* ── G13/G14/G15: drift the SDK can introduce ──────────────────────────────
+ * G1, G2 and G3 import the node registry directly, so a new node type or
+ * field fails them immediately. Three classes of drift had no gate at all, and
+ * all three are exactly what an SDK update moves:
+ *
+ *   G13  the event count is stated in prose in four pages; G10 only checked
+ *        the front-page chip, so the other four occurrences could go stale
+ *        in silence
+ *   G14  appendices.html renders all 92 event names; nothing compared them to
+ *        the catalogue
+ *   G15  the build stamp is in 43 pages. `npm run gen:manual` refreshes the 32
+ *        generated node pages from inventory.editorBuild; the other 11 are
+ *        hand-written and were never checked against EDITOR_BUILD.
+ *
+ * These read the live sources (reference/hackhub-events.json, EDITOR_BUILD)
+ * rather than the checked-in inventory.json, so they stay honest even if
+ * nobody re-runs the extractor.
+ */
+describe("manual coverage — G13: the event count in prose", () => {
+    it("every stated count matches the catalogue", () => {
+        const cat = JSON.parse(
+            readFileSync(join(ROOT, "reference", "hackhub-events.json"), "utf8"),
+        ) as { count: number };
+        /* Every phrasing the handbook currently uses to state the count. A new
+           phrasing would not be caught — add it here when you write one. */
+        const PHRASINGS = [
+            /The (\d+) events/g,
+            /There are (\d+)[,.]/g,
+            /there are (\d+) of them/g,
+            /<b>(\d+)<\/b>\s*game events/g,
+        ];
+        const wrong: string[] = [];
+        for (const page of PAGES) {
+            const text = read(page);
+            for (const p of PHRASINGS) {
+                p.lastIndex = 0;
+                for (const m of text.matchAll(p)) {
+                    if (Number(m[1]) !== cat.count) {
+                        wrong.push(`${rel(page)}: says ${m[1]}, the catalogue has ${cat.count}`);
+                    }
+                }
+            }
+        }
+        expect(
+            wrong,
+            `${wrong.length} stale event counts. Re-run gen:manual and update the prose:\n  ` +
+                wrong.join("\n  "),
+        ).toEqual([]);
+    });
+});
+
+describe("manual coverage — G14: the event list", () => {
+    it("lists exactly the events in the catalogue", () => {
+        const cat = JSON.parse(
+            readFileSync(join(ROOT, "reference", "hackhub-events.json"), "utf8"),
+        ) as { events: { name: string }[] };
+        const page = join(MANUAL, "appendices.html");
+        if (!existsSync(page)) return;
+        const text = read(page);
+        const start = text.indexOf('<h2 id="events-list"');
+        const end = text.indexOf('<h2 id="version"');
+        if (start === -1 || end === -1) return;
+        const listed = [...text.slice(start, end).matchAll(/<td><code>([^<]+)<\/code>/g)].map(
+            (m) => m[1],
+        );
+        const inCatalogue = new Set(cat.events.map((e) => e.name));
+        const stale = listed.filter((n) => !inCatalogue.has(n));
+        const missing = cat.events.map((e) => e.name).filter((n) => !listed.includes(n));
+        expect(
+            { listed: listed.length, stale, missing },
+            `appendices.html#events-list disagrees with reference/hackhub-events.json.\n` +
+                `  Regenerate that section rather than patching rows by hand.`,
+        ).toEqual({ listed: cat.events.length, stale: [], missing: [] });
+    });
+});
+
+describe("manual coverage — G15: the build stamp", () => {
+    it("every page documents the build it was written against", () => {
+        const wrong: string[] = [];
+        for (const page of PAGES) {
+            const text = read(page);
+            for (const m of text.matchAll(/build (\d{4}-\d{2}-\d{2}\.r\d+)/g)) {
+                if (m[1] !== EDITOR_BUILD) {
+                    wrong.push(`${rel(page)}: says ${m[1]}, the editor is ${EDITOR_BUILD}`);
+                }
+            }
+        }
+        expect(
+            wrong,
+            `${wrong.length} pages claim the wrong editor build. The 11 hand-written pages carry\n` +
+                `  the stamp as literal text, so gen:manual will not fix them:\n  ${wrong.join("\n  ")}`,
+        ).toEqual([]);
     });
 });

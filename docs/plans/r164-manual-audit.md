@@ -244,6 +244,7 @@ Prioritised by reader pain. None of this was changed; all of it is a proposal.
 | **P5** | Third warning level is invisible in the docs' mental model | `compile.ts` `info` ×5 | Either fold `info` into the reader-facing vocabulary deliberately, or the manual documents three tiers. |
 | **P6** | The templates gallery has better copy than the manual | `templates/index.ts` descriptions vs manual's "A worked example quest." | Surface `description`/`difficulty`/`nodeCount` in the Templates dialog if not already, and let the manual inherit it. |
 | **P7** | The **Pay the player** hint says "Credits" but the game's money is dollars | `registry.ts:846` hint: "Credits deposited into the player's bank account." | Zeis confirmed the game uses dollars. The manual now says dollars in its prose; the quoted field hint still says "Credits" until this copy is fixed. Change the hint (and the **Charge the player** sibling at `registry.ts:864`) to "dollars" in the same round as the manual, so the two agree. |
+| **P8** | The **Comment** hint on a Group frame undersells the field | `registry.ts` hint: "A note to future-you about what this cluster does." — but `planningComments()` (`compile.ts:91`) writes that text into `dist/mod.js` as a comment, where a third party debugging the mod will read it | Say so in the hint. "A note to future-you" reads as private; the text actually ships. Suggested: "A note about what this cluster does — this text is exported into the mod as a comment." The manual now states the behaviour; the hint and the manual should agree. |
 
 ---
 

@@ -58,10 +58,10 @@
 
 <h2>When you'd use it</h2>
 <p>Use it to keep a long quest readable: one frame per act, per location, or per character.</p>
-<p>It changes nothing about how the quest runs. It is a drawing aid.</p>
+<p>It changes nothing about how the quest runs. Its name and comment still travel with the export.</p>
 
 <h2>In the game, this looks like</h2>
-<p>Nothing. A frame never reaches the mod.</p>
+<p>The frame itself never runs. Its Name and Comment do ship: the export writes each group as a comment near the top of the mod, so somebody reading that file without this editor can still follow how you laid the quest out. Sticky notes ship nothing at all.</p>
 
 <h2>Fields</h2>
 
@@ -80,7 +80,9 @@
 <h3 id="node-layout-group-field-comment">Comment</h3>
 <blockquote class="blurb">A note to future-you about what this cluster does.</blockquote>
 <dl class="facts-list">
+  <dt>What to put here</dt><dd>Worth writing as though a stranger will read it, because they might. This text is the part of the frame that survives into the exported mod.</dd>
   <dt class="dt-mute">Default</dt><dd>empty</dd>
+  <dt class="dt-warn">Watch out</dt><dd>A comment containing the two characters that close a block comment cannot break the export. The compiler escapes it for you.</dd>
 </dl>
 
 

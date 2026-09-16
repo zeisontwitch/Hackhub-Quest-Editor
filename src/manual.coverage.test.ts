@@ -474,3 +474,40 @@ describe("manual coverage — G11: panel messages", () => {
         expect(docs).toContain("No issues");
     });
 });
+
+/* ── G12: furniture nodes ──────────────────────────────────────────────────
+ * Three node types are stripped from the exported graph (compile.ts:27), and
+ * the handbook once claimed all three "never reach the game". That was wrong
+ * for two of them: a group's name and comment are emitted as comments near the
+ * top of dist/mod.js (planningComments, compile.ts:91), and a beat's wires are
+ * spliced so the flow still connects. Both are asserted by
+ * src/compiler/__tests__/furniture.test.ts.
+ *
+ * This gate ties the three node pages to that behaviour, so a page cannot
+ * quietly go back to claiming a furniture node ships nothing when it does.
+ */
+describe("manual coverage — G12: furniture nodes", () => {
+    const page = (slug: string) => read(join(MANUAL, "nodes", `${slug}.html`));
+
+    it("says a Group frame's name and comment ship as comments", () => {
+        const text = page("layout-group");
+        expect(text).toMatch(/comment/i);
+        expect(
+            /never reaches the mod|never reach the mod|ships nothing at all\./.test(
+                text.replace(/Sticky notes ship nothing at all\./, ""),
+            ),
+            "layout-group.html claims the frame ships nothing, but planningComments() emits its " +
+                "name and comment into dist/mod.js",
+        ).toBe(false);
+    });
+
+    it("says a Story Beat's wires are spliced", () => {
+        expect(page("flow-beat")).toMatch(/spliced|joins the wires|wires are joined/i);
+    });
+
+    it("still says a Sticky note ships nothing", () => {
+        // flow.note is the one furniture node with no export effect at all —
+        // planningComments() filters on layout.group only.
+        expect(page("flow-note")).toMatch(/never runs|ships nothing|drawing aid/i);
+    });
+});

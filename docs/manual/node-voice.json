@@ -741,7 +741,7 @@
       "Use it to sketch a scene before you build it: what happens, and which ways it can go.",
       "Each row under <b class=\"ui\">Branch choices</b> becomes an output socket, so you can wire the paths out and see the shape of the scene."
     ],
-    "game": "Nothing. The card is a planning aid, and the story passes through it unchanged.",
+    "game": "Nothing. The card is stripped from the mod, and the wires that ran through it are spliced together, so the story reaches the same place it would have. The beat describes a moment; it does not create one.",
     "fields": {
       "title": {
         "put": "The card's title bar. Name the beat after the scene.",
@@ -770,10 +770,15 @@
     "what": "A named box around part of your canvas. Drag it and everything inside moves with it.",
     "when": [
       "Use it to keep a long quest readable: one frame per act, per location, or per character.",
-      "It changes nothing about how the quest runs. It is a drawing aid."
+      "It changes nothing about how the quest runs. Its name and comment still travel with the export."
     ],
-    "game": "Nothing. A frame never reaches the mod.",
-    "fields": {}
+    "game": "The frame itself never runs. Its Name and Comment do ship: the export writes each group as a comment near the top of the mod, so somebody reading that file without this editor can still follow how you laid the quest out. Sticky notes ship nothing at all.",
+    "fields": {
+      "comment": {
+        "put": "Worth writing as though a stranger will read it, because they might. This text is the part of the frame that survives into the exported mod.",
+        "watch": "A comment containing the two characters that close a block comment cannot break the export. The compiler escapes it for you."
+      }
+    }
   },
   "world.network": {
     "oneliner": "Builds the machines the player breaks into.",

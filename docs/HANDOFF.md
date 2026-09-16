@@ -1,3 +1,25 @@
+# Handoff — r168
+
+r168 adds a focused raw QA check for the old phone-call completion freeze. SDK
+0.24 declares Kisscord/WeeChat/Mail events, but **no phone/dialog end event**;
+phone `onEnd` is a callback on `QuestDialogSpeech`, not a `ModEventMap` entry.
+
+Added to `reference/sdk-0.24-qa/mod` harness version `1.0.6`:
+
+- `qe24 claim phone-auto` then `qe24 phone-auto`: final phone line calls
+  `completeObjective("phone-ended")`; `AutoComplete = true` should finish the
+  quest without freezing.
+- `qe24 claim phone-direct` then `qe24 phone-direct`: final phone line calls
+  `this.complete()` from `onEnd`; it should finish without freezing.
+
+These probes are untested in-game until Zeis runs them. If they pass, do not add
+a fake global phone event; design a Dialogue-node phone-completion/callback
+surface instead.
+
+Supporting note: [`plans/r168-phone-onend-completion-qa.md`](plans/r168-phone-onend-completion-qa.md).
+
+---
+
 # Handoff — r167
 
 r167 exposes **Create Wi-Fi** after the r166 SDK 0.24 in-game QA pass. The

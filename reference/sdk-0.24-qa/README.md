@@ -5,14 +5,16 @@ This folder is a deliberately small, manual in-game harness for the r166 SDK 0.2
 ## Contents
 
 - `mod/manifest.json` — package metadata for the raw in-game harness.
-- `mod/dist/mod.js` — hand-authored HackHub content mod that uses SDK 0.24-only surfaces directly.
-- `projects/sdk-0.24-ingame-qa.project.json` — editor-importable project that exercises the editor's still-hidden native `world.wifi` node path plus catalogue events.
+- `mod/dist/mod.js` — hand-authored HackHub content mod that uses SDK 0.24-only surfaces directly, including phone-call `onEnd` completion probes.
+- `projects/sdk-0.24-ingame-qa.project.json` — editor-importable project that exercises the editor's native `world.wifi` node path plus catalogue events; it was generated before r167 exposed Create Wi-Fi in the palette.
 - `editor-export/` — ready-to-install export generated from that project with editor build `2026-09-16.r166`.
 
 
 ## Current raw-mod status from in-game QA
 
-As of the HackHub 1.3.0 / Steam build 25341308 run on 2026-09-16, the raw `mod` harness is green by tester report except for terminal `curl`, which is unavailable in that build/session. Browser HTTP, Browser intercept, Browser collaborator, `Http.fetch`, Scheduler, native Wi-Fi fields/connect/disconnect/reload, abandon/reset-reseed command cleanup, and the separate quest lifecycle probes all behaved as expected with no freezes. The full step-by-step transcript is `QE24-TestResults - 3.md`.
+As of the HackHub 1.3.0 / Steam build 25341308 run on 2026-09-16, the raw `mod` harness is green by tester report except for terminal `curl`, which is unavailable in that build/session. Browser HTTP, Browser intercept, Browser collaborator, `Http.fetch`, Scheduler, native Wi-Fi fields/connect/disconnect/reload, abandon/reset-reseed command cleanup, and the separate direct quest lifecycle probes all behaved as expected with no freezes. The full step-by-step transcript is `QE24-TestResults - 3.md`.
+
+New after that run: raw harness version 1.0.6 adds two untested phone-call `onEnd` probes (`phone-auto` and `phone-direct`) for the old renderer-freeze bug. Run them on a clean throwaway save before changing the editor's phone-call completion behavior.
 
 One raw Wi-Fi gameplay wart remains documented: Bettercap can set the AP by BSSID and capture/crack the handshake, but `set wifi.ap 02:24:00:00:24:01` logs `SSID: undefined` instead of `QE24-RAW-5G`. Treat that as a runtime UX issue to account for before exposing native Wi-Fi broadly.
 
@@ -75,6 +77,12 @@ Recommended next pass:
 
    qe24 claim unclaim
    qe24 unclaim
+
+   # Phone onEnd completion freeze probes:
+   qe24 claim phone-auto
+   qe24 phone-auto
+   qe24 claim phone-direct
+   qe24 phone-direct
    ```
 
 4. Scheduler reload check. Because your observed game clock is fast, use a longer delay so you have time to save/reload:
@@ -93,6 +101,7 @@ Recommended next pass:
 - **Scheduler/Time** — a job should fire on the in-game clock, including after using Wait or reloading.
 - **Native Wi-Fi** — SDK 0.24 can create real access points with BSSID/channel/WPS fields. A pass means the AP appears, connects, disconnects, and survives reload without duplicates.
 - **Quest completion APIs** — `complete`, `retire`, and `unclaim` should not freeze the game or leave stale quest rows.
+- **Phone `onEnd` completion** — a phone-call line callback should be able to complete an objective or call `complete()` without freezing the renderer.
 
 ## Intercept test, step by step
 
@@ -158,8 +167,8 @@ Test this separately from the raw harness on a clean save when possible. Install
 - `qe24 collab` — mint a collaborator subdomain and print a Browser URL, a `curl` command for builds that have curl, and an optional DNS-only `nslookup` hint.
 - `qe24 intercept` — print the two-terminal intercept instructions.
 - `qe24 intercept on|queue|forward|drop|off` — exercise HTTP interception. In the current harness, `forward` and `drop` also turn intercept off to avoid accidentally holding later Browser requests.
-- `qe24 claim complete|button|retire|unclaim` — claim the focused quest-completion probes.
-- `qe24 complete`, `qe24 button-ready`, `qe24 retire`, `qe24 unclaim` — trigger each completion/cleanup API probe.
+- `qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct` — claim the focused quest-completion probes.
+- `qe24 complete`, `qe24 button-ready`, `qe24 retire`, `qe24 unclaim`, `qe24 phone-auto`, `qe24 phone-direct` — trigger each completion/cleanup API probe. The phone probes start a call; let its final line end before judging the result.
 - `qe24 reset` — clear the harness's saved IPs, unregister the host domain if possible and destroy known test networks.
 
 Raw harness fixed values:

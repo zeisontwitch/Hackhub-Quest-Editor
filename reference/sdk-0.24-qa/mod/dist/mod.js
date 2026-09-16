@@ -5,8 +5,8 @@
  *
  * Hand-authored, ready-to-copy HackHub mod used to verify SDK 0.24 fences in
  * game. It deliberately exercises APIs the no-code editor does not expose yet:
- * Quest.complete(), Quest.retire(), Quest.unclaim(), Scheduler callbacks and
- * Http route handlers.
+ * Quest.complete(), Quest.retire(), Quest.unclaim(), phone Dialog onEnd
+ * completion, Scheduler callbacks and Http route handlers.
  */
 var sdk = require("@hotbunny/hackhub-content-sdk");
 
@@ -288,6 +288,7 @@ function printGuide(tools) {
     tools.println("4. Scheduler/Time: jobs should fire on the in-game clock and survive save/load.");
     tools.println("5. Native Wi-Fi: a mod can create a real Wi-Fi AP with BSSID, channel and WPS fields.");
     tools.println("6. Quest completion APIs: complete, retire and unclaim should not freeze or leave stale quests.");
+    tools.println("7. Phone Dialog onEnd completion: a line-end callback should be able to finish a quest without freezing.");
     tools.println("");
     tools.println("Easy first pass:");
     tools.println("- qe24 http-fetch. If it printed status 200 and the http-response objective ticked, record that as a pass.");
@@ -313,6 +314,8 @@ function printNextSteps(tools) {
     tools.println("   qe24 claim button    -> qe24 button-ready -> click the quest Complete button -> save/reload.");
     tools.println("   qe24 claim retire    -> qe24 retire    -> quest should disappear without OnComplete/reward.");
     tools.println("   qe24 claim unclaim   -> qe24 unclaim   -> quest should disappear without being completed.");
+    tools.println("   qe24 claim phone-auto -> qe24 phone-auto -> let the call end; AutoComplete should finish without freezing.");
+    tools.println("   qe24 claim phone-direct -> qe24 phone-direct -> let the call end; onEnd calls complete() without freezing.");
     tools.println("4. Scheduler reload: qe24 schedule 10, save/reload before it fires if you can, then wait. It should fire once.");
     tools.println("5. Later, install the editor export to test QE24-LAB-5G and qe24-website.test separately.");
 }
@@ -532,6 +535,101 @@ class QE24UnclaimTarget extends sdk.Quest {
     OnAbandon() { log("unclaim target abandoned"); }
 }
 
+class QE24PhoneOnEndAutoCompleteProbe extends sdk.Quest {
+    constructor() {
+        super();
+        this.Name = "QE24PhoneOnEndAutoCompleteProbe";
+        this.Title = "QE24 phone onEnd AutoComplete probe";
+        this.Description = "Claim with qe24 claim phone-auto, then run qe24 phone-auto. Let the call end; the final line's onEnd completes the objective, and AutoComplete should finish the quest without freezing.";
+        this.Group = "sandbox";
+        this.AutoStart = false;
+        this.AutoComplete = true;
+        this.HasCompleteButton = false;
+        this.Abandonable = true;
+        this.Rewards = { money: 1, xp: 1 };
+        this.Objectives = [{ name: "phone-ended", description: "Run qe24 phone-auto, let the phone call finish, and watch for an OnComplete mail with no renderer freeze." }];
+        var self = this;
+        this.Dialog = {
+            default: [
+                { speaker: "QE24", text: "Phone onEnd AutoComplete probe. The last line completes the objective.", timeout: 500 },
+                {
+                    speaker: "QE24",
+                    text: "When this line ends, onEnd completes the objective. AutoComplete should finish the quest.",
+                    timeout: 500,
+                    isEnd: true,
+                    onEnd: function () {
+                        log("phone-auto onEnd fired; about to complete objective");
+                        completeObjectiveSafe(self, "phone-ended");
+                        log("phone-auto onEnd returned after completeObjective");
+                    },
+                },
+            ],
+        };
+    }
+    CreateData() { return {}; }
+    OnStart() { log("phone-auto probe started"); }
+    OnObjectivesStart() {
+        var self = this;
+        this.Events.on("QE24.PhoneAutoStart", function () {
+            log("starting phone-auto dialog");
+            self.createDialog("default", 0);
+        });
+    }
+    OnComplete() {
+        log("phone-auto OnComplete fired");
+        sendMailSafe("QE24 phone onEnd AutoComplete fired", "A phone Dialog line onEnd completed the objective, AutoComplete finished the quest, and OnComplete returned.");
+    }
+    OnAbandon() { log("phone-auto abandoned"); }
+}
+
+class QE24PhoneOnEndDirectCompleteProbe extends sdk.Quest {
+    constructor() {
+        super();
+        this.Name = "QE24PhoneOnEndDirectCompleteProbe";
+        this.Title = "QE24 phone onEnd complete() probe";
+        this.Description = "Claim with qe24 claim phone-direct, then run qe24 phone-direct. Let the call end; the final line's onEnd calls this.complete() and should not freeze the renderer.";
+        this.Group = "sandbox";
+        this.AutoStart = false;
+        this.AutoComplete = false;
+        this.HasCompleteButton = false;
+        this.Abandonable = true;
+        this.Rewards = { money: 1, xp: 1 };
+        this.Objectives = [{ name: "phone-ended", description: "Run qe24 phone-direct, let the phone call finish, and watch for an OnComplete mail with no renderer freeze." }];
+        var self = this;
+        this.Dialog = {
+            default: [
+                { speaker: "QE24", text: "Phone onEnd direct complete probe. The last line calls complete().", timeout: 500 },
+                {
+                    speaker: "QE24",
+                    text: "When this line ends, onEnd will call this.complete(). The game should keep running.",
+                    timeout: 500,
+                    isEnd: true,
+                    onEnd: function () {
+                        log("phone-direct onEnd fired; about to complete objective and quest");
+                        completeObjectiveSafe(self, "phone-ended");
+                        self.complete();
+                        log("phone-direct onEnd returned after complete()");
+                    },
+                },
+            ],
+        };
+    }
+    CreateData() { return {}; }
+    OnStart() { log("phone-direct probe started"); }
+    OnObjectivesStart() {
+        var self = this;
+        this.Events.on("QE24.PhoneDirectStart", function () {
+            log("starting phone-direct dialog");
+            self.createDialog("default", 0);
+        });
+    }
+    OnComplete() {
+        log("phone-direct OnComplete fired");
+        sendMailSafe("QE24 phone onEnd complete() fired", "A phone Dialog line onEnd called this.complete(), the quest completed, and OnComplete returned.");
+    }
+    OnAbandon() { log("phone-direct abandoned"); }
+}
+
 class QE24Command extends sdk.Command {
     constructor() {
         super();
@@ -539,7 +637,7 @@ class QE24Command extends sdk.Command {
         this.Description = "SDK 0.24 QA harness commands";
         this.Autocomplete = [
             { label: "qe24", type: "STRING" },
-            { label: "guide|next|status|history|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|reset", type: "STRING" },
+            { label: "guide|next|status|history|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
         ];
     }
     async Run(tools) {
@@ -578,7 +676,7 @@ class QE24Command extends sdk.Command {
             tools.println("Connected Wi-Fi is QE24 target: " + (connectedMatchesTarget ? "yes" : "no"));
             if (targetWifi && currentWifi && !connectedMatchesTarget) tools.println("Note: if the game UI says QE24 is connected, paste this mismatch before we unhide Wi-Fi.");
             tools.println("Tip: run qe24 next if the 6/6 surface objective quest is already done, qe24 intercept for proxy-test steps, or qe24 history for HTTP/collab evidence.");
-            tools.println("Commands: qe24 guide · qe24 next · qe24 status · qe24 history · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 reset");
+            tools.println("Commands: qe24 guide · qe24 next · qe24 status · qe24 history · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
             return;
         }
         if (sub === "history") {
@@ -652,7 +750,7 @@ class QE24Command extends sdk.Command {
         }
         if (sub === "claim") {
             var which = args[1] || "complete";
-            var names = { complete: "QE24DirectCompleteProbe", button: "QE24CompleteButtonProbe", retire: "QE24RetireProbe", unclaim: "QE24UnclaimTarget", surface: "QE24SurfaceProbe" };
+            var names = { complete: "QE24DirectCompleteProbe", button: "QE24CompleteButtonProbe", retire: "QE24RetireProbe", unclaim: "QE24UnclaimTarget", surface: "QE24SurfaceProbe", "phone-auto": "QE24PhoneOnEndAutoCompleteProbe", "phone-direct": "QE24PhoneOnEndDirectCompleteProbe" };
             var q = names[which];
             if (!q || !sdk.Quest || !sdk.Quest.claim) { tools.printError("Unknown quest or Quest.claim unavailable"); return; }
             sdk.Quest.claim(q);
@@ -677,6 +775,16 @@ class QE24Command extends sdk.Command {
         if (sub === "unclaim") {
             if (sdk.Quest && sdk.Quest.unclaim) sdk.Quest.unclaim("QE24UnclaimTarget");
             tools.println("Called Quest.unclaim(\"QE24UnclaimTarget\").");
+            return;
+        }
+        if (sub === "phone-auto") {
+            if (sdk.Events && sdk.Events.emit) sdk.Events.emit("QE24.PhoneAutoStart", {});
+            tools.println("Started QE24PhoneOnEndAutoCompleteProbe's phone call. Let the call end; the objective should complete and AutoComplete should finish the quest without freezing.");
+            return;
+        }
+        if (sub === "phone-direct") {
+            if (sdk.Events && sdk.Events.emit) sdk.Events.emit("QE24.PhoneDirectStart", {});
+            tools.println("Started QE24PhoneOnEndDirectCompleteProbe's phone call. Let the call end; onEnd should call complete() without freezing.");
             return;
         }
         if (sub === "reset") {
@@ -723,6 +831,8 @@ sdk.RegisterQuest(QE24DirectCompleteProbe);
 sdk.RegisterQuest(QE24CompleteButtonProbe);
 sdk.RegisterQuest(QE24RetireProbe);
 sdk.RegisterQuest(QE24UnclaimTarget);
+sdk.RegisterQuest(QE24PhoneOnEndAutoCompleteProbe);
+sdk.RegisterQuest(QE24PhoneOnEndDirectCompleteProbe);
 if (typeof sdk.RegisterCommand === "function") {
     sdk.RegisterCommand({ default: true, scope: "local" })(QE24Command);
 }

@@ -34,21 +34,179 @@
   <p class="tag">Start with the symptom. Every branch ends in something to try.</p>
 </header>
 <section id="troubleshooting">
-<div class="note warn"><b>Being written.</b> This page is scaffolding
-from the Phase 3 skeleton — the structure and anchors are final, the prose lands
-in Phase 4. Nothing here is a claim about the editor yet.</div>
+<p>Start from what you can see, not from what you think you did wrong. Every
+entry below begins with a symptom and works backwards to a cause.</p>
+<p>The two tools that answer most questions are on the top bar.
+<a href="guides.html#dry-run">Dry run</a> walks through your quest the way the
+mod would run it. The <a href="nodes/flow-debug.html">Debug probe</a> is a node
+you drop on the canvas that prints what a node does when it fires — and whether
+it fires at all. When something does not happen, the probe tells you which
+half of that sentence is the problem.</p>
+
 <h2 id="start-here">What is happening?</h2>
-<p>Written in Phase 4.</p>
+<table>
+  <thead><tr><th>You see this</th><th>Go to</th></tr></thead>
+  <tbody>
+    <tr><td>Nothing at all, in the editor or the game</td><td><a href="#nothing-runs">Nothing happens at all</a></td></tr>
+    <tr><td>An objective stays open forever</td><td><a href="#objective-never-ticks">The objective never ticks</a></td></tr>
+    <tr><td>The player cannot reach a machine you built</td><td><a href="#cannot-get-in">The player cannot get in</a></td></tr>
+    <tr><td>The export window says <b class="ui">Needs attention</b></td><td><a href="#export-refuses">The export report</a></td></tr>
+    <tr><td>Words on a node you do not recognise</td><td><a href="checking.html">Every message, quoted exactly</a></td></tr>
+    <tr><td>Something else</td><td><a href="#faq">Frequently asked</a></td></tr>
+  </tbody>
+</table>
+
 <h2 id="nothing-runs">Nothing happens at all</h2>
-<p>Written in Phase 4.</p>
+<p>Work down this list in order. Each step rules out the most common cause
+first.</p>
+<dl class="facts-list">
+  <dt class="dt-danger">1. Nothing is wired to a start</dt><dd>A node only runs
+  if a wire reaches it from <b class="ui">Quest start</b> or
+  <b class="ui">On start &amp; reload</b>. Select your first story node and look
+  at its <b class="ui">In</b> socket. If nothing is attached, nothing will ever
+  arrive.</dd>
+  <dt class="dt-warn">2. The node is unreachable</dt><dd>The canvas marks these.
+  A node with an <b class="ui">Unreachable</b> badge is on the map but off the
+  story.</dd>
+  <dt class="dt-warn">3. It is a listener in the wrong place</dt><dd>Anything
+  that has to be listening belongs on <b class="ui">On start &amp; reload</b>.
+  Set it up on <b class="ui">Quest start</b> instead and it is gone the moment
+  the player reloads.</dd>
+  <dt>4. You exported but did not unzip</dt><dd>The game reads a folder in
+  <code>mods/</code>, not an archive. A <code>.zip</code> sitting in that
+  directory is ignored.</dd>
+  <dt>5. The quest is not being accepted</dt><dd>Check
+  <b class="ui">Start automatically</b> on the <b class="ui">Quest</b> tab. With
+  it off, the quest waits for the player to accept it.</dd>
+</dl>
+<figure>
+  <img src="img/trouble-unreachable-badge.png"
+       alt="A node on the canvas carrying a small warning badge that reads Unreachable." />
+  <figcaption>The <b class="ui">Unreachable</b> badge. It is visible from
+  across the canvas, which is what it is for.</figcaption>
+</figure>
+<div class="note ok"><b>Still nothing?</b> Drop a Debug probe straight after the
+start node and run a dry run. If the probe prints, your start is fine and the
+problem is further down. If it stays silent, the problem is in that wiring.</div>
+
 <h2 id="objective-never-ticks">The objective never ticks</h2>
-<p>Written in Phase 4.</p>
+<p>An objective completes one of two ways: the story flow reaches it, or the
+event wired to its trigger fires. If neither happens, it stays open forever, and
+the quest cannot be finished.</p>
+<dl class="facts-list">
+  <dt class="dt-danger">Nothing is wired to its trigger</dt><dd>The canvas calls
+  this <b class="ui">No trigger</b>, and the quest's
+  <b class="ui">Health</b> group counts them. This is the single most common
+  reason a quest cannot be completed.</dd>
+  <dt class="dt-warn">The wire went into the wrong socket</dt><dd>
+  <b class="ui">In</b> takes a blue flow wire and ticks the objective when the
+  story arrives. <b class="ui">Trigger</b> takes a cyan one and waits for the
+  player. A wire into <b class="ui">In</b> cannot respond to anything the player
+  does.</dd>
+  <dt class="dt-warn">You wired two events</dt><dd>Only the first event wired to
+  a trigger is used. The second is ignored, so if you added a backup, that is
+  why it did not help.</dd>
+  <dt>It is locked behind another objective</dt><dd>The amber
+  <b class="ui">Unlocked by</b> socket only accepts a wire from another
+  objective. From anything else it is dropped without a message.</dd>
+</dl>
+<figure>
+  <img src="img/trouble-no-trigger.png"
+       alt="An Objective node carrying the No trigger badge, shown in the danger colour." />
+  <figcaption>The <b class="ui">No trigger</b> badge. It is red because the
+  player cannot finish the quest.</figcaption>
+</figure>
+<p>To find out which of these it is, put a Debug probe on the wire feeding the
+objective and run a dry run. The probe prints whether it fired. A probe that
+prints and an objective that stays open means the trigger is the problem, not
+the flow.</p>
+
 <h2 id="cannot-get-in">The player cannot get into the machine</h2>
-<p>Written in Phase 4.</p>
-<h2 id="export-refuses">The export refuses</h2>
-<p>Written in Phase 4.</p>
+<p>You built a network and the player cannot reach it. Work through the doors in
+order.</p>
+<dl class="facts-list">
+  <dt class="dt-danger">The router has no way in</dt><dd>The device tree says so
+  in plain words: <span class="mono">This router has no way in: set a model for
+  `fern`, or enable support-mail recovery.</span> Neither route is open, so
+  there is nothing to try.</dd>
+  <dt class="dt-warn">The exploit lands in the wrong account</dt><dd>An SSH
+  exploit lands in a guest account when it finds one. Your files may be in an
+  account the player has not reached yet. Turn the exploit off for a machine
+  that should hold only the accounts you listed.</dd>
+  <dt class="dt-warn">The address does not exist</dt><dd>If a
+  <a href="nodes/world-files.html">Place files</a> node points at an address
+  nothing uses, the message is red for a reason: the export drops those files
+  rather than failing. Check the four red messages about addresses in
+  <a href="checking.html#msg-field-files-no-network">checking your quest</a>.</dd>
+  <dt>A port or firewall rule has no machine</dt><dd>Both need a target. With
+  the field blank they act on nothing, and the player sees a machine that
+  behaves like a default one.</dd>
+</dl>
+
+<h2 id="export-refuses">The export report</h2>
+<p>First, the premise: <b>the export does not refuse.</b> The
+<b class="ui">Download .zip</b> button is disabled only while the file is being
+packed. It produces a <code>.zip</code> whatever the report says, because a
+quest with problems still deserves to be tested.</p>
+<p>What the report is telling you is what will change on the way into the
+game.</p>
+<dl class="facts-list">
+  <dt class="dt-danger">Needs attention</dt><dd>At least one item is an error.
+  Something you built will be dropped or altered. Fix these before you
+  ship.</dd>
+  <dt class="dt-warn">Good to know</dt><dd>Everything exported as you built it,
+  and what you built may not be what you meant. Read them, then decide.</dd>
+</dl>
+<figure>
+  <img src="img/trouble-export-report.png"
+       alt="The export window with a Needs attention section listing one item in the danger colour." />
+  <figcaption>The report. It describes consequences; it does not block
+  you.</figcaption>
+</figure>
+<p>Each item is quoted in full, with its fix, in
+<a href="checking.html#pre-export">the report before you export</a>. Paste the
+wording into the search box rather than reading the whole list.</p>
+<div class="note warn"><b>A clean report is not a working quest.</b> The report
+covers what the export can see. It says nothing about whether the puzzle is
+solvable, which is what
+<a href="guides.html#dry-run">dry run</a> and a Debug probe are for.</div>
+
 <h2 id="faq">Frequently asked</h2>
-<p>Written in Phase 4.</p>
+<dl class="facts-list">
+  <dt>I set a payment and the player got nothing</dt><dd>An amount of
+  <span class="mono">0</span>, or a blank field, does nothing at all — the node
+  runs and pays nobody. Type a real number. A hundred dollars is a reasonable
+  first fee.</dd>
+  <dt>I paid a percentage and it came out as zero</dt><dd>Percentages are
+  rounded to whole dollars. Ten percent of four dollars is forty cents, which
+  rounds to nothing. Use a fixed amount for small sums.</dd>
+  <dt>My files are missing in the game</dt><dd>Almost always an address
+  mismatch. A <b class="ui">Place files</b> node aimed at a network your quest
+  does not create has its files dropped by the export, and the field turns red
+  to say so.</dd>
+  <dt>The quest panel shows <span class="mono">{{data.targetIp}}</span> instead
+  of an address</dt><dd>Tags are filled in when the quest starts. Seeing one raw
+  means the value it names does not exist at that moment — usually because the
+  network that would create it has not run yet.</dd>
+  <dt>Can I use two <b class="ui">Quest start</b> nodes?</dt><dd>Yes. Every one
+  of them runs. Authors use that for opening threads that do not depend on each
+  other.</dd>
+  <dt>My ending never plays</dt><dd><b class="ui">On quest complete</b> only
+  runs if the quest completes, and it does not by default. End the story from
+  your last objective instead, or switch on
+  <b class="ui">Complete automatically</b>. See
+  <a href="concepts.html#why-no-complete">why quests do not complete</a>.</dd>
+  <dt>The game does not list my mod</dt><dd>Check that you unzipped it, that the
+  folder is directly inside <code>mods/</code>, and that the folder holds a
+  <code>manifest.json</code> rather than another archive.</dd>
+  <dt>Something worked before and now it does not</dt><dd>Undo is unlimited in
+  practice, and the editor keeps a copy in your browser as you work. Before
+  rebuilding anything, try <kbd>Ctrl</kbd>+<kbd>Z</kbd>.</dd>
+</dl>
+<p>If none of this matches, open the canvas
+<b class="ui">Debug</b> panel and note the build stamp, then describe the
+symptom rather than the fix you tried. <a href="export.html#build-stamp">The
+build stamp</a> explains where to find it.</p>
 </section>
 
 <div class="pagefoot"><a href="export.html">← Exporting and installing</a><a class="next" href="appendices.html">Glossary and limits →</a></div>

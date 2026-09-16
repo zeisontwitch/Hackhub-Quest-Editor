@@ -208,7 +208,7 @@ walkthrough and crop to the relevant cluster — not the whole canvas.
 | Filename | What to show |
 |---|---|
 | `trouble-unreachable-badge.png` | A node on the canvas carrying the **Unreachable** warning badge. Crop tight around the node. |
-| `trouble-no-trigger.png` | An Objective carrying the **No trigger** badge — the one error that blocks export. |
+| `trouble-no-trigger.png` | An Objective carrying the **No trigger** badge. Note: nothing blocks export — the **Download .zip** button is disabled only while packing (`ExportDialog.tsx:132`), so this badge is a canvas warning, not a gate. |
 | `trouble-export-report.png` | The export dialog showing a **Needs attention** item. |
 
 ---

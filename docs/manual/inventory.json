@@ -1,10 +1,10 @@
 {
   "generatedBy": "scripts/extract-manual-inventory.mjs",
-  "editorBuild": "2026-09-16.r166",
+  "editorBuild": "2026-09-16.r167",
   "sdkVersion": "0.24.0",
   "counts": {
     "nodeTypes": 34,
-    "obtainableNodeTypes": 33,
+    "obtainableNodeTypes": 34,
     "categories": 10,
     "editableFields": 123,
     "editableFieldsExcludingLists": 116,
@@ -12,9 +12,7 @@
     "events": 99,
     "eventGroups": 10
   },
-  "manualExclusions": [
-    "world.wifi"
-  ],
+  "manualExclusions": [],
   "categories": [
     {
       "id": "entry",
@@ -466,7 +464,7 @@
       "icon": "wifi",
       "category": "world",
       "hook": "onStart",
-      "obtainable": false,
+      "obtainable": true,
       "targets": [
         {
           "id": "in",
@@ -490,8 +488,8 @@
           "key": null,
           "label": null,
           "hint": null,
-          "tone": "warn",
-          "text": "The SDK now declares wireless creation, but this node stays out of the palette until in-game QA verifies the whole shape. Legacy projects that already contain it still export."
+          "tone": "info",
+          "text": "Game note: Bettercap may show no network name after you pick a mod-created access point by BSSID. Scanning, joining and cracking still worked in QA; use the BSSID as the fixed clue."
         },
         {
           "depth": 0,
@@ -513,7 +511,11 @@
           "key": "password",
           "label": "WPA passphrase",
           "hint": "The passphrase the player must discover. Make sure some node in your quest reveals it.",
-          "mono": true
+          "mono": true,
+          "generate": {
+            "kind": "wifiPassphrase",
+            "label": "passphrase"
+          }
         },
         {
           "depth": 0,
@@ -534,7 +536,11 @@
           "label": "BSSID",
           "hint": "Optional MAC address shown for the access point. Leave blank to let the game pick one.",
           "placeholder": "02:24:00:00:24:01",
-          "mono": true
+          "mono": true,
+          "generate": {
+            "kind": "bssid",
+            "label": "BSSID"
+          }
         },
         {
           "depth": 0,
@@ -553,7 +559,7 @@
           "kind": "toggle",
           "key": "wps",
           "label": "Advertises WPS",
-          "hint": "Whether Wi-Fi scans show WPS for this access point. Leave off unless your QA case needs to pin it."
+          "hint": "Whether Wi-Fi scans show WPS for this access point. Leave off unless your story needs to pin it."
         },
         {
           "depth": 0,

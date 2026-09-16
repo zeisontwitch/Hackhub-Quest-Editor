@@ -268,6 +268,70 @@
       ]
     ]
   },
+  "fx.pay": {
+    "oneliner": "Deposits money in the player's bank.",
+    "what": "Pays the player at this point in the story. Use it for rewards, refunds, bounties or contract settlements.",
+    "when": [
+      "Put it after the objective or branch that earns the reward. Paying early makes the ending feel already solved.",
+      "Add a <a href=\"fx-notify.html\">Notify</a> after it if the player should notice the balance change immediately.",
+      "Older saved projects may still carry percentage payout data. New projects use the fixed amount shown here."
+    ],
+    "game": "The player's bank balance rises, and the transfer appears with the statement label and sender you typed.",
+    "fields": {
+      "amount": {
+        "put": "The dollars to award when this node runs.",
+        "example": "250",
+        "empty": "A zero payout still runs, but the player receives nothing."
+      },
+      "description": {
+        "put": "Write how the client names the job when the transfer appears.",
+        "example": "Meridian Capital — contract settlement",
+        "empty": "The money arrives with no useful label, so the reward looks unexplained."
+      },
+      "fromIBAN": {
+        "put": "Use this when a client, shell company or agency should appear as the sender.",
+        "example": "BG80BNBG96611020345678",
+        "emptySafe": "The game still creates a transfer. Fill it when the sender matters to the fiction."
+      },
+      "fromName": {
+        "put": "Name the sender shown in the transfer details.",
+        "example": "Meridian Capital",
+        "emptySafe": "The payment still arrives. Fill it when the player should recognise who paid them."
+      }
+    },
+    "sockets": {
+      "in": {
+        "in": "Whatever moment earns the money."
+      },
+      "out": {
+        "out": "The closing message, next objective, or follow-up effect after the payment lands."
+      }
+    },
+    "steps": [
+      "Find <b class=\"ui\">Pay the player</b> under <b>Effects</b> in the palette.",
+      "Drag it after the step that deserves a reward.",
+      "Set <b class=\"ui\">Amount</b>, then write a short statement label.",
+      "Fill sender details if the payer matters to the story.",
+      "Wire the next beat from <b class=\"ui\">Out</b>."
+    ],
+    "mistakes": [
+      [
+        "The payment is wired before the win condition.",
+        "The player gets paid before proving anything. Move it after the objective's <b class=\"ui\">On complete</b> socket."
+      ],
+      [
+        "No message follows the transfer.",
+        "The balance changes quietly. Add a notification or closing mail if the reward should land with weight."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the payment never happens"
+      ]
+    ]
+  },
   "fx.notify": {
     "oneliner": "Puts a message on the player's screen.",
     "what": "Shows the player a message. Either a popup that stays until they dismiss it, or a toast that slides in and fades on its own.",
@@ -820,6 +884,108 @@
         "Unreachable",
         "msg-unreachable",
         "nothing leads to this node, so the network is never created"
+      ]
+    ]
+  },
+  "world.wifi": {
+    "oneliner": "Creates a wireless target the player can crack and join.",
+    "what": "Adds a Wi-Fi access point to the game's world, with a passphrase, signal strength, optional BSSID and optional devices behind it.",
+    "when": [
+      "Use it when the player should work through Bettercap and hashcat before reaching a network.",
+      "Give the access point a clue trail. The player needs to learn which network to attack and how to recover the passphrase.",
+      "Put machines behind the access point when joining the Wi-Fi should open the rest of the job."
+    ],
+    "game": "The network appears in the Wi-Fi list and Bettercap scan output. The player can capture a handshake, crack the passphrase, join it, and then reach whatever you placed behind the access point.",
+    "fields": {
+      "ssid": {
+        "example": "DOCKNET-5G",
+        "empty": "The access point has no visible name, so the player cannot recognise the right target."
+      },
+      "password": {
+        "example": "forklift-1948",
+        "watch": "If the player must type or crack this value later, make sure they can earn it first."
+      },
+      "signal": {
+        "put": "How strong and quick to join the access point should feel."
+      },
+      "bssid": {
+        "example": "02:24:00:00:17:48",
+        "emptySafe": "The game picks one for you. Fill it only when a clue or test needs a fixed value.",
+        "watch": "Current game builds may show no network name after Bettercap targets this value, but the attack still works."
+      },
+      "channel": {
+        "example": "44",
+        "emptySafe": "The game chooses a channel that fits the network name."
+      },
+      "wps": {
+        "put": "Turn it on for targets that should look old, consumer-grade, or poorly locked down."
+      },
+      "model": {
+        "example": "TP-Link Archer C6",
+        "emptySafe": "The access point still exists. Leave this blank if router-model recovery is not part of the puzzle."
+      },
+      "users": {
+        "put": "Accounts on the access point's own router. Use them for an admin-panel step, not for the machine behind it."
+      },
+      "ports": {
+        "put": "Services exposed by the access point's router itself."
+      },
+      "children": {
+        "put": "The machines the player reaches after joining the Wi-Fi."
+      },
+      "destroyOnComplete": {
+        "put": "Turn this on for a temporary access point that should disappear when the job is done."
+      },
+      "username": {
+        "example": "admin"
+      },
+      "emailAddress": {
+        "example": "admin@docknet.internal"
+      },
+      "external": {
+        "example": "80"
+      },
+      "service": {
+        "example": "http"
+      },
+      "version": {
+        "example": "nginx 8.4.71"
+      }
+    },
+    "sockets": {
+      "in": {
+        "in": "Whatever should happen before the access point exists."
+      },
+      "out": {
+        "out": "The briefing, objective, or next setup step that assumes the access point is live."
+      }
+    },
+    "steps": [
+      "Find <b class=\"ui\">Create Wi-Fi</b> under <b>World building</b> in the palette.",
+      "Name the network and set the passphrase the player has to recover.",
+      "Leave BSSID and Channel blank unless your clue needs a fixed value.",
+      "Add router ports or accounts only if the access point itself should be a target.",
+      "Add machines under <b class=\"ui\">Devices behind the access point</b> when joining Wi-Fi should unlock more systems."
+    ],
+    "mistakes": [
+      [
+        "No passphrase trail.",
+        "The player can see the access point and has no fair way to join it. Hide the passphrase, the model, or the handshake route somewhere in the quest."
+      ],
+      [
+        "Putting the prize on the router by accident.",
+        "Router accounts and ports are for the access point itself. Put the company server under Devices behind the access point."
+      ],
+      [
+        "Treating the Bettercap name display as failure.",
+        "If targeting by BSSID shows no name, keep going: the current game build still captures and cracks the handshake."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the access point is never created"
       ]
     ]
   },

@@ -92,6 +92,12 @@ describe("warning levels", () => {
         expect(levelOf(details, /placeholder domain/)).toBe("warn");
     });
 
+    it("Wi-Fi Bettercap display wart is informational, not a blocker", () => {
+        const project = projectWith([node("world.wifi", { ssid: "LAB-5G", password: "correct-horse" })]);
+        const details = computeWarningDetails(project);
+        expect(levelOf(details, /Bettercap may show no network name/)).toBe("info");
+    });
+
     it("target-matching mismatches warn, and the text view is unchanged", () => {
         const pack = {
             format: 2,

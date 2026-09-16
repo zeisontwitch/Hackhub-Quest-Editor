@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Create Wi-Fi — HackHub Quest Editor handbook</title>
+<link rel="stylesheet" href="../manual.css" />
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="Handbook contents">
+  <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
+  <p class="build">Handbook · build 2026-09-16.r167</p>
+  <div class="search">
+    <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
+    <div class="results" role="listbox" aria-label="Search results"></div>
+  </div>
+  <ol>
+    <li><a href="../index.html">Start here</a></li>
+    <li><a href="../tutorial.html">Your first quest</a></li>
+    <li><a href="../concepts.html">How a quest works</a></li>
+    <li><a href="../nodes.html">Node reference</a>
+      <ul class="sub">
+        <li><a href="../nodes.html#cat-entry"><span class="cat-dot" style="background:var(--cat-entry)"></span>Quest lifecycle</a></li>
+        <li><a href="../nodes.html#cat-objective"><span class="cat-dot" style="background:var(--cat-objective)"></span>Objectives</a></li>
+        <li><a href="../nodes.html#cat-trigger"><span class="cat-dot" style="background:var(--cat-trigger)"></span>Triggers</a></li>
+        <li><a href="../nodes.html#cat-world"><span class="cat-dot" style="background:var(--cat-world)"></span>World building</a></li>
+        <li><a href="../nodes.html#cat-comms"><span class="cat-dot" style="background:var(--cat-comms)"></span>Communication</a></li>
+        <li><a href="../nodes.html#cat-reply"><span class="cat-dot" style="background:var(--cat-reply)"></span>Custom terminal</a></li>
+        <li><a href="../nodes.html#cat-effect"><span class="cat-dot" style="background:var(--cat-effect)"></span>Effects</a></li>
+        <li><a href="../nodes.html#cat-community"><span class="cat-dot" style="background:var(--cat-community)"></span>Community addons</a></li>
+        <li><a href="../nodes.html#cat-flow"><span class="cat-dot" style="background:var(--cat-flow)"></span>Flow control</a></li>
+        <li><a href="../nodes.html#cat-layout"><span class="cat-dot" style="background:var(--cat-layout)"></span>Layout</a></li>
+      </ul>
+    </li>
+    <li><a href="../guides.html">Feature guides</a></li>
+    <li><a href="../how-do-i.html">How do I…</a></li>
+    <li><a href="../checking.html">Checking your quest</a></li>
+    <li><a href="../export.html">Exporting and installing</a></li>
+    <li><a href="../troubleshooting.html">When something goes wrong</a></li>
+    <li><a href="../appendices.html">Glossary and limits</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <h1><span class="cat-dot" style="background:var(--cat-world)"></span>Create Wi-Fi</h1>
+  <p class="tag"><span class="badge" style="color:var(--cat-world)">World building</span>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">world.wifi</code></p>
+</header>
+
+<section id="node-world-wifi-page">
+
+<h2>What it does</h2>
+<p>Adds a Wi-Fi access point to the game's world, with a passphrase, signal strength, optional BSSID and optional devices behind it.</p>
+
+<h2>When you'd use it</h2>
+<p>Use it when the player should work through Bettercap and hashcat before reaching a network.</p>
+<p>Give the access point a clue trail. The player needs to learn which network to attack and how to recover the passphrase.</p>
+<p>Put machines behind the access point when joining the Wi-Fi should open the rest of the job.</p>
+
+<h2>In the game, this looks like</h2>
+<p>The network appears in the Wi-Fi list and Bettercap scan output. The player can capture a handshake, crack the passphrase, join it, and then reach whatever you placed behind the access point.</p>
+
+<h2>Fields</h2>
+
+<h3 id="node-world-wifi-field-ssid">Network name (SSID)</h3>
+<blockquote class="blurb">The network name shown in the in-game Wi-Fi list.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>DOCKNET-5G</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>"NEIGHBOUR_5Ghz"</code></dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>The access point has no visible name, so the player cannot recognise the right target.</dd>
+</dl>
+
+<h3 id="node-world-wifi-field-password">WPA passphrase</h3>
+<blockquote class="blurb">The passphrase the player must discover. Make sure some node in your quest reveals it.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>forklift-1948</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>"letmein123"</code></dd>
+  <dt class="dt-warn">Watch out</dt><dd>If the player must type or crack this value later, make sure they can earn it first.</dd>
+</dl>
+
+<h3 id="node-world-wifi-field-signal">Signal strength</h3>
+<blockquote class="blurb">The game's Wi-Fi scale: 0 = weakest, 3 = strongest. It also drives how long joining takes.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>How strong and quick to join the access point should feel.</dd>
+  <dt class="dt-mute">Default</dt><dd><code>2</code></dd>
+  <dt>Limits</dt><dd>0 to 3. Whole numbers, in steps of 1.</dd>
+</dl>
+
+<h3 id="node-world-wifi-field-bssid">BSSID</h3>
+<blockquote class="blurb">Optional MAC address shown for the access point. Leave blank to let the game pick one.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>02:24:00:00:17:48</code></dd>
+  <dt class="dt-mute">If you leave it empty</dt><dd>The game picks one for you. Fill it only when a clue or test needs a fixed value.</dd>
+  <dt class="dt-warn">Watch out</dt><dd>Current game builds may show no network name after Bettercap targets this value, but the attack still works.</dd>
+</dl>
+
+<h3 id="node-world-wifi-field-channel">Channel</h3>
+<blockquote class="blurb">Optional 2.4 GHz or 5 GHz channel shown by scans. Leave blank to let the game pick one for the SSID's band.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>44</code></dd>
+  <dt>Limits</dt><dd>1 to 196. Whole numbers, in steps of 1.</dd>
+  <dt class="dt-mute">If you leave it empty</dt><dd>The game chooses a channel that fits the network name.</dd>
+</dl>
+
+<h3 id="node-world-wifi-field-wps">Advertises WPS</h3>
+<blockquote class="blurb">Whether Wi-Fi scans show WPS for this access point. Leave off unless your story needs to pin it.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Turn it on for targets that should look old, consumer-grade, or poorly locked down.</dd>
+  <dt>Limits</dt><dd>On or off.</dd>
+</dl>
+
+<h3 id="node-world-wifi-field-model">Router model</h3>
+<blockquote class="blurb">Enables the in-game `fern` recovery route. Leave blank to disable it.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>TP-Link Archer C6</code></dd>
+  <dt class="dt-mute">If you leave it empty</dt><dd>The access point still exists. Leave this blank if router-model recovery is not part of the puzzle.</dd>
+</dl>
+
+<h3 id="node-world-wifi-field-users">Router accounts</h3>
+<blockquote class="blurb">Accounts on the access point's own system. Their files land in /home/&lt;username&gt;/.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Accounts on the access point's own router. Use them for an admin-panel step, not for the machine behind it.</dd>
+  <dt class="dt-mute">Default</dt><dd>an empty list</dd>
+</dl>
+<p>The button reads <b class="ui">Add account</b>.</p><h4 id="node-world-wifi-field-username">Username</h4>
+<blockquote class="blurb">The login name for ssh, ftp or a web login page.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>admin</code></dd>
+</dl>
+<h4 id="node-world-wifi-field-password">Password</h4>
+<blockquote class="blurb">Leave blank to let the game pick one.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>forklift-1948</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>"letmein123"</code></dd>
+  <dt class="dt-warn">Watch out</dt><dd>If the player must type or crack this value later, make sure they can earn it first.</dd>
+</dl>
+<h4 id="node-world-wifi-field-firstName">First name</h4>
+<blockquote class="blurb">Shown on the account's profile page and in whois results.</blockquote>
+<dl class="facts-list">
+
+</dl>
+<h4 id="node-world-wifi-field-lastName">Last name</h4>
+<blockquote class="blurb">Shown on the account's profile page and in whois results.</blockquote>
+<dl class="facts-list">
+
+</dl>
+<h4 id="node-world-wifi-field-emailAddress">E-mail</h4>
+<blockquote class="blurb">The account's e-mail address. Useful as a lead the player can mail.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>admin@docknet.internal</code></dd>
+</dl>
+<h4 id="node-world-wifi-field-acceptReverseTCP">Accepts reverse TCP</h4>
+<blockquote class="blurb">Lets the player open a connection from this account back to their own machine. Turn on only if your quest needs it.</blockquote>
+<dl class="facts-list">
+  <dt>Limits</dt><dd>On or off.</dd>
+</dl>
+
+<h3 id="node-world-wifi-field-ports">Router ports</h3>
+<blockquote class="blurb">Open ports on the access point itself.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Services exposed by the access point's router itself.</dd>
+  <dt class="dt-mute">Default</dt><dd>an empty list</dd>
+</dl>
+<p>The button reads <b class="ui">Add port</b>.</p><h4 id="node-world-wifi-field-external">External port</h4>
+<blockquote class="blurb">The port number as seen from outside. This is what nmap reports and what the player connects to.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>80</code></dd>
+  <dt>Limits</dt><dd>0 to 65535.</dd>
+</dl>
+<h4 id="node-world-wifi-field-internal">Internal port</h4>
+<blockquote class="blurb">The port the service actually listens on inside the machine. Leave equal to the external port unless you are deliberately redirecting.</blockquote>
+<dl class="facts-list">
+  <dt>Limits</dt><dd>0 to 65535.</dd>
+</dl>
+<h4 id="node-world-wifi-field-service">Service</h4>
+<blockquote class="blurb">What nmap prints next to the port, e.g. http, ssh, ftp, mysql. Free text — it is a label, not a real service.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>http</code></dd>
+</dl>
+<h4 id="node-world-wifi-field-version">Version</h4>
+<blockquote class="blurb">The banner nmap -sV prints. Use three numbers and no letters — metasploit refuses "7.2" and "7.2p2", leaving the player unable to run the exploit. Blank omits the version line.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>nginx 8.4.71</code></dd>
+</dl>
+<h4 id="node-world-wifi-field-active">Open</h4>
+<blockquote class="blurb">Closed ports show as filtered to nmap.</blockquote>
+<dl class="facts-list">
+  <dt>Limits</dt><dd>On or off.</dd>
+</dl>
+
+<h3 id="node-world-wifi-field-children">Devices behind the access point</h3>
+<blockquote class="blurb">Machines reachable through this access point. Add a router here to build a second network hop.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The machines the player reaches after joining the Wi-Fi.</dd>
+  <dt class="dt-mute">Default</dt><dd>an empty list</dd>
+</dl>
+
+<h3 id="node-world-wifi-field-destroyOnComplete">Also remove this access point when the quest is completed</h3>
+<blockquote class="blurb">Off by default: the access point stays in the world after the quest. Abandoning the quest removes it either way.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Turn this on for a temporary access point that should disappear when the job is done.</dd>
+  <dt class="dt-mute">Default</dt><dd>off</dd>
+  <dt>Limits</dt><dd>On or off.</dd>
+</dl>
+
+
+
+<h2>Wires</h2>
+<table>
+  <thead><tr><th>Socket</th><th>Direction</th><th>What to connect</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="name kind-flow">In</td><td>input</td>
+      <td>Whatever should happen before the access point exists.</td>
+    </tr>
+    <tr>
+      <td class="name kind-flow">Out</td><td>output</td>
+      <td>The briefing, objective, or next setup step that assumes the access point is live.</td>
+    </tr>
+  </tbody>
+</table>
+<p class="wire-legend">
+  <span class="wire-chip kind-flow"><i></i><b>Then</b> runs next</span>
+  <span class="wire-chip kind-condition"><i></i><b>When</b> tests a condition</span>
+  <span class="wire-chip kind-unlock"><i></i><b>Unlocks</b> opens an objective</span>
+  <span class="wire-chip kind-data"><i></i><b>Data</b> carries a value</span>
+</p>
+<p>A wire only joins two sockets of the same colour, and the editor draws the
+wire in that colour. That is what the colours are for: match the colours and
+the connection takes, mismatch them and it will not.</p>
+
+<h2>Step by step: add this node to a quest</h2>
+<ol class="plain">
+  <li>Find <b class="ui">Create Wi-Fi</b> under <b>World building</b> in the palette.</li>
+  <li>Name the network and set the passphrase the player has to recover.</li>
+  <li>Leave BSSID and Channel blank unless your clue needs a fixed value.</li>
+  <li>Add router ports or accounts only if the access point itself should be a target.</li>
+  <li>Add machines under <b class="ui">Devices behind the access point</b> when joining Wi-Fi should unlock more systems.</li>
+</ol>
+
+<figure>
+  <img src="../img/node-world-wifi-inspector.png"
+       alt="The Create Wi-Fi node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>Create Wi-Fi</b>.</figcaption>
+</figure>
+
+<h2>Common mistakes</h2>
+<ul class="plain">
+  <li><b>No passphrase trail.</b> The player can see the access point and has no fair way to join it. Hide the passphrase, the model, or the handshake route somewhere in the quest.</li>
+  <li><b>Putting the prize on the router by accident.</b> Router accounts and ports are for the access point itself. Put the company server under Devices behind the access point.</li>
+  <li><b>Treating the Bettercap name display as failure.</b> If targeting by BSSID shows no name, keep going: the current game build still captures and cracks the handshake.</li>
+</ul>
+
+<h2>Messages you might see</h2>
+<ul class="plain">
+  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so the access point is never created</li>
+</ul>
+
+<h2>Related nodes</h2>
+<ul class="plain">
+  <li><a href="world-network.html">Create network</a> — Builds the machines the player breaks into.</li>
+  <li><a href="world-firewall.html">Firewall rule</a> — Allows or blocks a port.</li>
+  <li><a href="world-port.html">Change port</a> — Opens, closes, adds or removes a port.</li>
+  <li><a href="world-domain.html">Register domain</a> — Points a hostname at an address.</li>
+  <li><a href="world-database.html">Create database</a> — Data for the player to dig out.</li>
+  <li><a href="world-files.html">Place files</a> — Drops files on a machine.</li>
+  <li><a href="world-toolresponse.html">Tool response</a> — Scripts what a tool reports.</li>
+</ul>
+
+</section>
+
+<div class="pagefoot">
+  <a href="world-network.html">← Create network</a>
+  <a class="next" href="world-firewall.html">Firewall rule →</a>
+</div>
+
+<a class="totop" href="#node-world-wifi-page">↑ back to top</a>
+
+<footer class="colophon">
+  HackHub Quest Editor handbook · documents editor build 2026-09-16.r167 ·
+  field labels, hints, defaults and limits on this page are taken from the
+  editor's own node definitions.
+</footer>
+
+</main>
+</div>
+<script src="../search-index.js"></script>
+<script src="../manual.js"></script>
+</body>
+</html>

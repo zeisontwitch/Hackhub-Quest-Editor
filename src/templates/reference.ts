@@ -54,11 +54,35 @@ export const EXAMPLES: Partial<Record<NodeType, Record<string, unknown>>> = {
         ],
     },
     },
-    /* "world.wifi": hidden from the palette (see PALETTE_HIDDEN_TYPES) even
-       though SDK 0.24.0 declares the native creator; re-add the example here
-       and drop it from PALETTE_HIDDEN_TYPES only after in-game QA verifies the
-       Wi-Fi scan, join, child-device and cleanup paths.
-       ssid: "DOCKNET-5G", password: "forklift", signal: 2, model: "TP-Link Archer C6". */
+    "world.wifi": {
+        ssid: "DOCKNET-5G",
+        password: "forklift-1948",
+        signal: 2,
+        bssid: "02:24:00:00:17:48",
+        channel: 44,
+        wps: true,
+        model: "TP-Link Archer C6",
+        ports: [
+            { id: "wp1", external: 80, internal: 80, active: true, service: "http" },
+        ],
+        users: [
+            { id: "wu1", username: "admin", password: "forklift-1948", firstName: "Dock", lastName: "Admin" },
+        ],
+        children: [
+            {
+                id: "wdev1",
+                ip: "10.0.0.21",
+                type: "DEVICE",
+                name: "camera-01",
+                vulnerabilities: [],
+                users: [],
+                ports: [{ id: "wp2", external: 22, internal: 22, active: true, service: "ssh" }],
+                rules: [],
+                rootFiles: [],
+                children: [],
+            },
+        ],
+    },
     "world.firewall": {
         ip: "10.0.0.1",
         removeOnComplete: true,

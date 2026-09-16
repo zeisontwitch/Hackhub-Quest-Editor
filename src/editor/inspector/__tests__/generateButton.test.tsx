@@ -94,6 +94,24 @@ describe("generate (dice) button", () => {
         expect(screen.queryByRole("button", { name: /Generate/ })).not.toBeInTheDocument();
     });
 
+    it("rolls Wi-Fi-specific passphrases and BSSIDs", () => {
+        const wifi = makeNode("world.wifi", { x: 0, y: 0 }, { ssid: "NET", password: "", bssid: "" });
+        loadWith([wifi]);
+
+        const { unmount } = render(<Field def={fieldDef("world.wifi", "password")} nodeId={wifi.id} />);
+        fireEvent.click(screen.getByRole("button", { name: /Generate passphrase/ }));
+        const passphrase = String(getPath(nodeData(wifi.id), "password"));
+        expect(passphrase.length).toBeGreaterThanOrEqual(8);
+        expect(passphrase).not.toContain(" ");
+        unmount();
+
+        render(<Field def={fieldDef("world.wifi", "bssid")} nodeId={wifi.id} />);
+        fireEvent.click(screen.getByRole("button", { name: /Generate BSSID/ }));
+        expect(String(getPath(nodeData(wifi.id), "bssid"))).toMatch(
+            /^02:24:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}$/,
+        );
+    });
+
     it("matches the version banner to the port's service beside it", () => {
         // A network device with one port: service=ssh, version empty. The Version
         // dice should read the sibling service and produce an OpenSSH banner.

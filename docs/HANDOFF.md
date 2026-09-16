@@ -1,3 +1,39 @@
+# Handoff — r167
+
+r167 exposes **Create Wi-Fi** after the r166 SDK 0.24 in-game QA pass. The
+current shipped state is:
+
+- `@hotbunny/hackhub-content-sdk@0.24.0` is pinned and the generated event
+  catalogue has **99** events.
+- `world.wifi` is palette-visible, add-searchable, covered by the Node
+  Reference template, and documented in the generated handbook.
+- Wi-Fi exports through SDK 0.24's native `Network.createWifiNetwork` path when
+  available, with BSSID, numeric channel and WPS carried through; the older
+  router fallback remains only for older game builds/imports.
+- The Bettercap `SSID: undefined` behaviour for SDK-created APs is documented
+  as an informational game/runtime display wart, not an editor blocker.
+- Wi-Fi-specific dice buttons generate BSSIDs and WPA-style passphrases.
+- Manual inventory now reports **34 node types / 34 obtainable**, **123 editable
+  fields**, **65 sockets**, **10 categories**, and no manual exclusions.
+- Full validation for this pass: `npm run gen:manual`, `npm run typecheck`,
+  `npm test` (**1,527 tests / 79 files**) and `npm run build`.
+
+Next-up from the SDK 0.24 comparison: focused Mail QA for `Mail.send()` ids,
+`Mail.remove()` and `replyable`; a deliberate Scheduler/Time design pass; HTTP
+nodes only after SteelWaffe clarifies/fixes `curl`, DNS-only collaborator hits
+and static-site HTTP event semantics. Suspicion/log-forensics and SMS remain
+absent from the pinned SDK.
+
+Supporting notes:
+
+- [`plans/r167-wifi-exposure-and-sdk024-roadmap.md`](plans/r167-wifi-exposure-and-sdk024-roadmap.md)
+- [`plans/r166-sdk-0.24-ingame-qa.md`](plans/r166-sdk-0.24-ingame-qa.md)
+- [`03-questions-for-the-developers.md`](03-questions-for-the-developers.md)
+
+Older handoff sections below are retained as history.
+
+---
+
 # Handoff — r163
 
 r163 ships a proper **standalone user manual** (plan:
@@ -925,26 +961,21 @@ banner before acting on any of it.
    questions still open. (r127's comparison plan remains the source behind
    the cookbook.)
 
-## The world.wifi node: hidden from authors, kept in the engine
+## The world.wifi node: visible, with one game display wart
 
-Per Zeis's call, `world.wifi` is **removed from the authoring surface** (the
-node palette, the add-node search, and the Node Reference sheet) but **kept in
-the infrastructure** — the schema node, the `NODE_TYPES_REGISTRY` entry, the
-compiler/runtime forward-compat branch, and the `world.wifi` compile test all
-stay, so a legacy project using it still parses and compiles and a future SDK
-wireless API can be wired straight back in.
+As of r167, `world.wifi` is back on the authoring surface. `PALETTE_HIDDEN_TYPES`
+in `src/schema/registry.ts` is empty, `paletteGroups()` includes Create Wi-Fi,
+and the Node Reference sheet includes a real Wi-Fi example.
 
-Mechanism: `PALETTE_HIDDEN_TYPES` in `src/schema/registry.ts` (currently
-`{ "world.wifi" }`). `paletteGroups()` filters it out; `reference.ts` mirrors the
-palette by skipping hidden types. Re-enable by emptying the set (and re-adding
-the `world.wifi` example in `reference.ts`).
+Why this changed: SDK 0.24.0 ships `Network.createWifiNetwork`, and the r166
+in-game harness proved scan fields, connect/disconnect events, reload behaviour,
+cleanup, Bettercap capture and hashcat recovery are green enough to expose. The
+compiler still keeps the old router fallback for older game builds, but current
+exports use the native Wi-Fi creator when it exists.
 
-Why: SDK 0.21.0 ships no wireless API, so the node fell back to a plain router
-network and its `ssid`/`password`/`signal` were stored but not read. Worse, the
-editor's own tooling (the exploitable guard and `seedRemoteFiles`) only reads a
-node's nested `.device`, so a machine hosted behind a Wi-Fi node was invisible —
-the one place an author could build something the editor couldn't validate. It
-was that gap, not the concept, that made it feel obsolete.
+Known wart: Bettercap can print `SSID: undefined` after targeting an
+SDK-created AP by BSSID. The attack still worked in QA. The inspector/export
+warning is therefore informational, not a blocker.
 
 ## The shipped set
 

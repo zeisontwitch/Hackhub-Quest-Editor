@@ -138,6 +138,7 @@ Load *Node Reference*, click the node, screenshot. Same three steps every time.
 | `node-objective-inspector.png` | Objective | `objective` |
 | `node-trigger-event-inspector.png` | When event | `trigger.event` |
 | `node-world-network-inspector.png` | Create network | `world.network` |
+| `node-world-wifi-inspector.png` | Create Wi-Fi | `world.wifi` |
 | `node-world-firewall-inspector.png` | Firewall rule | `world.firewall` |
 | `node-world-port-inspector.png` | Change port | `world.port` |
 | `node-world-domain-inspector.png` | Register domain | `world.domain` |
@@ -260,15 +261,13 @@ say so in one line.
 
 | | Shots |
 |---|---|
-| Tier 1 — required | **63** (62 excluding its one in-game shot) |
+| Tier 1 — required | **64** (63 excluding its one in-game shot) |
 | Tier 2 — valuable | **19** |
 | In-game, only you, beyond the tutorial's | **5** |
-| **Total, all capturable** | **87** |
+| **Total, all capturable** | **88** |
 
-**No shot is impossible.** The one that would have been — `world.wifi` — has no
-page at all now, by your call, so it needs no image. See
-the structure proposal's *Why 33 node pages and not 34*
-([r164-manual-structure-proposal.md](r164-manual-structure-proposal.md)).
+**No shot is impossible.** `world.wifi` is now palette-visible after the SDK 0.24
+QA pass, so it has a planned inspector screenshot like the other node pages.
 
 ---
 

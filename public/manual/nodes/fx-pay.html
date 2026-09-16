@@ -11,7 +11,7 @@
 
 <nav class="toc" aria-label="Handbook contents">
   <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
-  <p class="build">Handbook · build 2026-09-16.r166</p>
+  <p class="build">Handbook · build 2026-09-16.r167</p>
   <div class="search">
     <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
     <div class="results" role="listbox" aria-label="Search results"></div>
@@ -54,91 +54,66 @@
 <section id="node-fx-pay-page">
 
 <h2>What it does</h2>
-<p>Puts money into the player's bank account.</p>
+<p>Pays the player at this point in the story. Use it for rewards, refunds, bounties or contract settlements.</p>
 
 <h2>When you'd use it</h2>
-<p>Use this when the player is supposed to receive money, usually after an
-employer completes their end of the job. A client wires the player a fee after
-they hand over the file. An employer settles up once the last objective
-completes. A refund arrives after the player fixes something they broke.</p>
-<p>Most quests pay once, near the end. If the money is the reward for one
-specific step, wire this node directly after the objective that earns it, so a
-player who takes a different route does not get paid for work they skipped.</p>
+<p>Put it after the objective or branch that earns the reward. Paying early makes the ending feel already solved.</p>
+<p>Add a <a href="fx-notify.html">Notify</a> after it if the player should notice the balance change immediately.</p>
+<p>Older saved projects may still carry percentage payout data. New projects use the fixed amount shown here.</p>
 
 <h2>In the game, this looks like</h2>
-<p>The player's balance goes up by the amount you set. Their bank statement
-gains one line, reading whatever you typed in <b class="ui">Description</b>,
-sent by whoever you named in <b class="ui">From name</b>.</p>
-<p>Nothing pops up on screen by default. If you want the player to notice the
-payment as it lands, add a <a href="fx-notify.html">Notify</a> node after this
-one. A balance that changes with nothing on screen gets overlooked, or can feel
-like a bug.</p>
-<p>Notify belongs in the "after" slot, never before the payment. A Notify that
-fires first tells the player about money that is not in their account yet, and
-a player who opens their bank to check finds nothing there.</p>
+<p>The player's bank balance rises, and the transfer appears with the statement label and sender you typed.</p>
 
 <h2>Fields</h2>
 
 <h3 id="node-fx-pay-field-amount">Amount</h3>
 <blockquote class="blurb">Credits deposited into the player's bank account.</blockquote>
-<p>The hint above is the editor's own wording and it still says "Credits." The
-money is dollars. That wording is on the list to be corrected.</p>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>A whole number of dollars. The fee, the bounty, the settlement.</dd>
-  <dt>Example</dt><dd><code>100</code></dd>
+  <dt>What to put here</dt><dd>The dollars to award when this node runs.</dd>
+  <dt>Example</dt><dd><code>250</code></dd>
   <dt class="dt-mute">Default</dt><dd><code>100</code></dd>
-  <dt>Limits</dt><dd>0 or more. Decimals are not accepted.</dd>
-  <dt class="dt-danger">If you leave it empty</dt><dd><b>The payment never happens, and nothing tells you.</b> The exported mod skips the whole transaction when the amount is not above zero — no error, no warning, no line in the bank statement. Check this first when a payment does not arrive.</dd>
+  <dt>Limits</dt><dd>0 or more.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>A zero payout still runs, but the player receives nothing.</dd>
 </dl>
 
 <h3 id="node-fx-pay-field-description">Description</h3>
 <blockquote class="blurb">The label on the bank statement line.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The words the player reads on their statement. Write it the way a bank would, because the player reads it as evidence that the job paid out.</dd>
+  <dt>What to put here</dt><dd>Write how the client names the job when the transfer appears.</dd>
   <dt>Example</dt><dd><code>Meridian Capital — contract settlement</code></dd>
-  <dt class="dt-mute">Default</dt><dd><code>Job payment</code></dd>
-  <dt>Limits</dt><dd>Technically any text, but keep it short — a bank statement
-  line is only a few words, and the game may cut a long one.</dd>
-  <dt class="dt-warn">If you leave it empty</dt><dd>The statement line has no label, so the player sees money appear from nowhere.</dd>
-  <dt class="dt-warn">Watch out</dt><dd>This is a good place for a runtime tag if the amount should read differently per player — see <a href="../guides.html#generate-tags">Generate and tags</a>.</dd>
+  <dt class="dt-mute">Default</dt><dd><code>"Job payment"</code></dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>The money arrives with no useful label, so the reward looks unexplained.</dd>
 </dl>
 
 <h3 id="node-fx-pay-field-fromIBAN">From IBAN</h3>
 <blockquote class="blurb">The sending account, shown in the transfer details.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The account number the money came from. Players who dig into the transfer see it, so it works as a clue.</dd>
-  <dt>Example</dt><dd><code>DE89370400440532013000</code></dd>
-  <dt class="dt-mute">Default</dt><dd>empty</dd>
-  <dt>Limits</dt><dd>Any text. The editor does not check that it is a real account number.</dd>
-  <dt class="dt-warn">If you leave it empty</dt><dd>The transfer details show no sending account.</dd>
-  <dt class="dt-warn">Watch out</dt><dd>The dice button beside this field writes a plausible account number, so you do not have to invent one that looks right.</dd>
+  <dt>What to put here</dt><dd>Use this when a client, shell company or agency should appear as the sender.</dd>
+  <dt>Example</dt><dd><code>BG80BNBG96611020345678</code></dd>
+  <dt class="dt-mute">If you leave it empty</dt><dd>The game still creates a transfer. Fill it when the sender matters to the fiction.</dd>
 </dl>
 
 <h3 id="node-fx-pay-field-fromName">From name</h3>
 <blockquote class="blurb">The sender's name on the statement.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Who the player should believe sent the money. A person, a company, or the client's handle from earlier in the story.</dd>
+  <dt>What to put here</dt><dd>Name the sender shown in the transfer details.</dd>
   <dt>Example</dt><dd><code>Meridian Capital</code></dd>
-  <dt class="dt-mute">Default</dt><dd>empty</dd>
-  <dt class="dt-warn">If you leave it empty</dt><dd>The statement names no sender. Filling in one of <b class="ui">From name</b> or <b class="ui">From IBAN</b> is enough for the game to attach a sender to the transfer — but a statement with an account number and no name looks unfinished, so fill in both.</dd>
-  <dt class="dt-warn">Watch out</dt><dd>Keep this consistent with whoever hired the player. A payment from a name the story never mentioned reads as a mistake, not a mystery.</dd>
+  <dt class="dt-mute">If you leave it empty</dt><dd>The payment still arrives. Fill it when the player should recognise who paid them.</dd>
 </dl>
+
+
 
 <h2>Wires</h2>
 <table>
-  <thead><tr><th>Socket</th><th>Direction</th><th>What to connect</th><th>Required?</th><th>If left unconnected</th></tr></thead>
+  <thead><tr><th>Socket</th><th>Direction</th><th>What to connect</th></tr></thead>
   <tbody>
     <tr>
       <td class="name kind-flow">In</td><td>input</td>
-      <td>The node that should run immediately before the payment — usually an <a href="objective.html">Objective</a> or a <a href="flow-branch.html">Branch</a>.</td>
-      <td>Yes</td>
-      <td>The node is unreachable and never runs. The editor flags it — see <a href="../checking.html#msg-unreachable">Unreachable</a>.</td>
+      <td>Whatever moment earns the money.</td>
     </tr>
     <tr>
       <td class="name kind-flow">Out</td><td>output</td>
-      <td>Whatever should happen after the money lands — a closing line, a <a href="fx-notify.html">Notify</a>, the next objective.</td>
-      <td>No</td>
-      <td>The payment still happens, and the quest stops here. That is the right shape for a final payout.</td>
+      <td>The closing message, next objective, or follow-up effect after the payment lands.</td>
     </tr>
   </tbody>
 </table>
@@ -154,55 +129,51 @@ the connection takes, mismatch them and it will not.</p>
 
 <h2>Step by step: add this node to a quest</h2>
 <ol class="plain">
-  <li>Find <b class="ui">Pay the player</b> under <b>Effects</b> in the palette on the left.</li>
-  <li>Drag it onto the canvas, near the node that earns the payment.</li>
-  <li>Drag a wire from that node's <b class="ui">Out</b> socket into this node's <b class="ui">In</b> socket. The wire turns the flow colour, which means the two are the same kind of connection.</li>
-  <li>Select the node and type the amount. <b>100</b> is a reasonable first fee.</li>
-  <li>Type a statement label — something a bank would print.</li>
-  <li>Roll the dice beside <b class="ui">From IBAN</b> and <b class="ui">From name</b> to fill in a believable sender, then edit the name to match your client.</li>
-  <li>Look at the status bar. It should show no issues for this node. If it says <b>Unreachable</b>, the wire in step 3 did not take.</li>
+  <li>Find <b class="ui">Pay the player</b> under <b>Effects</b> in the palette.</li>
+  <li>Drag it after the step that deserves a reward.</li>
+  <li>Set <b class="ui">Amount</b>, then write a short statement label.</li>
+  <li>Fill sender details if the payer matters to the story.</li>
+  <li>Wire the next beat from <b class="ui">Out</b>.</li>
 </ol>
 
 <figure>
   <img src="../img/node-fx-pay-inspector.png"
-       alt="The Pay the player node selected on the canvas, with its inspector open on the right showing the Amount field set to 100, a Description reading Meridian Capital — contract settlement, and a From IBAN and From name filled in." />
-  <figcaption>The inspector for <b>Pay the player</b>, with all four fields
-  filled in. Notice the dice button beside <b>From IBAN</b> and <b>From
-  name</b> — one click writes a believable sender.</figcaption>
+       alt="The Pay the player node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>Pay the player</b>.</figcaption>
 </figure>
 
 <h2>Common mistakes</h2>
 <ul class="plain">
-  <li><b>The amount is 0 or blank, so nothing happens.</b> There is no warning for this. Open the node and check <b class="ui">Amount</b> before anything else.</li>
-  <li><b>The node is not wired in.</b> A payment floating on its own never runs. Wire something into <b class="ui">In</b>.</li>
-  <li><b>The sender is half filled in.</b> An account number with no name, or a name with no account, makes the statement look broken. Fill in both.</li>
-  <li><b>The player never notices.</b> The balance changes with nothing on screen. Add a <a href="fx-notify.html">Notify</a> if the payment is the payoff of the whole quest.</li>
+  <li><b>The payment is wired before the win condition.</b> The player gets paid before proving anything. Move it after the objective's <b class="ui">On complete</b> socket.</li>
+  <li><b>No message follows the transfer.</b> The balance changes quietly. Add a notification or closing mail if the reward should land with weight.</li>
 </ul>
 
 <h2>Messages you might see</h2>
 <ul class="plain">
-  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so it never runs.</li>
+  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so the payment never happens</li>
 </ul>
 
 <h2>Related nodes</h2>
 <ul class="plain">
-  <li><a href="fx-withdraw.html">Charge the player</a> — takes money out instead, and can take a percentage of the balance.</li>
-  <li><a href="fx-notify.html">Notify</a> — tells the player the payment landed.</li>
-  <li><a href="objective.html">Objective</a> — the task the payment rewards. Wire its completion into this node's <b class="ui">In</b>.</li>
-  <li><a href="fx-setdata.html">Set quest data</a> — remember how much you paid, so a later quest can refer to it.</li>
+  <li><a href="fx-withdraw.html">Charge the player</a> — Takes money out of the player's account.</li>
+  <li><a href="fx-notify.html">Notify</a> — Puts a message on the player's screen.</li>
+  <li><a href="fx-setdata.html">Set quest data</a> — Stores a value for later.</li>
+  <li><a href="fx-claimquest.html">Claim another quest</a> — Starts the next quest.</li>
+  <li><a href="fx-shell.html">Run terminal command</a> — Runs a command in the player's terminal.</li>
+  <li><a href="fx-handbook.html">Open handbook</a> — Opens an in-game article.</li>
 </ul>
 
 </section>
 
 <div class="pagefoot">
-  <a href="fx-withdraw.html">← Charge the player</a>
-  <a class="next" href="fx-notify.html">Notify →</a>
+  <a href="reply-input.html">← Manual input</a>
+  <a class="next" href="fx-withdraw.html">Charge the player →</a>
 </div>
 
 <a class="totop" href="#node-fx-pay-page">↑ back to top</a>
 
 <footer class="colophon">
-  HackHub Quest Editor handbook · documents editor build 2026-09-16.r166 ·
+  HackHub Quest Editor handbook · documents editor build 2026-09-16.r167 ·
   field labels, hints, defaults and limits on this page are taken from the
   editor's own node definitions.
 </footer>

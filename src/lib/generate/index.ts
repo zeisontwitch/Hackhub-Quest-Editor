@@ -48,6 +48,8 @@ export type GeneratorKind =
     | "serviceVersion"
     | "companyName"
     | "ssid"
+    | "bssid"
+    | "wifiPassphrase"
     | "iban";
 
 /** Public targets read as real addresses; private ones as internal devices. */
@@ -196,6 +198,29 @@ export function ssid(rng: Rng = Math.random): string {
     return `${pick(SSID_WORDS, rng)}${pick(SSID_SUFFIXES, rng)}`;
 }
 
+function hexByte(value: number): string {
+    return value.toString(16).padStart(2, "0");
+}
+
+/** A locally administered unicast access-point MAC address for a BSSID field. */
+export function bssid(rng: Rng = Math.random): string {
+    return [
+        "02",
+        "24",
+        hexByte(int(0, 255, rng)),
+        hexByte(int(0, 255, rng)),
+        hexByte(int(0, 255, rng)),
+        hexByte(int(1, 254, rng)),
+    ].join(":");
+}
+
+/** A hardcoded WPA-style passphrase an author can copy into a clue. */
+export function wifiPassphrase(rng: Rng = Math.random): string {
+    const left = slug(pick(SSID_WORDS, rng));
+    const middle = slug(pick(HOSTNAME_WORDS, rng));
+    return `${left}-${middle}-${int(100, 999, rng)}`.toLowerCase();
+}
+
 /* ── services & finance ───────────────────────────────────────────────────── */
 
 export function serviceName(rng: Rng = Math.random): string {
@@ -280,6 +305,10 @@ export function generateField(
             return companyName(rng);
         case "ssid":
             return ssid(rng);
+        case "bssid":
+            return bssid(rng);
+        case "wifiPassphrase":
+            return wifiPassphrase(rng);
         case "iban":
             return iban(rng);
         default: {

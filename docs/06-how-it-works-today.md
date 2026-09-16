@@ -1,13 +1,13 @@
 # How the editor works today
 
-**Current as of build `2026-09-13.r148`.** Where the other documents are
+**Current as of build `2026-09-16.r167`.** Where the other documents are
 histories — how we got here, and what we learned on the way — this one is a
 snapshot of the thing as it stands. If it disagrees with an older document,
 this one is right.
 
-Verified figures, counted from the code rather than remembered: **1,396 tests**
-across 67 files, **34 node types** in 10 categories, **13 templates**, **92 game
-events**, against `@hotbunny/hackhub-content-sdk@0.21.0`.
+Verified figures, counted from the code rather than remembered: **1,527 tests**
+across 79 files, **34 node types** in 10 categories, **13 templates**, **99 game
+events**, against `@hotbunny/hackhub-content-sdk@0.24.0`.
 
 ---
 
@@ -34,7 +34,7 @@ src/
     websites/    the in-game website builder
     shell/       top bar, dialogs, status bar, overlays
   compiler/      project → TypeScript mod, plus the runtime the mod ships with
-  templates/     eight starting points
+  templates/     thirteen starting points and reference sheets
   analysis/      graph checks that feed the issue badges
 ```
 

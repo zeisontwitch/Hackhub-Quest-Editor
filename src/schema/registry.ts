@@ -517,13 +517,13 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            { kind: "note", tone: "warn", text: "The SDK now declares wireless creation, but this node stays out of the palette until in-game QA verifies the whole shape. Legacy projects that already contain it still export." },
+            { kind: "note", tone: "info", text: "Game note: Bettercap may show no network name after you pick a mod-created access point by BSSID. Scanning, joining and cracking still worked in QA; use the BSSID as the fixed clue." },
             { kind: "text", key: "ssid", hint: "The network name shown in the in-game Wi-Fi list.", label: "Network name (SSID)", mono: true, generate: { kind: "ssid", label: "network name" } },
-            { kind: "text", key: "password", label: "WPA passphrase", mono: true, hint: "The passphrase the player must discover. Make sure some node in your quest reveals it." },
+            { kind: "text", key: "password", label: "WPA passphrase", mono: true, generate: { kind: "wifiPassphrase", label: "passphrase" }, hint: "The passphrase the player must discover. Make sure some node in your quest reveals it." },
             { kind: "slider", key: "signal", label: "Signal strength", min: 0, max: 3, step: 1, hint: "The game's Wi-Fi scale: 0 = weakest, 3 = strongest. It also drives how long joining takes." },
-            { kind: "text", key: "bssid", label: "BSSID", mono: true, placeholder: "02:24:00:00:24:01", hint: "Optional MAC address shown for the access point. Leave blank to let the game pick one." },
+            { kind: "text", key: "bssid", label: "BSSID", mono: true, placeholder: "02:24:00:00:24:01", generate: { kind: "bssid", label: "BSSID" }, hint: "Optional MAC address shown for the access point. Leave blank to let the game pick one." },
             { kind: "number", key: "channel", label: "Channel", min: 1, max: 196, step: 1, hint: "Optional 2.4 GHz or 5 GHz channel shown by scans. Leave blank to let the game pick one for the SSID's band." },
-            { kind: "toggle", key: "wps", label: "Advertises WPS", hint: "Whether Wi-Fi scans show WPS for this access point. Leave off unless your QA case needs to pin it." },
+            { kind: "toggle", key: "wps", label: "Advertises WPS", hint: "Whether Wi-Fi scans show WPS for this access point. Leave off unless your story needs to pin it." },
             { kind: "text", key: "model", label: "Router model", mono: true, generate: { kind: "routerModel", label: "router model" }, hint: "Enables the in-game `fern` recovery route. Leave blank to disable it." },
             {
                 kind: "list",
@@ -1195,14 +1195,13 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
  * Node types that exist in the engine and schema but are deliberately not
  * offered in the editor's palette or add-node search.
  *
- * `world.wifi` is the reservation for the in-game wireless system. SDK
- * 0.24.0 declares the native creator, and legacy projects that already contain
- * the node now export through it when possible, with the router fallback kept
- * for older game builds. It stays hidden from new authoring until an in-game QA
- * pass confirms SSID/password/signal/children/cleanup all behave as expected.
- * Re-enable by removing it from this set only after that pass.
+ * This is currently empty. `world.wifi` used to live here while the project
+ * waited for a native wireless creator and in-game QA. SDK 0.24.0 now declares
+ * `Network.createWifiNetwork()`, and the r166 QA pass verified creation,
+ * scan fields, connect/disconnect events, reload stability and cracking well
+ * enough to expose Create Wi-Fi to authors.
  */
-export const PALETTE_HIDDEN_TYPES: ReadonlySet<NodeType> = new Set(["world.wifi"]);
+export const PALETTE_HIDDEN_TYPES: ReadonlySet<NodeType> = new Set();
 
 /** Palette order: categories first, then registry order within each. */
 export function paletteGroups(): { category: (typeof CATEGORIES)[number]; types: NodeTypeDef[] }[] {

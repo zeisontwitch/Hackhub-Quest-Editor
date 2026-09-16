@@ -47,7 +47,7 @@ public/manual/
   index.html            Start here + the nav shell
   tutorial.html         Your first quest
   concepts.html         Core concepts
-  nodes/<type>.html     33 files, one per obtainable node type
+  nodes/<type>.html     34 files, one per obtainable node type
   guides/<feature>.html 10 files, one per feature surface
   how-do-i.html          All recipes on one page (they are short and cross-link)
   checking.html         Every message the editor can show

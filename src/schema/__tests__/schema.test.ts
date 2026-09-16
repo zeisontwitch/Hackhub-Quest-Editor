@@ -81,6 +81,12 @@ describe("registry ↔ node union", () => {
         }
     });
 
+    it("offers Create Wi-Fi in the palette after the SDK 0.24 in-game pass", () => {
+        expect(PALETTE_HIDDEN_TYPES.has("world.wifi")).toBe(false);
+        const paletteTypes = new Set(paletteGroups().flatMap((g) => g.types.map((t) => t.type)));
+        expect(paletteTypes.has("world.wifi")).toBe(true);
+    });
+
     it("hides the palette-excluded types but keeps them registered", () => {
         // Every hidden type is a real node type the engine can still emit.
         for (const t of PALETTE_HIDDEN_TYPES) {

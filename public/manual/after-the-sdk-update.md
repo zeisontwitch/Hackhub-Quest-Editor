@@ -8,9 +8,9 @@ provided you know where to look and what the gates will and will not catch.
 
 Historical baseline was editor build `2026-09-14.r162` and SDK `0.21.0`; the completed SDK 0.24.0 pass is documented separately.
 
-If you are a fresh instance picking this up: the handbook is 43 HTML pages and
+If you are a fresh instance picking this up: the handbook is 44 HTML pages and
 about 30,000 words in `public/manual/`, and it is **complete at the top level**.
-Every one of the eight top-level pages is written, all 33 obtainable node types
+Every one of the ten top-level HTML pages is written, all 34 obtainable node types
 have a page, and there are 21 coverage gates in `src/manual.coverage.test.ts`.
 Nothing is a stub. What remains is listed in §6.
 
@@ -275,8 +275,8 @@ are not true — check the file's own notes before capturing from it.
 - **Money is dollars, not credits.** A first fee of 100 is reasonable; buyable
   tools cost about 35. Never 2500.
 - **The word is "socket", never "port".**
-- **`world.wifi` gets no page.** It is a commented-out feature. G1 excludes it
-  via `PALETTE_HIDDEN_TYPES`.
+- **`world.wifi` now gets a page.** It became palette-visible after the SDK 0.24
+  in-game QA pass, so G1 treats it like every other authorable node.
 - **Documentation vocabulary needs a counterpart in the product.** "Recipes"
   was renamed "How do I…" for exactly this reason.
 - Banned in prose: JSON, schema, node type, Zod, esbuild, regex, boolean, enum,
@@ -323,10 +323,10 @@ They are the reason §4 says gates do not read meaning.
 
 | Path | What |
 |---|---|
-| `public/manual/` | the handbook — 43 HTML pages, `manual.css`, `manual.js`, `search-index.js` |
+| `public/manual/` | the handbook — 44 HTML pages, `manual.css`, `manual.js`, `search-index.js` |
 | `src/manual.coverage.test.ts` | 21 gates, G1–G15 |
 | `docs/manual/inventory.json` | generated ground truth; per node: type, slug, label, fields, sockets, defaults |
-| `docs/manual/node-voice.json` | 32 hand-written voice entries (`fx.pay` is deliberately absent — its page is hand-written) |
+| `docs/manual/node-voice.json` | 34 hand-written voice entries, one per obtainable node |
 | `docs/manual/README.md` | maintenance note: why the inputs are separate, the restatement guard, G11's blind spot |
 | `scripts/extract-manual-inventory.mjs` | needs `jiti`; deterministic via `stabilise()` |
 | `scripts/build-node-pages.mjs` | one page per obtainable node; throws on missing voice, bad socket key, restated hint |

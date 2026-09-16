@@ -1095,8 +1095,8 @@ function __qeRegisterProject(sdk, PROJECT) {
                     });
                     /* SDK 0.24.0 declares a native wireless creator. Keep the
                        old router fallback because exported mods may run on an
-                       older game build, and because the Wi-Fi palette entry is
-                       still fenced until in-game QA confirms every field. */
+                       older game build even though the editor now exposes the
+                       Wi-Fi node for current HackHub builds. */
                     if (sdk.Network.createWifiNetwork) {
                         var wifiDef = {
                             ssid: d.ssid,

@@ -9,6 +9,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+    bssid,
     email,
     generateField,
     hostname,
@@ -18,6 +19,7 @@ import {
     ssid,
     username,
     versionNumber,
+    wifiPassphrase,
     type Rng,
 } from "@/lib/generate";
 import {
@@ -159,10 +161,35 @@ describe("ssid", () => {
     });
 });
 
+describe("bssid", () => {
+    it("makes a locally administered unicast MAC address", () => {
+        const value = bssid(seq([0.0, 0.5, 0.99, 0.25]));
+        expect(value).toMatch(/^02:24:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}$/);
+        const firstOctet = Number.parseInt(value.split(":")[0], 16);
+        expect((firstOctet & 1) === 0).toBe(true); // unicast, not multicast
+        expect((firstOctet & 2) === 2).toBe(true); // locally administered
+    });
+});
+
+describe("wifiPassphrase", () => {
+    it("is long enough for WPA and has no spaces", () => {
+        const value = wifiPassphrase(seq([0.1, 0.2, 0.3]));
+        expect(value.length).toBeGreaterThanOrEqual(8);
+        expect(value).not.toContain(" ");
+        expect(value).toMatch(/^[a-z0-9-]+$/);
+    });
+});
+
 describe("determinism", () => {
     it("same rng yields same output", () => {
         expect(generateField("email", { firstName: "A", lastName: "B" }, {}, seq([0.3, 0.4]))).toBe(
             generateField("email", { firstName: "A", lastName: "B" }, {}, seq([0.3, 0.4])),
+        );
+        expect(generateField("bssid", {}, {}, seq([0.1, 0.2, 0.3, 0.4]))).toBe(
+            generateField("bssid", {}, {}, seq([0.1, 0.2, 0.3, 0.4])),
+        );
+        expect(generateField("wifiPassphrase", {}, {}, seq([0.1, 0.2, 0.3]))).toBe(
+            generateField("wifiPassphrase", {}, {}, seq([0.1, 0.2, 0.3])),
         );
     });
 });

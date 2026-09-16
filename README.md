@@ -36,7 +36,7 @@ Only relevant to coders, if you just want to use the tool you can ignore this.
 
 ```bash
 npm run typecheck    # tsc --noEmit
-npm test             # 1,521 tests (vitest)
+npm test             # 1,527 tests (vitest)
 npm run build        # typecheck + vite build → dist/
 ```
 
@@ -120,8 +120,8 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
-| 1 | **SDK 0.24 in-game QA** | SDK 0.24.0 is pinned and the event catalogue is upgraded, but the risky surfaces remain fenced until real game evidence says otherwise. The active checklist and installable harnesses are in [`docs/plans/r166-sdk-0.24-ingame-qa.md`](docs/plans/r166-sdk-0.24-ingame-qa.md) and `reference/sdk-0.24-qa/`. |
-| 2 | Old quest mail is never cleaned up | Mail sent by an uninstalled mod stays in the inbox. The `Mail` namespace has no delete, so there may be nothing we can do — question 9 in the bug report. |
+| 1 | **SDK 0.24 follow-up choices** | Wi-Fi is exposed in r167. The next safe candidates are mail cleanup/replyability QA and a Scheduler/Time design pass; HTTP/curl/DNS collaborator nodes stay fenced until SteelWaffe answers the upstream gaps. See [`docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md`](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md). |
+| 2 | Old quest mail cleanup | SDK 0.24.0 now declares `Mail.send(): string \| null` and `Mail.remove(id)`, so this can become a real feature after a focused in-game QA pass verifies ids, replyable mail, and cleanup timing. |
 | 3 | **Date deprecation warning (`moment` RFC2822)** | Only appears with a quest-editor mod installed, 30–90s after a mail is sent, when a browser or app screen is opened. The stack is the game's own date formatting and we never set a date on anything — question 10 in the bug report. |
 
 ### Next up
@@ -135,9 +135,10 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
-| r166 | **SDK 0.24 in-game QA harness** | ([plan](docs/plans/r166-sdk-0.24-ingame-qa.md)) Adds the evidence-only checklist plus installable raw/editor QA harnesses under `reference/sdk-0.24-qa/`. Hidden/imported Wi-Fi now carries SDK 0.24's BSSID, numeric channel and WPS fields through the native creator when present, but the palette and higher-risk SDK surfaces stay fenced pending in-game results. |
+| r167 | **Create Wi-Fi exposed** | ([plan](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md)) `world.wifi` is palette-visible, searchable, covered by the reference template and handbook, and exports through SDK 0.24's native Wi-Fi creator with BSSID/channel/WPS support. The remaining Bettercap `SSID: undefined` display wart is documented as an info note, not a blocker. Wi-Fi-specific dice outputs now generate BSSIDs and WPA-style passphrases. |
+| r166 | **SDK 0.24 in-game QA harness** | ([plan](docs/plans/r166-sdk-0.24-ingame-qa.md)) Adds the evidence-only checklist plus installable raw/editor QA harnesses under `reference/sdk-0.24-qa/`. The green native Wi-Fi rows became the r167 Create Wi-Fi exposure; HTTP/curl/DNS collaborator, Scheduler and mail/Twotter follow-ups remain separately gated. |
 | r165 | **SDK 0.24 declaration and event-catalogue upgrade** | ([plan](docs/plans/r165-sdk-0.24-assessment.md)) Pins `@hotbunny/hackhub-content-sdk@0.24.0`, regenerates the 99-event catalogue/manual appendix, and records which new surfaces still require game verification before product exposure. |
-| r163 | **Standalone user manual** | ([plan](docs/plans/r163-user-manual.md)) A proper, self-contained user manual as a single HTML file at [`public/manual.html`](public/manual.html) — inline CSS, no build step, no JS, opens straight off disk. Sticky section nav (structure inspired by a single-page reference manual, content ours only) walks every surface: the top bar and quest strip, palette, canvas, inspector, status/issues; a full node reference of all **34** node types across their **10** categories; sockets & wires; Dialogues; Websites; the **92** events grouped ten ways; Generate (dice) & tags; Addons; the **13** templates; Dry run; export contents; Settings (6 themes, 7 fonts, grid, wires); the complete keyboard/mouse cheat sheet; saving; and the known limits (Wi-Fi/complete caveats). Every figure counted from the code, not the stale r148 doc. Documentation only — no compiler-output change, so `EDITOR_BUILD` is unchanged. |
+| r163 | **Standalone user manual** | ([plan](docs/plans/r163-user-manual.md)) A proper, self-contained user manual as a single HTML file at [`public/manual.html`](public/manual.html) — inline CSS, no build step, no JS, opens straight off disk. Sticky section nav (structure inspired by a single-page reference manual, content ours only) walks every surface: the top bar and quest strip, palette, canvas, inspector, status/issues; a full node reference of all **34** node types across their **10** categories; sockets & wires; Dialogues; Websites; the event appendix; Generate (dice) & tags; Addons; the **13** templates; Dry run; export contents; Settings (6 themes, 7 fonts, grid, wires); the complete keyboard/mouse cheat sheet; saving; and the known limits. Every figure counted from the code, not the stale r148 doc. Documentation only in that round. |
 | r162 | **Dice icon + service-aware Version generator + long tail** | ([plan](docs/plans/r162-dice-icon-and-long-tail.md)) Finishes the auto-generate feature. The r161 dice icon was a plain square that read as a text box; it's replaced by a proper filled vector die (`Icon.tsx` gained filled-glyph support). Ports → **Version** now composes from the port's **Service** and obeys the game's real rule — three parts, first 1–9, rest 0–99 (e.g. `2.4.71`) — so an ssh port rolls `OpenSSH 8.4.71`, never a rejected banner. Long tail wired: port Service, vuln Version, Pay-node From IBAN + From name, Wi-Fi SSID, and the sims (Mail from, Kisscord handle, WeeChat host + per-line username). Still editor-only — nothing reaches the compiler or export. +5 tests. |
 | r161 | **Auto-generate (dice) button for name/IP-like fields** | ([plan](docs/plans/r161-autogen-dice-button.md)) Next-up #1: a flat dice button beside name/IP/domain fields fills them with a realistic **hardcoded** value in the editor (exports as plain text — the tag/sparkle button stays right beside it for the runtime-random `{{…}}` case, so IP fields now offer both). A pure, seedable `src/lib/generate` engine composes from curated wordlists rather than a flat firstname+lastname list, and reuses values already entered in the same section — roll First name → *John*, Last name → *Noble*, then E-mail → *jnoble@…* — reading siblings but only ever writing its own field, so one click is one undo step. IPs come public **or** private (RFC-1918) per field. Wired across the quest Employer, Create-network devices (IP/hostname/domain/router model), user accounts, and every IP/domain/host field. Fields opt in with a `generate` descriptor; nothing new reaches the compiler or export. +18 tests. |
 | r160 | **The Inspector edge becomes a real drawer pull** | ([plan](docs/plans/r160-inspector-drawer-pull.md)) Follow-up on the user's annotated screenshot: the r159 edge handle now behaves like a drawer. It's a protruding pull tab centred on the docked inspector's left edge — **drag it left to widen the docked panel** (340px default/floor, up to 640px), and only when you pull *past* that ceiling does it tear off the wall into a floating drawer; a plain click still pops it out in place. Docked width is a new persisted per-author preference (`drawerLayout.ts`, same shape as the float rect, never in the mod); reset re-docks at 340px. The canvas minimap follows the panel while docked and returns to base when it floats — for free, because it already lives inside the flex-sibling canvas. +5 tests. |
@@ -157,8 +158,10 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 | Item | Why |
 |---|---|
 | No ctrl+drag to deselect | Three rounds (r93–r95) failed to make it work in a real browser and it was dropped as not worth the cost. React Flow sends no change events for a box over already-selected nodes, and the geometry workaround needed a store subscription firing every frame. **Ctrl+click** to deselect works. |
-| Wi-Fi node still hidden | SDK 0.24.0 declares `Network.createWifiNetwork`, and old/imported `world.wifi` nodes now export through it when present. The node stays out of the palette until the r166 in-game QA rows for scan fields, connection events, reload and cleanup are green. |
-| No Twotter | Removed in r31: the SDK declares it but this build does not honour it. Revisit if a newer build ships it. |
+| Wi-Fi Bettercap name wart | Create Wi-Fi is visible and exports through SDK 0.24's native API. Current game builds can still print `SSID: undefined` after Bettercap targets an SDK-created AP by BSSID, even though scan, join, handshake capture and hashcat recovery worked in r166 QA. |
+| HTTP/curl and DNS collaborator nodes fenced | SDK 0.24 declares HTTP/collaborator events, but terminal `curl` was missing, DNS-only collaborator hits did not arrive, and static editor websites did not fire HTTP objectives in QA. Generic event triggers still list the raw events. |
+| No Twotter authoring | SDK 0.24 declares update/remove helpers, but historical in-game Twotter behavior was unreliable. Revisit only with a fresh QA scaffold. |
+| No suspicion or SMS nodes | SDK 0.24 still has no Suspicion/log-forensics API and no SMS/text-message namespace or events. |
 | No log-cleaning node | Entirely engine-side: the game logs connections on the machine, and the player wipes them from its own UI. |
 
 
@@ -176,10 +179,10 @@ Rounds 130–153 are archived at
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-16.r166`: **1,521 tests** across 79
-files, **34 node types** in 10 categories (33 in the palette — Wi-Fi is hidden),
-**13 templates** (11 playable + 2 reference sheets), **99 game events**,
-against `@hotbunny/hackhub-content-sdk@0.24.0`.
+Counted from the code at build `2026-09-16.r167`: **1,527 tests** across 79
+files, **34 node types** in 10 categories (all palette-visible), **13 templates**
+(11 playable + 2 reference sheets), **99 game events**, against
+`@hotbunny/hackhub-content-sdk@0.24.0`.
 
 ### Documentation
 

@@ -32,8 +32,9 @@ than no gate.
    pages and rebuilds the search index in one go.
 4. Run the coverage gate: `npx vitest run src/manual.coverage.test.ts`.
 
-`nodes/fx-pay.html` is hand-written and has no voice entry, so the generator
-leaves it alone. It is the exemplar the generated pages are shaped after.
+Every obtainable node now has a voice entry, including `fx.pay`. Do not keep
+orphan hand-written node pages beside the generator; `npm run gen:manual` should
+end with `0 awaiting prose`.
 
 ## Limits rows
 

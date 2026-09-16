@@ -995,3 +995,19 @@ a.cat-link { font-weight: 600; }
     margin-right: 7px;
     vertical-align: 1px;
 }
+
+/* A severity chip, for the message index. Amber means unfinished, red means the
+   player will hit it — the same two colours the editor uses on the canvas. */
+.sev {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    border-radius: 999px;
+    padding: 1px 9px;
+    border: 1px solid currentColor;
+}
+
+.sev.warn   { color: var(--warn);   background: rgba(251, 191, 36, 0.1); }
+.sev.danger { color: var(--danger); background: rgba(248, 113, 113, 0.1); }

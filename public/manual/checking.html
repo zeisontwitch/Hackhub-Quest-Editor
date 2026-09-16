@@ -19,10 +19,23 @@
     <li><a href="index.html">Start here</a></li>
     <li><a href="tutorial.html">Your first quest</a></li>
     <li><a href="concepts.html">How a quest works</a></li>
-    <li><a href="nodes.html">Node reference</a></li>
+    <li><a href="nodes.html">Node reference</a>
+      <ul class="sub">
+        <li><a href="nodes.html#cat-entry"><span class="cat-dot" style="background:var(--cat-entry)"></span>Quest lifecycle</a></li>
+        <li><a href="nodes.html#cat-objective"><span class="cat-dot" style="background:var(--cat-objective)"></span>Objectives</a></li>
+        <li><a href="nodes.html#cat-trigger"><span class="cat-dot" style="background:var(--cat-trigger)"></span>Triggers</a></li>
+        <li><a href="nodes.html#cat-world"><span class="cat-dot" style="background:var(--cat-world)"></span>World building</a></li>
+        <li><a href="nodes.html#cat-comms"><span class="cat-dot" style="background:var(--cat-comms)"></span>Communication</a></li>
+        <li><a href="nodes.html#cat-reply"><span class="cat-dot" style="background:var(--cat-reply)"></span>Custom terminal</a></li>
+        <li><a href="nodes.html#cat-effect"><span class="cat-dot" style="background:var(--cat-effect)"></span>Effects</a></li>
+        <li><a href="nodes.html#cat-community"><span class="cat-dot" style="background:var(--cat-community)"></span>Community addons</a></li>
+        <li><a href="nodes.html#cat-flow"><span class="cat-dot" style="background:var(--cat-flow)"></span>Flow control</a></li>
+        <li><a href="nodes.html#cat-layout"><span class="cat-dot" style="background:var(--cat-layout)"></span>Layout</a></li>
+      </ul>
+    </li>
     <li><a href="guides.html">Feature guides</a></li>
     <li><a href="how-do-i.html">How do I…</a></li>
-    <li><a href="checking.html">Checking your quest</a></li>
+    <li><a href="checking.html" aria-current="true">Checking your quest</a></li>
     <li><a href="export.html">Exporting and installing</a></li>
     <li><a href="troubleshooting.html">When something goes wrong</a></li>
     <li><a href="appendices.html">Glossary and limits</a></li>
@@ -31,36 +44,292 @@
 <main>
 <header class="hero">
   <h1>Checking your quest</h1>
-  <p class="tag">Every message the editor can show you, and what to do about it.</p>
+  <p class="tag">Every message the editor can show you, quoted exactly as it writes
+  it. Paste the wording into the search box to find the one you are looking at.</p>
 </header>
+
 <section id="checking">
-<div class="note warn"><b>Being written.</b> This page is scaffolding
-from the Phase 3 skeleton — the structure and anchors are final, the prose lands
-in Phase 4. Nothing here is a claim about the editor yet.</div>
+<p>The editor reads your quest as you build it and tells you what looks wrong.
+Nothing here is a guess on your part: if the editor is quiet, the shapes it
+checks are sound. If it is not, this page has the message you are seeing and
+what to do about it.</p>
+<p>Messages fall into two groups. The first group watches the shape of your
+quest while you edit — a node nothing points at, an objective that can never
+finish. The second group only appears when you export, because it needs the
+whole mod in front of it: two websites fighting over one domain, a machine with
+a login and no accounts.</p>
+
 <h2 id="where-messages-appear">Where messages appear</h2>
-<p>Written in Phase 4.</p>
-<h2 id="levels">The three levels</h2>
-<p>Written in Phase 4.</p>
-<h2 id="msg-index">Message index</h2>
-<p>Written in Phase 4.</p>
-<h2 id="msg-unreachable">Unreachable</h2>
-<p>Written in Phase 4.</p>
-<h2 id="msg-no-trigger">No trigger</h2>
-<p>Written in Phase 4.</p>
-<h2 id="msg-dead-end">Dead end</h2>
-<p>Written in Phase 4.</p>
-<h2 id="msg-only-runs-on-completion">Only runs on completion</h2>
-<p>Written in Phase 4.</p>
-<h2 id="msg-empty">Empty</h2>
-<p>Written in Phase 4.</p>
-<h2 id="pre-export">Before you export</h2>
-<p>Written in Phase 4.</p>
+<dl class="facts-list">
+  <dt>On the node</dt><dd>A small badge on the card, visible from across the
+  canvas. This is how you find a problem in a quest too big to read node by
+  node.</dd>
+  <dt>In the inspector</dt><dd>Under the field the message is about, when you
+  have that node selected. Field messages only show while the node is selected,
+  so they cannot nag at you from the other side of the canvas.</dd>
+  <dt>In the status bar</dt><dd>A running count of what is wrong, and the
+  message for whichever node you last touched.</dd>
+  <dt>In the export report</dt><dd>Everything the export checks found, listed
+  before the <code>.zip</code> is written. See
+  <a href="#pre-export">the report</a>.</dd>
+</dl>
+
+<h2 id="levels">What the two colours mean</h2>
+<dl class="facts-list">
+  <dt class="dt-warn">Amber</dt><dd>Unfinished, or fragile. Exporting still
+  works, and the player may never notice. Fix it before you ship, but nothing is
+  broken right now.</dd>
+  <dt class="dt-danger">Red</dt><dd>The player will hit this. Either the quest
+  cannot be finished, or something you built will not survive the trip into the
+  game. Fix it before you export.</dd>
+</dl>
+<p>There is no third level. A quest with no messages has nothing the editor can
+find fault with, which is not the same as a quest that plays well — only playing
+it tells you that. See <a href="guides.html#dry-run">Dry run</a> for the closest
+thing to a test drive.</p>
+
+<h2 id="msg-index">Every message</h2>
+<p>Each entry below quotes the editor's own wording. The exact text is what the
+search box matches, so copy it from the status bar rather than paraphrasing
+it.</p>
+
+<h3 id="msg-unreachable">Unreachable</h3>
+<blockquote class="blurb">Nothing leads to this node. Wire it to the chain that should run it — nodes do nothing until something points at them.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev warn">Amber</span></dd>
+  <dt class="dt-mute">Where</dt><dd>On the node, and in the status bar.</dd>
+  <dt>What it means</dt><dd>The node is on the canvas and is never run. A node
+  only does something when another node points at it, or when it is one of the
+  lifecycle nodes that starts a chain by itself.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Drag a wire from the node that should run
+  it into this node's input. That is usually the last node of your
+  <a href="nodes/entry-start.html">Quest start</a> chain. If the node is left
+  over from an idea you dropped, delete it instead.</dd>
+</dl>
+
+<h3 id="msg-no-trigger">No trigger</h3>
+<blockquote class="blurb">Nothing completes this objective. Wire a “When event” node into its trigger socket, or the player can never finish the quest.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev danger">Red</span></dd>
+  <dt class="dt-mute">Where</dt><dd>On the objective, and in the status bar.</dd>
+  <dt>What it means</dt><dd>The player receives the objective and can never tick
+  it over. There is no condition attached to it, so nothing in the game can
+  complete it. A quest with an objective like this cannot be finished.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Add a
+  <a href="nodes/trigger-event.html">When event</a> node, pick the game event
+  that means the player did the thing, and wire its <b class="ui">When</b>
+  socket into the objective's <b class="ui">Trigger</b> socket.</dd>
+</dl>
+
+<h3 id="msg-dead-end">Dead end</h3>
+<blockquote class="blurb">The “…” outcome goes nowhere, so the quest stalls if the player takes it.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev warn">Amber</span></dd>
+  <dt class="dt-mute">Where</dt><dd>On the node, and in the status bar.</dd>
+  <dt>What it means</dt><dd>The node offers more than one way out and at least
+  one of them is unwired. The wording names the outcome, so
+  <b class="ui">Yes</b> or <b class="ui">No</b> tells you which side is missing.
+  The editor writes a different version for two node types, because the same
+  shape means something different in each.</dd>
+  <dt class="dt-mute">On a Sequence</dt><dd>It reads
+  <em>The "…" output goes nowhere, so that step of the sequence does
+  nothing.</em> A step with no wire is a beat that never lands.</dd>
+  <dt class="dt-mute">On Manual input</dt><dd>It reads
+  <em>The "…" outcome goes nowhere, so a wrong answer shows the failure message
+  and the player tries again.</em> That is the usual design for a passphrase, so
+  this one is often correct as it stands.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Wire the named outcome to the node that
+  should run down that path, or remove the outcome if the path should not exist.
+  On a <a href="nodes/reply-input.html">Manual input</a>, leaving it unwired is
+  fine when retrying is the design.</dd>
+</dl>
+
+<h3 id="msg-only-runs-on-completion">Only runs on completion</h3>
+<blockquote class="blurb">This is wired, but it only runs if the quest completes — with auto-complete off and no Complete button (the default) that never happens. End the story from the last objective's “done” instead.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev warn">Amber</span></dd>
+  <dt class="dt-mute">Where</dt><dd>On the node, and in the status bar.</dd>
+  <dt>What it means</dt><dd>You have built the ending of your quest on
+  <a href="nodes/entry-complete.html">On quest complete</a>. Under the default
+  settings a quest never reaches that state, so everything you wired behind it
+  never runs. The player finishes the last objective and sees nothing.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Move those nodes onto the last
+  objective's <b class="ui">On complete</b> socket. That path runs when the
+  objective ticks over, which is the moment you actually mean. If you really
+  want completion, turn it on in the quest's behaviour settings instead.</dd>
+</dl>
+
+<h3 id="msg-empty">Empty</h3>
+<blockquote class="blurb">Nothing is wired to “…” That is fine if you do not need it — delete the node to clear this.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev warn">Amber</span></dd>
+  <dt class="dt-mute">Where</dt><dd>On the node, and in the status bar.</dd>
+  <dt>What it means</dt><dd>One of the four lifecycle nodes is on the canvas
+  with nothing after it, so it runs and changes nothing. The message names the
+  node in the quotes.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Wire the nodes that should run at that
+  moment to its output. On <a href="nodes/entry-start.html">Quest start</a> that
+  is usually your briefing message first. If you do not need the node, delete it
+  and the message goes with it.</dd>
+</dl>
+
+<h3 id="msg-field-no-machine">No machine set</h3>
+<blockquote class="blurb">No machine set — this node does nothing until it points at one.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev warn">Amber</span></dd>
+  <dt class="dt-mute">Where</dt><dd>In the inspector, under <b class="ui">Device IP</b> or <b class="ui">Protected IP</b>.</dd>
+  <dt>What it means</dt><dd>A <a href="nodes/world-port.html">Change port</a> or
+  <a href="nodes/world-firewall.html">Firewall rule</a> node has no machine to
+  act on. The field is blank, which usually means you have not got to it yet
+  rather than that something is broken.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Type the target address token to aim it at
+  the machine your network created, or pick
+  <b class="ui">Random — the quest's network</b> on a firewall rule.</dd>
+</dl>
+
+<h3 id="msg-field-no-network">No network creates that machine</h3>
+<blockquote class="blurb">This is set to a machine, but no network in this quest creates one for it to act on.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev warn">Amber</span></dd>
+  <dt class="dt-mute">Where</dt><dd>In the inspector, under the address field.</dd>
+  <dt>What it means</dt><dd>The address is filled in, and nothing in the quest
+  brings a machine with that address into the world. The node points at a
+  machine that will not exist.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Add a
+  <a href="nodes/world-network.html">Create network</a> node from
+  <b>World building</b> and point this at a device in it. If you do not need the
+  node, remove it.</dd>
+</dl>
+
+<h3 id="msg-field-files-no-network">Files aimed at a network that does not exist</h3>
+<blockquote class="blurb">This “Place files” node puts files on a remote device, but no network in this quest exists for that device to live on — export would drop the files.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev danger">Red</span></dd>
+  <dt class="dt-mute">Where</dt><dd>In the inspector, under <b class="ui">Device IP</b>.</dd>
+  <dt>What it means</dt><dd>The files have nowhere to land. Exporting drops them
+  rather than failing, so the player gets a quest with the clue missing and no
+  error anywhere.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Add a
+  <a href="nodes/world-network.html">Create network</a> node and give it the
+  device this node is aimed at.</dd>
+</dl>
+
+<h3 id="msg-field-files-no-device">Files aimed at an address nothing uses</h3>
+<blockquote class="blurb">No device in this quest uses that address, so these files would be dropped when you export.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev danger">Red</span></dd>
+  <dt class="dt-mute">Where</dt><dd>In the inspector, under <b class="ui">Device IP</b>.</dd>
+  <dt>What it means</dt><dd>The address is typed in and matches no device your
+  network creates. With no address at all, the editor writes
+  <em>No address set, so the files have nowhere to land</em> instead. Either
+  way, export drops the files.</dd>
+  <dt class="dt-ok">What to do</dt><dd>The message lists the addresses your
+  quest does create. Point this node at one of them, or at the same token you
+  gave the network.</dd>
+</dl>
+
+<h3 id="msg-field-files-no-user">Files aimed at a device with no account</h3>
+<blockquote class="blurb">That device has no user account, and files mount under a user's home folder — export would drop the files.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev danger">Red</span></dd>
+  <dt class="dt-mute">Where</dt><dd>In the inspector, under <b class="ui">Device IP</b>.</dd>
+  <dt>What it means</dt><dd>The device exists, but there is nobody logged into
+  it, and files land in a user's home folder. Export drops them.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Add a user account to that device in your
+  <a href="nodes/world-network.html">Create network</a> node.</dd>
+</dl>
+
+<h2 id="pre-export">The report before you export</h2>
+<p>Exporting runs a second set of checks that need the whole mod in front of
+them: what your websites do to each other, whether a machine can actually be
+broken into. The report lists everything it found before the
+<code>.zip</code> is written, so you can go back and fix it.</p>
+<p>Red entries mean the export dropped or changed something. Amber entries mean
+it shipped what you built, and what you built is probably not what you meant.</p>
+
+<h3 id="msg-export-network-shape">A network the game cannot build</h3>
+<blockquote class="blurb">… has machines behind it, but only a router or a splitter can hold other machines.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev danger">Red</span></dd>
+  <dt>What it means</dt><dd>You have hung a device behind something that cannot
+  host one. The game has no way to build the shape.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Put a router or a splitter between them in
+  your <a href="nodes/world-network.html">Create network</a> node.</dd>
+</dl>
+<p>Two more red entries come from the same place. One names a machine carrying
+firewall rules when only a firewall device enforces them, so the rules are
+ignored. The other names a machine with a login service open and no user
+accounts, so the player cannot break in — there is nothing to log in as.</p>
+
+<h3 id="msg-export-tool-version">A version a tool will not read</h3>
+<blockquote class="blurb">… metasploit needs three numbers (for example “OpenSSH 7.2.0”) — it rejects anything else.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev danger">Red</span></dd>
+  <dt>What it means</dt><dd>A vulnerability's version is written in a form the
+  game's attack tool refuses to read, so the player cannot exploit it. The
+  weakness is on the list and does nothing.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Write the version as three numbers, the
+  way the tool expects.</dd>
+</dl>
+
+<h3 id="msg-export-domain-clash">Two websites on one domain</h3>
+<blockquote class="blurb">… is the host of … websites in this mod. Domains are global — two sites on one host will fight over it.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev danger">Red</span></dd>
+  <dt>What it means</dt><dd>Domains belong to the whole game, not to your quest.
+  Two sites claiming one host means whichever loads last wins, and the other
+  disappears.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Give one of them its own hostname. Two
+  related sites read better as subdomains of one host anyway.</dd>
+</dl>
+<p>Three more entries come from the same checks. A red one names a host with two
+pages at the same path, which ship as two definitions of one address. Another
+names a page whose path does not start at the host root. An amber one warns that
+a placeholder domain ships as a real site any player can find, and another mod
+may already be using it.</p>
+
+<h3 id="msg-export-conversation">A conversation nobody reaches</h3>
+<blockquote class="blurb">… a conversation is set to “play when the story reaches this node” but nothing is wired into it — it never plays.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev warn">Amber</span></dd>
+  <dt>What it means</dt><dd>A <a href="nodes/comms-dialogue.html">Dialogue</a>
+  node waits for the story to arrive and the story never does. The player never
+  has the conversation.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Wire the node into the chain, or set the
+  conversation to start some other way.</dd>
+</dl>
+
+<h3 id="msg-export-addon">An addon node that is not set up</h3>
+<blockquote class="blurb">… a “Give data to an addon” node is not set up yet.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev warn">Amber</span></dd>
+  <dt>What it means</dt><dd>A node that depends on a community addon has no pack
+  or node chosen, so it exports as something that does nothing. The same check
+  covers <a href="nodes/pack-node.html">Addon node</a>.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Open the node and pick the pack and the
+  shape or node it should use. If the addon is not installed, install it
+  first.</dd>
+</dl>
+
+<h3 id="msg-export-kisscord">An upload that becomes a message</h3>
+<blockquote class="blurb">… Kisscord uploads compile to a “[uploaded file …]” message.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev warn">Amber</span></dd>
+  <dt>What it means</dt><dd>A file attached to a Kisscord conversation does not
+  reach the player as a file. It arrives as a line of text standing in for it.
+  Nothing is lost; the player does not get the attachment itself.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Nothing, if a line of text is enough. If
+  the player needs the actual file, put it somewhere with
+  <a href="nodes/world-files.html">Place files</a> and have the conversation
+  point at it.</dd>
+</dl>
 </section>
 
 <div class="pagefoot"><a href="how-do-i.html">← How do I…</a><a class="next" href="export.html">Exporting and installing →</a></div>
+<a class="totop" href="#checking">↑ back to top</a>
 <footer class="colophon">
   HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·
-  every figure on these pages is taken from the editor's own source.
+  every message on this page is quoted from the editor's own source.
 </footer>
 </main>
 </div>

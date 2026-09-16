@@ -93,7 +93,7 @@ next to the picture.
 
 | # | Filename | Crop to | Step | What to show |
 |---|---|---|---|---|
-| 01 | `tutorial-01-new-dialog.png` | Region | 2.2 | The **New** dialog open, template list visible. |
+| 01 | `tutorial-01-new-dialog.png` | Region | 2.2 | The **Start from a template** dialog open, template list visible. Not the **New** dialog — that one (`Start a new project?`) has no template list, only a destructive-clear warning. |
 | 02 | `tutorial-02-first-contact.png` | Full editor | 2.2 | Just after loading *First Contact*. |
 | 03 | `tutorial-03-read-the-map.png` | Full editor | 2.3 | The whole node map, zoomed to fit. |
 | 04 | `tutorial-04-inspector-tabs.png` | Region | 2.3 | The inspector top, with the **Node / Quest / Mod** tabs clearly visible. |
@@ -103,7 +103,7 @@ next to the picture.
 | 08 | `tutorial-08-when-event-inspector.png` | Panel | 2.5 | The *When event* inspector with the event picker open. |
 | 09 | `tutorial-09-dialogue-inspector.png` | Panel | 2.6 | A *Dialogue* node selected, inspector open. |
 | 10 | `tutorial-10-pay-inspector.png` | Panel | 2.7 | A *Pay the player* node selected, inspector open. |
-| 11 | `tutorial-11-status-clean.png` | Region | 2.8 | The status bar alone, showing no issues. A short wide strip is all this needs. |
+| 11 | `tutorial-11-status-clean.png` | Region | 2.8 | The status bar alone: saved state, node/wire/objective counts, selection and history depth. A short wide strip is all this needs. Note the bar reports no issue counts at all — problems surface on the nodes and in the export window, so this shot cannot show a clean/unclean state. |
 | 12 | `tutorial-12-dryrun.png` | Region | 2.9 | The **Dry run** dialog part-way through a trace. |
 | 13 | `tutorial-13-export-dialog.png` | Region | 2.10 | The **Export mod** dialog with its summary and the *Download .zip* button. |
 | 14 | `tutorial-14-installed.png` | In-game | 2.10 | The mod visible in the game's mod list. See §5. |

@@ -34,21 +34,253 @@
   <p class="tag">Twenty minutes, start to finish, ending in a mod you install and play.</p>
 </header>
 <section id="tutorial">
-<div class="note warn"><b>Being written.</b> This page is scaffolding
-from the Phase 3 skeleton — the structure and anchors are final, the prose lands
-in Phase 4. Nothing here is a claim about the editor yet.</div>
+<p>Twenty minutes, and you finish with a mod installed in the game. You build on
+top of a template rather than a blank canvas, because seeing a working quest is
+the fastest way to learn what the pieces are for.</p>
+<div class="note ok"><b>Nothing here is destructive.</b> Every step can be
+undone with <kbd>Ctrl</kbd>+<kbd>Z</kbd>, and the editor keeps a copy in your
+browser as you work. The editor says so itself, in the panel you meet first.</div>
+
 <h2 id="tour">The screen, labelled</h2>
-<p>Written in Phase 4.</p>
+<p>Open the editor with nothing loaded and you get a short welcome panel. Its
+own description of the job:</p>
+<blockquote class="blurb">Drag nodes from the left onto the canvas, then wire their sockets together. Every field on the right is a dropdown or a switch — no JSON, no code.</blockquote>
+<p>That is the whole method, and the screen is arranged around it.</p>
+<figure>
+  <img src="img/tour-workspace.png"
+       alt="The whole editor at once: the top bar of buttons, a strip of quest tabs beneath it, the node palette down the left side, the canvas of nodes and coloured wires in the middle, the inspector panel docked on the right, and a thin status bar along the bottom." />
+  <figcaption>The editor with a quest loaded. Five regions, and you use four of
+  them constantly.</figcaption>
+</figure>
+<dl class="facts-list">
+  <dt>Top bar</dt><dd>The buttons: <b class="ui">New</b>,
+  <b class="ui">Load</b>, <b class="ui">Save</b>, undo, redo, the quest tabs,
+  <b class="ui">Dialogues</b>, <b class="ui">Websites</b>,
+  <b class="ui">Dry run</b>, <b class="ui">Addons</b>,
+  <b class="ui">Settings</b> and <b class="ui">Export mod</b>. Hover any of
+  them for a longer description.</dd>
+  <dt>Palette</dt><dd>Every node the editor can make, grouped by what it does.
+  Type in the <b class="ui">Filter nodes</b> box to narrow it. Drag one onto the
+  canvas, or click it to drop one in the middle.</dd>
+  <dt>Canvas</dt><dd>Your quest map. Drag nodes around, draw wires between
+  sockets, scroll to zoom.</dd>
+  <dt>Inspector</dt><dd>Three tabs: <b class="ui">Node</b>,
+  <b class="ui">Quest</b> and <b class="ui">Mod</b>. The
+  <b class="ui">Node</b> tab stays greyed out until you click a node, because
+  there is nothing to show yet.</dd>
+  <dt>Status bar</dt><dd>Along the bottom. Whether your work is saved, how many
+  nodes and wires the quest has, what you have selected, and how deep your undo
+  history goes.</dd>
+</dl>
+<figure>
+  <img src="img/tour-empty-canvas.png"
+       alt="A brand-new blank project: the same five regions, with an empty canvas in the middle and the welcome panel floating over it." />
+  <figcaption>The same screen before anything is on it.</figcaption>
+</figure>
+
 <h2 id="new-project">Start from a template</h2>
-<p>Written in Phase 4.</p>
+<p>Thirteen templates come with the editor, from a blank canvas up to a
+36-node quest. You want <b class="ui">First Contact</b>: eight nodes, marked
+Beginner, and deliberately no hacking in it. Its own description:</p>
+<blockquote class="blurb">The whole spine in miniature: a brief, one objective (a person lookup), a payment and a closing line. No hacking — just the shape of a quest.</blockquote>
+<ol class="plain">
+  <li>Click <b class="ui">Browse 13 templates</b> on the welcome panel. If you
+  have already closed that panel, use <b class="ui">New</b> instead — though
+  note that <b class="ui">New</b> opens a different window that only clears
+  your work.</li>
+  <li>In the window titled <b class="ui">Start from a template</b>, choose
+  <b class="ui">First Contact</b>. The editor confirms with a message reading
+  <span class="mono">Loaded “First Contact”.</span></li>
+</ol>
+<figure>
+  <img src="img/tutorial-01-new-dialog.png"
+       alt="The Start from a template window, showing the list of templates with their names, difficulty labels and node counts." />
+  <figcaption>The template picker. Difficulty and node count are shown for
+  each.</figcaption>
+</figure>
+<div class="note warn"><b>Keep <b class="ui">New</b> and templates apart.</b>
+<b class="ui">New</b> asks <span class="mono">Start a new project?</span> and
+warns that it cannot be undone, because it deletes every quest, website and
+conversation in the project along with the autosaved copy. It offers
+<b class="ui">Save current quest first</b> for that reason. Templates are the
+harmless route.</div>
+<figure>
+  <img src="img/tutorial-02-first-contact.png"
+       alt="The editor immediately after loading the First Contact template, with eight nodes on the canvas." />
+  <figcaption>First Contact, loaded.</figcaption>
+</figure>
+
+<h2 id="read-the-map">Read the map you loaded</h2>
+<p>Before changing anything, work out what this quest does. Zoom out until all
+eight nodes fit on screen.</p>
+<figure>
+  <img src="img/tutorial-03-read-the-map.png"
+       alt="The whole First Contact node map zoomed to fit, with blue flow wires running left to right between the nodes." />
+  <figcaption>Read left to right. The wires, not the positions, decide the
+  order.</figcaption>
+</figure>
+<p>Follow the blue wires. They read as "and then", so a chain of them is the
+story running in order. You should find a brief being sent to the player, an
+objective, a payment, and a closing line. That is the spine, and almost every
+quest you write will be this shape with more in the middle.</p>
+<p>Now click the objective node. The inspector opens on its fields.</p>
+<figure>
+  <img src="img/tutorial-04-inspector-tabs.png"
+       alt="The top of the inspector panel, with the Node, Quest and Mod tabs visible and the Node tab selected." />
+  <figcaption>The three inspector tabs. <b class="ui">Node</b> is the one you
+  will use most.</figcaption>
+</figure>
+<div class="note"><b>Why this matters.</b> A template you cannot read is a
+template you cannot edit. Every quest you build later will be a variation on
+something you have already taken apart.</div>
+
 <h2 id="add-objective">Add your own objective</h2>
-<p>Written in Phase 4.</p>
+<p>Now change the quest. You will add a second objective, so the player has two
+things to do instead of one.</p>
+<ol class="plain">
+  <li>In the palette, find <b class="ui">Objective</b>. Type
+  <span class="mono">objective</span> in <b class="ui">Filter nodes</b> if the
+  list is long.</li>
+  <li>Drag it onto an empty part of the canvas. A new node appears.</li>
+  <li>Click it. The inspector now shows its fields.</li>
+</ol>
+<figure>
+  <img src="img/tutorial-05-add-objective.png"
+       alt="The node palette with the Objective entry visible in the list." />
+  <figcaption>Objective, in the palette.</figcaption>
+</figure>
+<p>Fill in the two fields that matter for this exercise:</p>
+<dl class="facts-list">
+  <dt>Identifier</dt><dd>A short name the game uses internally, like
+  <span class="mono">find-the-contact</span>. The player never sees it, but it
+  has to be unique within the quest.</dd>
+  <dt>Shown to the player</dt><dd>The line that appears in their quest panel.
+  Write it as an instruction: <span class="mono">Look up who wrote the
+  article.</span></dd>
+</dl>
+<figure>
+  <img src="img/tutorial-06-objective-inspector.png"
+       alt="The inspector showing a selected Objective node with its Identifier and Shown to the player fields filled in." />
+  <figcaption>Two fields, and the objective exists.</figcaption>
+</figure>
+<p>Now wire it in. Drag from the <b class="ui">On complete</b> socket on the
+first objective to the <b class="ui">In</b> socket on the new one. A blue wire
+appears, and the second objective now starts when the first one finishes.</p>
+
 <h2 id="wire-trigger">Make it complete</h2>
-<p>Written in Phase 4.</p>
+<p>An objective with nothing wired to its trigger never completes on its own.
+This is the step that turns a quest from a script into something that reacts to
+the player.</p>
+<ol class="plain">
+  <li>Drag <b class="ui">When event</b> from the palette onto the canvas.</li>
+  <li>Click it and open its <b class="ui">Game event</b> field. Pick the event
+  that matches what the player will do.</li>
+  <li>Drag from the node's <b class="ui">When</b> socket to the objective's
+  <b class="ui">Trigger</b> socket. The wire is cyan, because it is a different
+  kind of connection from the blue ones.</li>
+</ol>
+<figure>
+  <img src="img/tutorial-07-drag-wire.png"
+       alt="A wire being dragged from a When event node's output socket, stretched across the canvas but not yet dropped onto a target." />
+  <figcaption>Mid-drag. The wire follows your cursor until you drop it on a
+  matching socket.</figcaption>
+</figure>
+<figure>
+  <img src="img/tutorial-08-when-event-inspector.png"
+       alt="The inspector for a When event node, with the game event picker open and its list of events." />
+  <figcaption>Choosing the event. There are 92, grouped by the part of the game
+  they come from.</figcaption>
+</figure>
+<div class="note warn"><b>The socket has to match.</b> A cyan wire only lands on
+a cyan socket. If you drop it on <b class="ui">In</b> instead of
+<b class="ui">Trigger</b>, nothing connects — and that is the editor refusing a
+connection that would not mean anything.</div>
+
+<h2 id="write-the-reward">Give the player a reason to finish</h2>
+<p>Two nodes make a quest feel like a job rather than a checklist. Both are
+already in First Contact; click them to see what they hold.</p>
+<p>A <b class="ui">Dialogue</b> node is a conversation on the player's phone.
+Select one and the inspector shows who speaks and what they say. This is where
+an employer explains the job and where the story closes.</p>
+<figure>
+  <img src="img/tutorial-09-dialogue-inspector.png"
+       alt="The inspector for a Dialogue node, showing its speaker and message lines." />
+  <figcaption>A conversation, node by node.</figcaption>
+</figure>
+<p>A <b class="ui">Pay the player</b> node puts money in their account. Set the
+amount in dollars. A hundred is a reasonable fee for a first job; the tools the
+player buys run around thirty-five, so the number should mean something to
+them.</p>
+<figure>
+  <img src="img/tutorial-10-pay-inspector.png"
+       alt="The inspector for a Pay the player node, with its amount field set." />
+  <figcaption>The payment. Leave the amount blank and the node does
+  nothing.</figcaption>
+</figure>
+
+<h2 id="check-it">Check it before you ship it</h2>
+<p>The editor checks your work in two places. The status bar along the bottom
+tells you the shape of what you have built.</p>
+<figure>
+  <img src="img/tutorial-11-status-clean.png"
+       alt="The status bar alone, reading Saved, then a count of nodes, wires and objectives, then the history depth." />
+  <figcaption>The status bar. It reports counts and whether your work is
+  saved; it does not list problems.</figcaption>
+</figure>
+<p>Problems show up on the nodes themselves and in the export window, not here.
+The fuller check is <b class="ui">Dry run</b>, which walks through your quest
+the way the exported mod would run it.</p>
+<figure>
+  <img src="img/tutorial-12-dryrun.png"
+       alt="The Dry run window part-way through a trace, showing the nodes firing in order." />
+  <figcaption>Dry run. It is the closest thing to playing the quest without
+  installing it.</figcaption>
+</figure>
+<p>Run it and watch the order. If a node you expected never appears, it is not
+wired to anything. Drop a <b class="ui">Debug probe</b> after it and run again —
+the probe prints what a node does when it fires, and whether it fires at all.
+<a href="checking.html">Checking your quest</a> lists every message the editor
+can show you.</p>
+
 <h2 id="export">Export, install, play</h2>
-<p>Written in Phase 4.</p>
-<h2 id="recap">What you built</h2>
-<p>Written in Phase 4.</p>
+<p>Click <b class="ui">Export mod</b>. The window that opens shows what you are
+about to ship before it packs anything: your quests, your websites, the
+permissions your nodes need, and every file that will go in the archive.</p>
+<figure>
+  <img src="img/tutorial-13-export-dialog.png"
+       alt="The Export mod window showing the quest list, websites, permission chips and the file list, with a Download .zip button." />
+  <figcaption>The export summary. Read it before you download.</figcaption>
+</figure>
+<p>Anything red means the game will drop or change something you built. Fix it
+first. Then choose <b class="ui">Download .zip</b> and unzip the folder into the
+game's <code>mods/</code> directory.</p>
+<figure>
+  <img src="img/tutorial-14-installed.png"
+       alt="The game's own mod list, with the exported mod visible in it." />
+  <figcaption>Installed. The quest is available to accept.</figcaption>
+</figure>
+<p>Everything the archive contains and why is on the
+<a href="export.html">exporting and installing</a> page. The one thing worth
+remembering from it: the <code>.zip</code> is finished output. Your project file
+is the thing you keep editing.</p>
+
+<h2 id="recap">What you now know</h2>
+<p>You loaded a quest, read what it did, added to it, made one objective respond
+to real play, and installed the result. Four ideas carried all of it:</p>
+<ul>
+  <li><b>Wires decide order, not position.</b> Moving a node changes nothing.
+  <a href="concepts.html#quest-map">Your quest map</a> explains why.</li>
+  <li><b>Wires have kinds.</b> Blue for "and then", cyan for "when". A socket
+  takes only its own kind.</li>
+  <li><b>An objective completes when its trigger fires.</b> That is the
+  difference between a quest that reacts and one that assumes.</li>
+  <li><b>Exporting is not saving.</b> Two different files, two different
+  purposes.</li>
+</ul>
+<p>Next, take apart a bigger template. <b class="ui">The Byline</b> adds a
+website clue, and <b class="ui">Cold Call</b> tells its story entirely in
+conversation. Then look at the <a href="how-do-i.html">How do I…</a> pages when
+you want to build something specific.</p>
 </section>
 
 <div class="pagefoot"><a href="index.html">← Start here</a><a class="next" href="concepts.html">How a quest works →</a></div>

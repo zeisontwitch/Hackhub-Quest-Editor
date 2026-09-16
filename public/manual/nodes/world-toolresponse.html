@@ -68,10 +68,8 @@
 <h3 id="node-world-toolresponse-field-command">Tool</h3>
 <blockquote class="blurb">Pick the in-game command this overrides, like nmap or whois. When the player runs it on your input, they see your text instead of the usual result.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The command this overrides.</dd>
   <dt class="dt-mute">Default</dt><dd><code>"nmap"</code></dd>
   <dt>Limits</dt><dd>One of the 11 listed below.</dd>
-  <dt class="dt-warn">Watch out</dt><dd>The override lasts until the quest ends or you take it down. Every other command the player runs is untouched.</dd>
 </dl>
 <table>
   <thead><tr><th>Choice</th><th>What it is stored as</th></tr></thead>
@@ -93,7 +91,6 @@
 <h3 id="node-world-toolresponse-field-input">Keyed by</h3>
 <blockquote class="blurb">What the player types after the command — the IP, domain or name it answers for. The tool only responds to this exact input. hydra/ssh/ftp use the user + target fields below instead.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>What the player types after the command — the address, domain or name it answers for.</dd>
   <dt>Example</dt><dd><code>{{data.targetIp}}</code></dd>
   <dt class="dt-mute">Default</dt><dd>empty</dd>
   <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
@@ -103,20 +100,18 @@
 <h3 id="node-world-toolresponse-field-inputUser">User</h3>
 <blockquote class="blurb">Only match when the player ran the command against this user.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Only match when the player ran the command against this user.</dd>
+
 </dl>
 
 <h3 id="node-world-toolresponse-field-inputTarget">Target</h3>
 <blockquote class="blurb">Only match when the player ran the command against this host.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Only match when the player ran it against this host.</dd>
   <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
 </dl>
 
 <h3 id="node-world-toolresponse-field-dataText">Response</h3>
 <blockquote class="blurb">One “Label: value” per line. The editor turns them into exactly what that tool shows in-game — add a line for each thing you want the player to see.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>One label and value per line. The editor turns them into the shape that tool really prints.</dd>
   <dt>Example</dt><dd><code>PORT: 22  STATE: open  SERVICE: ssh</code></dd>
   <dt class="dt-mute">Default</dt><dd>empty</dd>
   <dt class="dt-danger">If you leave it empty</dt><dd>The command answers with nothing, which reads to the player as a dead host.</dd>
@@ -125,7 +120,6 @@
 <h3 id="node-world-toolresponse-field-removeOnComplete">Remove when the quest ends</h3>
 <blockquote class="blurb">Stop intercepting the command when the quest ends.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Turn this on to stop intercepting the command when the quest ends.</dd>
   <dt class="dt-mute">Default</dt><dd>on</dd>
   <dt>Limits</dt><dd>On or off.</dd>
 </dl>

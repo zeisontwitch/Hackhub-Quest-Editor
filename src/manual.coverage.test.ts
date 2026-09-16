@@ -270,6 +270,36 @@ describe("manual coverage — G6: language", () => {
     });
 });
 
+/* ── G10: the front page's headline figures ─────────────────────────────── */
+
+describe("manual coverage — G10: headline figures", () => {
+    it("quotes the same numbers the editor reports", () => {
+        // The chips at the top of index.html are typed by hand, so they can
+        // quietly disagree with the registry. They are the first numbers a
+        // reader trusts, which makes them the worst place for a stale figure.
+        const index = join(MANUAL, "index.html");
+        if (!existsSync(index)) return; // G1's business
+        const html = read(index);
+        const inv = JSON.parse(
+            readFileSync(join(ROOT, "docs/manual/inventory.json"), "utf8"),
+        ) as { counts: Record<string, number> };
+        const expected: Array<[string, number]> = [
+            ["node types", inv.counts.obtainableNodeTypes],
+            ["settings", inv.counts.editableFields],
+            ["game events", inv.counts.events],
+        ];
+        const wrong: string[] = [];
+        for (const [label, want] of expected) {
+            const m = html.match(new RegExp(`<b>([0-9]+)</b>\\s*${label}`));
+            if (!m) wrong.push(`${label}: not stated on the front page`);
+            else if (Number(m[1]) !== want) {
+                wrong.push(`${label}: the front page says ${m[1]}, the editor has ${want}`);
+            }
+        }
+        expect(wrong, wrong.join("\n")).toEqual([]);
+    });
+});
+
 /* ── G8: images ─────────────────────────────────────────────────────────── */
 
 /**

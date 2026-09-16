@@ -23,8 +23,11 @@ than no gate.
 1. Add an entry to `docs/manual/node-voice.json`. `what` and `when` are
    required; the script throws without them.
 2. Add per-field `put`, `example`, `empty` and `watch` only where you have
-   something the editor's own hint does not already say. Restating the hint
-   twice is the most common way these pages go soft.
+   something the editor's own hint does not already say. The script measures the
+   overlap between your `put` and the hint it sits under, and **throws above
+   70%**. That guard exists because the flaw was fixed by hand once and then
+   reintroduced at scale in the next two batches — 48 fields said nothing the
+   hint had not already said. A machine check does not forget between rounds.
 3. Run `npm run gen:manual`. That re-extracts the inventory, rebuilds the
    pages and rebuilds the search index in one go.
 4. Run the coverage gate: `npx vitest run src/manual.coverage.test.ts`.

@@ -169,10 +169,6 @@
       "terminalCommand": {
         "example": "ssh dock01.meridian.local",
         "watch": "It runs nothing on its own. It is a nudge the player can copy, not a shortcut."
-      },
-      "hidden": {
-        "put": "Turn this on to keep the objective out of the journal until another objective unlocks it.",
-        "watch": "A hidden objective still has to be reachable. If nothing unlocks it, the player never sees it and the quest stalls."
       }
     },
     "sockets": {
@@ -452,7 +448,6 @@
     "game": "Nothing appears on screen. The value sits in the quest's memory until something reads it.",
     "fields": {
       "key": {
-        "put": "The name you will use to read this value back.",
         "example": "doorCode",
         "empty": "The value is stored under no name, so nothing can find it again."
       },
@@ -641,12 +636,8 @@
         "watch": "With one option there is nothing random about it. With none, there is nothing to pick."
       },
       "storeAs": {
-        "put": "The name the picked value is stored under.",
         "example": "guardOnDuty",
         "empty": "The pick is not stored, so nothing can read it back later."
-      },
-      "label": {
-        "put": "The value stored if this option is the one picked."
       }
     },
     "mistakes": [
@@ -680,7 +671,6 @@
         "put": "A name for the output, so you can tell the sockets apart on the canvas."
       },
       "delayMs": {
-        "put": "How long to wait before this output fires, counted from the one before it.",
         "example": "1500"
       }
     },
@@ -761,15 +751,8 @@
       "text": {
         "put": "What happens in the beat. The card previews the top of it and expands in the inspector."
       },
-      "choices": {
-        "put": "One row per path the story can take. Each row becomes an output socket on the card."
-      },
       "label": {
-        "put": "A short title for the path.",
         "example": "Go in through the front door"
-      },
-      "note": {
-        "put": "One line on where this path leads, so a branching beat reads at a glance."
       },
       "color": {
         "put": "Colour the card by act, character or branch, so a big canvas reads at a glance."
@@ -790,18 +773,7 @@
       "It changes nothing about how the quest runs. It is a drawing aid."
     ],
     "game": "Nothing. A frame never reaches the mod.",
-    "fields": {
-      "label": {
-        "put": "The frame's title. Name the cluster after what it does.",
-        "example": "Act 1: the docks"
-      },
-      "color": {
-        "put": "Colour-code your frames however helps: one colour per act, or per character."
-      },
-      "comment": {
-        "put": "A note to future-you about what this cluster does."
-      }
-    }
+    "fields": {}
   },
   "world.network": {
     "oneliner": "Builds the machines the player breaks into.",
@@ -855,28 +827,14 @@
     ],
     "game": "The player's scans show the port as blocked or reachable, depending on the rule.",
     "fields": {
-      "ip": {
-        "put": "The machine these rules protect. Pick the quest's own network, or type the address of one machine."
-      },
       "port": {
-        "put": "The port this rule applies to.",
         "example": "22"
       },
       "allowed": {
         "put": "Turn this on to let traffic through. Off blocks the port."
       },
-      "source": {
-        "put": "Which machines the rule applies to. An asterisk means anywhere on the internet."
-      },
-      "destination": {
-        "put": "The machine the rule protects. It usually matches <b class=\"ui\">Protected IP</b>."
-      },
       "locked": {
-        "put": "Turn this on and the player cannot remove the rule from inside the game.",
         "watch": "A locked rule with no way around it stops the quest. Leave the player another route."
-      },
-      "removeOnComplete": {
-        "put": "Turn this on to drop the rule when the quest ends, so the machine is reachable afterwards."
       }
     },
     "mistakes": [
@@ -902,31 +860,17 @@
     ],
     "game": "The next scan the player runs shows the port in its new state.",
     "fields": {
-      "ip": {
-        "put": "The machine to change. A router address, or any device behind it.",
-        "example": "{{data.targetIp}}",
-        "empty": "There is no machine to change, so the node does nothing."
-      },
       "action": {
         "put": "What to do to the port."
       },
       "port.external": {
-        "put": "The port number as seen from outside. This is the one a scan reports.",
         "example": "22"
       },
       "port.internal": {
-        "put": "The port the service listens on inside the machine. It usually matches the external one.",
         "example": "22"
       },
       "port.service": {
-        "put": "What a scan prints next to the port.",
         "example": "ssh"
-      },
-      "port.active": {
-        "put": "Turn this off to make the port look closed."
-      },
-      "restoreOnComplete": {
-        "put": "Turn this on to put the port back the way it was when the quest ends."
       }
     },
     "mistakes": [
@@ -953,14 +897,8 @@
     "game": "The player looks the name up and gets the address you gave it.",
     "fields": {
       "domain": {
-        "put": "The hostname the player types.",
         "example": "vault.corp-internal.net",
         "empty": "There is no name to resolve, so the node does nothing."
-      },
-      "ip": {
-        "put": "The address it resolves to.",
-        "example": "{{data.targetIp}}",
-        "empty": "The name resolves to nothing, and the player's lookup comes back empty."
       },
       "vulnerabilities": {
         "put": "The weaknesses on the host behind this name. A scanner reports the ones you list."
@@ -969,11 +907,7 @@
         "put": "The kind of weakness. Each one says what the player can do with it."
       },
       "version": {
-        "put": "The affected component's version.",
         "example": "WordPress 5.8"
-      },
-      "removeOnComplete": {
-        "put": "Turn this on to drop the entry when the quest ends."
       }
     },
     "mistakes": [
@@ -1000,7 +934,6 @@
     "game": "The player connects with a database client and queries the tables you built.",
     "fields": {
       "host": {
-        "put": "The address the player points their client at.",
         "example": "{{data.targetIp}}"
       },
       "user": {
@@ -1008,15 +941,10 @@
         "example": "admin"
       },
       "password": {
-        "put": "The password. Put it somewhere the player can find it: a config file, a leaked dump, a note.",
         "watch": "The default is a placeholder. Leave it in place and the player can guess their way in without playing."
       },
       "tables": {
-        "put": "The data inside: tables holding rows of named values.",
         "empty": "The database exists and holds nothing, so there is nothing to find."
-      },
-      "removeOnComplete": {
-        "put": "Turn this on to drop the database when the quest ends."
       }
     },
     "mistakes": [
@@ -1043,7 +971,6 @@
     "game": "The files appear in the filesystem, and the player finds them with the usual commands.",
     "fields": {
       "target": {
-        "put": "Whose filesystem to write to.",
         "watch": "Both fields below stay visible whichever you pick, and <b class=\"ui\">Device IP</b> is only read for a remote device."
       },
       "ip": {
@@ -1051,30 +978,19 @@
         "example": "{{data.targetIp}}"
       },
       "parentPath": {
-        "put": "Where the files are mounted.",
         "example": "~/docs",
         "watch": "Folders named etc, home, logs or lib are merged into the machine's real ones rather than created fresh."
       },
       "files": {
-        "put": "The files and folders to create.",
         "empty": "Nothing is written."
       },
       "name": {
-        "put": "The name exactly as it appears in a listing.",
         "example": "config"
       },
       "extension": {
-        "put": "The extension. Leave it blank for a folder.",
         "example": "conf"
       },
-      "isFolder": {
-        "put": "Turn this on to make the entry a directory rather than a file."
-      },
-      "hidden": {
-        "put": "Turn this on to prefix the name with a dot, so a plain listing does not show it."
-      },
       "data": {
-        "put": "The file's contents. This is where clues live.",
         "example": "DB_PASS=hunter2"
       }
     },
@@ -1158,28 +1074,13 @@
     ],
     "game": "The player runs the command and reads your response instead of the game's own.",
     "fields": {
-      "command": {
-        "put": "The command this overrides.",
-        "watch": "The override lasts until the quest ends or you take it down. Every other command the player runs is untouched."
-      },
       "input": {
-        "put": "What the player types after the command — the address, domain or name it answers for.",
         "example": "{{data.targetIp}}",
         "empty": "There is nothing to match, so the response never fires."
       },
-      "inputUser": {
-        "put": "Only match when the player ran the command against this user."
-      },
-      "inputTarget": {
-        "put": "Only match when the player ran it against this host."
-      },
       "dataText": {
-        "put": "One label and value per line. The editor turns them into the shape that tool really prints.",
         "example": "PORT: 22  STATE: open  SERVICE: ssh",
         "empty": "The command answers with nothing, which reads to the player as a dead host."
-      },
-      "removeOnComplete": {
-        "put": "Turn this on to stop intercepting the command when the quest ends."
       }
     },
     "mistakes": [
@@ -1251,15 +1152,12 @@
     "game": "The player types the command, sees your prompt, and types their answer. The terminal prints your success or failure line.",
     "fields": {
       "commandName": {
-        "put": "The command the player runs. It appears in the terminal's help.",
         "example": "decrypt"
       },
       "commandDescription": {
-        "put": "The one-line description shown next to the command in help.",
         "example": "Decrypt the intercepted payload"
       },
       "prompt": {
-        "put": "The text printed before the cursor.",
         "example": "Passphrase >"
       },
       "mask": {
@@ -1270,20 +1168,14 @@
         "watch": "A pattern match is the hardest of the three for a player to guess at. Use it only when several answers should count."
       },
       "expected": {
-        "put": "The answer that counts as correct, or the pattern if you chose a pattern match.",
         "empty": "Nothing the player types can be correct, so the story never leaves the wrong path.",
         "watch": "The player has to be able to find this somewhere. An answer with no clue behind it is a guess, not a puzzle."
       },
       "caseSensitive": {
-        "put": "Turn this off to accept any capitalisation.",
         "watch": "Left on, a player who types the right word with the wrong capitals fails. Turn it off unless case is part of the puzzle."
       },
       "successMessage": {
-        "put": "Printed on a match, a moment before the <b class=\"ui\">Correct</b> socket fires.",
         "example": "Decrypted."
-      },
-      "failureMessage": {
-        "put": "Printed on a miss, a moment before the <b class=\"ui\">Wrong</b> socket fires. The player can try again."
       }
     },
     "sockets": {

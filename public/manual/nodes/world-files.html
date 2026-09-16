@@ -68,7 +68,6 @@
 <h3 id="node-world-files-field-target">Where</h3>
 <blockquote class="blurb">Whose filesystem to write to. The player's own machine is written when the flow reaches this node; a remote device is mounted with the machine, under the account the player lands in, so the files are already there when they break in.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Whose filesystem to write to.</dd>
   <dt class="dt-mute">Default</dt><dd><code>"player"</code></dd>
   <dt>Limits</dt><dd>One of the 2 listed below.</dd>
   <dt class="dt-warn">Watch out</dt><dd>Both fields below stay visible whichever you pick, and &lt;b class="ui"&gt;Device IP&lt;/b&gt; is only read for a remote device.</dd>
@@ -92,7 +91,6 @@
 <h3 id="node-world-files-field-parentPath">Parent folder</h3>
 <blockquote class="blurb">Where the files are mounted. Folders named etc, home, logs or lib are merged into the existing ones rather than replacing them.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Where the files are mounted.</dd>
   <dt>Example</dt><dd><code>~/docs</code></dd>
   <dt class="dt-mute">Default</dt><dd><code>"~/"</code></dd>
   <dt class="dt-warn">Watch out</dt><dd>Folders named etc, home, logs or lib are merged into the machine's real ones rather than created fresh.</dd>
@@ -101,38 +99,32 @@
 <h3 id="node-world-files-field-files">Files</h3>
 <blockquote class="blurb">The files and folders to create. A folder named etc, home, logs or lib merges with the machine's existing one.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The files and folders to create.</dd>
   <dt class="dt-mute">Default</dt><dd>an empty list</dd>
   <dt class="dt-danger">If you leave it empty</dt><dd>Nothing is written.</dd>
 </dl>
 <p>The button reads <b class="ui">Add file</b>.</p><h4 id="node-world-files-field-name">Name</h4>
 <blockquote class="blurb">The file or folder name, exactly as it appears in ls.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The name exactly as it appears in a listing.</dd>
   <dt>Example</dt><dd><code>config</code></dd>
 </dl>
 <h4 id="node-world-files-field-extension">Extension</h4>
 <blockquote class="blurb">The extension, e.g. txt, log, conf. Leave blank for folders.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The extension. Leave it blank for a folder.</dd>
   <dt>Example</dt><dd><code>conf</code></dd>
 </dl>
 <h4 id="node-world-files-field-isFolder">Folder</h4>
 <blockquote class="blurb">Mark this entry as a directory rather than a file.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Turn this on to make the entry a directory rather than a file.</dd>
   <dt>Limits</dt><dd>On or off.</dd>
 </dl>
 <h4 id="node-world-files-field-hidden">Hidden</h4>
 <blockquote class="blurb">Prefix the name with a dot so a plain ls does not show it.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Turn this on to prefix the name with a dot, so a plain listing does not show it.</dd>
   <dt>Limits</dt><dd>On or off.</dd>
 </dl>
 <h4 id="node-world-files-field-data">Contents</h4>
 <blockquote class="blurb">The file's contents. This is where clues live — a config file, a log excerpt, a leaked password.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The file's contents. This is where clues live.</dd>
   <dt>Example</dt><dd><code>DB_PASS=hunter2</code></dd>
 </dl>
 

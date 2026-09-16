@@ -68,7 +68,6 @@
 <h3 id="node-world-firewall-field-ip">Protected IP</h3>
 <blockquote class="blurb">The machine these rules protect: the quest's own network, or one machine you name.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The machine these rules protect. Pick the quest's own network, or type the address of one machine.</dd>
   <dt class="dt-mute">Default</dt><dd><code>"{{data.targetIp}}"</code></dd>
   <dt>Limits</dt><dd>One of the 1 listed below.</dd>
   <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
@@ -83,7 +82,6 @@
 <h3 id="node-world-firewall-field-removeOnComplete">Remove when the quest ends</h3>
 <blockquote class="blurb">Drop the firewall when the quest ends so the machine is reachable afterwards.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Turn this on to drop the rule when the quest ends, so the machine is reachable afterwards.</dd>
   <dt class="dt-mute">Default</dt><dd>on</dd>
   <dt>Limits</dt><dd>On or off.</dd>
 </dl>
@@ -92,7 +90,6 @@
 <h4 id="node-world-firewall-field-port">Port</h4>
 <blockquote class="blurb">The port this rule applies to.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The port this rule applies to.</dd>
   <dt>Example</dt><dd><code>22</code></dd>
   <dt class="dt-mute">Default</dt><dd><code>22</code></dd>
   <dt>Limits</dt><dd>0 to 65535.</dd>
@@ -109,7 +106,6 @@
 <h4 id="node-world-firewall-field-source">Source</h4>
 <blockquote class="blurb">Which machines the rule applies to: anywhere on the internet, or one machine you name.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Which machines the rule applies to. An asterisk means anywhere on the internet.</dd>
   <dt class="dt-mute">Default</dt><dd><code>"*"</code></dd>
   <dt>Limits</dt><dd>One of the 1 listed below.</dd>
 </dl>
@@ -123,14 +119,12 @@
 <h4 id="node-world-firewall-field-destination">Destination</h4>
 <blockquote class="blurb">The machine the rule protects — usually the one in “Protected IP” above. Picking it copies that address; changing it later won't follow.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The machine the rule protects. It usually matches &lt;b class="ui"&gt;Protected IP&lt;/b&gt;.</dd>
   <dt class="dt-mute">Default</dt><dd><code>"{{data.targetIp}}"</code></dd>
 </dl>
 
 <h4 id="node-world-firewall-field-locked">Locked</h4>
 <blockquote class="blurb">The player cannot remove a locked rule.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Turn this on and the player cannot remove the rule from inside the game.</dd>
   <dt>Limits</dt><dd>On or off.</dd>
   <dt class="dt-warn">Watch out</dt><dd>A locked rule with no way around it stops the quest. Leave the player another route.</dd>
 </dl>

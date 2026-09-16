@@ -167,14 +167,55 @@ ${rows}
 
 /* ── One field ──────────────────────────────────────────────────────────── */
 
+/** Content words, tags and entities stripped, for a crude overlap test. */
+function wordsOf(s) {
+    return new Set(
+        String(s)
+            .replace(/<[^>]*>/g, " ")
+            .replace(/&[a-z]+;/gi, " ")
+            .toLowerCase()
+            .split(/[^a-z0-9']+/)
+            .filter((w) => w.length > 3),
+    );
+}
+
+/**
+ * How much of the guidance is already said by the field's own hint, quoted
+ * directly above it. A row that repeats the hint teaches nothing and pushes the
+ * rows that do say something off the screen, so it is rejected rather than
+ * shipped — the same rule the first batch of pages was cleaned up against, and
+ * one that was then broken again twice at scale. A machine check does not
+ * forget between rounds.
+ */
+function restatesHint(hint, guidance) {
+    if (!hint || !guidance) return 0;
+    const a = wordsOf(hint);
+    const b = wordsOf(guidance);
+    if (!a.size || !b.size) return 0;
+    let shared = 0;
+    for (const w of b) if (a.has(w)) shared += 1;
+    return shared / Math.min(a.size, b.size);
+}
+
+const RESTATE_CEILING = 0.7;
+
 function fieldBlock(node, f, vfield, depth = 0) {
     const slug = slugOf(node.type);
     const anchor = `node-${slug}-field-${f.key}`;
     const fv = vfield?.[f.key] ?? {};
     const rows = [];
 
-    if (fv.put) rows.push(["What to put here", esc(fv.put)]);
-    else if (f.kind === "toggle") rows.push(["What it does", esc(f.hint || "")]);
+    if (fv.put) {
+        const overlap = restatesHint(f.hint, fv.put);
+        if (overlap >= RESTATE_CEILING) {
+            throw new Error(
+                `${node.type}.${f.key}: "What to put here" repeats the field's own hint ` +
+                    `(${Math.round(overlap * 100)}% overlap). Say something the hint does not, ` +
+                    `or drop the row — the hint is already quoted directly above it.`,
+            );
+        }
+        rows.push(["What to put here", esc(fv.put)]);
+    }
     if (fv.example) rows.push(["Example", `<code>${esc(fv.example)}</code>`]);
 
     const d = renderDefault(defaultValue(node, f));

@@ -68,7 +68,6 @@
 <h3 id="node-world-database-field-host">Host IP</h3>
 <blockquote class="blurb">The address the player points a database client at.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The address the player points their client at.</dd>
   <dt>Example</dt><dd><code>{{data.targetIp}}</code></dd>
   <dt class="dt-mute">Default</dt><dd>empty</dd>
   <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
@@ -85,7 +84,6 @@
 <h3 id="node-world-database-field-password">Password</h3>
 <blockquote class="blurb">The password. Give the player a way to find it — a config file, a leaked dump, a cracked hash.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The password. Put it somewhere the player can find it: a config file, a leaked dump, a note.</dd>
   <dt class="dt-mute">Default</dt><dd><code>"secret123"</code></dd>
   <dt class="dt-warn">Watch out</dt><dd>The default is a placeholder. Leave it in place and the player can guess their way in without playing.</dd>
 </dl>
@@ -93,7 +91,6 @@
 <h3 id="node-world-database-field-tables">Tables</h3>
 <blockquote class="blurb">The data inside: tables holding rows of named values, ready for the player's SQL.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The data inside: tables holding rows of named values.</dd>
   <dt class="dt-mute">Default</dt><dd>an empty list</dd>
   <dt class="dt-danger">If you leave it empty</dt><dd>The database exists and holds nothing, so there is nothing to find.</dd>
 </dl>
@@ -101,7 +98,6 @@
 <h3 id="node-world-database-field-removeOnComplete">Remove when the quest ends</h3>
 <blockquote class="blurb">Drop the database when the quest ends.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Turn this on to drop the database when the quest ends.</dd>
   <dt class="dt-mute">Default</dt><dd>on</dd>
   <dt>Limits</dt><dd>On or off.</dd>
 </dl>

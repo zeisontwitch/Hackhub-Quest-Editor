@@ -68,7 +68,6 @@
 <h3 id="node-world-domain-field-domain">Domain</h3>
 <blockquote class="blurb">The hostname the player types, e.g. vault.corp-internal.net.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The hostname the player types.</dd>
   <dt>Example</dt><dd><code>vault.corp-internal.net</code></dd>
   <dt class="dt-mute">Default</dt><dd>empty</dd>
   <dt class="dt-danger">If you leave it empty</dt><dd>There is no name to resolve, so the node does nothing.</dd>
@@ -77,11 +76,8 @@
 <h3 id="node-world-domain-field-ip">Resolves to</h3>
 <blockquote class="blurb">The address it resolves to. nslookup and dig will report this.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The address it resolves to.</dd>
-  <dt>Example</dt><dd><code>{{data.targetIp}}</code></dd>
   <dt class="dt-mute">Default</dt><dd>empty</dd>
   <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
-  <dt class="dt-danger">If you leave it empty</dt><dd>The name resolves to nothing, and the player's lookup comes back empty.</dd>
 </dl>
 
 <h3 id="node-world-domain-field-vulnerabilities">Vulnerabilities</h3>
@@ -111,14 +107,12 @@
 <h4 id="node-world-domain-field-version">Version</h4>
 <blockquote class="blurb">The affected component's version, e.g. "WordPress 5.8". Cosmetic unless a trigger matches on it.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The affected component's version.</dd>
   <dt>Example</dt><dd><code>WordPress 5.8</code></dd>
 </dl>
 
 <h3 id="node-world-domain-field-removeOnComplete">Remove when the quest ends</h3>
 <blockquote class="blurb">Drop the DNS entry when the quest ends.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Turn this on to drop the entry when the quest ends.</dd>
   <dt class="dt-mute">Default</dt><dd>on</dd>
   <dt>Limits</dt><dd>On or off.</dd>
 </dl>

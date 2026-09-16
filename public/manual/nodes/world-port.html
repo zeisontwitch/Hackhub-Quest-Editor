@@ -68,11 +68,8 @@
 <h3 id="node-world-port-field-ip">Device IP</h3>
 <blockquote class="blurb">A router IP or any device behind it.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The machine to change. A router address, or any device behind it.</dd>
-  <dt>Example</dt><dd><code>{{data.targetIp}}</code></dd>
   <dt class="dt-mute">Default</dt><dd>empty</dd>
   <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
-  <dt class="dt-danger">If you leave it empty</dt><dd>There is no machine to change, so the node does nothing.</dd>
 </dl>
 
 <h3 id="node-world-port-field-action">Action</h3>
@@ -95,7 +92,6 @@
 <h3 id="node-world-port-field-port.external">External port</h3>
 <blockquote class="blurb">The port number as seen from outside — what nmap reports.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The port number as seen from outside. This is the one a scan reports.</dd>
   <dt>Example</dt><dd><code>22</code></dd>
   <dt class="dt-mute">Default</dt><dd><code>22</code></dd>
   <dt>Limits</dt><dd>0 to 65535.</dd>
@@ -104,7 +100,6 @@
 <h3 id="node-world-port-field-port.internal">Internal port</h3>
 <blockquote class="blurb">The port the service listens on inside the machine.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The port the service listens on inside the machine. It usually matches the external one.</dd>
   <dt>Example</dt><dd><code>22</code></dd>
   <dt class="dt-mute">Default</dt><dd><code>22</code></dd>
   <dt>Limits</dt><dd>0 to 65535.</dd>
@@ -113,7 +108,6 @@
 <h3 id="node-world-port-field-port.service">Service</h3>
 <blockquote class="blurb">What nmap prints next to the port, e.g. http, ssh, mysql.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>What a scan prints next to the port.</dd>
   <dt>Example</dt><dd><code>ssh</code></dd>
   <dt class="dt-mute">Default</dt><dd><code>"ssh"</code></dd>
 </dl>
@@ -121,7 +115,6 @@
 <h3 id="node-world-port-field-port.active">Open</h3>
 <blockquote class="blurb">Turn off to make the port appear closed.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Turn this off to make the port look closed.</dd>
   <dt class="dt-mute">Default</dt><dd>on</dd>
   <dt>Limits</dt><dd>On or off.</dd>
 </dl>
@@ -129,7 +122,6 @@
 <h3 id="node-world-port-field-restoreOnComplete">Restore when the quest ends</h3>
 <blockquote class="blurb">Put the port back the way it was when the quest ends.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Turn this on to put the port back the way it was when the quest ends.</dd>
   <dt class="dt-mute">Default</dt><dd>off</dd>
   <dt>Limits</dt><dd>On or off.</dd>
 </dl>

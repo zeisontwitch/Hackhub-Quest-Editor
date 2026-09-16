@@ -9,6 +9,13 @@ This folder is a deliberately small, manual in-game harness for the r166 SDK 0.2
 - `projects/sdk-0.24-ingame-qa.project.json` — editor-importable project that exercises the editor's still-hidden native `world.wifi` node path plus catalogue events.
 - `editor-export/` — ready-to-install export generated from that project with editor build `2026-09-16.r166`.
 
+
+## Current raw-mod status from in-game QA
+
+As of the HackHub 1.3.0 / Steam build 25341308 run on 2026-09-16, the raw `mod` harness is green by tester report except for terminal `curl`, which is unavailable in that build/session. Browser HTTP, Browser intercept, Browser collaborator, `Http.fetch`, Scheduler, native Wi-Fi fields/connect/disconnect/reload, and the separate quest lifecycle probes all behaved as expected with no freezes. The full step-by-step transcript is `QE24-TestResults - 3.md`.
+
+If you are continuing QA, the next useful target is the editor-generated scaffold (`editor-export/`): test `QE24-LAB-5G` and `http://qe24-website.test/`. Optional raw-mod closure items are the abandon and reset cleanup rows from the full plan.
+
 ## Plain-English quick start
 
 Use a throwaway save. The harness is not a puzzle quest: its objectives are reminders for QA checks, and you can skip or retry them in any order.

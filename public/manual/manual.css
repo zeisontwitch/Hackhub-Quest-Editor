@@ -45,6 +45,16 @@
     --cat-flow: #94a3b8;
     --cat-layout: #64748b;
 
+    /* Wire kinds — HANDLE_STYLE, src/schema/edges.ts:39-44. The editor paints
+       every socket and every wire in its kind's colour, and canConnect only
+       joins two sockets of the same kind. The manual reuses the same four
+       colours for the same four meanings, so a reader who learns them here
+       recognises them on the canvas. */
+    --wire-flow: var(--cat-effect);        /* Then    — solid  */
+    --wire-condition: var(--cat-trigger);  /* When    — solid  */
+    --wire-unlock: var(--cat-objective);   /* Unlocks — dashed */
+    --wire-data: var(--cat-entry);         /* Data    — dotted */
+
     /* Type — src/index.css:54-59 */
     --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
         "Helvetica Neue", Arial, sans-serif;
@@ -384,15 +394,23 @@ p b {
 
 .note.warn {
     border-left-color: var(--warn);
+    background: rgba(251, 191, 36, 0.07);
 }
 
 .note.danger {
     border-left-color: var(--danger);
+    background: rgba(248, 113, 113, 0.07);
 }
 
 .note.ok {
     border-left-color: var(--ok);
+    background: rgba(52, 211, 153, 0.07);
 }
+
+/* The first bold phrase in a note is its verdict, so it takes the bar's colour. */
+.note.warn b:first-child   { color: var(--warn); }
+.note.danger b:first-child { color: var(--danger); }
+.note.ok b:first-child     { color: var(--ok); }
 
 table {
     border-collapse: collapse;
@@ -415,6 +433,12 @@ th {
     font-size: 11.5px;
     text-transform: uppercase;
     letter-spacing: 0.4px;
+    background: var(--surface-2);
+    border-bottom: 2px solid var(--accent-dim);
+}
+
+tbody tr:nth-child(even) td {
+    background: rgba(255, 255, 255, 0.014);
 }
 
 td.name {
@@ -423,8 +447,8 @@ td.name {
     white-space: nowrap;
 }
 
-tr:hover td {
-    background: rgba(255, 255, 255, 0.015);
+tbody tr:hover td {
+    background: var(--accent-soft);
 }
 
 code,
@@ -455,22 +479,28 @@ kbd {
     color: var(--ink);
 }
 
-/* Exact UI strings — buttons, labels, menu paths. V8: quoted verbatim. */
+/* Exact UI strings — buttons, labels, menu paths. V8: quoted verbatim.
+   A reader hunting for "what do I click" should find every control name
+   without reading the sentences, so the label carries a wash and the
+   guillemets carry the accent. */
 .ui {
     color: var(--ink);
     font-weight: 600;
     white-space: nowrap;
+    background: var(--accent-soft);
+    border-radius: 4px;
+    padding: 0.05em 0.3em;
 }
 
 .ui::before {
     content: "‹";
-    color: var(--ink-4);
+    color: var(--accent);
     margin-right: 1px;
 }
 
 .ui::after {
     content: "›";
-    color: var(--ink-4);
+    color: var(--accent);
     margin-left: 1px;
 }
 
@@ -508,22 +538,43 @@ blockquote.blurb {
 
 /* The five-question spine of a node page, so a reader learns the shape once. */
 dl.facts-list {
-    margin: 10px 0;
+    margin: 12px 0;
     display: grid;
     grid-template-columns: max-content 1fr;
-    gap: 4px 14px;
+    gap: 0 16px;
     font-size: 13.5px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 2px 16px;
 }
 
 dl.facts-list dt {
     color: var(--ink-2);
     font-weight: 600;
+    padding: 8px 0;
+    border-top: 1px solid var(--line);
 }
 
 dl.facts-list dd {
     margin: 0;
     color: var(--ink-2);
+    padding: 8px 0;
+    border-top: 1px solid var(--line);
 }
+
+dl.facts-list dt:first-of-type,
+dl.facts-list dd:first-of-type {
+    border-top: 0;
+}
+
+/* The label says how much the row matters, so the label carries the colour.
+   A row that can break your quest quietly is red. A row that needs care is
+   amber. Everything else stays quiet. */
+dl.facts-list dt.dt-danger { color: var(--danger); }
+dl.facts-list dt.dt-warn   { color: var(--warn); }
+dl.facts-list dt.dt-ok     { color: var(--ok); }
+dl.facts-list dt.dt-mute   { color: var(--ink-3); font-weight: 500; }
 
 figure {
     margin: 16px 0;
@@ -781,3 +832,148 @@ ul.contents-sub .cnt {
         color: #000;
     }
 }
+
+/* ══ Colour system ═════════════════════════════════════════════════════════
+ * Colour here always means something. Three channels, all taken from the
+ * editor's own palette, so the manual and the app speak the same language:
+ *
+ *   1. Wire kinds  — four colours, from HANDLE_STYLE. "Which end do I plug in?"
+ *   2. Categories  — ten colours, the palette's and minimap's own. "Where am I?"
+ *   3. Severity    — ok / warn / danger. "How badly can this go wrong?"
+ *
+ * Everything below is structure: colour used to separate blocks of text so a
+ * long reference page can be scanned instead of read.
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+/* 1. Wire kinds ─────────────────────────────────────────────────────────── */
+
+.wire-chip {
+    --w: var(--ink-3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--ink-2);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 3px 11px 3px 9px;
+    margin: 0 6px 6px 0;
+    white-space: nowrap;
+}
+
+.wire-chip i {
+    display: block;
+    width: 22px;
+    height: 0;
+    border-top: 3px solid var(--w);
+    border-radius: 2px;
+}
+
+.wire-chip b {
+    color: var(--w);
+    font-weight: 650;
+}
+
+.wire-chip.kind-flow      { --w: var(--wire-flow); }
+.wire-chip.kind-condition { --w: var(--wire-condition); }
+.wire-chip.kind-unlock    { --w: var(--wire-unlock); }
+.wire-chip.kind-data      { --w: var(--wire-data); }
+
+/* The line style is part of the meaning: the editor draws Unlocks dashed and
+   Data dotted, so the chip draws them the same way. */
+.wire-chip.kind-unlock i { border-top-style: dashed; }
+.wire-chip.kind-data i   { border-top-style: dotted; }
+
+/* A socket name in a Wires table takes its kind's colour. */
+td.name.kind-flow      { color: var(--wire-flow); }
+td.name.kind-condition { color: var(--wire-condition); }
+td.name.kind-unlock    { color: var(--wire-unlock); }
+td.name.kind-data      { color: var(--wire-data); }
+
+/* 2. Numbered steps ─────────────────────────────────────────────────────── */
+
+ol.plain {
+    list-style: none;
+    counter-reset: step;
+    margin: 14px 0;
+    padding: 0;
+}
+
+ol.plain > li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 40px;
+    margin: 11px 0;
+    max-width: 72ch;
+}
+
+ol.plain > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-dim);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+}
+
+/* 3. Category dots inside the sidebar ───────────────────────────────────── */
+
+nav.toc ul.sub .cat-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+    margin-right: 7px;
+}
+
+/* 4. The index, coloured by the kind of help a page offers ──────────────── */
+
+ul.contents-list { --t: var(--ink-3); }
+
+ul.contents-list.tone-learn { --t: var(--accent); }
+ul.contents-list.tone-look  { --t: var(--cat-effect); }
+ul.contents-list.tone-build { --t: var(--cat-reply); }
+ul.contents-list.tone-fix   { --t: var(--danger); }
+
+h3.tone-learn { color: var(--accent); }
+h3.tone-look  { color: var(--cat-effect); }
+h3.tone-build { color: var(--cat-reply); }
+h3.tone-fix   { color: var(--danger); }
+
+ul.contents-list > li {
+    border-left: 3px solid var(--t);
+    padding-left: 14px;
+    transition: border-color 120ms ease;
+}
+
+ul.contents-list > li:hover {
+    border-left-color: var(--ink-3);
+}
+
+ul.contents-list > li > a:hover {
+    color: var(--t);
+}
+
+/* 5. The numbers on the front page are the point of the chips ───────────── */
+
+.facts .chip b {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.facts .chip:last-child b {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+/* 6. Related-node links keep the category colour of where they lead ─────── */
+
+a.cat-link { font-weight: 600; }

@@ -5,6 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import { Field } from "@/editor/inspector/Field";
+import { warningCalloutClass } from "@/editor/inspector/primitives";
 import { makeNode } from "@/templates/kit";
 import { createProject, createQuest } from "@/schema/project";
 import { useEditor } from "@/store/editor";
@@ -52,5 +53,12 @@ describe("field warning badge", () => {
         loadWith([port, network]);
         render(<Field def={ipField} nodeId={port.id} />);
         expect(screen.queryByRole("button", { name: /warning:/i })).not.toBeInTheDocument();
+    });
+
+    it("puts the Worth checking callout on a solid surface", () => {
+        const callout = warningCalloutClass("warn");
+        expect(callout).toContain("bg-surface-2");
+        expect(callout).toContain("border-warn/60");
+        expect(callout).not.toContain("bg-warn/10");
     });
 });

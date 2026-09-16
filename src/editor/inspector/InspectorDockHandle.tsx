@@ -119,12 +119,15 @@ export function InspectorDockHandle() {
             aria-label="Float inspector"
             title="Drag to widen the inspector — pull further to float it, or click to pop it out"
             onPointerDown={onPointerDown}
-            className="group absolute top-0 left-0 z-20 flex h-full w-3 cursor-ew-resize touch-none items-center justify-center border-r border-line/0 hover:bg-accent-soft/40 active:cursor-grabbing"
+            className="group absolute top-0 -left-3 z-20 flex h-full w-6 cursor-ew-resize touch-none items-center justify-start border-r border-line/0 hover:bg-accent-soft/20 active:cursor-grabbing"
         >
-            {/* A protruding pull tab, centred on the edge — the "grab me" the
-                author drew. It sits quietly and brightens on hover so it reads
-                as a handle without stealing the eye from the fields. */}
-            <span className="pointer-events-none absolute left-0 flex h-14 w-3 items-center justify-center rounded-r-md border border-l-0 border-line bg-surface-2 text-ink-4 shadow-sm transition-colors group-hover:bg-accent-soft group-hover:text-accent">
+            {/* A protruding pull tab, centred on the edge and facing the canvas
+                instead of the inspector. It sits quietly and brightens on hover
+                so it reads as a handle without stealing the eye from the fields. */}
+            <span
+                data-testid="inspector-dock-tab"
+                className="pointer-events-none absolute left-0 flex h-14 w-3 items-center justify-center rounded-l-md border border-r-0 border-line bg-surface-2 text-ink-4 shadow-sm transition-colors group-hover:bg-accent-soft group-hover:text-accent"
+            >
                 <span className="flex flex-col gap-[3px]">
                     <span className="h-0.5 w-0.5 rounded-full bg-current" />
                     <span className="h-0.5 w-0.5 rounded-full bg-current" />

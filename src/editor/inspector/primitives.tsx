@@ -105,6 +105,13 @@ export function HintBadge({ label, hint }: { label: string; hint: string }) {
  * Distinct from the ⓘ (which explains what a field is): this appears only when
  * the field's current value will not work, and states the concrete next step.
  */
+export function warningCalloutClass(severity: "warn" | "danger") {
+    return cn(
+        "z-50 max-w-[300px] rounded-lg border bg-surface-2 px-2.5 py-2 text-[11.5px] leading-relaxed text-ink-2 shadow-panel",
+        severity === "danger" ? "border-danger/60" : "border-warn/60",
+    );
+}
+
 export function WarningBadge({
     detail,
     nextStep,
@@ -137,12 +144,7 @@ export function WarningBadge({
                         align="start"
                         sideOffset={8}
                         collisionPadding={12}
-                        className={cn(
-                            "z-50 max-w-[300px] rounded-lg border px-2.5 py-2 text-[11.5px] leading-relaxed shadow-panel",
-                            severity === "danger"
-                                ? "border-danger/40 bg-danger/10 text-ink-2"
-                                : "border-warn/40 bg-warn/10 text-ink-2",
-                        )}
+                        className={warningCalloutClass(severity)}
                     >
                         <span className={cn("flex items-center gap-1 text-[10px] font-semibold uppercase", tone)}>
                             <Icon name="alert" size={11} />

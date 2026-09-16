@@ -1,3 +1,47 @@
+# Handoff — r171
+
+r171 is a small polish pass plus the first phone-proxy evidence note.
+
+Current shipped state:
+
+- Editor build stamp is `2026-09-17.r171`; SDK remains
+  `@hotbunny/hackhub-content-sdk@0.24.0`.
+- Manual inventory still reports **38 node types / 38 obtainable**, **133 editable
+  fields**, **72 sockets**, **10 categories**, **99 events**, and no manual
+  exclusions.
+- Field-level warning popovers now use an opaque `bg-surface-2` panel with a
+  stronger warn/danger border. The orange **Worth checking** tooltip is readable
+  even when it overlaps the inspector or canvas.
+- The docked inspector pull tab is flipped outward: it protrudes into the canvas
+  with its rounded edge facing away from the inspector.
+- Phone-proxy investigation status: pinned SDK 0.24.0, HotBunny docs, the local
+  handbook and official quest transcriptions show phone Dialog trees and custom
+  PhoneApp UIs, but no declared API/event for listening to a third-party phone
+  call. Keep phone-proxy/eavesdrop authoring fenced until xu can provide an exact
+  snippet, SDK call, or in-game route and a raw QA probe passes.
+
+Validation for this pass: `npm run gen:manual`, targeted Vitest for the warning
+badge and floating inspector, `npm run typecheck`, `npm test` (**1,561 tests /
+79 files**), `npm run build`, and `git diff --check`.
+
+Supporting notes:
+
+- [`plans/r171-inspector-polish-and-phone-proxy-investigation.md`](plans/r171-inspector-polish-and-phone-proxy-investigation.md)
+- [`plans/r170-ui-prompt-node.md`](plans/r170-ui-prompt-node.md)
+- [`plans/r169-phone-end-flow-and-quest-endings.md`](plans/r169-phone-end-flow-and-quest-endings.md)
+
+Next-up from the SDK 0.24 comparison: focused Mail QA for `Mail.send()` ids,
+`Mail.remove()` and `replyable`; fresh Twotter update/remove QA; phone-proxy
+QA if xu can provide concrete evidence; a deliberate Scheduler/Time design pass;
+then the contact/branching template queue. HTTP nodes stay fenced until
+SteelWaffe clarifies/fixes `curl`, DNS-only collaborator hits and static-site
+HTTP event semantics. Suspicion/log-forensics and SMS remain absent from the
+pinned SDK.
+
+Older handoff sections below are retained as history.
+
+---
+
 # Handoff — r170
 
 r170 exposes SDK `UI.prompt` as a small author-facing Effects node named
@@ -1015,12 +1059,12 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r170 (Ask player prompt node) on
+- **HEAD:** r171 (inspector polish + phone-proxy notes) on
   `arena/01a0aaee-hackhub-quest-editor`, committed and pushed after validation.
-  Previous rounds: r169 phone end flow + quest-ending nodes, r168 phone `onEnd`
-  completion QA probes, r167 Create Wi-Fi, r166 SDK 0.24 in-game QA.
-- **1,560 tests green** across 79 files, typecheck clean, build clean.
-- **Editor build stamp:** `2026-09-17.r170` (bumps every round since r148 — the
+  Previous rounds: r170 Ask player prompt node, r169 phone end flow +
+  quest-ending nodes, r168 phone `onEnd` completion QA probes, r167 Create Wi-Fi.
+- **1,561 tests green** across 79 files, typecheck clean, build clean.
+- **Editor build stamp:** `2026-09-17.r171` (bumps every round since r148 — the
   stamp is a version, not a changelog).
 - Tool-pack modules: `src/toolpacks/schema.ts` (format 2 + plain-language
   `parseToolPack`), `src/toolpacks/palette.ts` (pure `packNodeDefs`,
@@ -1216,20 +1260,23 @@ wants the *specific action* named.
 2. **Twotter update/remove QA.** SDK 0.24.0 declares `Twotter.updateUser(id, patch)`
    and `Twotter.removeUser(id)`, but old Twotter save/search behavior was brittle.
    Verify repair/removal semantics in game before restoring authoring.
-3. **Scheduler/Time design pass.** r166 proved Scheduler/Time can survive reload
+3. **Phone proxy/eavesdrop QA.** xu reports a call-listening mechanic, but r171
+   found no declared SDK API/event for it. Ask for a snippet or exact game route,
+   then raw-probe before exposing anything.
+4. **Scheduler/Time design pass.** r166 proved Scheduler/Time can survive reload
    in a raw probe. Design the editor surface deliberately rather than dropping a
    generic timer node into the palette.
-4. **HTTP/curl/DNS collaborator remain fenced.** Static editor websites loaded
+5. **HTTP/curl/DNS collaborator remain fenced.** Static editor websites loaded
    in game, but `http-request`/`http-response` objectives did not complete;
    `curl` was missing as a terminal command; DNS-only collaborator hits produced
    no result. Wait for SteelWaffe clarification or fresh in-game proof before
    exposing authoring nodes.
-5. **"Contact-driven story" template.** Cold Call covers the conversation shape;
+6. **"Contact-driven story" template.** Cold Call covers the conversation shape;
    the phone-brief + objective-gated-drip variant is still open.
-6. **"Two Ways Out" template.** Approved branching consequence shape, possibly
+7. **"Two Ways Out" template.** Approved branching consequence shape, possibly
    morally grey. The Long Game includes a typed verdict with two endings, but a
    standalone template may still be useful after the feature queue settles.
-7. **Data requests / eyes-on checks.** SMTP/POP3/IMAP version banners + ports;
+8. **Data requests / eyes-on checks.** SMTP/POP3/IMAP version banners + ports;
    Apache metasploit module for 2.4.49/50 or flavour; Handbook title/category
    screenshot + id jump test; eyes on the preview; the Harbour `scp` hint fix.
 

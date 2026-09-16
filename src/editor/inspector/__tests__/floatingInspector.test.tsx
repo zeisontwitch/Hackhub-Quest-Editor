@@ -45,8 +45,11 @@ describe("floating inspector", () => {
     it("starts docked — the shipped default", () => {
         render(<App />);
         expect(inspectorMode()).toBe("docked");
-        // Docked: the float control is offered.
+        // Docked: the float control is offered, and its tab faces out toward
+        // the canvas (flat edge against the inspector, rounded edge outside).
         expect(screen.getByRole("button", { name: "Float inspector" })).toBeInTheDocument();
+        expect(screen.getByTestId("inspector-dock-tab")).toHaveClass("rounded-l-md");
+        expect(screen.getByTestId("inspector-dock-tab")).toHaveClass("border-r-0");
     });
 
     it("floats when the float control is clicked, and can dock again", async () => {

@@ -12,9 +12,11 @@ This folder is a deliberately small, manual in-game harness for the r166 SDK 0.2
 
 ## Current raw-mod status from in-game QA
 
-As of the HackHub 1.3.0 / Steam build 25341308 run on 2026-09-16, the raw `mod` harness is green by tester report except for terminal `curl`, which is unavailable in that build/session. Browser HTTP, Browser intercept, Browser collaborator, `Http.fetch`, Scheduler, native Wi-Fi fields/connect/disconnect/reload, and the separate quest lifecycle probes all behaved as expected with no freezes. The full step-by-step transcript is `QE24-TestResults - 3.md`.
+As of the HackHub 1.3.0 / Steam build 25341308 run on 2026-09-16, the raw `mod` harness is green by tester report except for terminal `curl`, which is unavailable in that build/session. Browser HTTP, Browser intercept, Browser collaborator, `Http.fetch`, Scheduler, native Wi-Fi fields/connect/disconnect/reload, abandon/reset cleanup, and the separate quest lifecycle probes all behaved as expected with no freezes. The full step-by-step transcript is `QE24-TestResults - 3.md`.
 
-If you are continuing QA, the next useful target is the editor-generated scaffold (`editor-export/`): test `QE24-LAB-5G` and `http://qe24-website.test/`. Optional raw-mod closure items are the abandon and reset cleanup rows from the full plan.
+One raw Wi-Fi gameplay wart remains documented: Bettercap can set the AP by BSSID and capture/crack the handshake, but `set wifi.ap 02:24:00:00:24:01` logs `SSID: undefined` instead of `QE24-RAW-5G`. Treat that as a runtime UX issue to account for before exposing native Wi-Fi broadly.
+
+If you are continuing QA, the next useful target is the editor-generated scaffold (`editor-export/`): test `QE24-LAB-5G` and `http://qe24-website.test/`. The only raw collaborator edge still unclear is DNS-only lookup: run `qe24 collab`, then `nslookup <printed-subdomain>.qe24-collab.test` without `http://` or `/qe24`, and check `qe24 history` for `kind=dns`.
 
 ## Plain-English quick start
 
@@ -55,7 +57,7 @@ Recommended next pass:
    qe24 history
    ```
 
-2. Wi-Fi details/reload check. You do **not** need to crack `QE24-RAW-5G`; the passphrase is intentionally known because this tests SDK network creation, not Wi-Fi gameplay. Connect with `correct-horse-battery`, run `qe24 status`, and confirm `Connected Wi-Fi is QE24 target: yes`. Disconnect from the QE24 network, run `qe24 status` again, then reload and confirm `Target Wi-Fi matches` stays at `1`. If the game UI says QE24 is connected but `qe24 status` reports a different connected network, paste that mismatch.
+2. Wi-Fi details/reload check. You do **not** need to crack `QE24-RAW-5G`; the passphrase is intentionally known because this tests SDK network creation first. Connect with `correct-horse-battery`, run `qe24 status`, and confirm `Connected Wi-Fi is QE24 target: yes`. Disconnect from the QE24 network, run `qe24 status` again, then reload and confirm `Target Wi-Fi matches` stays at `1`. Cracking with Bettercap is useful extra coverage; current evidence says the handshake/hashcat path works, but the Bettercap `set wifi.ap <BSSID>` log prints `SSID: undefined`.
 
 3. Quest lifecycle probes:
 
@@ -142,7 +144,7 @@ Record the curl subcase as `Blocked` if `curl` is missing. H-04 and H-06 can sti
 - `qe24 history` — print recent HTTP history, collaborator hits and held intercept requests; useful evidence when game logs are unavailable.
 - `qe24 http-fetch` — make a server-origin HTTP request through `Http.fetch()`.
 - `qe24 schedule 1` — schedule a job one in-game minute in the future; use the clock Wait button or let game time advance.
-- `qe24 collab` — mint a collaborator subdomain and print a Browser URL plus a `curl` command for builds that have curl.
+- `qe24 collab` — mint a collaborator subdomain and print a Browser URL, a `curl` command for builds that have curl, and an optional DNS-only `nslookup` hint.
 - `qe24 intercept` — print the two-terminal intercept instructions.
 - `qe24 intercept on|queue|forward|drop|off` — exercise HTTP interception. In the current harness, `forward` and `drop` also turn intercept off to avoid accidentally holding later Browser requests.
 - `qe24 claim complete|button|retire|unclaim` — claim the focused quest-completion probes.

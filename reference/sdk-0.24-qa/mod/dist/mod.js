@@ -307,7 +307,7 @@ function printNextSteps(tools) {
     tools.println("2. Wi-Fi: do NOT need to crack " + WIFI_SSID + "; the passphrase is intentionally known. We are checking SDK AP creation/events, not solving a Wi-Fi puzzle.");
     tools.println("   Connect with " + WIFI_PASSWORD + ", run qe24 status, and confirm Connected Wi-Fi is QE24 target: yes.");
     tools.println("   Then disconnect from the QE24 network, run qe24 status again, reload, and confirm Target Wi-Fi matches stays at 1.");
-    tools.println("   Optional only: use normal Wi-Fi/recon tools if you want to test router/child reachability, but do not block on that.");
+    tools.println("   Optional but useful: crack/test it with Bettercap. If set wifi.ap by BSSID prints SSID undefined but handshake/hashcat works, record W-04 as Partial.");
     tools.println("3. Quest lifecycle probes, preferably on a clean throwaway save:");
     tools.println("   qe24 claim complete  -> qe24 complete  -> save/reload and check no duplicate mail/reward/freeze.");
     tools.println("   qe24 claim button    -> qe24 button-ready -> click the quest Complete button -> save/reload.");
@@ -626,6 +626,7 @@ class QE24Command extends sdk.Command {
             tools.println("Or, if your game build has curl, run: curl http://" + host + "/qe24");
             tools.println("Expected: collaborator-hit objective ticks and qe24 status/history can show the hit. If nothing happens, record Partial/Fail.");
             tools.println("If curl says command not found, record the curl-only row as Blocked and try the Browser URL instead.");
+            tools.println("Optional DNS-only check: run nslookup " + host + " without http/path, then qe24 history; look for a kind=dns collaborator hit.");
             return;
         }
         if (sub === "intercept") {

@@ -3,7 +3,7 @@
  *
  * Loaded from `reference/hackhub-events.json`, which is *generated* from the SDK's
  * own `ModEventMap` (see `reference/generate-event-catalogue.mjs`). This matters:
- * the docs' Events guide lists stale payloads for roughly half of the 92 events,
+ * the docs' Events guide has listed stale payloads for large parts of the catalogue,
  * and a condition built against a stale field name would silently never match
  * (docs/01 §7.2).
  */
@@ -31,7 +31,7 @@ export const EVENTS: CatalogueEvent[] = catalogue.events;
 
 export const EVENT_GROUPS: { id: string; label: string }[] = [
     { id: "recon", label: "Reconnaissance & terminal" },
-    { id: "web", label: "Directory brute-force & browser" },
+    { id: "web", label: "Directory brute-force, browser & HTTP" },
     { id: "access", label: "Access & exploitation" },
     { id: "cracking", label: "Cracking & vuln scanning" },
     { id: "wifi", label: "Bettercap & Wi-Fi" },
@@ -85,25 +85,23 @@ export function eventFields(name: string): string[] {
  * Events the SDK types as an object but the game actually raises with a bare
  * value.
  *
- * `Terminal.Lynx.Search` is declared `{ query: string }`; in build 1.1.2 the
- * game emits the search term as a plain string, so a condition on `query` read
- * undefined and silently never matched (QA, r47 — the objective stayed unticked
- * while the dossier printed perfectly).
- *
  * The compiler copes with this generally: on a primitive payload any field name
  * resolves to the payload itself. This list exists so the editor can *say so*
- * in the condition builder rather than quietly offering a field that will not
- * be there. Confirmed in-game only — add to it on the same evidence, never on
- * the declarations alone.
+ * in the condition builder when an in-game probe proves a declaration is wrong.
+ *
+ * SDK 0.24.0 now types the old `Terminal.Lynx.Search` mismatch as `string`, so
+ * there are no known declaration/runtime primitive mismatches today.
  */
-export const PAYLOAD_IS_REALLY_PRIMITIVE = new Set<string>(["Terminal.Lynx.Search"]);
+export const PAYLOAD_IS_REALLY_PRIMITIVE = new Set<string>();
 
-/** True when the payload is a primitive rather than an object (e.g. `string`). */
+const MATCHABLE_PRIMITIVE_PAYLOADS = new Set(["string", "number", "boolean"]);
+
+/** True when the payload is one bare value the author can match as a whole. */
 export function isPrimitivePayload(name: string): boolean {
     if (PAYLOAD_IS_REALLY_PRIMITIVE.has(name)) return true;
     const ev = byName.get(name);
     if (!ev) return false;
-    return !ev.payload.trim().startsWith("{");
+    return MATCHABLE_PRIMITIVE_PAYLOADS.has(ev.payload.trim());
 }
 
 export function isKnownEvent(name: string): boolean {

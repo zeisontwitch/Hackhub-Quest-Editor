@@ -1,11 +1,11 @@
 {
   "generatedFrom": {
     "package": "@hotbunny/hackhub-content-sdk",
-    "version": "0.21.0",
+    "version": "0.24.0",
     "source": "index.d.ts → ModEventMap",
     "generatedBy": "reference/generate-event-catalogue.mjs"
   },
-  "count": 92,
+  "count": 99,
   "events": [
     {
       "name": "AppStore.Downloaded",
@@ -15,52 +15,54 @@
     {
       "name": "Bank.AccountCreated",
       "group": "world",
-      "payload": "{ id: string; IBAN: string; owner?: string }"
+      "payload": "{ id: string; IBAN: string; accountName: string; balance: number; fullName: string; email: string; phone: string; isMine: boolean }"
     },
     {
       "name": "Bank.Logout",
       "group": "world",
-      "payload": "{ id: string; IBAN: string }"
+      "payload": "{ id: string; IBAN: string; accountName: string; balance: number; fullName: string; email: string; phone: string; isMine: boolean }"
     },
     {
       "name": "Bank.Transfer",
       "group": "world",
-      "payload": "{ amount: number; from: string; to: string }"
+      "payload": "{ accountId: string; amount: number; description: string; transactionAt: number; from: { name: string; IBAN: string; }; to?: string }"
     },
     {
       "name": "BCC.News.Opened",
       "group": "world",
-      "payload": "{ articleId: string }"
+      "payload": "string",
+      "doc": "Payload is the article id as a plain string."
     },
     {
       "name": "Bettercap.Close",
       "group": "wifi",
-      "payload": "{}"
+      "payload": "null"
     },
     {
       "name": "Bettercap.NetProbe",
       "group": "wifi",
-      "payload": "{ active: boolean }"
+      "payload": "boolean",
+      "doc": "Payload is whether probing is now on, as a plain boolean."
     },
     {
       "name": "Bettercap.NetShow",
       "group": "wifi",
-      "payload": "{}"
+      "payload": "null"
     },
     {
       "name": "Bettercap.Open",
       "group": "wifi",
-      "payload": "{}"
+      "payload": "null"
     },
     {
       "name": "Bettercap.WifiDeAuth",
       "group": "wifi",
-      "payload": "{}"
+      "payload": "null"
     },
     {
       "name": "Bettercap.WifiRecon",
       "group": "wifi",
-      "payload": "{}"
+      "payload": "null"
     },
     {
       "name": "Browser.Meta",
@@ -70,27 +72,28 @@
     {
       "name": "Browser.WebsiteOpened",
       "group": "web",
-      "payload": "{ siteName: string; url: string }"
+      "payload": "{ SiteName: string; Url: string; Icon: string; Popular: boolean }"
     },
     {
       "name": "Database.Connected",
       "group": "network",
-      "payload": "{ ip: string; database?: string }"
+      "payload": "{ id: string; host: string; user: string; password: string; tables: Record<string, any[]> }"
     },
     {
       "name": "Database.DataUpdate",
       "group": "network",
-      "payload": "{ table: string; data: any }"
+      "payload": "{ databaseId: string; table: string; key: string; value: string | number; index: number }"
     },
     {
       "name": "Fern.FindPassword",
       "group": "cracking",
-      "payload": "{ user: any; model: string }"
+      "payload": "{ subnet: NetworkSubnetInfo; user: NetworkUserInfo; model: string }"
     },
     {
       "name": "Files.Deleted",
       "group": "files",
-      "payload": "{ id: string; name: string }"
+      "payload": "{ id: string; name: string; extension?: string; isFolder?: boolean; data?: string; parent?: string; readonly?: boolean; hidden?: boolean }",
+      "doc": "Payload is the deleted file."
     },
     {
       "name": "Files.Open",
@@ -100,12 +103,39 @@
     {
       "name": "Files.Transfer",
       "group": "files",
-      "payload": "{ type: \"DOWNLOAD\" | \"UPLOAD\"; file: { id: string; name: string; extension?: string; } }"
+      "payload": "{ type: \"DOWNLOAD\" | \"UPLOAD\"; file: FileInfo }"
+    },
+    {
+      "name": "Game.SessionStarted",
+      "group": "world",
+      "payload": "undefined",
+      "doc": "The desktop is up and the player's save is live. Packs load once, at app boot, before any save is chosen, so anything you write at load time (`SaveStorage`, mail, scheduled jobs, quest state) is discarded when the save rehydrates over it. Seed per-save content from here instead. Fires on every load, so guard one-time work with a `SaveStorage` flag."
     },
     {
       "name": "Hashcat",
       "group": "cracking",
-      "payload": "{ id: string; name: string }"
+      "payload": "{ id: string; name: string; extension?: string; isFolder?: boolean; data?: string; parent?: string; readonly?: boolean; hidden?: boolean }",
+      "doc": "Payload is the file that was cracked."
+    },
+    {
+      "name": "Http.CollaboratorHit",
+      "group": "web",
+      "payload": "{ id: string; host: string; path: string; method: string; kind: \"dns\" | \"http\"; headers: Record<string, string>; body?: string; at: number }"
+    },
+    {
+      "name": "Http.Intercepted",
+      "group": "web",
+      "payload": "{ id: string; method: HttpMethod; url: string; host: string; port: number; path: string; query: Record<string, string>; headers: Record<string, string>; body?: string; origin: HttpOrigin; at: number }"
+    },
+    {
+      "name": "Http.Request",
+      "group": "web",
+      "payload": "{ id: string; method: HttpMethod; url: string; host: string; port: number; path: string; query: Record<string, string>; headers: Record<string, string>; body?: string; origin: HttpOrigin; at: number }"
+    },
+    {
+      "name": "Http.Response",
+      "group": "web",
+      "payload": "{ id: string; request: HttpRequest; response: HttpResponse; edited?: boolean; synthetic?: boolean }"
     },
     {
       "name": "John.DecryptHash",
@@ -120,22 +150,22 @@
     {
       "name": "Kisscord.Messaging",
       "group": "social",
-      "payload": "{ channel: string; isMine?: boolean }"
+      "payload": "{ channel: string; isMine?: boolean; content: { questId: string; messageIndex: number; fileId?: string; text?: string; }; sendedAt: string; read?: boolean }"
     },
     {
       "name": "Mail.AccountCreated",
       "group": "mail",
-      "payload": "{ email: string; password: string }"
+      "payload": "{ fullName: string; email: string; password: string; phone: string; provider: string; isMine: boolean }"
     },
     {
       "name": "Mail.AccountLoggedIn",
       "group": "mail",
-      "payload": "{ email: string }"
+      "payload": "{ fullName: string; email: string; password: string; phone: string; provider: string; isMine: boolean }"
     },
     {
       "name": "Mail.MailboxOpened",
       "group": "mail",
-      "payload": "{ from: string; to: string; subject: string }"
+      "payload": "{ id: string; from: string; to: string; sendedAt: number; read?: boolean; starred?: boolean; deleted?: boolean; content: any; file?: FileInfo }"
     },
     {
       "name": "Mail.Read",
@@ -155,27 +185,28 @@
     {
       "name": "Metasploit.Event",
       "group": "access",
-      "payload": "{ type: string; data: any }"
+      "payload": "{ name: string; module: MetasploitModuleInfo; data: T }"
     },
     {
       "name": "Metasploit.Event.Try",
       "group": "access",
-      "payload": "{ exploit: string; target: string; options: any }"
+      "payload": "{ name: string; module: MetasploitModuleInfo; data: T }"
     },
     {
       "name": "Metasploit.Meterpreter.Connected",
       "group": "access",
-      "payload": "{ ip: string; session: any }"
+      "payload": "{ id: string; ip: string; handler: { ip: string; port: string; }; timestamp: string; user: NetworkUserInfo }"
     },
     {
       "name": "Metasploit.Msfconsole",
       "group": "access",
-      "payload": "{}"
+      "payload": "undefined",
+      "doc": "Carries no payload."
     },
     {
       "name": "Metasploit.Rootgrab",
       "group": "access",
-      "payload": "{ ip: string; file: { id: string; name: string; } }"
+      "payload": "{ ip: string; file: FileInfo }"
     },
     {
       "name": "Metasploit.Search",
@@ -185,27 +216,27 @@
     {
       "name": "Metasploit.SetOption",
       "group": "access",
-      "payload": "{ name: string; value: string | number; allFilled: boolean }"
+      "payload": "{ name: string; value: string | number; module: MetasploitModuleInfo; allFilled: boolean }"
     },
     {
       "name": "Metasploit.ShowOptions",
       "group": "access",
-      "payload": "{ name: string; type: string }"
+      "payload": "{ name: string; rank: string; description: string; disclosureDate: string; options: Array<{ name: string; type: \"string\" | \"number\" | \"ip\" | \"port\" | \"ip:port\" | \"version\" | \"localip\" | \"payload\"; required?: boolean; description: string; default?: any; value?: any; }>; services: Array<{ service: string; versions: [ string, string ]; keys?: string[]; }> }"
     },
     {
       "name": "Metasploit.Use",
       "group": "access",
-      "payload": "{ name: string; type: string }"
+      "payload": "{ name: string; rank: string; description: string; disclosureDate: string; options: Array<{ name: string; type: \"string\" | \"number\" | \"ip\" | \"port\" | \"ip:port\" | \"version\" | \"localip\" | \"payload\"; required?: boolean; description: string; default?: any; value?: any; }>; services: Array<{ service: string; versions: [ string, string ]; keys?: string[]; }> }"
     },
     {
       "name": "Meterpreter.Download",
       "group": "access",
-      "payload": "{ host: string; file: { id: string; name: string; } }"
+      "payload": "{ host: string; file: FileInfo }"
     },
     {
       "name": "Network.PortChanges",
       "group": "network",
-      "payload": "{ ip: string; port: number; active: boolean }"
+      "payload": "{ subnet: NetworkSubnetInfo; oldPorts: NetworkPortInfo[]; newPorts: NetworkPortInfo[] }"
     },
     {
       "name": "Network.UserActivity",
@@ -215,22 +246,28 @@
     {
       "name": "Network.WifiConnected",
       "group": "wifi",
-      "payload": "{ ip: string; ssid?: string }"
+      "payload": "{ id?: string; ip: string; users: NetworkUserInfo[]; name?: string; domain?: { name: string; vulnerabilities?: string[]; }; lanIp?: string; type?: string; ports?: NetworkPortInfo[]; model?: string; wifiNetwork?: { name: string; password: string; level: number; mac: string; channel: number; wps?: boolean; }; [key: string]: any }"
+    },
+    {
+      "name": "Network.WifiDisconnected",
+      "group": "wifi",
+      "payload": "null",
+      "doc": "Carries no payload."
     },
     {
       "name": "NetworkPacketTransfer",
       "group": "network",
-      "payload": "{ from: string; to: string; type?: string }"
+      "payload": "{ id: string; source: string; destination: string; protocol: string; info: string; data: string | { locale: string; data?: any; } }"
     },
     {
       "name": "Nuclei.Item",
       "group": "cracking",
-      "payload": "{ host: string; vulnerability: any }"
+      "payload": "{ file: FileInfo; currentDomain: string }"
     },
     {
       "name": "Nuclei.Results",
       "group": "cracking",
-      "payload": "{ file: any; hosts: string[] }"
+      "payload": "{ file: FileInfo; hosts: string[] }"
     },
     {
       "name": "PFSense.Changes",
@@ -245,27 +282,27 @@
     {
       "name": "Process.Killed",
       "group": "world",
-      "payload": "{ pid: number; name: string }"
+      "payload": "{ id: string; pid: string; name: string; startTime: number; cpuUsage: number; memoryUsage: number; userId: string }"
     },
     {
       "name": "Python3.ExecFile",
       "group": "files",
-      "payload": "{ args: string[]; file: any }"
+      "payload": "{ args: string[]; file: FileInfo }"
     },
     {
       "name": "Quest.Claimed",
       "group": "world",
-      "payload": "{ name: string; id: string }"
+      "payload": "{ Id: string; Name: string; Title: string; Completed: boolean; Description?: string; Icon?: string; Level?: number; Group?: string }"
     },
     {
       "name": "RemoteConnection.Disconnected",
       "group": "access",
-      "payload": "{ ip: string; service?: string }"
+      "payload": "{ targetIp: string; targetPort?: number; fromIp: string; user: { id: string; username: string; [key: string]: any; }; t: \"SSH\" | \"METASPLOIT\" }"
     },
     {
       "name": "RemoteConnection.Established",
       "group": "access",
-      "payload": "{ ip: string; service?: string }"
+      "payload": "{ targetIp: string; targetPort?: number; fromIp: string; user: { id: string; username: string; [key: string]: any; }; t: \"SSH\" | \"METASPLOIT\" }"
     },
     {
       "name": "Sqlmap.DumpTable",
@@ -280,22 +317,24 @@
     {
       "name": "Subfinder.Results",
       "group": "cracking",
-      "payload": "{ domain: string; subdomains: any[] }"
+      "payload": "{ domain: string; subdomains: Array<{ name: string; vulnerabilities?: string[]; }> }"
     },
     {
       "name": "Subfinder.Try",
       "group": "cracking",
-      "payload": "{ domain: string }"
+      "payload": "string",
+      "doc": "Payload is the domain being enumerated, as a plain string."
     },
     {
       "name": "Terminal.Cat",
       "group": "recon",
-      "payload": "{ id: string; name: string; extension?: string; data?: string }"
+      "payload": "{ id: string; name: string; extension?: string; isFolder?: boolean; data?: string; parent?: string; readonly?: boolean; hidden?: boolean }",
+      "doc": "Payload is the file that was read."
     },
     {
       "name": "Terminal.Cd",
       "group": "recon",
-      "payload": "{ path: string }"
+      "payload": "{ from: FileInfo; to: FileInfo }"
     },
     {
       "name": "Terminal.Command",
@@ -313,6 +352,11 @@
       "payload": "{ host: string; results: string[] }"
     },
     {
+      "name": "Terminal.DnsHistory",
+      "group": "recon",
+      "payload": "{ domain: string; ip: string }"
+    },
+    {
       "name": "Terminal.Explorer",
       "group": "recon",
       "payload": "{ ip: string }"
@@ -320,22 +364,24 @@
     {
       "name": "Terminal.FTP.Connect",
       "group": "access",
-      "payload": "{ ip: string; port?: number }"
+      "payload": "string",
+      "doc": "Payload is the host as a plain string."
     },
     {
       "name": "Terminal.Geoip",
       "group": "recon",
-      "payload": "{ ip: string }"
+      "payload": "string",
+      "doc": "Payload is the looked-up target as a plain string."
     },
     {
       "name": "Terminal.Hydra",
       "group": "access",
-      "payload": "{ ip: string; port: number; wordlistFile: string; credentials?: { username: string; password: string; } }"
+      "payload": "{ ip: string; port: string; wordlistFile: FileInfo; credentials: { username: string; password: string; } }"
     },
     {
       "name": "Terminal.Hydra.Try",
       "group": "access",
-      "payload": "{ ip: string; username: string; password: string }"
+      "payload": "{ ip: string; port: string; wordlistFile: FileInfo }"
     },
     {
       "name": "Terminal.Ifconfig",
@@ -350,17 +396,19 @@
     {
       "name": "Terminal.Ls",
       "group": "recon",
-      "payload": "{ id: string; name: string }"
+      "payload": "{ id: string; name: string; extension?: string; isFolder?: boolean; data?: string; parent?: string; readonly?: boolean; hidden?: boolean }",
+      "doc": "Payload is the folder that was listed."
     },
     {
       "name": "Terminal.Lynx.Lookup",
       "group": "recon",
-      "payload": "{ data: any }"
+      "payload": "{ input: string; data: LynxLookupData | null }"
     },
     {
       "name": "Terminal.Lynx.Search",
       "group": "recon",
-      "payload": "{ query: string }"
+      "payload": "string",
+      "doc": "Payload is the search term as a plain string (e.g. \"nova energy\")."
     },
     {
       "name": "Terminal.Mxlookup",
@@ -380,7 +428,7 @@
     {
       "name": "Terminal.Openssl",
       "group": "recon",
-      "payload": "{ file: string }"
+      "payload": "{ type: \"dec\" | \"enc\"; input: string; output: string }"
     },
     {
       "name": "Terminal.Ping",
@@ -402,12 +450,14 @@
     {
       "name": "Terminal.SSH.FileDownload",
       "group": "access",
-      "payload": "{ id: string; name: string; extension?: string }"
+      "payload": "{ id: string; name: string; extension?: string; isFolder?: boolean; data?: string; parent?: string; readonly?: boolean; hidden?: boolean }",
+      "doc": "Payload is the downloaded file."
     },
     {
       "name": "Terminal.SSH.Shutdown",
       "group": "access",
-      "payload": "{ ip: string }"
+      "payload": "string",
+      "doc": "Payload is the host as a plain string."
     },
     {
       "name": "Terminal.Whois",
@@ -447,27 +497,29 @@
     {
       "name": "WeeChat.Connected",
       "group": "social",
-      "payload": "{ host: string }"
+      "payload": "string",
+      "doc": "Payload is the IRC host as a plain string."
     },
     {
       "name": "WeeChat.Disconnected",
       "group": "social",
-      "payload": "{ host: string }"
+      "payload": "string",
+      "doc": "Payload is the IRC host as a plain string."
     },
     {
       "name": "WeeChat.Message",
       "group": "social",
-      "payload": "{ host: string; username: string; message: any }"
+      "payload": "{ host: string; username: string; message: string | { locale: string; data?: any; } | { questId: string; index: number; } }"
     },
     {
       "name": "Wireshark.Started",
       "group": "world",
-      "payload": "{ interface: string }"
+      "payload": "{ source?: string; destination?: string }"
     },
     {
       "name": "Wireshark.Stopped",
       "group": "world",
-      "payload": "{ interface: string }"
+      "payload": "{ source?: string; destination?: string }"
     }
   ]
 }

@@ -1,10 +1,12 @@
 # After the SDK update
 
+> Superseded on 2026-09-16 by `docs/plans/r165-sdk-0.24-assessment.md` for the SDK 0.24.0 update pass. This file is now historical manual-maintenance context; follow the current Arena session prompt for branch and source-control rules.
+
 Read this before touching the handbook. It exists because the game and its SDK
 are about to change, and most of what needs doing afterwards is mechanical —
 provided you know where to look and what the gates will and will not catch.
 
-Written against editor build `2026-09-14.r162`, SDK `0.21.0`, 92 events.
+Historical baseline was editor build `2026-09-14.r162` and SDK `0.21.0`; the completed SDK 0.24.0 pass is documented separately.
 
 If you are a fresh instance picking this up: the handbook is 43 HTML pages and
 about 30,000 words in `public/manual/`, and it is **complete at the top level**.
@@ -109,8 +111,8 @@ Check `project.ts` for the default, and `entry.complete`'s blurb in
 
 ### The event list
 
-92 events in 10 groups, from `reference/hackhub-events.json`. **G13 and G14
-catch this now** — G13 checks every stated count, G14 diffs the whole list
+The event list comes from `reference/hackhub-events.json`. **G13 and G14
+catch stale counts now** — G13 checks every stated count, G14 diffs the whole list
 against the catalogue. Regenerate the `appendices.html#events-list` section
 rather than patching rows; it was generated, and the generation script asserts
 the grouped total equals the catalogue's count.
@@ -209,8 +211,9 @@ from html.parser import HTMLParser   # walk it, assert nothing unclosed
 And before every push:
 
 ```bash
-git fetch -q origin arena/01a0a7a9-hackhub-quest-editor
-[ "$(git rev-parse HEAD)" = "$(git rev-parse FETCH_HEAD)" ] && echo "will fast-forward"
+git status --short
+git fetch -q origin
+# use the Arena branch named in the current session prompt
 ```
 
 The sandbox has reset git three times in this project and orphaned committed
@@ -265,7 +268,7 @@ are not true — check the file's own notes before capturing from it.
 ## 7. Standing rules from Zeis
 
 - **Always commit and push.** Commits alone are invisible; the branch on GitHub
-  is what gets seen. Push `arena/01a0a7a9-hackhub-quest-editor` every turn.
+  is what gets seen. Push the Arena branch named in the current session prompt every turn.
 - **Never edit `src/**`.** Product-copy changes are proposals. They go in the
   advocacy list at `docs/plans/r164-manual-audit.md` §5 (P1–P8 so far).
   `src/manual.coverage.test.ts` is the exception — it is the doc suite's own.

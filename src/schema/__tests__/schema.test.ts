@@ -207,10 +207,10 @@ describe("story beat sockets", () => {
 });
 
 describe("event catalogue", () => {
-    it("was generated from the pinned SDK and reports 92 events", () => {
+    it("was generated from the pinned SDK and reports 99 events", () => {
         expect(SDK_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
-        expect(EVENT_COUNT).toBe(92);
-        expect(EVENTS).toHaveLength(92);
+        expect(EVENT_COUNT).toBe(99);
+        expect(EVENTS).toHaveLength(99);
     });
 
     it("has unique event ids (a few, like `Hashcat`, have no namespace)", () => {

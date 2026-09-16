@@ -16,15 +16,15 @@ describe("event explanation", () => {
     });
 
     it("says plainly when there is nothing to match on", () => {
-        render(<EventExplanation name="Metasploit.Msfconsole" payload="{}" />);
+        render(<EventExplanation name="Metasploit.Msfconsole" payload="undefined" />);
         expect(screen.getByText(/opens the metasploit console/)).toBeInTheDocument();
         expect(screen.getByText("It carries no details to test against.")).toBeInTheDocument();
     });
 
     it("matches primitive payloads as a whole, like the condition builder", () => {
-        // Lynx.Search declares { query } but the game raises a bare string —
-        // the preview must not offer "query" as a field.
-        render(<EventExplanation name="Terminal.Lynx.Search" payload="{ query: string }" />);
+        // Lynx.Search is now correctly declared as a bare string, so the
+        // preview must not offer the old "query" field.
+        render(<EventExplanation name="Terminal.Lynx.Search" payload="string" />);
         expect(screen.queryByText(/Narrow it down/)).not.toBeInTheDocument();
         expect(screen.getByText(/Match it as a whole/)).toBeInTheDocument();
     });

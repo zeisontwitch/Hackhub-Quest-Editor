@@ -88,20 +88,16 @@ var __QE = (function () {
 
     /* Read the field a condition names off an event payload.
 
-       The SDK's declarations are not always right about the shape. It types
-       Terminal.Lynx.Search as { query: string }, and the editor offers "query"
-       on that basis - but the game emits the search term as a BARE STRING.
-       Asking a string for .query gives undefined, so the condition silently
-       never matched and the objective never ticked. QA hit exactly that:
+       Older SDKs typed Terminal.Lynx.Search as { query: string }, so the
+       editor offered "query" and projects saved that field. The game emitted
+       the search term as a BARE STRING, so asking the payload for .query gave
+       undefined and the objective never ticked. SDK 0.24.0 corrected that
+       declaration, but old projects still need to run.
 
-           objective "identify-target": Terminal.Lynx.Search fired but did not
-           match. Event carried: "Anselm Ritter"
-
-       Three events (AppStore.Downloaded, Terminal.SSH.Connected/Disconnected)
-       are declared as primitives, so a payload that is not an object is a
-       legitimate shape the author still has to be able to match on. When the
-       payload is a primitive, any field name resolves to the payload itself -
-       which is the only value there is, and certainly what the author meant. */
+       Primitive events are a legitimate shape the author still has to be able
+       to match on. When the payload is a primitive, any field name resolves to
+       the payload itself - which is the only value there is, and certainly what
+       the author meant. */
     function fieldOf(payload, field) {
         if (payload != null && typeof payload !== "object") return payload;
         var direct = getPath(payload, field);
@@ -1089,34 +1085,38 @@ function __qeRegisterProject(sdk, PROJECT) {
                     var wifiIp = d.ipMode === "fixed" && d.ip
                         ? d.ip
                         : ((questRef && questRef.Data && questRef.Data.targetIp) || (sdk.Network.randomIp ? sdk.Network.randomIp() : "10.0.0.1"));
-                    /* SDK 0.21.0 has no wireless API: use it if a future
-                       version ships one, otherwise fall back to a plain
-                       router network so the machines at least exist. */
+                    var wifiRoot = mapDevice({
+                        ip: wifiIp,
+                        type: "ROUTER",
+                        model: d.model,
+                        ports: d.ports || [],
+                        users: d.users || [],
+                        children: d.children || [],
+                    });
+                    /* SDK 0.24.0 declares a native wireless creator. Keep the
+                       old router fallback because exported mods may run on an
+                       older game build, and because the Wi-Fi palette entry is
+                       still fenced until in-game QA confirms every field. */
                     if (sdk.Network.createWifiNetwork) {
-                        sdk.Network.createWifiNetwork({
+                        var madeWifiIp = sdk.Network.createWifiNetwork({
                             ssid: d.ssid,
                             password: d.password,
                             signal: d.signal,
                             bssid: d.bssid,
                             channel: d.channel,
+                            ip: wifiIp,
                             model: d.model,
+                            users: wifiRoot.users || [],
+                            ports: wifiRoot.ports || [],
+                            children: wifiRoot.children || [],
                         });
+                        questCleanup.push({ kind: "network", ip: madeWifiIp || wifiIp, onComplete: d.destroyOnComplete === true });
+                        return next();
                     } else {
                         /* Same reason as world.network above. */
                         questCleanup.push({ kind: "network", ip: wifiIp, onComplete: d.destroyOnComplete === true });
-                        return buildNetwork(wifiIp, mapDevice({
-                            ip: wifiIp,
-                            type: "ROUTER",
-                            model: d.model,
-                            ports: d.ports || [],
-                            users: d.users || [],
-                            children: d.children || [],
-                        }), next);
+                        return buildNetwork(wifiIp, wifiRoot, next);
                     }
-                    /* The createWifiNetwork branch (a future SDK) still needs
-                       its teardown registered. */
-                    questCleanup.push({ kind: "network", ip: wifiIp, onComplete: d.destroyOnComplete === true });
-                    return next();
                 }
                 case "world.domain": {
                     /* A domain the player can whois / nslookup their way to. */

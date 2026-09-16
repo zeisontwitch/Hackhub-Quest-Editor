@@ -70,7 +70,7 @@ export function buildByline(): ProjectDocument {
         terminalCommand: `lynx "${AUTHOR}"`,
     });
 
-    const tRead = triggerFor(oRead, "Browser.WebsiteOpened", [{ field: "url", op: "contains", value: "/p/night-shift" }], { x: 960, y: 200 });
+    const tRead = triggerFor(oRead, "Browser.WebsiteOpened", [{ field: "Url", op: "contains", value: "/p/night-shift" }], { x: 960, y: 200 });
     const tAuthor = triggerFor(oAuthor, "Terminal.Lynx.Search", [{ field: "query", op: "contains", value: "Calloway" }], { x: 1280, y: 200 });
 
     const reach = makeNode("comms.dialogue", { x: 1600, y: 0 }, {

@@ -17,7 +17,7 @@
  * immediately — a dry run collapses waits.
  */
 import { compileProject, EDITOR_BUILD, type CompilerWarning } from "@/compiler/compile";
-import { PAYLOAD_IS_REALLY_PRIMITIVE, getEvent, payloadFields } from "@/schema/events";
+import { getEvent, isPrimitivePayload, payloadFields } from "@/schema/events";
 import type { ProjectDocument, QuestDoc } from "@/schema/project";
 import type { ToolPack } from "@/toolpacks/schema";
 
@@ -321,9 +321,9 @@ function buildProbes(
         if (roots.includes(root)) setPath(payload, c.field, resolved(c.value));
     }
     const probes: ProbeProbe[] = [{ label: "the declared shape", payload }];
-    // Primitive-declared events: the game has sent the value bare before
-    // (Terminal.Lynx.Search), and the runtime deliberately matches both.
-    if (PAYLOAD_IS_REALLY_PRIMITIVE.has(event) && conditions.length > 0) {
+    // Primitive-declared events carry the value bare, while old projects may
+    // still name a field from a pre-0.24 declaration. Probe both shapes.
+    if (isPrimitivePayload(event) && conditions.length > 0) {
         probes.push({ label: "the bare value the game actually sends", payload: resolved(conditions[0].value) });
     }
     return probes;

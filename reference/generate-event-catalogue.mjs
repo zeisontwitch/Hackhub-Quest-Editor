@@ -3,8 +3,8 @@
  * Regenerates `reference/hackhub-events.json` from the HackHub Content SDK's own
  * type declarations.
  *
- * Why this exists: the payload table on the docs' Events *guide* page is stale for
- * roughly half of the 92 events (see docs/01-analysis-and-architecture.md §7.2).
+ * Why this exists: the payload table on the docs' Events *guide* page has been
+ * stale for large parts of the catalogue (see docs/01-analysis-and-architecture.md §7.2).
  * Building the editor's trigger palette from that table would generate trigger
  * conditions that never match. `ModEventMap` in the published `index.d.ts` is the
  * authoritative source, so we parse it.
@@ -40,6 +40,7 @@ function resolveSdkPath() {
 const sdkPath = resolveSdkPath();
 const raw = fs.readFileSync(sdkPath, "utf-8");
 const src = raw.replace(/\r/g, "");
+const structuralSrc = src.replace(/\/\*[\s\S]*?\*\//g, "");
 
 const pkgPath = path.join(path.dirname(sdkPath), "package.json");
 const sdkVersion = fs.existsSync(pkgPath)
@@ -49,7 +50,7 @@ const sdkVersion = fs.existsSync(pkgPath)
 /** Every top-level `interface Name { ... }` → its field list, flattened one level. */
 function collectInterfaces(text) {
     const out = new Map();
-    const re = /(?:^export )?interface (\w+) \{([\s\S]*?)\n\}/gm;
+    const re = /(?:^export )?interface (\w+)(?:<[^>]+>)? \{([\s\S]*?)\n\}/gm;
     let m;
     while ((m = re.exec(text)) !== null) {
         const name = m[1];
@@ -75,6 +76,17 @@ function collectInterfaces(text) {
     return out;
 }
 
+/** Every top-level `type Name = OtherName;` alias the event map may point at. */
+function collectTypeAliases(text) {
+    const out = new Map();
+    const re = /export type (\w+)(?:<[^>]+>)?\s*=\s*([^;]+);/gm;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+        out.set(m[1], m[2].trim().replace(/\s+/g, " "));
+    }
+    return out;
+}
+
 /** The `ModEventMap` block. */
 const mapMatch = src.match(/export interface ModEventMap \{([\s\S]*?)\n\}/);
 if (!mapMatch) {
@@ -82,7 +94,8 @@ if (!mapMatch) {
     process.exit(1);
 }
 
-const interfaces = collectInterfaces(src);
+const interfaces = collectInterfaces(structuralSrc);
+const typeAliases = collectTypeAliases(structuralSrc);
 
 /** Pull the leading doc comment (if any) for an event key, as a description. */
 function docFor(eventName) {
@@ -101,11 +114,16 @@ function docFor(eventName) {
 }
 
 /** Render a payload type expression into a readable shape string. */
-function renderPayload(typeExpr) {
-    const named = typeExpr.trim();
-    if (interfaces.has(named)) {
-        const fields = interfaces.get(named);
+function renderPayload(typeExpr, seen = new Set()) {
+    const named = typeExpr.replace(/\/\*[\s\S]*?\*\//g, "").trim();
+    const bareName = named.replace(/<.*>$/, "");
+    if (interfaces.has(bareName)) {
+        const fields = interfaces.get(bareName);
         return fields.length ? `{ ${fields.join("; ")} }` : "{}";
+    }
+    if (typeAliases.has(bareName) && !seen.has(bareName)) {
+        seen.add(bareName);
+        return renderPayload(typeAliases.get(bareName), seen);
     }
     // inline object literal spanning several lines
     const inlined = named.replace(/\s*\n\s*/g, " ").replace(/\s+/g, " ").trim();
@@ -113,12 +131,12 @@ function renderPayload(typeExpr) {
         const inner = inlined.slice(1, -1).trim();
         return inner ? `{ ${inner.replace(/;$/, "")} }` : "{}";
     }
-    return named; // primitives e.g. `string`
+    return inlined; // primitives e.g. `string`
 }
 
 const GROUPS = [
-    ["recon", /^(Terminal\.(NmapScan|Ping|Nslookup|Mxlookup|Dig|Whois|Geoip|Lynx\.|Command|InstallPackage|Cd|Ls|Cat|Openssl|Ifconfig|Explorer))/],
-    ["web", /^(Terminal\.Dirhunter|Browser\.)/],
+    ["recon", /^(Terminal\.(NmapScan|Ping|Nslookup|Mxlookup|Dig|Whois|Geoip|Lynx\.|Command|InstallPackage|Cd|Ls|Cat|Openssl|Ifconfig|Explorer|DnsHistory))/],
+    ["web", /^(Terminal\.Dirhunter|Browser\.|Http\.)/],
     ["access", /^(Terminal\.SSH\.|Terminal\.FTP\.|Terminal\.Hydra|Metasploit\.|Meterpreter\.|RemoteConnection\.)/],
     ["cracking", /^(Hashcat|John\.|Fern\.|Subfinder\.|Nuclei\.|Sqlmap\.)/],
     ["wifi", /^(Bettercap\.|Network\.Wifi)/],
@@ -126,7 +144,7 @@ const GROUPS = [
     ["files", /^(Files\.|Python3\.)/],
     ["mail", /^Mail\./],
     ["social", /^(Twotter\.|Kisscord\.|WeeChat\.)/],
-    ["world", /^(Bank\.|Quest\.|AppStore\.|Process\.|Wireshark\.|BCC\.)/],
+    ["world", /^(Bank\.|Quest\.|AppStore\.|Process\.|Wireshark\.|BCC\.|Game\.)/],
 ];
 
 function groupOf(name) {
@@ -183,6 +201,12 @@ for (const e of events) {
     if (/;\s*\{|{\s*;/.test(e.payload)) {
         problems.push(`${e.name}: malformed nested object in ${JSON.stringify(e.payload)}`);
     }
+    if (/^[A-Z]\w+(?:<.*>)?$/.test(e.payload)) {
+        problems.push(`${e.name}: unresolved named payload ${JSON.stringify(e.payload)}`);
+    }
+}
+if (events.some((e) => e.group === "other")) {
+    problems.push(`unclassified events: ${events.filter((e) => e.group === "other").map((e) => e.name).join(", ")}`);
 }
 if (problems.length) {
     console.error("Refusing to write catalogue — parser needs updating for this SDK version:");

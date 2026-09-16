@@ -1,7 +1,7 @@
 /**
  * The game-event picker.
  *
- * Shows all 92 events with their *real* payload fields (from the generated
+ * Shows all SDK events with their *real* payload fields (from the generated
  * catalogue, not the stale docs table), so the author can see what they are able
  * to test against before writing a condition.
  */

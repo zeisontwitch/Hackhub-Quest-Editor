@@ -117,7 +117,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-14.r162";
+export const EDITOR_BUILD = "2026-09-16.r165";
 
 /** Warning severity (r153): info = good to know, warn = could cause issues,
     error = will break or strand the player. */
@@ -477,7 +477,7 @@ function warnWifi(project: ProjectDocument): string[] {
         for (const n of q.graph.nodes) {
             if (n.type !== "world.wifi") continue;
             warnings.push(
-                `${q.name}: the mod SDK (0.21.0) cannot create wireless networks yet — “Create Wi-Fi” exports as a regular router network the player reaches by IP, not through the in-game Wi-Fi list.`,
+                `${q.name}: “Create Wi-Fi” now exports through the SDK wireless creator when the game provides it, but the node remains hidden from the palette until in-game QA verifies the whole shape. Test old projects that already contain it in game before shipping.`,
             );
         }
     }

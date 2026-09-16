@@ -1,7 +1,7 @@
 {
   "generatedBy": "scripts/extract-manual-inventory.mjs",
-  "editorBuild": "2026-09-14.r162",
-  "sdkVersion": "0.21.0",
+  "editorBuild": "2026-09-16.r165",
+  "sdkVersion": "0.24.0",
   "counts": {
     "nodeTypes": 34,
     "obtainableNodeTypes": 33,
@@ -9,7 +9,7 @@
     "editableFields": 120,
     "editableFieldsExcludingLists": 113,
     "sockets": 65,
-    "events": 92,
+    "events": 99,
     "eventGroups": 10
   },
   "manualExclusions": [
@@ -80,7 +80,7 @@
     },
     {
       "id": "web",
-      "label": "Directory brute-force & browser"
+      "label": "Directory brute-force, browser & HTTP"
     },
     {
       "id": "access",
@@ -374,7 +374,7 @@
           "kind": "event",
           "key": "event",
           "label": "Game event",
-          "hint": "All 92 HackHub events, listed with the details each one carries."
+          "hint": "All supported HackHub events, listed with the details each one carries."
         },
         {
           "depth": 0,
@@ -491,7 +491,7 @@
           "label": null,
           "hint": null,
           "tone": "warn",
-          "text": "The mod SDK (0.21.0) has no wireless API yet, so this node exports as a regular router network: the player reaches it by IP address, not through the in-game Wi-Fi list. The SSID and passphrase are stored in the mod and start working if the game opens that up."
+          "text": "The SDK now declares wireless creation, but this node stays out of the palette until in-game QA verifies the whole shape. Legacy projects that already contain it still export."
         },
         {
           "depth": 0,
@@ -521,7 +521,7 @@
           "kind": "slider",
           "key": "signal",
           "label": "Signal strength",
-          "hint": "The game's Wi-Fi scale: 0 = weakest, 3 = strongest (it also drives how long joining takes). The current mod SDK does not read it yet — it is kept for when wireless support lands.",
+          "hint": "The game's Wi-Fi scale: 0 = weakest, 3 = strongest. It also drives how long joining takes.",
           "min": 0,
           "max": 3,
           "step": 1

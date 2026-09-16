@@ -6,13 +6,13 @@
  * the lead ledger straight out of the database. It is the expert template
  * because it chains several tools and two hosts.
  *
- * SDK 0.21.0 has no wireless API, so the "cold storage wireless" identity is
- * modelled as a plain router network (the router's `model` still enables the
- * in-game `fern` recovery route, and its admin account is the "router login"
- * step). The wireless recon/join events (Bettercap.WifiRecon,
- * Network.WifiConnected) are deliberately not used: they cannot be guaranteed
- * to fire in this build. Every objective below waits on an event the runtime
- * actually emits.
+ * SDK 0.24.0 declares native wireless creation, but this template still models
+ * the "cold storage wireless" identity as a plain router network until the
+ * hidden Wi-Fi node has passed in-game QA. The router's `model` still enables
+ * the in-game `fern` recovery route, and its admin account is the "router login"
+ * step. The wireless recon/join events (Bettercap.WifiRecon,
+ * Network.WifiConnected) are deliberately not used here until that QA pass says
+ * they are safe for shipped templates.
  */
 import { createQuest, createProject, type ProjectDocument } from "@/schema/project";
 import { TARGET_IP_TOKEN } from "@/schema/common";
@@ -266,7 +266,7 @@ export function buildColdStorage(): ProjectDocument {
             "",
             "Each objective completes on a real game event (the grey node under it). Change an IP or a model and change it in the matching trigger too.",
             "",
-            "The edge is modelled as a plain router network because SDK 0.21.0 ships no wireless API — the router's `model` still enables `fern`, and its admin account is the 'login' step. The wireless recon/join events are deliberately left out because they cannot be guaranteed to fire. This is the part to playtest first.",
+            "The edge is still modelled as a plain router network while the hidden Wi-Fi node waits for in-game QA. SDK 0.24.0 declares the wireless creator, but shipped templates should not depend on it until the scan, join, child-device and cleanup paths have been played through.",
             "",
             "The player takes a COPY, not a hole: sending the ledger, not deleting it, is the job.",
         ].join("\n"),

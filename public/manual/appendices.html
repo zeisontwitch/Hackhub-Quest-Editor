@@ -10,7 +10,7 @@
 <div class="wrap">
 <nav class="toc" aria-label="Handbook contents">
   <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
-  <p class="build">Handbook · build 2026-09-14.r162</p>
+  <p class="build">Handbook · build 2026-09-16.r165</p>
   <div class="search">
     <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
     <div class="results" role="listbox" aria-label="Search results"></div>
@@ -72,7 +72,7 @@ events. Nothing here needs reading in order.</p>
   <dt>Objective</dt><dd>A line in the player's quest panel. The only part of
   your quest they are told about.</dd>
   <dt>Event</dt><dd>Something the player does in the game, which your quest can
-  hear. There are 92.</dd>
+  hear. There are 99.</dd>
   <dt>Trigger</dt><dd>Only ever a socket: the cyan one on an objective. The node
   that feeds it is a <b class="ui">When event</b>.</dd>
   <dt>Tag</dt><dd>Text in braces that the game fills in when the quest runs,
@@ -148,10 +148,10 @@ cross one.</p>
   <b class="ui">Complete automatically</b> starts off, so
   <b class="ui">On quest complete</b> never runs until you switch it on. End the
   story from your last objective instead.</dd>
-  <dt class="dt-danger">It cannot build a Wi-Fi network</dt><dd>The
-  <b class="ui">Create Wi-Fi</b> node exists in the editor's registry but cannot
-  be created, so it has no page here. If you need one, it is not available in
-  this build.</dd>
+  <dt class="dt-danger">It cannot offer Create Wi-Fi yet</dt><dd>The game
+  now lists wireless creation. This editor still keeps the node out of the
+  palette. It needs an in-game pass first. Old projects that already contain it
+  still export.</dd>
   <dt class="dt-warn">It cannot stop you exporting a broken quest</dt><dd>The
   report describes consequences; it gates nothing. A <code>.zip</code> always
   downloads. That is deliberate, but it means a downloaded file is not proof of
@@ -176,60 +176,112 @@ cross one.</p>
   verifies that your quest is consistent, not that it is fair.</dd>
 </dl>
 
-<h2 id="events-list">The 92 events</h2>
+<h2 id="events-list">The 99 events</h2>
 <p>Every event a <b class="ui">When event</b> node can wait for, grouped the way
 the editor groups them. Type part of a name into the node's
 <b class="ui">Game event</b> picker rather than reading this list — it is here
 so you can see the shape of what is available.</p>
-<h3 id="events-recon">Reconnaissance &amp; terminal <span class="mono">(17)</span></h3>
+<h3 id="events-recon">Reconnaissance &amp; terminal <span class="mono">(18)</span></h3>
 <table class="compact">
 <tbody>
-<tr><td><code>Terminal.Cat</code></td><td><code>Terminal.Cd</code></td></tr><tr><td><code>Terminal.Command</code></td><td><code>Terminal.Dig</code></td></tr><tr><td><code>Terminal.Explorer</code></td><td><code>Terminal.Geoip</code></td></tr><tr><td><code>Terminal.Ifconfig</code></td><td><code>Terminal.InstallPackage</code></td></tr><tr><td><code>Terminal.Ls</code></td><td><code>Terminal.Lynx.Lookup</code></td></tr><tr><td><code>Terminal.Lynx.Search</code></td><td><code>Terminal.Mxlookup</code></td></tr><tr><td><code>Terminal.NmapScan</code></td><td><code>Terminal.Nslookup</code></td></tr><tr><td><code>Terminal.Openssl</code></td><td><code>Terminal.Ping</code></td></tr><tr><td><code>Terminal.Whois</code></td><td></td></tr></tbody>
+<tr><td><code>Terminal.Cat</code></td><td><code>Terminal.Cd</code></td></tr>
+<tr><td><code>Terminal.Command</code></td><td><code>Terminal.Dig</code></td></tr>
+<tr><td><code>Terminal.DnsHistory</code></td><td><code>Terminal.Explorer</code></td></tr>
+<tr><td><code>Terminal.Geoip</code></td><td><code>Terminal.Ifconfig</code></td></tr>
+<tr><td><code>Terminal.InstallPackage</code></td><td><code>Terminal.Ls</code></td></tr>
+<tr><td><code>Terminal.Lynx.Lookup</code></td><td><code>Terminal.Lynx.Search</code></td></tr>
+<tr><td><code>Terminal.Mxlookup</code></td><td><code>Terminal.NmapScan</code></td></tr>
+<tr><td><code>Terminal.Nslookup</code></td><td><code>Terminal.Openssl</code></td></tr>
+<tr><td><code>Terminal.Ping</code></td><td><code>Terminal.Whois</code></td></tr>
+</tbody>
 </table>
-<h3 id="events-web">Directory brute-force &amp; browser <span class="mono">(3)</span></h3>
+<h3 id="events-web">Directory brute-force, browser &amp; HTTP <span class="mono">(7)</span></h3>
 <table class="compact">
 <tbody>
-<tr><td><code>Browser.Meta</code></td><td><code>Browser.WebsiteOpened</code></td></tr><tr><td><code>Terminal.Dirhunter</code></td><td></td></tr></tbody>
+<tr><td><code>Browser.Meta</code></td><td><code>Browser.WebsiteOpened</code></td></tr>
+<tr><td><code>Http.CollaboratorHit</code></td><td><code>Http.Intercepted</code></td></tr>
+<tr><td><code>Http.Request</code></td><td><code>Http.Response</code></td></tr>
+<tr><td><code>Terminal.Dirhunter</code></td><td></td></tr>
+</tbody>
 </table>
 <h3 id="events-access">Access &amp; exploitation <span class="mono">(19)</span></h3>
 <table class="compact">
 <tbody>
-<tr><td><code>Metasploit.Event</code></td><td><code>Metasploit.Event.Try</code></td></tr><tr><td><code>Metasploit.Meterpreter.Connected</code></td><td><code>Metasploit.Msfconsole</code></td></tr><tr><td><code>Metasploit.Rootgrab</code></td><td><code>Metasploit.Search</code></td></tr><tr><td><code>Metasploit.SetOption</code></td><td><code>Metasploit.ShowOptions</code></td></tr><tr><td><code>Metasploit.Use</code></td><td><code>Meterpreter.Download</code></td></tr><tr><td><code>RemoteConnection.Disconnected</code></td><td><code>RemoteConnection.Established</code></td></tr><tr><td><code>Terminal.FTP.Connect</code></td><td><code>Terminal.Hydra</code></td></tr><tr><td><code>Terminal.Hydra.Try</code></td><td><code>Terminal.SSH.Connected</code></td></tr><tr><td><code>Terminal.SSH.Disconnected</code></td><td><code>Terminal.SSH.FileDownload</code></td></tr><tr><td><code>Terminal.SSH.Shutdown</code></td><td></td></tr></tbody>
+<tr><td><code>Metasploit.Event</code></td><td><code>Metasploit.Event.Try</code></td></tr>
+<tr><td><code>Metasploit.Meterpreter.Connected</code></td><td><code>Metasploit.Msfconsole</code></td></tr>
+<tr><td><code>Metasploit.Rootgrab</code></td><td><code>Metasploit.Search</code></td></tr>
+<tr><td><code>Metasploit.SetOption</code></td><td><code>Metasploit.ShowOptions</code></td></tr>
+<tr><td><code>Metasploit.Use</code></td><td><code>Meterpreter.Download</code></td></tr>
+<tr><td><code>RemoteConnection.Disconnected</code></td><td><code>RemoteConnection.Established</code></td></tr>
+<tr><td><code>Terminal.FTP.Connect</code></td><td><code>Terminal.Hydra</code></td></tr>
+<tr><td><code>Terminal.Hydra.Try</code></td><td><code>Terminal.SSH.Connected</code></td></tr>
+<tr><td><code>Terminal.SSH.Disconnected</code></td><td><code>Terminal.SSH.FileDownload</code></td></tr>
+<tr><td><code>Terminal.SSH.Shutdown</code></td><td></td></tr>
+</tbody>
 </table>
 <h3 id="events-cracking">Cracking &amp; vuln scanning <span class="mono">(9)</span></h3>
 <table class="compact">
 <tbody>
-<tr><td><code>Fern.FindPassword</code></td><td><code>Hashcat</code></td></tr><tr><td><code>John.DecryptHash</code></td><td><code>Nuclei.Item</code></td></tr><tr><td><code>Nuclei.Results</code></td><td><code>Sqlmap.DumpTable</code></td></tr><tr><td><code>Sqlmap.ListTables</code></td><td><code>Subfinder.Results</code></td></tr><tr><td><code>Subfinder.Try</code></td><td></td></tr></tbody>
+<tr><td><code>Fern.FindPassword</code></td><td><code>Hashcat</code></td></tr>
+<tr><td><code>John.DecryptHash</code></td><td><code>Nuclei.Item</code></td></tr>
+<tr><td><code>Nuclei.Results</code></td><td><code>Sqlmap.DumpTable</code></td></tr>
+<tr><td><code>Sqlmap.ListTables</code></td><td><code>Subfinder.Results</code></td></tr>
+<tr><td><code>Subfinder.Try</code></td><td></td></tr>
+</tbody>
 </table>
-<h3 id="events-wifi">Bettercap &amp; Wi-Fi <span class="mono">(7)</span></h3>
+<h3 id="events-wifi">Bettercap &amp; Wi-Fi <span class="mono">(8)</span></h3>
 <table class="compact">
 <tbody>
-<tr><td><code>Bettercap.Close</code></td><td><code>Bettercap.NetProbe</code></td></tr><tr><td><code>Bettercap.NetShow</code></td><td><code>Bettercap.Open</code></td></tr><tr><td><code>Bettercap.WifiDeAuth</code></td><td><code>Bettercap.WifiRecon</code></td></tr><tr><td><code>Network.WifiConnected</code></td><td></td></tr></tbody>
+<tr><td><code>Bettercap.Close</code></td><td><code>Bettercap.NetProbe</code></td></tr>
+<tr><td><code>Bettercap.NetShow</code></td><td><code>Bettercap.Open</code></td></tr>
+<tr><td><code>Bettercap.WifiDeAuth</code></td><td><code>Bettercap.WifiRecon</code></td></tr>
+<tr><td><code>Network.WifiConnected</code></td><td><code>Network.WifiDisconnected</code></td></tr>
+</tbody>
 </table>
 <h3 id="events-network">Network &amp; infrastructure <span class="mono">(7)</span></h3>
 <table class="compact">
 <tbody>
-<tr><td><code>Database.Connected</code></td><td><code>Database.DataUpdate</code></td></tr><tr><td><code>Network.PortChanges</code></td><td><code>Network.UserActivity</code></td></tr><tr><td><code>NetworkPacketTransfer</code></td><td><code>PFSense.Changes</code></td></tr><tr><td><code>PFSense.Login</code></td><td></td></tr></tbody>
+<tr><td><code>Database.Connected</code></td><td><code>Database.DataUpdate</code></td></tr>
+<tr><td><code>Network.PortChanges</code></td><td><code>Network.UserActivity</code></td></tr>
+<tr><td><code>NetworkPacketTransfer</code></td><td><code>PFSense.Changes</code></td></tr>
+<tr><td><code>PFSense.Login</code></td><td></td></tr>
+</tbody>
 </table>
 <h3 id="events-files">Files <span class="mono">(4)</span></h3>
 <table class="compact">
 <tbody>
-<tr><td><code>Files.Deleted</code></td><td><code>Files.Open</code></td></tr><tr><td><code>Files.Transfer</code></td><td><code>Python3.ExecFile</code></td></tr></tbody>
+<tr><td><code>Files.Deleted</code></td><td><code>Files.Open</code></td></tr>
+<tr><td><code>Files.Transfer</code></td><td><code>Python3.ExecFile</code></td></tr>
+</tbody>
 </table>
 <h3 id="events-mail">E-mail <span class="mono">(6)</span></h3>
 <table class="compact">
 <tbody>
-<tr><td><code>Mail.AccountCreated</code></td><td><code>Mail.AccountLoggedIn</code></td></tr><tr><td><code>Mail.MailboxOpened</code></td><td><code>Mail.Read</code></td></tr><tr><td><code>Mail.Received</code></td><td><code>Mail.Sent</code></td></tr></tbody>
+<tr><td><code>Mail.AccountCreated</code></td><td><code>Mail.AccountLoggedIn</code></td></tr>
+<tr><td><code>Mail.MailboxOpened</code></td><td><code>Mail.Read</code></td></tr>
+<tr><td><code>Mail.Received</code></td><td><code>Mail.Sent</code></td></tr>
+</tbody>
 </table>
 <h3 id="events-social">Social &amp; chat <span class="mono">(11)</span></h3>
 <table class="compact">
 <tbody>
-<tr><td><code>Kisscord.FriendAdded</code></td><td><code>Kisscord.Messaging</code></td></tr><tr><td><code>Twotter.AccountCreated</code></td><td><code>Twotter.AccountLogin</code></td></tr><tr><td><code>Twotter.AccountLogout</code></td><td><code>Twotter.Post</code></td></tr><tr><td><code>Twotter.PostSeen</code></td><td><code>Twotter.ProfileSeen</code></td></tr><tr><td><code>WeeChat.Connected</code></td><td><code>WeeChat.Disconnected</code></td></tr><tr><td><code>WeeChat.Message</code></td><td></td></tr></tbody>
+<tr><td><code>Kisscord.FriendAdded</code></td><td><code>Kisscord.Messaging</code></td></tr>
+<tr><td><code>Twotter.AccountCreated</code></td><td><code>Twotter.AccountLogin</code></td></tr>
+<tr><td><code>Twotter.AccountLogout</code></td><td><code>Twotter.Post</code></td></tr>
+<tr><td><code>Twotter.PostSeen</code></td><td><code>Twotter.ProfileSeen</code></td></tr>
+<tr><td><code>WeeChat.Connected</code></td><td><code>WeeChat.Disconnected</code></td></tr>
+<tr><td><code>WeeChat.Message</code></td><td></td></tr>
+</tbody>
 </table>
-<h3 id="events-world">Bank, quest &amp; misc <span class="mono">(9)</span></h3>
+<h3 id="events-world">Bank, quest &amp; misc <span class="mono">(10)</span></h3>
 <table class="compact">
 <tbody>
-<tr><td><code>AppStore.Downloaded</code></td><td><code>BCC.News.Opened</code></td></tr><tr><td><code>Bank.AccountCreated</code></td><td><code>Bank.Logout</code></td></tr><tr><td><code>Bank.Transfer</code></td><td><code>Process.Killed</code></td></tr><tr><td><code>Quest.Claimed</code></td><td><code>Wireshark.Started</code></td></tr><tr><td><code>Wireshark.Stopped</code></td><td></td></tr></tbody>
+<tr><td><code>AppStore.Downloaded</code></td><td><code>Bank.AccountCreated</code></td></tr>
+<tr><td><code>Bank.Logout</code></td><td><code>Bank.Transfer</code></td></tr>
+<tr><td><code>BCC.News.Opened</code></td><td><code>Game.SessionStarted</code></td></tr>
+<tr><td><code>Process.Killed</code></td><td><code>Quest.Claimed</code></td></tr>
+<tr><td><code>Wireshark.Started</code></td><td><code>Wireshark.Stopped</code></td></tr>
+</tbody>
 </table>
 <div class="note"><b>Names are dotted and capitalised.</b> They come from the
 game, not from this editor, so they read like
@@ -237,7 +289,7 @@ game, not from this editor, so they read like
 one by hand.</div>
 
 <h2 id="version">Which handbook version is this</h2>
-<p>This handbook documents editor build <span class="mono">2026-09-14.r162</span>.
+<p>This handbook documents editor build <span class="mono">2026-09-16.r165</span>.
 The same stamp appears in the footer of every page, and the editor writes it
 into every mod it exports.</p>
 <dl class="facts-list">
@@ -255,7 +307,7 @@ into every mod it exports.</p>
 
 <div class="pagefoot"><a href="troubleshooting.html">← When something goes wrong</a></div>
 <footer class="colophon">
-  HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·
+  HackHub Quest Editor handbook · documents editor build 2026-09-16.r165 ·
   every figure on these pages is taken from the editor's own source.
 </footer>
 </main>

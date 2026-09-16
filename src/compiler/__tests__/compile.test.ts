@@ -11,7 +11,7 @@ import { nodeTypeDef } from "@/schema/registry";
 import { createProject, type ProjectDocument } from "@/schema/project";
 import { NodeSchema } from "@/schema/nodes";
 import { getTemplate, TEMPLATES } from "@/templates";
-import { EVENTS, getEvent, payloadFields } from "@/schema/events";
+import { EVENTS, getEvent, isPrimitivePayload, payloadFields } from "@/schema/events";
 import type { NodeDoc } from "@/schema/nodes";
 import type { EdgeDoc } from "@/schema/edges";
 
@@ -129,7 +129,7 @@ function stubSdk(calls: string[], listeners: [string, (d: unknown) => void][]) {
         RegisterModPackage: (c: unknown) => (registered as any).mod = c,
         Network: {
             createSubnetNetwork: (d: { ip: string }) => { calls.push(`net:${d.ip}`); return d.ip; },
-            createWifiNetwork: () => calls.push("wifi"),
+            createWifiNetwork: (d: { ip?: string }) => { calls.push(`wifi:${d.ip ?? ""}`); return d.ip ?? "wifi-ip"; },
             createUser: (u: unknown) => u,
             randomIp: () => "10.9.9.9",
         },
@@ -327,7 +327,7 @@ describe("world.wifi against the real SDK surface", () => {
         return p;
     }
 
-    it("falls back to a router network when the SDK has no Wi-Fi API (0.21.0 reality)", async () => {
+    it("falls back to a router network when the SDK has no Wi-Fi creator", async () => {
         const calls: string[] = [];
         const listeners: [string, (d: unknown) => void][] = [];
         const sdk = stubSdk(calls, listeners);
@@ -337,19 +337,34 @@ describe("world.wifi against the real SDK surface", () => {
         q.OnStart();
         await settle();
         expect(calls).toContain("net:10.0.0.77");
-        expect(calls.join(" ")).not.toContain("wifi");
+        expect(calls.join(" ")).not.toContain("wifi:");
     });
 
-    it("prefers a native Wi-Fi API if a future SDK ships one", async () => {
+    it("uses SDK 0.24's native Wi-Fi creator when it is present", async () => {
         const calls: string[] = [];
         const listeners: [string, (d: unknown) => void][] = [];
         const sdk = stubSdk(calls, listeners);
+        const made: Record<string, unknown>[] = [];
+        (sdk.Network as any).createWifiNetwork = (d: Record<string, unknown>) => {
+            made.push(d);
+            calls.push(`wifi:${String(d.ip ?? "")}`);
+            return d.ip;
+        };
         runMod(compileProject(wifiProject()).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
         const q = new (sdk as any).__registered.quests[0]();
         q.OnStart();
         await settle();
-        expect(calls).toContain("wifi");
+        expect(calls).toContain("wifi:10.0.0.77");
         expect(calls.join(" ")).not.toContain("net:10.0.0.77");
+        expect(made[0]).toMatchObject({
+            ssid: "CafeNet",
+            password: "cake",
+            signal: 2,
+            ip: "10.0.0.77",
+            users: [],
+            ports: [],
+            children: [],
+        });
     });
 });
 
@@ -2661,10 +2676,11 @@ describe("lynx results do not send the player somewhere that crashes", () => {
  *     objective "identify-target": Terminal.Lynx.Search fired but did not
  *     match. Event carried: "Anselm Ritter"
  *
- * A bare string. The SDK declares `Terminal.Lynx.Search` as `{ query: string }`
- * and the editor offers "query" as a field on that basis, so the condition read
- * `.query` off a string, got undefined, and never matched. The dossier printed
- * correctly the whole time — only the objective was stuck.
+ * A bare string. Older SDKs declared `Terminal.Lynx.Search` as `{ query: string }`,
+ * so the editor offered "query" and saved projects with that condition field.
+ * The runtime still has to match those projects after SDK 0.24.0 corrected the
+ * declaration to `string`. The dossier printed correctly the whole time — only
+ * the objective was stuck.
  *
  * This is a fourth instance of the pattern that has run through this whole
  * project: the declarations describe one thing and the build does another. The
@@ -2755,8 +2771,9 @@ describe("conditions survive an event whose real shape is not the declared one",
  *
  * The risk class is precise: an event the SDK declares as an object with
  * exactly ONE field can plausibly arrive as a bare value instead — that is what
- * `Terminal.Lynx.Search` turned out to do. There are 19 such events, plus the
- * 3 the SDK already declares as primitives.
+ * `Terminal.Lynx.Search` did before SDK 0.24.0 corrected its declaration. The
+ * runtime also has to keep matching the events the SDK now declares as bare
+ * primitive values.
  */
 describe("every event the editor offers works in both shapes", () => {
     function fires(event: string, field: string, value: string, payload: unknown) {
@@ -2785,8 +2802,8 @@ describe("every event the editor offers works in both shapes", () => {
     const singleField = EVENTS.filter((e) => payloadFields(e.payload).length === 1);
 
     it("finds the single-field events, so this test cannot quietly cover nothing", () => {
-        expect(singleField.length).toBeGreaterThan(15);
-        expect(singleField.map((e) => e.name)).toContain("Terminal.Lynx.Search");
+        expect(singleField.length).toBeGreaterThan(0);
+        expect(singleField.map((e) => e.name)).toContain("Terminal.Dig");
     });
 
     it("matches every single-field event in its DECLARED object shape", () => {
@@ -2799,7 +2816,7 @@ describe("every event the editor offers works in both shapes", () => {
     });
 
     it("matches every single-field event when it really arrives as a bare value", () => {
-        // This is the lynx case, applied to all 19 of its risk class.
+        // This is the historical lynx case, applied to every event still in its risk class.
         const broken: string[] = [];
         for (const e of singleField) {
             const f = payloadFields(e.payload)[0];
@@ -2809,7 +2826,7 @@ describe("every event the editor offers works in both shapes", () => {
     });
 
     it("matches the events the SDK already declares as primitives", () => {
-        const prims = EVENTS.filter((e) => !e.payload.trim().startsWith("{"));
+        const prims = EVENTS.filter((e) => isPrimitivePayload(e.name));
         expect(prims.length).toBeGreaterThan(0);
         const broken: string[] = [];
         for (const e of prims) {
@@ -2845,17 +2862,17 @@ describe("every event the editor offers works in both shapes", () => {
  * These are the pairs the "Standard Contract Hack" walkthrough depends on.
  */
 describe("scripted tool responses line up with the events they should raise", () => {
-    const PAIRS: [string, string, string][] = [
-        // tool             event                       field an author matches on
+    const PAIRS: [string, string, string | null][] = [
+        // tool             event                       field an author matches on; null = match the whole payload
         ["nmap", "Terminal.NmapScan", "ip"],
         ["whois", "Terminal.Whois", "domain"],
         ["nslookup", "Terminal.Nslookup", "domain"],
         ["mxlookup", "Terminal.Mxlookup", "domain"],
         ["ping", "Terminal.Ping", "ip"],
-        ["lynx", "Terminal.Lynx.Search", "query"],
-        ["geoip", "Terminal.Geoip", "ip"],
+        ["lynx", "Terminal.Lynx.Search", null],
+        ["geoip", "Terminal.Geoip", null],
         ["hydra", "Terminal.Hydra", "ip"],
-        ["ftp", "Terminal.FTP.Connect", "ip"],
+        ["ftp", "Terminal.FTP.Connect", null],
     ];
 
     it("names only events the SDK declares", () => {
@@ -2864,8 +2881,12 @@ describe("scripted tool responses line up with the events they should raise", ()
         }
     });
 
-    it("matches on fields those events actually carry", () => {
+    it("matches on fields those events carry, or on the whole value for primitives", () => {
         for (const [tool, event, field] of PAIRS) {
+            if (field === null) {
+                expect(isPrimitivePayload(event), `${tool} -> ${event}`).toBe(true);
+                continue;
+            }
             const fields = payloadFields(getEvent(event)!.payload);
             expect(fields, `${tool} -> ${event}`).toContain(field);
         }

@@ -463,7 +463,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         sources: [whenOut],
         hook: "declarative",
         fields: [
-            { kind: "event", key: "event", label: "Game event", hint: "All 92 HackHub events, listed with the details each one carries." },
+            { kind: "event", key: "event", label: "Game event", hint: "All supported HackHub events, listed with the details each one carries." },
             { kind: "conditions", key: "conditions", label: "Only when", hint: "Leave empty to fire on any occurrence." },
         ],
         create: () => seed(TriggerEventDataSchema),
@@ -517,10 +517,10 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            { kind: "note", tone: "warn", text: "The mod SDK (0.21.0) has no wireless API yet, so this node exports as a regular router network: the player reaches it by IP address, not through the in-game Wi-Fi list. The SSID and passphrase are stored in the mod and start working if the game opens that up." },
+            { kind: "note", tone: "warn", text: "The SDK now declares wireless creation, but this node stays out of the palette until in-game QA verifies the whole shape. Legacy projects that already contain it still export." },
             { kind: "text", key: "ssid", hint: "The network name shown in the in-game Wi-Fi list.", label: "Network name (SSID)", mono: true, generate: { kind: "ssid", label: "network name" } },
             { kind: "text", key: "password", label: "WPA passphrase", mono: true, hint: "The passphrase the player must discover. Make sure some node in your quest reveals it." },
-            { kind: "slider", key: "signal", label: "Signal strength", min: 0, max: 3, step: 1, hint: "The game's Wi-Fi scale: 0 = weakest, 3 = strongest (it also drives how long joining takes). The current mod SDK does not read it yet — it is kept for when wireless support lands." },
+            { kind: "slider", key: "signal", label: "Signal strength", min: 0, max: 3, step: 1, hint: "The game's Wi-Fi scale: 0 = weakest, 3 = strongest. It also drives how long joining takes." },
             { kind: "text", key: "model", label: "Router model", mono: true, generate: { kind: "routerModel", label: "router model" }, hint: "Enables the in-game `fern` recovery route. Leave blank to disable it." },
             {
                 kind: "list",
@@ -1192,14 +1192,12 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
  * Node types that exist in the engine and schema but are deliberately not
  * offered in the editor's palette or add-node search.
  *
- * `world.wifi` is the reservation for the in-game wireless system (the game
- * generates hackable Wi-Fi networks, and switching between them lowers
- * suspicion), but SDK 0.21.0 ships no wireless API — the node falls back to a
- * plain router network and `ssid`/`password`/`signal` are stored but not read.
- * It is kept in `NODE_TYPES_REGISTRY` (and the schema) so legacy projects that
- * already use it still parse, compile and render; it is only hidden from the
- * authoring surface so nobody builds a "Wi-Fi" quest that cannot be validated.
- * Re-enable by removing it from this set once the SDK ships the API.
+ * `world.wifi` is the reservation for the in-game wireless system. SDK
+ * 0.24.0 declares the native creator, and legacy projects that already contain
+ * the node now export through it when possible, with the router fallback kept
+ * for older game builds. It stays hidden from new authoring until an in-game QA
+ * pass confirms SSID/password/signal/children/cleanup all behave as expected.
+ * Re-enable by removing it from this set only after that pass.
  */
 export const PALETTE_HIDDEN_TYPES: ReadonlySet<NodeType> = new Set(["world.wifi"]);
 

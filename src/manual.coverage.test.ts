@@ -521,7 +521,7 @@ describe("manual coverage — G12: furniture nodes", () => {
  *   G13  the event count is stated in prose in four pages; G10 only checked
  *        the front-page chip, so the other four occurrences could go stale
  *        in silence
- *   G14  appendices.html renders all 92 event names; nothing compared them to
+ *   G14  appendices.html renders every event name; nothing compared them to
  *        the catalogue
  *   G15  the build stamp is in 43 pages. `npm run gen:manual` refreshes the 32
  *        generated node pages from inventory.editorBuild; the other 11 are

@@ -57,9 +57,10 @@
 <p>Puts money into the player's bank account.</p>
 
 <h2>When you'd use it</h2>
-<p>Use it when the story pays off. A client wires you a fee after you hand over
-the file. A employer settles up once the last objective ticks. A refund arrives
-after the player fixes something they broke.</p>
+<p>Use it when the player is supposed to receive money in their bank account.
+A client wires the player a fee after they hand over the file. An employer
+settles up once the last objective completes. A refund arrives after the player
+fixes something they broke.</p>
 <p>Most quests pay once, near the end. If the money is the reward for one
 specific step, wire this node directly after the objective that earns it, so a
 player who takes a different route does not get paid for work they skipped.</p>
@@ -69,16 +70,17 @@ player who takes a different route does not get paid for work they skipped.</p>
 gains one line, reading whatever you typed in <b class="ui">Description</b>,
 sent by whoever you named in <b class="ui">From name</b>.</p>
 <p>Nothing pops up on screen by default. If you want the player to notice the
-payment as it lands, add a <a href="fx-notify.html">Notify</a> node beside
-this one — a balance that changes with nothing on screen gets overlooked.</p>
+payment as it lands, add a <a href="fx-notify.html">Notify</a> node after
+this one — a balance that changes with nothing on screen gets overlooked or can
+feel like a bug.</p>
 
 <h2>Fields</h2>
 
 <h3 id="node-fx-pay-field-amount">Amount</h3>
 <blockquote class="blurb">Credits deposited into the player's bank account.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>A whole number of credits. The fee, the bounty, the settlement.</dd>
-  <dt>Example</dt><dd><code>2500</code></dd>
+  <dt>What to put here</dt><dd>A whole number of dollars. The fee, the bounty, the settlement.</dd>
+  <dt>Example</dt><dd><code>100</code></dd>
   <dt>Default</dt><dd><code>100</code></dd>
   <dt>Limits</dt><dd>0 or more. Decimals are not accepted.</dd>
   <dt>If you leave it empty</dt><dd><b>The payment never happens, and nothing tells you.</b> The exported mod skips the whole transaction when the amount is not above zero — no error, no warning, no line in the bank statement. Check this first when a payment does not arrive.</dd>
@@ -90,7 +92,8 @@ this one — a balance that changes with nothing on screen gets overlooked.</p>
   <dt>What to put here</dt><dd>The words the player reads on their statement. Write it the way a bank would, because the player reads it as evidence that the job paid out.</dd>
   <dt>Example</dt><dd><code>Meridian Capital — contract settlement</code></dd>
   <dt>Default</dt><dd><code>Job payment</code></dd>
-  <dt>Limits</dt><dd>Any text.</dd>
+  <dt>Limits</dt><dd>Technically any text, but keep it short — a bank statement
+  line is only a few words, and the game may cut a long one.</dd>
   <dt>If you leave it empty</dt><dd>The statement line has no label, so the player sees money appear from nowhere.</dd>
   <dt>Watch out</dt><dd>This is a good place for a runtime tag if the amount should read differently per player — see <a href="../guides.html#generate-tags">Generate and tags</a>.</dd>
 </dl>
@@ -117,13 +120,6 @@ this one — a balance that changes with nothing on screen gets overlooked.</p>
   <dt>Watch out</dt><dd>Keep this consistent with whoever hired the player. A payment from a name the story never mentioned reads as a mistake, not a mystery.</dd>
 </dl>
 
-<div class="note"><b>An older kind of payment.</b> If you open a project made
-before this build, a <b>Pay the player</b> node in it may pay a percentage of
-the player's balance instead of a fixed sum. Those still work exactly as they
-were written, and the node shows a note saying so. You cannot set that up on a
-new node — a percentage is now the job of
-<a href="fx-withdraw.html">Charge the player</a>, which takes money out.</div>
-
 <h2>Wires</h2>
 <table>
   <thead><tr><th>Socket</th><th>Direction</th><th>What to connect</th><th>Required?</th><th>If left unconnected</th></tr></thead>
@@ -148,7 +144,7 @@ new node — a percentage is now the job of
   <li>Find <b class="ui">Pay the player</b> under <b>Effects</b> in the palette on the left.</li>
   <li>Drag it onto the canvas, near the node that earns the payment.</li>
   <li>Drag a wire from that node's <b class="ui">Out</b> socket into this node's <b class="ui">In</b> socket. The wire turns the flow colour, which means the two are the same kind of connection.</li>
-  <li>Select the node and type the amount. <b>2500</b> is a reasonable first fee.</li>
+  <li>Select the node and type the amount. <b>100</b> is a reasonable first fee.</li>
   <li>Type a statement label — something a bank would print.</li>
   <li>Roll the dice beside <b class="ui">From IBAN</b> and <b class="ui">From name</b> to fill in a believable sender, then edit the name to match your client.</li>
   <li>Look at the status bar. It should show no issues for this node. If it says <b>Unreachable</b>, the wire in step 3 did not take.</li>
@@ -156,7 +152,7 @@ new node — a percentage is now the job of
 
 <figure>
   <img src="../img/node-fx-pay-inspector.png"
-       alt="The Pay the player node selected on the canvas, with its inspector open on the right showing the Amount field set to 2500, a Description reading Meridian Capital — contract settlement, and a From IBAN and From name filled in." />
+       alt="The Pay the player node selected on the canvas, with its inspector open on the right showing the Amount field set to 100, a Description reading Meridian Capital — contract settlement, and a From IBAN and From name filled in." />
   <figcaption>The inspector for <b>Pay the player</b>, with all four fields
   filled in. Notice the dice button beside <b>From IBAN</b> and <b>From
   name</b> — one click writes a believable sender.</figcaption>
@@ -168,7 +164,6 @@ new node — a percentage is now the job of
   <li><b>The node is not wired in.</b> A payment floating on its own never runs. Wire something into <b class="ui">In</b>.</li>
   <li><b>The sender is half filled in.</b> An account number with no name, or a name with no account, makes the statement look broken. Fill in both.</li>
   <li><b>The player never notices.</b> The balance changes with nothing on screen. Add a <a href="fx-notify.html">Notify</a> if the payment is the payoff of the whole quest.</li>
-  <li><b>You wanted a percentage.</b> This node pays a fixed sum. Taking a slice of the balance is <a href="fx-withdraw.html">Charge the player</a>.</li>
 </ul>
 
 <h2>Messages you might see</h2>

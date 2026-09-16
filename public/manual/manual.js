@@ -78,9 +78,13 @@
         });
     }
 
+    /* Some pages carry more than one search box (the index page adds a big one
+       under the hero), so wire every one rather than only the first. */
     function initSearch() {
-        var box = document.querySelector(".search");
-        if (!box) return;
+        Array.prototype.slice.call(document.querySelectorAll(".search")).forEach(wireSearch);
+    }
+
+    function wireSearch(box) {
         var input = box.querySelector("input");
         var out = box.querySelector(".results");
         if (!input || !out) return;

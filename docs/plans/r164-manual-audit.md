@@ -243,6 +243,7 @@ Prioritised by reader pain. None of this was changed; all of it is a proposal.
 | **P4** | `Create Wi-Fi` is registered, categorised, warned about — and unobtainable | `registry.ts:1204` | Either surface it in the palette with a "not available in this SDK build" state, or the docs must say it plainly. Today neither happens. |
 | **P5** | Third warning level is invisible in the docs' mental model | `compile.ts` `info` ×5 | Either fold `info` into the reader-facing vocabulary deliberately, or the manual documents three tiers. |
 | **P6** | The templates gallery has better copy than the manual | `templates/index.ts` descriptions vs manual's "A worked example quest." | Surface `description`/`difficulty`/`nodeCount` in the Templates dialog if not already, and let the manual inherit it. |
+| **P7** | The **Pay the player** hint says "Credits" but the game's money is dollars | `registry.ts:846` hint: "Credits deposited into the player's bank account." | Zeis confirmed the game uses dollars. The manual now says dollars in its prose; the quoted field hint still says "Credits" until this copy is fixed. Change the hint (and the **Charge the player** sibling at `registry.ts:864`) to "dollars" in the same round as the manual, so the two agree. |
 
 ---
 

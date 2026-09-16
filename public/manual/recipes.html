@@ -91,6 +91,7 @@ never finish the quest.</p>
   <li><b>The objective still shows an error.</b> The wire went into <b class="ui">In</b> instead of <b class="ui">Trigger</b>. Delete it and try again — the two sockets are different colours for exactly this reason.</li>
   <li><b>It ticks too early, or on the wrong file.</b> The condition is too loose, or missing. Narrow it, or add a second clause.</li>
   <li><b>It never ticks even though the player did the thing.</b> The event you picked is not the one the game fires for that action. A file pulled over ssh raises two events, and listening to only one is a common miss — see <a href="troubleshooting.html#objective-never-ticks">the objective never ticks</a>.</li>
+  <li><b>You still can't see why.</b> Drop a <a href="nodes/flow-debug.html">Debug probe</a> after the objective and run a dry run. It prints what each node does when it fires — and whether it fires at all — so you can tell if the trigger is even going off.</li>
 </ul>
 </section>
 

@@ -121,8 +121,7 @@ archived once it has stayed fixed for a few rounds.
 | # | Item | Notes |
 |---|---|---|
 | 1 | **SDK 0.24 follow-up choices** | Wi-Fi is exposed, and phone end-flow / quest-ending APIs landed in r169 after raw QA. Current queue: UI.prompt options, mail cleanup/replyability QA, Twotter update/remove QA, then Scheduler/Time design. HTTP/curl/DNS collaborator nodes stay fenced until SteelWaffe answers the upstream gaps. See [`docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md`](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md). |
-| 2 | Old quest mail cleanup | SDK 0.24.0 now declares `Mail.send(): string \| null` and `Mail.remove(id)`, so this can become a real feature after a focused in-game QA pass verifies ids, replyable mail, and cleanup timing. |
-| 3 | **Date deprecation warning (`moment` RFC2822)** | Only appears with a quest-editor mod installed, 30–90s after a mail is sent, when a browser or app screen is opened. The stack is the game's own date formatting and we never set a date on anything — question 10 in the bug report. |
+| 2 | **Date deprecation warning (`moment` RFC2822)** | Only appears with a quest-editor mod installed, 30–90s after a mail is sent, when a browser or app screen is opened. The stack is the game's own date formatting and we never set a date on anything — question 10 in the bug report. |
 
 ### Next up
 

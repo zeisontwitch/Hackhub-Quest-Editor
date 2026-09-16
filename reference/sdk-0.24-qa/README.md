@@ -51,11 +51,11 @@ curl http://qe24-http.test/
 
 # Terminal B
 qe24 intercept queue
-qe24 intercept forward
-qe24 intercept off
+qe24 intercept forward  # forwards and turns intercept off in the current harness
+qe24 intercept off      # optional cleanup/safe no-op
 ```
 
-Expected result: the `http-intercepted` objective ticks, `qe24 intercept queue` shows one held `GET` request, and the waiting Browser/`curl` request prints the page after `forward`.
+Expected result: the `http-intercepted` objective ticks, `qe24 intercept queue` shows one held `GET` request, and the waiting Browser/`curl` request prints the page after `forward`. A blank/dark page while intercept is on normally means the request is held.
 
 If anything gets stuck, use Terminal B:
 
@@ -78,19 +78,19 @@ Then use the in-game Browser for browser-compatible URLs:
 - `http://qe24-http.test/api/echo?from=browser`
 - the `http://<random>.qe24-collab.test/qe24` URL printed by `qe24 collab`
 
-Record H-02/H-04/H-06 as `Blocked` if there is no way to issue player-side HTTP from that build.
+Record the curl subcase as `Blocked` if `curl` is missing. H-04 and H-06 can still pass through the in-game Browser fallback if the Browser URL is held/forwarded or the collaborator hit appears.
 
 ## Raw harness commands
 
 - `qe24 guide` — explain what each test is for and the safe run order.
 - `qe24 seed` — create/re-register the per-save HTTP host and native Wi-Fi AP.
-- `qe24 status` — print the current host, Wi-Fi password, Time.now, scheduler queue count, HTTP history count and Wi-Fi scan count.
+- `qe24 status` — print the current host, Wi-Fi password, Time.now, scheduler queue count, HTTP history/intercept state, target Wi-Fi details and connected Wi-Fi details.
 - `qe24 history` — print recent HTTP history, collaborator hits and held intercept requests; useful evidence when game logs are unavailable.
 - `qe24 http-fetch` — make a server-origin HTTP request through `Http.fetch()`.
 - `qe24 schedule 1` — schedule a job one in-game minute in the future; use the clock Wait button or let game time advance.
 - `qe24 collab` — mint a collaborator subdomain and print a Browser URL plus a `curl` command for builds that have curl.
 - `qe24 intercept` — print the two-terminal intercept instructions.
-- `qe24 intercept on|queue|forward|drop|off` — exercise HTTP interception; always forward/off after a probe.
+- `qe24 intercept on|queue|forward|drop|off` — exercise HTTP interception. In the current harness, `forward` and `drop` also turn intercept off to avoid accidentally holding later Browser requests.
 - `qe24 claim complete|button|retire|unclaim` — claim the focused quest-completion probes.
 - `qe24 complete`, `qe24 button-ready`, `qe24 retire`, `qe24 unclaim` — trigger each completion/cleanup API probe.
 - `qe24 reset` — clear the harness's saved IPs, unregister the host domain if possible and destroy known test networks.
@@ -105,6 +105,6 @@ Raw harness fixed values:
 ## Safety notes
 
 - The harness uses `SaveStorage` to remember generated network IPs per save. It does not use shared/global storage for per-save state.
-- HTTP interception can make browser/curl requests appear hung. Run `qe24 intercept forward` or `qe24 intercept off` immediately after the intercepted request is recorded.
+- HTTP interception can make browser/curl requests appear hung. Run `qe24 intercept forward` or `qe24 intercept off` immediately after the intercepted request is recorded. If left on, the engine may show blank/dark pages until its held-request timeout forwards traffic.
 - `qe24 reset` is scoped to the IPs the harness stored in the current save, but use a throwaway save anyway.
 - Results should be recorded in `docs/plans/r166-sdk-0.24-ingame-qa.md`; only lift editor fences after those rows are green in-game.

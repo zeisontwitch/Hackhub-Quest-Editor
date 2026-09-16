@@ -15,6 +15,7 @@ var HTTP_HOST = "qe24-http.test";
 var COLLAB_DOMAIN = "qe24-collab.test";
 var WIFI_SSID = "QE24-RAW-5G";
 var WIFI_PASSWORD = "correct-horse-battery";
+var WIFI_BSSID = "02:24:00:00:24:01";
 var SCHEDULE_KIND = MOD_ID + ".scheduled-mail";
 var HTTP_IP_KEY = "qe24.httpIp";
 var WIFI_IP_KEY = "qe24.wifiIp";
@@ -62,6 +63,26 @@ function saveRemove(key) {
 function createUser(options) {
     if (sdk.Network && sdk.Network.createUser) return sdk.Network.createUser(options);
     return Object.assign({}, options);
+}
+
+function wifiMatchesTarget(wifiOrSubnet) {
+    if (!wifiOrSubnet) return false;
+    var wifi = wifiOrSubnet.wifiNetwork || wifiOrSubnet;
+    var savedIp = saveGet(WIFI_IP_KEY);
+    return wifi.ssid === WIFI_SSID || wifi.name === WIFI_SSID || wifi.bssid === WIFI_BSSID || wifi.mac === WIFI_BSSID || (savedIp && (wifi.ip === savedIp || wifiOrSubnet.ip === savedIp));
+}
+
+function describeWifi(wifiOrSubnet) {
+    if (!wifiOrSubnet) return "unavailable";
+    var wifi = wifiOrSubnet.wifiNetwork || wifiOrSubnet;
+    var name = wifi.name || wifi.ssid || "?";
+    var ip = wifiOrSubnet.ip || wifi.ip || "?";
+    var bssid = wifi.bssid || wifi.mac || "?";
+    var channel = wifi.channel != null ? wifi.channel : "?";
+    var wps = wifi.wps != null ? wifi.wps : "?";
+    var signal = wifi.signal != null ? wifi.signal : wifi.level != null ? wifi.level : "?";
+    var rssi = wifi.rssi != null ? wifi.rssi : "?";
+    return name + " ip=" + ip + " bssid=" + bssid + " channel=" + channel + " wps=" + wps + " signal=" + signal + " rssi=" + rssi;
 }
 
 function registerScheduler() {
@@ -197,7 +218,7 @@ function ensureWifi() {
             ssid: WIFI_SSID,
             password: WIFI_PASSWORD,
             signal: 3,
-            bssid: "02:24:00:00:24:01",
+            bssid: WIFI_BSSID,
             channel: 44,
             wps: true,
             ip: desiredIp,
@@ -288,8 +309,8 @@ function printInterceptGuide(tools) {
     tools.println("1. Terminal A: qe24 intercept on");
     tools.println("2. Terminal A: open http://" + HTTP_HOST + "/ in Browser, or run curl http://" + HTTP_HOST + "/ if curl exists");
     tools.println("3. Terminal B: qe24 intercept queue");
-    tools.println("4. Terminal B: qe24 intercept forward");
-    tools.println("5. Terminal B: qe24 intercept off");
+    tools.println("4. Terminal B: qe24 intercept forward  (this harness also turns intercept off)");
+    tools.println("5. Optional cleanup: qe24 intercept off");
     tools.println("");
     tools.println("What to look for: the http-intercepted objective ticks, queue shows one GET request, and the waiting browser/curl prints the page after forward.");
     tools.println("If the terminal says curl is not found, no request was made. Run qe24 intercept off and record curl-specific rows as Blocked.");
@@ -361,12 +382,21 @@ class QE24SurfaceProbe extends sdk.Quest {
         this.Events.on("QE24.SchedulerFired", function (job) {
             done("scheduler-fired", job && job.id ? job.id : "job fired");
         });
+        var currentWifi = sdk.Network && sdk.Network.getConnectedWifi ? safe("Network.getConnectedWifi", function () { return sdk.Network.getConnectedWifi(); }, null) : null;
+        var sawTargetWifi = wifiMatchesTarget(currentWifi);
         this.Events.on("Network.WifiConnected", function (ap) {
-            var wifiName = ap && ap.wifiNetwork ? (ap.wifiNetwork.name || ap.wifiNetwork.ssid) : ap && (ap.ssid || ap.name);
-            if (wifiName === WIFI_SSID || (ap && ap.ip === saveGet(WIFI_IP_KEY))) done("wifi-connect", wifiName || "connected");
+            if (wifiMatchesTarget(ap)) {
+                sawTargetWifi = true;
+                done("wifi-connect", describeWifi(ap));
+            }
         });
         this.Events.on("Network.WifiDisconnected", function () {
-            done("wifi-disconnect", "no payload");
+            if (sawTargetWifi) {
+                sawTargetWifi = false;
+                done("wifi-disconnect", "payload=null after QE24 Wi-Fi was connected");
+            } else {
+                log("ignored wifi-disconnect before QE24 Wi-Fi connect");
+            }
         });
     }
     OnComplete() { log("QE24SurfaceProbe OnComplete fired"); }
@@ -509,14 +539,19 @@ class QE24Command extends sdk.Command {
             var jobs = sdk.Scheduler && sdk.Scheduler.list ? safe("Scheduler.list", function () { return sdk.Scheduler.list(SCHEDULE_KIND); }, []) : [];
             var history = sdk.Http && sdk.Http.history ? safe("Http.history", function () { return sdk.Http.history(); }, []) : [];
             var queue = sdk.Http && sdk.Http.interceptQueue ? safe("Http.interceptQueue", function () { return sdk.Http.interceptQueue(); }, []) : [];
+            var interceptOn = sdk.Http && sdk.Http.interceptEnabled ? safe("Http.interceptEnabled", function () { return sdk.Http.interceptEnabled(); }, false) : "unavailable";
             var wifis = sdk.Network && sdk.Network.getWifiNetworks ? safe("Network.getWifiNetworks", function () { return sdk.Network.getWifiNetworks(); }, []) : [];
+            var targetWifi = Array.isArray(wifis) ? wifis.filter(wifiMatchesTarget)[0] : null;
+            var currentWifi = sdk.Network && sdk.Network.getConnectedWifi ? safe("Network.getConnectedWifi", function () { return sdk.Network.getConnectedWifi(); }, null) : null;
             tools.println("QE24 SDK 0.24 QA harness");
             tools.println("Host: http://" + HTTP_HOST + "/");
             tools.println("Wi-Fi: " + WIFI_SSID + " / " + WIFI_PASSWORD);
             tools.println("Time.now: " + (sdk.Time && sdk.Time.now ? sdk.Time.now() : "unavailable") + " scale=" + (sdk.Time && sdk.Time.scale ? sdk.Time.scale() : "unavailable"));
             tools.println("Scheduler pending: " + (jobs && jobs.length != null ? jobs.length : "?"));
-            tools.println("HTTP history: " + (history && history.length != null ? history.length : "?") + "; intercept queue: " + (queue && queue.length != null ? queue.length : "?"));
+            tools.println("HTTP history: " + (history && history.length != null ? history.length : "?") + "; intercept enabled: " + interceptOn + "; intercept queue: " + (queue && queue.length != null ? queue.length : "?"));
             tools.println("Visible Wi-Fi networks: " + (wifis && wifis.length != null ? wifis.length : "?"));
+            tools.println("Target Wi-Fi details: " + describeWifi(targetWifi));
+            tools.println("Connected Wi-Fi: " + describeWifi(currentWifi));
             tools.println("Tip: run qe24 guide for the plain-English checklist, qe24 intercept for proxy-test steps, or qe24 history for HTTP/collab evidence.");
             tools.println("Commands: qe24 guide · qe24 status · qe24 history · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 reset");
             return;
@@ -557,6 +592,10 @@ class QE24Command extends sdk.Command {
         if (sub === "collab") {
             registerHttp();
             if (!sdk.Http || !sdk.Http.mintCollaboratorSubdomain) { tools.printError("collaborator APIs unavailable"); return; }
+            var collabInterceptOn = sdk.Http.interceptEnabled ? safe("Http.interceptEnabled", function () { return sdk.Http.interceptEnabled(); }, false) : false;
+            if (collabInterceptOn) {
+                tools.printWarning ? tools.printWarning("Intercept is still ON. Run qe24 intercept off before opening the collaborator URL unless you are deliberately testing held collaborator traffic.") : tools.println("Warning: intercept is still ON; run qe24 intercept off before opening the collaborator URL.");
+            }
             var host = sdk.Http.mintCollaboratorSubdomain();
             tools.println("Open in Browser: http://" + host + "/qe24");
             tools.println("Or, if your game build has curl, run: curl http://" + host + "/qe24");
@@ -575,9 +614,10 @@ class QE24Command extends sdk.Command {
                 return;
             }
             if (mode === "off") { sdk.Http.setInterceptEnabled(false); if (sdk.Http.interceptForwardAll) sdk.Http.interceptForwardAll(); tools.println("Intercept OFF and any held requests forwarded."); return; }
-            if (mode === "forward") { if (sdk.Http.interceptForwardAll) sdk.Http.interceptForwardAll(); tools.println("Forwarded all held requests. The waiting browser/curl should continue now."); return; }
-            if (mode === "drop") { if (sdk.Http.interceptDropAll) sdk.Http.interceptDropAll(); tools.println("Dropped all held requests. The waiting browser/curl should fail now."); return; }
+            if (mode === "forward") { if (sdk.Http.interceptForwardAll) sdk.Http.interceptForwardAll(); sdk.Http.setInterceptEnabled(false); tools.println("Forwarded all held requests and turned intercept OFF. The waiting browser/curl should continue now."); return; }
+            if (mode === "drop") { if (sdk.Http.interceptDropAll) sdk.Http.interceptDropAll(); sdk.Http.setInterceptEnabled(false); tools.println("Dropped all held requests and turned intercept OFF. The waiting browser/curl should fail now."); return; }
             var held = sdk.Http.interceptQueue ? sdk.Http.interceptQueue() : [];
+            tools.println("Intercept enabled: " + (sdk.Http.interceptEnabled ? sdk.Http.interceptEnabled() : "unavailable"));
             tools.println("Held requests: " + held.length);
             if (!held.length) tools.println("No held requests. If you expected one, make sure intercept is on and use browser/curl traffic, not qe24 http-fetch. If curl is missing, try Browser or mark curl-only rows Blocked.");
             held.forEach(function (h) { tools.println(h.request.id + " " + h.request.method + " " + h.request.url); });

@@ -57,3 +57,40 @@ Colours are never invented here. They come from the editor's own palette, via
 `manual.css`'s `:root`: ten category hues, `ok`/`warn`/`danger`, and four wire
 kinds copied from `HANDLE_STYLE` in `src/schema/edges.ts`. If the editor
 changes a hue, the manual follows by editing that one block.
+
+## Messages come from four places, not three
+
+`checking.html` documents four sources, and the fourth was missing until the
+audit found it:
+
+| Source | Count | Extracted how |
+|---|---|---|
+| Canvas (`analysis/graph.ts`) | 5 | `label`/`detail`/`nextStep`/`severity` objects |
+| Inspector fields (`analysis/fields.ts`) | 5 | same shape |
+| Export (`compiler/compile.ts`) | 13 | `level:` + `text:` pairs |
+| **Panel editors (10 files)** | **10** | **none — hand-curated, gate G11** |
+
+The first three share a machine-readable shape, which is why a regex finds
+them. The fourth does not: those messages are plain JSX text inside whichever
+editor is describing the thing in front of you — the quest's **Health**
+section, the device tree, a database's tables, an addon card, the website
+builder. They never reach a node badge or the export report.
+
+### Why G11 is a curated list and not a scan
+
+Scanning for them was tried and rejected. Walking outward from a
+`text-warn`/`text-danger` class to the next JSX text node returned **7**
+messages at a 400-character window, **9** at 900 and **10** at 1600, because
+source indentation moves the closing tag. A gate whose count depends on line
+wrapping reports drift that is not there and hides drift that is.
+
+So G11 holds a known set and checks it in both directions: it fails when a
+listed message is reworded or deleted in `src/`, and when one is dropped from
+`checking.html`. Both directions were verified to fire.
+
+**The cost is stated plainly: G11 will not notice a brand-new inline
+message.** When you add a warning to an inspector editor, add it to
+`PANEL_MESSAGES` and to `checking.html`. A third test asserts that
+`StatusBar.tsx` still mentions no issues at all — the handbook once claimed the
+status bar carried the issue count, and the counter actually lives on the
+canvas.

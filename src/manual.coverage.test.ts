@@ -352,3 +352,116 @@ describe("manual coverage — G8: screenshots", () => {
         expect(orphans, `unreferenced files in public/manual/img/: ${orphans.join(", ")}`).toEqual([]);
     });
 });
+
+/* ── G11: panel messages ────────────────────────────────────────────────────
+ * Ten messages are written by the inspector's own editors rather than by the
+ * canvas analysis: the quest Health section, the device tree, a database's
+ * tables, an addon card, the website builder. They never reach a node badge or
+ * the export report, so nothing else in this suite can see them.
+ *
+ * The list is curated rather than extracted. Extraction was tried: scanning
+ * outward from a `text-warn`/`text-danger` class for the next JSX text node
+ * returned 7 messages at a 400-character window, 9 at 900 and 10 at 1600,
+ * because source indentation moves the closing tag. A gate whose answer depends
+ * on line wrapping is worse than no gate, so this checks a known set in both
+ * directions instead — it fails when a listed message is reworded or deleted in
+ * the source, and when one is dropped from checking.html.
+ *
+ * It will NOT notice a brand-new inline message. That is the accepted cost of
+ * being deterministic; re-run the scan when touching these editors.
+ */
+describe("manual coverage — G11: panel messages", () => {
+    const flat = (t: string) => t.replace(/\s+/g, " ").trim();
+    const PAGE = join(MANUAL, "checking.html");
+    const PANEL_MESSAGES: { src: string; inSource: string; inDocs: string }[] = [
+        {
+            src: "src/editor/inspector/InspectorPanel.tsx",
+            inSource: "no trigger wired in, so the player can never complete",
+            inDocs: "no trigger wired in, so the player can never complete",
+        },
+        {
+            src: "src/editor/inspector/DeviceTree.tsx",
+            inSource: "This router has no way in: set a model for `fern`, or enable",
+            inDocs: "This router has no way in",
+        },
+        {
+            src: "src/editor/inspector/DeviceTree.tsx",
+            inSource: "The SSH exploit lands in a guest account when it finds one",
+            inDocs: "The SSH exploit lands in a guest account",
+        },
+        {
+            src: "src/editor/inspector/TablesEditor.tsx",
+            inSource: "This table has no name, so the game will skip it.",
+            inDocs: "This table has no name, so the game will skip it.",
+        },
+        {
+            src: "src/editor/inspector/ConditionsEditor.tsx",
+            inSource: "Not one of this event's known details",
+            inDocs: "Not one of this event's known details",
+        },
+        {
+            src: "src/editor/inspector/sims/PackNodeEditor.tsx",
+            inSource: "Not set up yet — this card doesn&apos;t know which tool action it runs.",
+            inDocs: "know which tool action it runs",
+        },
+        {
+            src: "src/editor/inspector/sims/PackNodeEditor.tsx",
+            inSource: "game mod installed for this to work — say so in your quest",
+            inDocs: "game mod installed for this to work",
+        },
+        {
+            src: "src/editor/inspector/sims/PackDataEditor.tsx",
+            inSource: "pack isn't loaded on this machine",
+            inDocs: "pack isn't loaded on this machine",
+        },
+        {
+            src: "src/editor/inspector/sims/DialogueNodeEditor.tsx",
+            inSource: "Timed conversations are sent through the game's live messaging API, one",
+            inDocs: "Timed conversations are sent through",
+        },
+        {
+            src: "src/editor/websites/WebsiteBuilder.tsx",
+            inSource: "Not in search results — only a direct URL (or dirhunter) leads here.",
+            inDocs: "Not in search results",
+        },
+    ];
+
+    it("every panel message still exists in the source it came from", () => {
+        const gone: string[] = [];
+        for (const m of PANEL_MESSAGES) {
+            const source = flat(readFileSync(join(ROOT, m.src), "utf8"));
+            if (!source.includes(flat(m.inSource))) gone.push(`${m.src}: “${m.inSource}”`);
+        }
+        expect(
+            gone,
+            `${gone.length} panel messages have been reworded or removed in the source. Update\n` +
+                `  the list above and checking.html, or the docs are describing copy that no\n` +
+                `  longer ships:\n  ${gone.join("\n  ")}`,
+        ).toEqual([]);
+    });
+
+    it("documents every panel message", () => {
+        const docs = flat(readFileSync(PAGE, "utf8").replace(/<[^>]+>/g, " "));
+        const missing = PANEL_MESSAGES.filter((m) => !docs.includes(flat(m.inDocs))).map(
+            (m) => `${m.src}: “${m.inDocs}”`,
+        );
+        expect(
+            missing,
+            `${missing.length} panel messages are undocumented in checking.html:\n  ${missing.join("\n  ")}`,
+        ).toEqual([]);
+    });
+
+    it("claims the canvas chip, not the status bar, carries the issue count", () => {
+        // StatusBar.tsx has no reference to issues, warnings or the graph
+        // analysis at all — it reports saved state, counts and history. The
+        // counter lives on the canvas. This guards a claim that was once wrong.
+        const bar = readFileSync(join(ROOT, "src/editor/shell/StatusBar.tsx"), "utf8");
+        expect(
+            /issue|warning|analyseGraph/i.test(bar),
+            "StatusBar.tsx now mentions issues; the handbook's “where messages appear” list " +
+                "needs re-checking against it",
+        ).toBe(false);
+        const docs = readFileSync(PAGE, "utf8");
+        expect(docs).toContain("No issues");
+    });
+});

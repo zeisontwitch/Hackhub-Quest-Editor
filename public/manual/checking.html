@@ -44,7 +44,8 @@
 <main>
 <header class="hero">
   <h1>Checking your quest</h1>
-  <p class="tag">Every message the editor can show you, quoted exactly as it writes
+  <p class="tag">Every diagnostic message the editor can show you — on the canvas, in the
+  inspector, inside a panel and in the export report — quoted exactly as it writes
   it. Paste the wording into the search box to find the one you are looking at.</p>
 </header>
 
@@ -67,8 +68,16 @@ a login and no accounts.</p>
   <dt>In the inspector</dt><dd>Under the field the message is about, when you
   have that node selected. Field messages only show while the node is selected,
   so they cannot nag at you from the other side of the canvas.</dd>
-  <dt>In the status bar</dt><dd>A running count of what is wrong, and the
-  message for whichever node you last touched.</dd>
+  <dt>On the canvas, as a chip</dt><dd>A counter beside the canvas tools. It
+  reads <span class="mono">No issues</span> when the quest is clean, otherwise
+  <span class="mono">1 blocking, 3 to review</span> — blocking first, and only
+  the counts that are not zero. Hover it for every message in full, each with
+  its next step. Red means at least one blocking problem; amber means none.</dd>
+  <dt>Inside a panel</dt><dd>Ten further messages live in the editors
+  themselves — the quest's <b class="ui">Health</b> section, the device tree, a
+  database's tables, an addon card, the website builder. They describe the thing
+  you are looking at, so they appear beside it rather than on the node. See
+  <a href="#panel-messages">messages inside a panel</a>.</dd>
   <dt>In the export report</dt><dd>Everything the export checks found, listed
   before the <code>.zip</code> is written. See
   <a href="#pre-export">the report</a>.</dd>
@@ -88,7 +97,7 @@ find fault with, which is not the same as a quest that plays well — only playi
 it tells you that. See <a href="guides.html#dry-run">Dry run</a> for the closest
 thing to a test drive.</p>
 
-<h2 id="msg-index">Every message</h2>
+<h2 id="msg-index">Messages on the canvas and in the inspector</h2>
 <p>Each entry below quotes the editor's own wording. The exact text is what the
 search box matches, so copy it from the status bar rather than paraphrasing
 it.</p>
@@ -237,6 +246,130 @@ it.</p>
   it, and files land in a user's home folder. Export drops them.</dd>
   <dt class="dt-ok">What to do</dt><dd>Add a user account to that device in your
   <a href="nodes/world-network.html">Create network</a> node.</dd>
+</dl>
+
+<h2 id="panel-messages">Messages inside a panel</h2>
+<p>These ten do not come from the canvas analysis. Each one is written by the
+editor you are working in, about the thing in front of you. They never appear on
+a node badge and never reach the export report, which makes them the kind of
+problem that goes unnoticed. They are listed here in full.</p>
+
+<h3 id="msg-panel-objective-trigger">An objective the player can never complete</h3>
+<blockquote class="blurb">1 objective has no trigger wired in, so the player can never complete it.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Where</dt><dd>The <b class="ui">Quest</b> tab, in
+  <b class="ui">Health</b> at the bottom.</dd>
+  <dt>What it means</dt><dd>Nothing can tick that objective off. Not the story
+  flow, because nothing reaches it, and no event, because none is wired to its
+  trigger. The quest cannot be finished.</dd>
+  <dt class="dt-danger">What to do</dt><dd>Wire a <b class="ui">When event</b>
+  into its <b class="ui">Trigger</b> socket, or run a flow wire into its
+  <b class="ui">In</b> socket. <a href="concepts.html#objectives">Objectives</a>
+  explains the difference.</dd>
+</dl>
+
+<h3 id="msg-panel-router-no-way-in">A router the player cannot reach</h3>
+<blockquote class="blurb">This router has no way in: set a model for `fern`, or enable support-mail recovery.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Where</dt><dd>In the device tree, under the router.</dd>
+  <dt>What it means</dt><dd>Every route into that router is closed. The player
+  can see it exists and can do nothing with it, which usually stalls the quest
+  without any message telling them why.</dd>
+  <dt class="dt-danger">What to do</dt><dd>Give <code>fern</code> a model, or
+  switch on support-mail recovery. Either one opens a door.</dd>
+</dl>
+
+<h3 id="msg-panel-ssh-guest">An exploit that lands in the wrong account</h3>
+<blockquote class="blurb">The SSH exploit lands in a guest account when it finds one, so the player may need to switch user or crack a password to reach the accounts you wrote. Turn this off for a machine that should have only the accounts listed here.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Where</dt><dd>In the device tree, under a machine with the
+  exploit enabled.</dd>
+  <dt>What it means</dt><dd>This one is a reminder rather than a fault. The
+  player gets in, but not necessarily as the account you wrote your files into.
+  A quest that reads as broken is often this.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Leave it on if switching user is part of
+  the puzzle. Turn it off if the machine should hold only the accounts you
+  listed.</dd>
+</dl>
+
+<h3 id="msg-panel-table-no-name">A database table the game will skip</h3>
+<blockquote class="blurb">This table has no name, so the game will skip it.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Where</dt><dd>Under a table in a database editor.</dd>
+  <dt>What it means</dt><dd>The rows you typed will not exist in the game. The
+  player will search a table that was never created.</dd>
+  <dt class="dt-danger">What to do</dt><dd>Name the table. The rows survive as
+  soon as it has one.</dd>
+</dl>
+
+<h3 id="msg-panel-event-detail">A condition that tests a detail the event does not have</h3>
+<blockquote class="blurb">Not one of this event's known details</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Where</dt><dd>A small amber warning icon beside a
+  condition's value field. Hover it for this text.</dd>
+  <dt>What it means</dt><dd>You are comparing against a detail name this event
+  does not carry. The comparison will never be true, so the branch never
+  fires.</dd>
+  <dt class="dt-danger">What to do</dt><dd>Pick a detail from the list the
+  editor offers for that event. If the one you want is absent, this event cannot
+  answer the question you are asking.</dd>
+</dl>
+
+<h3 id="msg-panel-addon-not-set-up">An addon card that runs nothing</h3>
+<blockquote class="blurb">Not set up yet — this card doesn't know which tool action it runs. Delete it and drag the action in again from the palette's “Editor Mods” group. As it stands it does nothing.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Where</dt><dd>On an addon card in the inspector.</dd>
+  <dt>What it means</dt><dd>The card was made without the addon it belongs to
+  loaded. It has a shape but no action behind it.</dd>
+  <dt class="dt-danger">What to do</dt><dd>Delete the card and drag the action in
+  again, with the addon loaded. Editing the existing card will not fix it.</dd>
+</dl>
+
+<h3 id="msg-panel-addon-needs-mod">An addon the player does not have</h3>
+<blockquote class="blurb">Players need the Example Pack game mod installed for this to work — say so in your quest description.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Where</dt><dd>On an addon card, in both the tool-response
+  and pack-data editors.</dd>
+  <dt>What it means</dt><dd>The node works for you because you have the addon. A
+  player without it gets a quest that quietly does nothing, and no message tells
+  them what is missing.</dd>
+  <dt class="dt-warn">What to do</dt><dd>Name the addon in your quest
+  description. Nothing in the editor can say it for you.</dd>
+</dl>
+
+<h3 id="msg-panel-pack-not-loaded">A pack you cannot re-pick from</h3>
+<blockquote class="blurb">The Example Pack pack isn't loaded on this machine. Everything you chose here is saved in the project, so the node keeps working — load the pack again to pick a different data shape.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Where</dt><dd>In the pack-data editor.</dd>
+  <dt>What it means</dt><dd>Your choice is safe and the node still works. You cannot change the data shape until the
+  pack is loaded again.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Nothing, unless you want a different
+  shape. Load the addon to change it.</dd>
+</dl>
+
+<h3 id="msg-panel-timed-conversation">A conversation that plays live</h3>
+<blockquote class="blurb">Timed conversations are sent through the game's live messaging API, one message at a time with the delays you set. Player replies, uploads and “unlocks after” steps only work in the normal declarative script, and the game does not clean live messages up with the quest. Worth an in-game check before you ship it.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Where</dt><dd>Under <b class="ui">Play when the story
+  reaches this node</b> on a dialogue node, once it is switched on.</dd>
+  <dt>What it means</dt><dd>Live playback costs you three things: replies stop
+  working, uploads stop working, and the messages stay on the player's phone
+  after the quest ends.</dd>
+  <dt class="dt-warn">What to do</dt><dd>Leave it off unless you need the
+  conversation to land on a specific beat. If you need it, test the quest in the
+  game.</dd>
+</dl>
+
+<h3 id="msg-panel-page-unlisted">A page nobody can find</h3>
+<blockquote class="blurb">Not in search results — only a direct URL (or dirhunter) leads here.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Where</dt><dd>In the website builder, above the preview of
+  an unlisted page.</dd>
+  <dt>What it means</dt><dd>Deliberate, and often what you want: the player has
+  to be told the address or find it by brute force. It is a problem only if you
+  expected the page to be searchable.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Nothing, if hiding the page is the point.
+  Otherwise list it, and hand the player a way to reach it.</dd>
 </dl>
 
 <h2 id="pre-export">The report before you export</h2>

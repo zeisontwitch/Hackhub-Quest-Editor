@@ -127,3 +127,14 @@ Zeis~$ [/home/Zeis] qe24 schedule 10
 
 --> Executed command, save/logged out, reloaded save -> objective complete.
 
+---
+
+# Quick Tests:
+
+- Abandon from UI works.
+
+- qe24 reset works and after a reload, qe24 seed puts out "✓ QE24 per-save content seeded."
+
+- Breaking into our QE24 WiFi network (which is the main way a player gets access to those networks, so definitely worth a test) via bettercap does throw one error: When I use set wifi.ap 02:24:00:00:24:01 I get [21:23:49] [sys.log] Target AP set to 02:24:00:00:24:01 (SSID: undefined) in return. The SSID should not read undefined, but QE24-RAW-5G. Deauthing it however, does produce a [21:26:00] [sys.log] Handshake captured: /home/Zeis/qe24-raw-5g.pcap which is odd. The rest of the hack works without issues, I get the password after using hashcat on the pcap file.
+
+- I would test "DNS-only collaborator lookup if nslookup/dig exist" but I don't actually know what you want me to do here. I ran nslookup qe24-website.test just because, and it returned "No results found." which makes sense if we didn't add any results for the nslookup tool to find.

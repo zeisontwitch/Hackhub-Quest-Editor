@@ -34,19 +34,223 @@
   <p class="tag">Look-ups: every word, every key, and everything this editor cannot do yet.</p>
 </header>
 <section id="appendices">
-<div class="note warn"><b>Being written.</b> This page is scaffolding
-from the Phase 3 skeleton — the structure and anchors are final, the prose lands
-in Phase 4. Nothing here is a claim about the editor yet.</div>
+<p>Reference material: the words, the keys, the limits, and the full list of
+events. Nothing here needs reading in order.</p>
+
 <h2 id="glossary">Glossary</h2>
-<p>Written in Phase 4.</p>
+<dl class="facts-list">
+  <dt>Node</dt><dd>One card on the canvas. Each does one thing: send a message,
+  build a machine, pay the player.</dd>
+  <dt>Wire</dt><dd>The line joining two nodes. Wires decide what runs and in
+  what order; where the nodes sit decides nothing.</dd>
+  <dt>Socket</dt><dd>The point a wire attaches to. Every socket takes one kind
+  of wire and refuses the others.</dd>
+  <dt>Palette</dt><dd>The list of nodes down the left. Drag one out, or click it
+  to drop one in the middle.</dd>
+  <dt>Inspector</dt><dd>The panel on the right, with its
+  <b class="ui">Node</b>, <b class="ui">Quest</b> and <b class="ui">Mod</b>
+  tabs.</dd>
+  <dt>Field</dt><dd>One setting on a node. Every field is a dropdown, a switch,
+  a box to type in or a colour.</dd>
+  <dt>Hint</dt><dd>The grey sentence under a field. It is the editor's own
+  wording, and this handbook quotes it rather than paraphrasing.</dd>
+  <dt>Message</dt><dd>Something the editor has found wrong. Amber is unfinished,
+  red is broken. All of them are in
+  <a href="checking.html">checking your quest</a>.</dd>
+  <dt>Project file</dt><dd>Your editable work. Saved with
+  <b class="ui">Save</b>, reopened with <b class="ui">Load</b>. This is the only
+  thing you can carry on editing.</dd>
+  <dt>Mod, or the <code>.zip</code></dt><dd>Finished output for the game. Not
+  editable. Exporting makes a new one every time.</dd>
+  <dt>Export</dt><dd>Turning a project into a mod. The editor calls the button
+  <b class="ui">Export mod</b>.</dd>
+  <dt>Dry run</dt><dd>Walking through your quest the way the mod would run it,
+  without installing anything.</dd>
+  <dt>Debug probe</dt><dd>A node you drop on the canvas that prints what a node
+  does when it fires. Not the same as the canvas
+  <b class="ui">Debug</b> button.</dd>
+  <dt>Objective</dt><dd>A line in the player's quest panel. The only part of
+  your quest they are told about.</dd>
+  <dt>Event</dt><dd>Something the player does in the game, which your quest can
+  hear. There are 92.</dd>
+  <dt>Trigger</dt><dd>Only ever a socket: the cyan one on an objective. The node
+  that feeds it is a <b class="ui">When event</b>.</dd>
+  <dt>Tag</dt><dd>Text in braces that the game fills in when the quest runs,
+  like a machine address it allocates. The sparkle button inserts one.</dd>
+  <dt>Addon</dt><dd>A pack made by somebody else that adds events and tool
+  actions to your editor. Data only.</dd>
+  <dt>Drawing aid</dt><dd>A node that does not run: a Sticky note, a Story Beat
+  or a Group frame. A frame's name and comment still ship as comments.</dd>
+</dl>
+
 <h2 id="shortcuts">Keyboard and mouse</h2>
-<p>Written in Phase 4.</p>
+<p>Keys work anywhere. Gestures are on the canvas. The editor shows this same
+list under <b class="ui">Shortcuts</b>.</p>
+<h3>Editing</h3>
+<table>
+  <tbody>
+    <tr><td>Undo</td><td><kbd>Ctrl</kbd><kbd>Z</kbd></td></tr>
+    <tr><td>Redo</td><td><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>Z</kbd> or <kbd>Ctrl</kbd><kbd>Y</kbd></td></tr>
+    <tr><td>Copy / cut / paste the selected nodes</td><td><kbd>Ctrl</kbd><kbd>C</kbd> · <kbd>X</kbd> · <kbd>V</kbd></td></tr>
+    <tr><td>Duplicate the selected nodes</td><td><kbd>Ctrl</kbd><kbd>D</kbd></td></tr>
+    <tr><td>Delete the selected nodes or wires</td><td><kbd>Delete</kbd></td></tr>
+    <tr><td>Save the draft now</td><td><kbd>Ctrl</kbd><kbd>S</kbd></td></tr>
+  </tbody>
+</table>
+<h3>Adding nodes</h3>
+<table>
+  <tbody>
+    <tr><td>Place a node where you drop it</td><td><i>drag from the palette</i></td></tr>
+    <tr><td>Add a node at the viewport centre</td><td><i>click a palette card</i></td></tr>
+    <tr><td>Search for a node at the pointer</td><td><kbd>Shift</kbd><kbd>A</kbd></td></tr>
+    <tr><td>Search for a node here</td><td><i>right-click the canvas</i></td></tr>
+    <tr><td>Create a node the wire fits</td><td><i>drag a wire onto empty canvas</i></td></tr>
+  </tbody>
+</table>
+<h3>Selecting</h3>
+<table>
+  <tbody>
+    <tr><td>Select one node</td><td><i>click it</i></td></tr>
+    <tr><td>Add to or toggle the selection</td><td><kbd>Shift</kbd> or <kbd>Ctrl</kbd> <i>+ click</i></td></tr>
+    <tr><td>Box-select; any overlap counts</td><td><i>drag on empty canvas</i></td></tr>
+    <tr><td>Add to or remove from a box selection</td><td><kbd>Shift</kbd> <i>+ drag a box</i></td></tr>
+    <tr><td>Clear the selection</td><td><kbd>Esc</kbd></td></tr>
+  </tbody>
+</table>
+<h3>Wiring</h3>
+<table>
+  <tbody>
+    <tr><td>Start a wire</td><td><i>drag from a socket</i></td></tr>
+    <tr><td>Wire to a node's matching socket</td><td><i>drop on the node's body</i></td></tr>
+    <tr><td>Pick a wire up to move or remove it</td><td><i>drag it out of its input</i></td></tr>
+    <tr><td>Remove a wire</td><td><i>drop it on empty canvas</i></td></tr>
+    <tr><td>Insert a reroute point</td><td><i>double-click the wire</i></td></tr>
+  </tbody>
+</table>
+<h3>Moving around</h3>
+<table>
+  <tbody>
+    <tr><td>Pan the canvas</td><td><i>middle-drag or right-drag</i></td></tr>
+    <tr><td>Zoom in and out</td><td><i>scroll</i></td></tr>
+    <tr><td>Move a group and its contents</td><td><i>drag the frame's title bar</i></td></tr>
+  </tbody>
+</table>
+
 <h2 id="limits">What this editor cannot do yet</h2>
-<p>Written in Phase 4.</p>
+<p>Stated plainly, because each of these has cost somebody an afternoon. None is
+a bug; each is a boundary, and the editor does not always tell you when you
+cross one.</p>
+<dl class="facts-list">
+  <dt class="dt-danger">It cannot give an objective two triggers</dt><dd>Only
+  the first event wired to a trigger is used. A second one is ignored without a
+  message. If you need two ways to finish, use two objectives.</dd>
+  <dt class="dt-danger">It cannot make a quest complete itself by default</dt><dd>
+  <b class="ui">Complete automatically</b> starts off, so
+  <b class="ui">On quest complete</b> never runs until you switch it on. End the
+  story from your last objective instead.</dd>
+  <dt class="dt-danger">It cannot build a Wi-Fi network</dt><dd>The
+  <b class="ui">Create Wi-Fi</b> node exists in the editor's registry but cannot
+  be created, so it has no page here. If you need one, it is not available in
+  this build.</dd>
+  <dt class="dt-warn">It cannot stop you exporting a broken quest</dt><dd>The
+  report describes consequences; it gates nothing. A <code>.zip</code> always
+  downloads. That is deliberate, but it means a downloaded file is not proof of
+  a working quest.</dd>
+  <dt class="dt-warn">It cannot tell your players they need an addon</dt><dd>A
+  quest built on an addon does nothing for anyone without it, and the game says
+  nothing. The quest description is the only channel, and you have to write
+  it.</dd>
+  <dt class="dt-warn">It cannot keep a live conversation interactive</dt><dd>Turn
+  on <b class="ui">Play when the story reaches this node</b> and the player loses
+  replies and uploads, and the messages are never cleaned up.</dd>
+  <dt class="dt-warn">It cannot test the game's tools</dt><dd>Dry run executes
+  your logic against a stub, not against the real thing. A scan, an exploit or a
+  conversation can still behave differently in the game.</dd>
+  <dt class="dt-warn">It cannot save to the cloud</dt><dd>Everything lives in
+  your browser and in files you download yourself. There is no account, no
+  shared project and no history beyond undo.</dd>
+  <dt>It cannot recover a cleared project</dt><dd><b class="ui">New</b> deletes
+  every quest, website and conversation along with the autosaved copy, and it
+  says so before it does it. Export or save first.</dd>
+  <dt>It cannot tell you the puzzle is solvable</dt><dd>No check can. The editor
+  verifies that your quest is consistent, not that it is fair.</dd>
+</dl>
+
 <h2 id="events-list">The 92 events</h2>
-<p>Written in Phase 4.</p>
+<p>Every event a <b class="ui">When event</b> node can wait for, grouped the way
+the editor groups them. Type part of a name into the node's
+<b class="ui">Game event</b> picker rather than reading this list — it is here
+so you can see the shape of what is available.</p>
+<h3 id="events-recon">Reconnaissance &amp; terminal <span class="mono">(17)</span></h3>
+<table class="compact">
+<tbody>
+<tr><td><code>Terminal.Cat</code></td><td><code>Terminal.Cd</code></td></tr><tr><td><code>Terminal.Command</code></td><td><code>Terminal.Dig</code></td></tr><tr><td><code>Terminal.Explorer</code></td><td><code>Terminal.Geoip</code></td></tr><tr><td><code>Terminal.Ifconfig</code></td><td><code>Terminal.InstallPackage</code></td></tr><tr><td><code>Terminal.Ls</code></td><td><code>Terminal.Lynx.Lookup</code></td></tr><tr><td><code>Terminal.Lynx.Search</code></td><td><code>Terminal.Mxlookup</code></td></tr><tr><td><code>Terminal.NmapScan</code></td><td><code>Terminal.Nslookup</code></td></tr><tr><td><code>Terminal.Openssl</code></td><td><code>Terminal.Ping</code></td></tr><tr><td><code>Terminal.Whois</code></td><td></td></tr></tbody>
+</table>
+<h3 id="events-web">Directory brute-force &amp; browser <span class="mono">(3)</span></h3>
+<table class="compact">
+<tbody>
+<tr><td><code>Browser.Meta</code></td><td><code>Browser.WebsiteOpened</code></td></tr><tr><td><code>Terminal.Dirhunter</code></td><td></td></tr></tbody>
+</table>
+<h3 id="events-access">Access &amp; exploitation <span class="mono">(19)</span></h3>
+<table class="compact">
+<tbody>
+<tr><td><code>Metasploit.Event</code></td><td><code>Metasploit.Event.Try</code></td></tr><tr><td><code>Metasploit.Meterpreter.Connected</code></td><td><code>Metasploit.Msfconsole</code></td></tr><tr><td><code>Metasploit.Rootgrab</code></td><td><code>Metasploit.Search</code></td></tr><tr><td><code>Metasploit.SetOption</code></td><td><code>Metasploit.ShowOptions</code></td></tr><tr><td><code>Metasploit.Use</code></td><td><code>Meterpreter.Download</code></td></tr><tr><td><code>RemoteConnection.Disconnected</code></td><td><code>RemoteConnection.Established</code></td></tr><tr><td><code>Terminal.FTP.Connect</code></td><td><code>Terminal.Hydra</code></td></tr><tr><td><code>Terminal.Hydra.Try</code></td><td><code>Terminal.SSH.Connected</code></td></tr><tr><td><code>Terminal.SSH.Disconnected</code></td><td><code>Terminal.SSH.FileDownload</code></td></tr><tr><td><code>Terminal.SSH.Shutdown</code></td><td></td></tr></tbody>
+</table>
+<h3 id="events-cracking">Cracking &amp; vuln scanning <span class="mono">(9)</span></h3>
+<table class="compact">
+<tbody>
+<tr><td><code>Fern.FindPassword</code></td><td><code>Hashcat</code></td></tr><tr><td><code>John.DecryptHash</code></td><td><code>Nuclei.Item</code></td></tr><tr><td><code>Nuclei.Results</code></td><td><code>Sqlmap.DumpTable</code></td></tr><tr><td><code>Sqlmap.ListTables</code></td><td><code>Subfinder.Results</code></td></tr><tr><td><code>Subfinder.Try</code></td><td></td></tr></tbody>
+</table>
+<h3 id="events-wifi">Bettercap &amp; Wi-Fi <span class="mono">(7)</span></h3>
+<table class="compact">
+<tbody>
+<tr><td><code>Bettercap.Close</code></td><td><code>Bettercap.NetProbe</code></td></tr><tr><td><code>Bettercap.NetShow</code></td><td><code>Bettercap.Open</code></td></tr><tr><td><code>Bettercap.WifiDeAuth</code></td><td><code>Bettercap.WifiRecon</code></td></tr><tr><td><code>Network.WifiConnected</code></td><td></td></tr></tbody>
+</table>
+<h3 id="events-network">Network &amp; infrastructure <span class="mono">(7)</span></h3>
+<table class="compact">
+<tbody>
+<tr><td><code>Database.Connected</code></td><td><code>Database.DataUpdate</code></td></tr><tr><td><code>Network.PortChanges</code></td><td><code>Network.UserActivity</code></td></tr><tr><td><code>NetworkPacketTransfer</code></td><td><code>PFSense.Changes</code></td></tr><tr><td><code>PFSense.Login</code></td><td></td></tr></tbody>
+</table>
+<h3 id="events-files">Files <span class="mono">(4)</span></h3>
+<table class="compact">
+<tbody>
+<tr><td><code>Files.Deleted</code></td><td><code>Files.Open</code></td></tr><tr><td><code>Files.Transfer</code></td><td><code>Python3.ExecFile</code></td></tr></tbody>
+</table>
+<h3 id="events-mail">E-mail <span class="mono">(6)</span></h3>
+<table class="compact">
+<tbody>
+<tr><td><code>Mail.AccountCreated</code></td><td><code>Mail.AccountLoggedIn</code></td></tr><tr><td><code>Mail.MailboxOpened</code></td><td><code>Mail.Read</code></td></tr><tr><td><code>Mail.Received</code></td><td><code>Mail.Sent</code></td></tr></tbody>
+</table>
+<h3 id="events-social">Social &amp; chat <span class="mono">(11)</span></h3>
+<table class="compact">
+<tbody>
+<tr><td><code>Kisscord.FriendAdded</code></td><td><code>Kisscord.Messaging</code></td></tr><tr><td><code>Twotter.AccountCreated</code></td><td><code>Twotter.AccountLogin</code></td></tr><tr><td><code>Twotter.AccountLogout</code></td><td><code>Twotter.Post</code></td></tr><tr><td><code>Twotter.PostSeen</code></td><td><code>Twotter.ProfileSeen</code></td></tr><tr><td><code>WeeChat.Connected</code></td><td><code>WeeChat.Disconnected</code></td></tr><tr><td><code>WeeChat.Message</code></td><td></td></tr></tbody>
+</table>
+<h3 id="events-world">Bank, quest &amp; misc <span class="mono">(9)</span></h3>
+<table class="compact">
+<tbody>
+<tr><td><code>AppStore.Downloaded</code></td><td><code>BCC.News.Opened</code></td></tr><tr><td><code>Bank.AccountCreated</code></td><td><code>Bank.Logout</code></td></tr><tr><td><code>Bank.Transfer</code></td><td><code>Process.Killed</code></td></tr><tr><td><code>Quest.Claimed</code></td><td><code>Wireshark.Started</code></td></tr><tr><td><code>Wireshark.Stopped</code></td><td></td></tr></tbody>
+</table>
+<div class="note"><b>Names are dotted and capitalised.</b> They come from the
+game, not from this editor, so they read like
+<code>Terminal.Lynx.Search</code> rather than like a sentence. You never type
+one by hand.</div>
+
 <h2 id="version">Which handbook version is this</h2>
-<p>Written in Phase 4.</p>
+<p>This handbook documents editor build <span class="mono">2026-09-14.r162</span>.
+The same stamp appears in the footer of every page, and the editor writes it
+into every mod it exports.</p>
+<dl class="facts-list">
+  <dt>To check your editor</dt><dd>Open the canvas <b class="ui">Debug</b>
+  panel. The build stamp is the first thing in it.</dd>
+  <dt>To check a mod you exported</dt><dd>Open
+  <code>dist/mod.js</code> inside the <code>.zip</code>. The stamp is in the
+  header comment. See <a href="export.html#build-stamp">the build stamp</a>.</dd>
+  <dt>Why it matters</dt><dd>A handbook for an older build can describe a field
+  that has since moved. If your stamp is newer than this one, the pages are
+  probably still right, but the export window is the authority on what
+  ships.</dd>
+</dl>
 </section>
 
 <div class="pagefoot"><a href="troubleshooting.html">← When something goes wrong</a></div>

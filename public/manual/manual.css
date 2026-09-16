@@ -1011,3 +1011,26 @@ a.cat-link { font-weight: 600; }
 
 .sev.warn   { color: var(--warn);   background: rgba(251, 191, 36, 0.1); }
 .sev.danger { color: var(--danger); background: rgba(248, 113, 113, 0.1); }
+
+/* ── Compact tables ──────────────────────────────────────────────────────
+   The 92-event list in appendices.html is ten small two-column tables. Default
+   8px/12px padding on 46 rows makes that a very long scroll for a lookup
+   table nobody reads top to bottom, so these get tighter rows, a smaller
+   mono face and no bottom border between the paired columns. */
+table.compact {
+    margin: 8px 0 18px;
+    font-size: 12px;
+}
+
+table.compact td {
+    padding: 3px 10px 3px 0;
+    border-bottom: none;
+    width: 50%;
+}
+
+table.compact code {
+    font-size: 11.5px;
+    color: var(--ink-2);
+    background: none;
+    padding: 0;
+}

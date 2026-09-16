@@ -256,30 +256,68 @@ function sendMailSafe(subject, body) {
     });
 }
 
+function printGuide(tools) {
+    ensureSession();
+    tools.println("QE24 is a QA harness, not a puzzle quest. The quest objectives are reminders for tests you can run in any order.");
+    tools.println("");
+    tools.println("What is new enough to check in SDK 0.24:");
+    tools.println("1. HTTP/curl events: browser or curl traffic should raise Http.Request/Http.Response events.");
+    tools.println("2. HTTP intercept: a proxy-style switch can HOLD browser/curl requests so a tool can inspect or forward them.");
+    tools.println("3. Collaborator hits: a one-use callback domain should record when curl or DNS touches it.");
+    tools.println("4. Scheduler/Time: jobs should fire on the in-game clock and survive save/load.");
+    tools.println("5. Native Wi-Fi: a mod can create a real Wi-Fi AP with BSSID, channel and WPS fields.");
+    tools.println("6. Quest completion APIs: complete, retire and unclaim should not freeze or leave stale quests.");
+    tools.println("");
+    tools.println("Easy first pass:");
+    tools.println("- Already done: qe24 http-fetch. If it printed status 200 and the http-response objective ticked, record that as a pass.");
+    tools.println("- Optional proxy test: run qe24 intercept with no extra word to print the two-terminal steps.");
+    tools.println("- Time test: qe24 schedule 1, then use the clock Wait button or wait until the scheduler mail/toast appears.");
+    tools.println("- Collaborator test: qe24 collab, then run the curl command it prints.");
+    tools.println("- Wi-Fi test: connect to " + WIFI_SSID + " with passphrase " + WIFI_PASSWORD + ", then disconnect.");
+    tools.println("- Completion tests: qe24 claim complete, then qe24 complete. Watch for freeze or duplicate rewards/mail after reload.");
+    tools.println("");
+    tools.println("Safety: if any browser/curl request seems stuck after an intercept test, open another terminal and run qe24 intercept off.");
+}
+
+function printInterceptGuide(tools) {
+    tools.println("Intercept means: turn on the game's HTTP proxy hold switch, make one browser/curl request, then release it.");
+    tools.println("This checks whether SDK 0.24's Http.Intercepted event can see player traffic. It is safe if you always turn it off again.");
+    tools.println("");
+    tools.println("Use TWO terminal windows because the curl window may wait until you forward the request:");
+    tools.println("1. Terminal A: qe24 intercept on");
+    tools.println("2. Terminal A: curl http://" + HTTP_HOST + "/");
+    tools.println("3. Terminal B: qe24 intercept queue");
+    tools.println("4. Terminal B: qe24 intercept forward");
+    tools.println("5. Terminal B: qe24 intercept off");
+    tools.println("");
+    tools.println("What to look for: the http-intercepted objective ticks, queue shows one GET request, and curl prints the page after forward.");
+    tools.println("If queue stays empty or the objective does not tick, record Partial/Fail. Emergency cleanup: qe24 intercept off.");
+}
+
 class QE24SurfaceProbe extends sdk.Quest {
     constructor() {
         super();
         this.Name = "QE24SurfaceProbe";
         this.Title = "QE24 SDK surface probe";
-        this.Description = "Run qe24 status for the SDK 0.24 in-game QA commands.";
+        this.Description = "Developer QA harness. Run qe24 guide first; objectives are test reminders, not a puzzle path.";
         this.Group = "sandbox";
         this.AutoStart = true;
         this.AutoComplete = false;
         this.HasCompleteButton = false;
         this.Abandonable = true;
         this.Objectives = [
-            { name: "http-response", description: "Run curl http://" + HTTP_HOST + "/api/echo?from=terminal, or qe24 http-fetch." },
-            { name: "http-intercepted", description: "Run qe24 intercept on, then curl http://" + HTTP_HOST + "/, then qe24 intercept forward." },
-            { name: "collaborator-hit", description: "Run qe24 collab, then curl the printed collaborator URL." },
-            { name: "scheduler-fired", description: "Run qe24 schedule 1, then use the clock Wait button or wait about a second." },
-            { name: "wifi-connect", description: "Connect to Wi-Fi " + WIFI_SSID + " with passphrase " + WIFI_PASSWORD + "." },
-            { name: "wifi-disconnect", description: "Disconnect from the QE24 Wi-Fi network." },
+            { name: "http-response", description: "HTTP event check: run qe24 http-fetch or curl http://" + HTTP_HOST + "/api/echo?from=terminal, then look for status 200/JSON." },
+            { name: "http-intercepted", description: "Optional proxy check: run qe24 intercept first for the two-terminal steps; turn it off after forwarding." },
+            { name: "collaborator-hit", description: "Callback check: run qe24 collab, then curl the printed URL and look for this objective to tick." },
+            { name: "scheduler-fired", description: "Clock check: run qe24 schedule 1, then use the clock Wait button or wait for the scheduler mail/toast." },
+            { name: "wifi-connect", description: "Wi-Fi check: connect to " + WIFI_SSID + " with passphrase " + WIFI_PASSWORD + "." },
+            { name: "wifi-disconnect", description: "Wi-Fi cleanup check: disconnect from the QE24 Wi-Fi network." },
         ];
     }
     CreateData() { return {}; }
     OnStart() {
         log("QE24SurfaceProbe started");
-        sendMailSafe("QE24 SDK harness", "Run qe24 status in the terminal for commands. Test host: http://" + HTTP_HOST + "/\nWi-Fi: " + WIFI_SSID + " / " + WIFI_PASSWORD);
+        sendMailSafe("QE24 SDK harness", "Start with qe24 guide in the terminal. This is not a puzzle; the quest objectives are reminders for SDK 0.24 tests.\n\nTest host: http://" + HTTP_HOST + "/\nWi-Fi: " + WIFI_SSID + " / " + WIFI_PASSWORD + "\n\nIf traffic gets stuck after an intercept test, open another terminal and run qe24 intercept off.");
     }
     OnObjectivesStart() {
         var self = this;
@@ -431,13 +469,17 @@ class QE24Command extends sdk.Command {
         this.Description = "SDK 0.24 QA harness commands";
         this.Autocomplete = [
             { label: "qe24", type: "STRING" },
-            { label: "status|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|reset", type: "STRING" },
+            { label: "guide|status|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|reset", type: "STRING" },
         ];
     }
     async Run(tools) {
         var args = tools.getArgs ? tools.getArgs() : [];
-        var sub = args[0] || "status";
-        if (sub === "help") sub = "status";
+        var sub = args[0] || "guide";
+        if (sub === "help") sub = "guide";
+        if (sub === "guide") {
+            printGuide(tools);
+            return;
+        }
         if (sub === "status") {
             ensureSession();
             var jobs = sdk.Scheduler && sdk.Scheduler.list ? safe("Scheduler.list", function () { return sdk.Scheduler.list(SCHEDULE_KIND); }, []) : [];
@@ -451,7 +493,8 @@ class QE24Command extends sdk.Command {
             tools.println("Scheduler pending: " + (jobs && jobs.length != null ? jobs.length : "?"));
             tools.println("HTTP history: " + (history && history.length != null ? history.length : "?") + "; intercept queue: " + (queue && queue.length != null ? queue.length : "?"));
             tools.println("Visible Wi-Fi networks: " + (wifis && wifis.length != null ? wifis.length : "?"));
-            tools.println("Commands: qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 reset");
+            tools.println("Tip: run qe24 guide for the plain-English checklist, or qe24 intercept for the proxy-test steps.");
+            tools.println("Commands: qe24 guide · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 reset");
             return;
         }
         if (sub === "seed") {
@@ -469,6 +512,7 @@ class QE24Command extends sdk.Command {
                 origin: "script",
             });
             tools.println("Http.fetch status " + res.status + " body: " + res.body);
+            tools.println("Look for the http-response objective to tick. If it did, record HTTP fetch/response as Pass.");
             return;
         }
         if (sub === "schedule") {
@@ -479,6 +523,7 @@ class QE24Command extends sdk.Command {
             if (sdk.Scheduler.cancel) safe("Scheduler.cancel", function () { sdk.Scheduler.cancel(id); });
             var jobId = sdk.Scheduler.schedule(SCHEDULE_KIND, { command: "qe24 schedule", minutes: minutes }, { minutes: minutes }, id);
             tools.println("Scheduled " + jobId + " for " + minutes + " in-game minute(s). Use the taskbar clock Wait button, or wait for game time to pass.");
+            tools.println("Look for a scheduler mail/toast and the scheduler-fired objective. After reload, the job should not duplicate.");
             return;
         }
         if (sub === "collab") {
@@ -486,18 +531,25 @@ class QE24Command extends sdk.Command {
             if (!sdk.Http || !sdk.Http.mintCollaboratorSubdomain) { tools.printError("collaborator APIs unavailable"); return; }
             var host = sdk.Http.mintCollaboratorSubdomain();
             tools.println("Run: curl http://" + host + "/qe24");
-            tools.println("Then check qe24 status or the SurfaceProbe objective.");
+            tools.println("Expected: collaborator-hit objective ticks and qe24 status/history can show the hit. If nothing happens, record Partial/Fail.");
             return;
         }
         if (sub === "intercept") {
             if (!sdk.Http) { tools.printError("Http APIs unavailable"); return; }
-            var mode = args[1] || "queue";
-            if (mode === "on") { sdk.Http.setInterceptEnabled(true); tools.printWarning ? tools.printWarning("Intercept ON. Run qe24 intercept forward or off if a request hangs.") : tools.println("Intercept ON."); return; }
-            if (mode === "off") { sdk.Http.setInterceptEnabled(false); if (sdk.Http.interceptForwardAll) sdk.Http.interceptForwardAll(); tools.println("Intercept OFF and queue forwarded."); return; }
-            if (mode === "forward") { if (sdk.Http.interceptForwardAll) sdk.Http.interceptForwardAll(); tools.println("Forwarded all held requests."); return; }
-            if (mode === "drop") { if (sdk.Http.interceptDropAll) sdk.Http.interceptDropAll(); tools.println("Dropped all held requests."); return; }
+            var mode = args[1] || "help";
+            if (mode === "help") { printInterceptGuide(tools); return; }
+            if (mode === "on") {
+                sdk.Http.setInterceptEnabled(true);
+                tools.printWarning ? tools.printWarning("Intercept ON. Keep a second terminal ready: curl may wait until you run qe24 intercept forward/off there.") : tools.println("Intercept ON. Keep a second terminal ready.");
+                tools.println("Next: curl http://" + HTTP_HOST + "/ in one terminal, then qe24 intercept queue and qe24 intercept forward in another.");
+                return;
+            }
+            if (mode === "off") { sdk.Http.setInterceptEnabled(false); if (sdk.Http.interceptForwardAll) sdk.Http.interceptForwardAll(); tools.println("Intercept OFF and any held requests forwarded."); return; }
+            if (mode === "forward") { if (sdk.Http.interceptForwardAll) sdk.Http.interceptForwardAll(); tools.println("Forwarded all held requests. The waiting browser/curl should continue now."); return; }
+            if (mode === "drop") { if (sdk.Http.interceptDropAll) sdk.Http.interceptDropAll(); tools.println("Dropped all held requests. The waiting browser/curl should fail now."); return; }
             var held = sdk.Http.interceptQueue ? sdk.Http.interceptQueue() : [];
             tools.println("Held requests: " + held.length);
+            if (!held.length) tools.println("No held requests. If you expected one, make sure intercept is on and use browser/curl traffic, not qe24 http-fetch.");
             held.forEach(function (h) { tools.println(h.request.id + " " + h.request.method + " " + h.request.url); });
             return;
         }

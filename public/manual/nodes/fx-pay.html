@@ -57,10 +57,10 @@
 <p>Puts money into the player's bank account.</p>
 
 <h2>When you'd use it</h2>
-<p>Use it when the player is supposed to receive money in their bank account.
-A client wires the player a fee after they hand over the file. An employer
-settles up once the last objective completes. A refund arrives after the player
-fixes something they broke.</p>
+<p>Use this when the player is supposed to receive money, usually after an
+employer completes their end of the job. A client wires the player a fee after
+they hand over the file. An employer settles up once the last objective
+completes. A refund arrives after the player fixes something they broke.</p>
 <p>Most quests pay once, near the end. If the money is the reward for one
 specific step, wire this node directly after the objective that earns it, so a
 player who takes a different route does not get paid for work they skipped.</p>
@@ -70,14 +70,19 @@ player who takes a different route does not get paid for work they skipped.</p>
 gains one line, reading whatever you typed in <b class="ui">Description</b>,
 sent by whoever you named in <b class="ui">From name</b>.</p>
 <p>Nothing pops up on screen by default. If you want the player to notice the
-payment as it lands, add a <a href="fx-notify.html">Notify</a> node after
-this one — a balance that changes with nothing on screen gets overlooked or can
-feel like a bug.</p>
+payment as it lands, add a <a href="fx-notify.html">Notify</a> node after this
+one. A balance that changes with nothing on screen gets overlooked, or can feel
+like a bug.</p>
+<p>Notify belongs in the "after" slot, never before the payment. A Notify that
+fires first tells the player about money that is not in their account yet, and
+a player who opens their bank to check finds nothing there.</p>
 
 <h2>Fields</h2>
 
 <h3 id="node-fx-pay-field-amount">Amount</h3>
 <blockquote class="blurb">Credits deposited into the player's bank account.</blockquote>
+<p>The hint above is the editor's own wording and it still says "Credits." The
+money is dollars. That wording is on the list to be corrected.</p>
 <dl class="facts-list">
   <dt>What to put here</dt><dd>A whole number of dollars. The fee, the bounty, the settlement.</dd>
   <dt>Example</dt><dd><code>100</code></dd>

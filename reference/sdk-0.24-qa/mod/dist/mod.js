@@ -305,7 +305,8 @@ function printNextSteps(tools) {
     tools.println("Next after QE24SurfaceProbe is 6/6:");
     tools.println("1. Evidence snapshot: qe24 status, then qe24 history. Paste those lines if you can.");
     tools.println("2. Wi-Fi: do NOT need to crack " + WIFI_SSID + "; the passphrase is intentionally known. We are checking SDK AP creation/events, not solving a Wi-Fi puzzle.");
-    tools.println("   Connect with " + WIFI_PASSWORD + ", run qe24 status, disconnect from the QE24 network, then run qe24 status again.");
+    tools.println("   Connect with " + WIFI_PASSWORD + ", run qe24 status, and confirm Connected Wi-Fi is QE24 target: yes.");
+    tools.println("   Then disconnect from the QE24 network, run qe24 status again, reload, and confirm Target Wi-Fi matches stays at 1.");
     tools.println("   Optional only: use normal Wi-Fi/recon tools if you want to test router/child reachability, but do not block on that.");
     tools.println("3. Quest lifecycle probes, preferably on a clean throwaway save:");
     tools.println("   qe24 claim complete  -> qe24 complete  -> save/reload and check no duplicate mail/reward/freeze.");
@@ -560,8 +561,10 @@ class QE24Command extends sdk.Command {
             var queue = sdk.Http && sdk.Http.interceptQueue ? safe("Http.interceptQueue", function () { return sdk.Http.interceptQueue(); }, []) : [];
             var interceptOn = sdk.Http && sdk.Http.interceptEnabled ? safe("Http.interceptEnabled", function () { return sdk.Http.interceptEnabled(); }, false) : "unavailable";
             var wifis = sdk.Network && sdk.Network.getWifiNetworks ? safe("Network.getWifiNetworks", function () { return sdk.Network.getWifiNetworks(); }, []) : [];
-            var targetWifi = Array.isArray(wifis) ? wifis.filter(wifiMatchesTarget)[0] : null;
+            var targetWifis = Array.isArray(wifis) ? wifis.filter(wifiMatchesTarget) : [];
+            var targetWifi = targetWifis[0] || null;
             var currentWifi = sdk.Network && sdk.Network.getConnectedWifi ? safe("Network.getConnectedWifi", function () { return sdk.Network.getConnectedWifi(); }, null) : null;
+            var connectedMatchesTarget = wifiMatchesTarget(currentWifi);
             tools.println("QE24 SDK 0.24 QA harness");
             tools.println("Host: http://" + HTTP_HOST + "/");
             tools.println("Wi-Fi: " + WIFI_SSID + " / " + WIFI_PASSWORD);
@@ -569,8 +572,11 @@ class QE24Command extends sdk.Command {
             tools.println("Scheduler pending: " + (jobs && jobs.length != null ? jobs.length : "?"));
             tools.println("HTTP history: " + (history && history.length != null ? history.length : "?") + "; intercept enabled: " + interceptOn + "; intercept queue: " + (queue && queue.length != null ? queue.length : "?"));
             tools.println("Visible Wi-Fi networks: " + (wifis && wifis.length != null ? wifis.length : "?"));
+            tools.println("Target Wi-Fi matches: " + (targetWifis && targetWifis.length != null ? targetWifis.length : "?"));
             tools.println("Target Wi-Fi details: " + describeWifi(targetWifi));
             tools.println("Connected Wi-Fi: " + describeWifi(currentWifi));
+            tools.println("Connected Wi-Fi is QE24 target: " + (connectedMatchesTarget ? "yes" : "no"));
+            if (targetWifi && currentWifi && !connectedMatchesTarget) tools.println("Note: if the game UI says QE24 is connected, paste this mismatch before we unhide Wi-Fi.");
             tools.println("Tip: run qe24 next if the 6/6 surface objective quest is already done, qe24 intercept for proxy-test steps, or qe24 history for HTTP/collab evidence.");
             tools.println("Commands: qe24 guide · qe24 next · qe24 status · qe24 history · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 reset");
             return;

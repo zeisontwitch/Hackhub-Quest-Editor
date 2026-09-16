@@ -48,7 +48,7 @@ Recommended next pass:
    qe24 history
    ```
 
-2. Wi-Fi details/reload check. You do **not** need to crack `QE24-RAW-5G`; the passphrase is intentionally known because this tests SDK network creation, not Wi-Fi gameplay. Connect with `correct-horse-battery`, run `qe24 status`, disconnect from the QE24 network, run `qe24 status` again, then reload and confirm the network is not duplicated.
+2. Wi-Fi details/reload check. You do **not** need to crack `QE24-RAW-5G`; the passphrase is intentionally known because this tests SDK network creation, not Wi-Fi gameplay. Connect with `correct-horse-battery`, run `qe24 status`, and confirm `Connected Wi-Fi is QE24 target: yes`. Disconnect from the QE24 network, run `qe24 status` again, then reload and confirm `Target Wi-Fi matches` stays at `1`. If the game UI says QE24 is connected but `qe24 status` reports a different connected network, paste that mismatch.
 
 3. Quest lifecycle probes:
 
@@ -131,7 +131,7 @@ Record the curl subcase as `Blocked` if `curl` is missing. H-04 and H-06 can sti
 - `qe24 guide` — explain what each test is for and the safe run order.
 - `qe24 next` — print what to do after the raw surface quest is already 6/6.
 - `qe24 seed` — create/re-register the per-save HTTP host and native Wi-Fi AP.
-- `qe24 status` — print the current host, Wi-Fi password, Time.now, scheduler queue count, HTTP history/intercept state, target Wi-Fi details and connected Wi-Fi details.
+- `qe24 status` — print the current host, Wi-Fi password, Time.now, scheduler queue count, HTTP history/intercept state, target Wi-Fi match count/details, connected Wi-Fi details and whether the connected network is the QE24 target.
 - `qe24 history` — print recent HTTP history, collaborator hits and held intercept requests; useful evidence when game logs are unavailable.
 - `qe24 http-fetch` — make a server-origin HTTP request through `Http.fetch()`.
 - `qe24 schedule 1` — schedule a job one in-game minute in the future; use the clock Wait button or let game time advance.

@@ -19,11 +19,24 @@
     <li><a href="index.html">Start here</a></li>
     <li><a href="tutorial.html">Your first quest</a></li>
     <li><a href="concepts.html">How a quest works</a></li>
-    <li><a href="nodes.html">Node reference</a></li>
+    <li><a href="nodes.html">Node reference</a>
+      <ul class="sub">
+        <li><a href="nodes.html#cat-entry"><span class="cat-dot" style="background:var(--cat-entry)"></span>Quest lifecycle</a></li>
+        <li><a href="nodes.html#cat-objective"><span class="cat-dot" style="background:var(--cat-objective)"></span>Objectives</a></li>
+        <li><a href="nodes.html#cat-trigger"><span class="cat-dot" style="background:var(--cat-trigger)"></span>Triggers</a></li>
+        <li><a href="nodes.html#cat-world"><span class="cat-dot" style="background:var(--cat-world)"></span>World building</a></li>
+        <li><a href="nodes.html#cat-comms"><span class="cat-dot" style="background:var(--cat-comms)"></span>Communication</a></li>
+        <li><a href="nodes.html#cat-reply"><span class="cat-dot" style="background:var(--cat-reply)"></span>Custom terminal</a></li>
+        <li><a href="nodes.html#cat-effect"><span class="cat-dot" style="background:var(--cat-effect)"></span>Effects</a></li>
+        <li><a href="nodes.html#cat-community"><span class="cat-dot" style="background:var(--cat-community)"></span>Community addons</a></li>
+        <li><a href="nodes.html#cat-flow"><span class="cat-dot" style="background:var(--cat-flow)"></span>Flow control</a></li>
+        <li><a href="nodes.html#cat-layout"><span class="cat-dot" style="background:var(--cat-layout)"></span>Layout</a></li>
+      </ul>
+    </li>
     <li><a href="guides.html">Feature guides</a></li>
     <li><a href="how-do-i.html">How do I…</a></li>
     <li><a href="checking.html">Checking your quest</a></li>
-    <li><a href="export.html">Exporting and installing</a></li>
+    <li><a href="export.html" aria-current="true">Exporting and installing</a></li>
     <li><a href="troubleshooting.html">When something goes wrong</a></li>
     <li><a href="appendices.html">Glossary and limits</a></li>
   </ol>
@@ -31,28 +44,136 @@
 <main>
 <header class="hero">
   <h1>Exporting and installing</h1>
-  <p class="tag">What the zip is, where it goes, and how to update a quest you already shipped.</p>
+  <p class="tag">Turning your project into a mod the game can play, what is inside
+  the file it gives you, and what to do with it afterwards.</p>
 </header>
+
 <section id="export">
-<div class="note warn"><b>Being written.</b> This page is scaffolding
-from the Phase 3 skeleton — the structure and anchors are final, the prose lands
-in Phase 4. Nothing here is a claim about the editor yet.</div>
-<h2 id="export-dialog">The export dialog</h2>
-<p>Written in Phase 4.</p>
-<h2 id="zip-contents">What is inside the zip</h2>
-<p>Written in Phase 4.</p>
-<h2 id="installing">Installing it in the game</h2>
-<p>Written in Phase 4.</p>
+<p>Exporting is the last step. It reads everything you built — the quests, the
+websites, the machines — and packs it into a <code>.zip</code> the game loads as
+a mod. Nothing about your project changes when you do it, and you can export as
+often as you like.</p>
+<p>Exporting also runs the second set of checks, the ones that need the whole
+mod in front of them rather than one node at a time. Read
+<a href="checking.html#pre-export">the report</a> before you download, because
+some of what it finds means the game will quietly drop something you built.</p>
+
+<h2 id="export-dialog">The export window</h2>
+<p>Opening the export window shows you what you are about to ship before it is
+packed. Its own words for the job:</p>
+<blockquote class="blurb">Compiles everything into a ready-to-play mod folder — no coding needed. Unzip it into the game's <code>mods/</code> directory.</blockquote>
+<dl class="facts-list">
+  <dt>Quests</dt><dd>Every quest in the project, by title. If a quest is missing
+  from this list, it is not in the mod either.</dd>
+  <dt>Websites</dt><dd>Every host your mod registers. Worth a look, because
+  domains belong to the whole game and two mods claiming one host will fight
+  over it.</dd>
+  <dt>Permissions requested</dt><dd>The list below. The game shows these to the
+  player when they install, so a shorter list is a friendlier one.</dd>
+  <dt>In the zip</dt><dd>Every file that will be packed, by path. Nothing is
+  hidden from you here.</dd>
+  <dt>Needs attention</dt><dd><span class="sev danger">Red</span> — at least one
+  export check found something the game will drop or change. Fix it before you
+  download.</dd>
+  <dt>Good to know</dt><dd><span class="sev warn">Amber</span> — the export
+  shipped what you built, and what you built may not be what you meant.</dd>
+</dl>
+
+<h3 id="permissions">The six permissions</h3>
+<p>A permission is a promise about what your mod touches. You do not pick them
+anywhere: the editor works out which ones your nodes need and asks for exactly
+those. Delete the node and the permission goes with it.</p>
+<table>
+  <thead><tr><th>Permission</th><th>Asked for by</th><th>What it lets the mod do</th></tr></thead>
+  <tbody>
+    <tr><td class="name">network</td><td>Create network · Register domain · Create database · Place files</td><td>Put machines, names and files into the game's world.</td></tr>
+    <tr><td class="name">filesystem</td><td>Place files</td><td>Write files onto the player's own machine.</td></tr>
+    <tr><td class="name">shell</td><td>Run terminal command · Tool response · Manual input</td><td>Run commands, answer for the game's tools, and add a command of your own.</td></tr>
+    <tr><td class="name">events</td><td>When event · Claim another quest</td><td>Watch for what the player does, and start another quest.</td></tr>
+    <tr><td class="name">bank</td><td>Pay the player · Charge the player</td><td>Move money in and out of the player's account.</td></tr>
+    <tr><td class="name">ui</td><td>Notify</td><td>Put a message on the player's screen.</td></tr>
+  </tbody>
+</table>
+<p>The plain words behind each one are in
+<a href="concepts.html#permissions">Permissions, in plain words</a>.</p>
+
+<h2 id="zip-contents">What is in the <code>.zip</code></h2>
+<p>Two of these files are the mod. The rest are there so that somebody who wants
+to change the mod later can rebuild it, and so the folder makes sense to anyone
+who opens it. You never need to touch any of them.</p>
+<table>
+  <thead><tr><th>File</th><th>What it is</th></tr></thead>
+  <tbody>
+    <tr><td class="name"><code>dist/mod.js</code></td><td>The mod. Everything you built, turned into something the game can run.</td></tr>
+    <tr><td class="name"><code>manifest.json</code></td><td>The mod's card: its name, author, description, version and the permissions it asks for. This is what the game reads first.</td></tr>
+    <tr><td class="name"><code>dist/manifest.json</code></td><td>A second copy of the card, where the game also looks for it.</td></tr>
+    <tr><td class="name"><code>README.md</code></td><td>A short description of the mod, with its permissions and any warnings the export produced.</td></tr>
+    <tr><td class="name"><code>src/index.ts</code></td><td>The same mod as <code>dist/mod.js</code>, in the form a developer would edit.</td></tr>
+    <tr><td class="name"><code>package.json</code></td><td>Build instructions, for anyone rebuilding the mod from <code>src</code>.</td></tr>
+    <tr><td class="name"><code>esbuild.config.mjs</code></td><td>The tool that turns <code>src</code> into <code>dist</code>.</td></tr>
+    <tr><td class="name"><code>tsconfig.json</code></td><td>Settings for the same rebuild.</td></tr>
+  </tbody>
+</table>
+<div class="note ok"><b>You do not need any of this to ship a quest.</b> The
+editor builds the whole folder for you. It is listed here so the export window
+is not a list of unexplained filenames.</div>
+
+<h2 id="installing">Installing it</h2>
+<p>The file downloads with a name built from your mod's identifier and version,
+so <code>meridian-1.0.0.zip</code> is version <code>1.0.0</code> of the mod
+called <code>meridian</code>. Two versions of one mod therefore never share a
+filename, which matters when you are testing a change against the last one.</p>
+<ol class="plain">
+  <li>Open the export window and read the report. Fix anything red.</li>
+  <li>Choose <b class="ui">Download .zip</b>. The button reads
+  <b class="ui">Packing…</b> while the file is built.</li>
+  <li>Unzip the folder into the game's <code>mods/</code> directory, as the
+  export window tells you. The folder inside the archive is the mod; the archive
+  itself is not.</li>
+  <li>Start the game. The mod is loaded, and its quests are available to
+  accept.</li>
+</ol>
+<div class="note warn"><b>Unzip it, do not drop it in whole.</b> The game reads a
+folder in <code>mods/</code>, not an archive. A <code>.zip</code> sitting in that
+directory is ignored.</div>
+
 <h2 id="export-is-not-a-save">Export is not a save</h2>
-<p>Written in Phase 4.</p>
+<p>This is the mistake worth understanding properly, because it loses work. The
+<code>.zip</code> is the finished mod. It is the thing the game plays, and it is
+not something you can open in the editor and carry on editing.</p>
+<p>Your project file is the editable thing. It holds your canvas, your node
+settings and your websites in the form the editor understands. Saving keeps that
+up to date; exporting only produces a copy for the game to run.</p>
+<dl class="facts-list">
+  <dt>To keep working</dt><dd>Save the project, and open the project again next
+  time. Not the <code>.zip</code>.</dd>
+  <dt>To ship a change</dt><dd>Edit the project, then export again. The new
+  <code>.zip</code> replaces the old folder in <code>mods/</code>.</dd>
+  <dt class="dt-danger">If you only have the <code>.zip</code></dt><dd>The quests
+  inside it still play, but the canvas you built them on is gone. There is no
+  way back from the mod to the project.</dd>
+</dl>
+
 <h2 id="build-stamp">The build stamp</h2>
-<p>Written in Phase 4.</p>
+<p>Every export writes the editor's own build into
+<code>dist/mod.js</code>, as <code>2026-09-14.r162</code>. It is how you tell
+which version of the editor produced a mod, which is the first thing worth
+knowing when a quest behaves differently for someone else than it does for
+you.</p>
+<p>The same stamp is in the footer of every page of this handbook, so you can
+check that the handbook you are reading describes the editor you are using. A
+handbook for an older build can describe a field that has since moved.</p>
+<div class="note"><b>When you report a problem, give the build.</b> Open any
+<code>.zip</code> you exported and the stamp is at the top of
+<code>dist/mod.js</code>. It saves everyone a round of questions.</div>
 </section>
 
 <div class="pagefoot"><a href="checking.html">← Checking your quest</a><a class="next" href="troubleshooting.html">When something goes wrong →</a></div>
+<a class="totop" href="#export">↑ back to top</a>
 <footer class="colophon">
   HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·
-  every figure on these pages is taken from the editor's own source.
+  filenames, permissions and the build stamp on this page are taken from the
+  editor's own source.
 </footer>
 </main>
 </div>

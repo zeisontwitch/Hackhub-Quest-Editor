@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Branch — HackHub Quest Editor handbook</title>
+<title>Random pick — HackHub Quest Editor handbook</title>
 <link rel="stylesheet" href="../manual.css" />
 </head>
 <body>
@@ -46,48 +46,45 @@
 <main>
 
 <header class="hero">
-  <h1><span class="cat-dot" style="background:var(--cat-flow)"></span>Branch</h1>
+  <h1><span class="cat-dot" style="background:var(--cat-flow)"></span>Random pick</h1>
   <p class="tag"><span class="badge" style="color:var(--cat-flow)">Flow control</span>
-  &nbsp;<code class="mono" style="color:var(--ink-4)">flow.branch</code></p>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">flow.random</code></p>
 </header>
 
-<section id="node-flow-branch-page">
+<section id="node-flow-random-page">
 
 <h2>What it does</h2>
-<p>Splits the story in two. One path runs when your condition holds, the other runs when it does not.</p>
+<p>Picks one of its outgoing paths at random, and stores the name of the pick so you can read it back.</p>
 
 <h2>When you'd use it</h2>
-<p>Use it when the story should differ based on something the player did: whether they were spotted, whether they paid, which file they pulled.</p>
-<p>Both paths need somewhere to go. A branch with an unwired <b class="ui">Yes</b> or <b class="ui">No</b> is a dead end the player walks into.</p>
-<p>For three or more outcomes, chain branches. Each one splits again, and the canvas stays readable.</p>
+<p>Use it for variety that does not depend on the player: which guard is on duty, which route is blocked.</p>
+<p>Wire each option to a different path. The story goes down one of them and skips the rest.</p>
+<p>Read the pick back later with a <a href="flow-branch.html">Branch</a> testing quest data.</p>
 
 <h2>In the game, this looks like</h2>
-<p>Nothing appears on screen. The player only notices that the next message differs from the one their friend got.</p>
+<p>Nothing appears on screen. The pick happens quietly and the story takes one of the paths you wired.</p>
 
 <h2>Fields</h2>
 
-<h3 id="node-flow-branch-field-source">Test against</h3>
-<blockquote class="blurb">Test against details from the event that fired, or against quest data you stored earlier with a “Set quest data” node.</blockquote>
+<h3 id="node-flow-random-field-options">Options</h3>
+<blockquote class="blurb">One of these is picked at random and stored. Add as many as you like.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>Pick what the condition is tested against. &lt;b class="ui"&gt;Event&lt;/b&gt; tests the details carried by the event that fired. &lt;b class="ui"&gt;Data&lt;/b&gt; tests values you stored with &lt;a href="fx-setdata.html"&gt;Set quest data&lt;/a&gt;.</dd>
-  <dt class="dt-mute">Default</dt><dd><code>"event"</code></dd>
-  <dt>Limits</dt><dd>One of the 2 listed below.</dd>
-  <dt class="dt-warn">Watch out</dt><dd>Pick &lt;b class="ui"&gt;Data&lt;/b&gt; when the thing you are testing happened earlier in the quest. The event that woke this branch only carries its own details.</dd>
-</dl>
-<table>
-  <thead><tr><th>Choice</th><th>What it is stored as</th></tr></thead>
-  <tbody>
-    <tr><td class="name">Details from the event</td><td><code>event</code></td></tr>
-    <tr><td class="name">Quest data</td><td><code>data</code></td></tr>
-  </tbody>
-</table>
-
-<h3 id="node-flow-branch-field-conditions">Take the “Yes” path when</h3>
-<blockquote class="blurb">All clauses must hold for the “Yes” path. Otherwise the “No” path runs.</blockquote>
-<dl class="facts-list">
-  <dt>What to put here</dt><dd>Add one clause per thing that has to be true.</dd>
+  <dt>What to put here</dt><dd>The values to choose between. Add as many as you like.</dd>
   <dt class="dt-mute">Default</dt><dd>an empty list</dd>
-  <dt class="dt-danger">If you leave it empty</dt><dd>With no clauses there is nothing to fail, so the &lt;b class="ui"&gt;Yes&lt;/b&gt; path always runs and the &lt;b class="ui"&gt;No&lt;/b&gt; path never does.</dd>
+  <dt class="dt-warn">Watch out</dt><dd>With one option there is nothing random about it. With none, there is nothing to pick.</dd>
+</dl>
+<p>The button reads <b class="ui">Add option</b>.</p><h4 id="node-flow-random-field-label">Value</h4>
+<blockquote class="blurb">The value stored if this option is picked.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The value stored if this option is the one picked.</dd>
+</dl>
+
+<h3 id="node-flow-random-field-storeAs">Store the result as</h3>
+<blockquote class="blurb">A name you choose. The picked value is saved under it so you can read it back later with {{data.name}}.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The name the picked value is stored under.</dd>
+  <dt>Example</dt><dd><code>guardOnDuty</code></dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>The pick is not stored, so nothing can read it back later.</dd>
 </dl>
 
 
@@ -98,18 +95,10 @@
   <tbody>
     <tr>
       <td class="name kind-flow">In</td><td>input</td>
-      <td>Whatever should run immediately before the split.</td>
+      <td>Whatever should run immediately before this node.</td>
     </tr>
     <tr>
-      <td class="name kind-condition">Trigger</td><td>input</td>
-      <td>The event that wakes the branch, when it should react to something the player does.</td>
-    </tr>
-    <tr>
-      <td class="name kind-flow">Yes</td><td>output</td>
-      <td>Whatever should happen after this node runs.</td>
-    </tr>
-    <tr>
-      <td class="name kind-flow">No</td><td>output</td>
+      <td class="name kind-flow">Out</td><td>output</td>
       <td>Whatever should happen after this node runs.</td>
     </tr>
   </tbody>
@@ -124,38 +113,29 @@
 wire in that colour. That is what the colours are for: match the colours and
 the connection takes, mismatch them and it will not.</p>
 
-<h2>Step by step: add this node to a quest</h2>
-<ol class="plain">
-  <li>Find <b class="ui">Branch</b> under <b>Flow control</b> in the palette.</li>
-  <li>Drag it onto the canvas where the story should split.</li>
-  <li>Wire the previous node into <b class="ui">In</b>.</li>
-  <li>Pick what to test under <b class="ui">Test against</b>, then add your clauses.</li>
-  <li>Wire both <b class="ui">Yes</b> and <b class="ui">No</b> to somewhere. Neither may be left empty.</li>
-</ol>
+
 
 <figure>
-  <img src="../img/node-flow-branch-inspector.png"
-       alt="The Branch node selected on the canvas, with its inspector open on the right." />
-  <figcaption>The inspector for <b>Branch</b>.</figcaption>
+  <img src="../img/node-flow-random-inspector.png"
+       alt="The Random pick node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>Random pick</b>.</figcaption>
 </figure>
 
 <h2>Common mistakes</h2>
 <ul class="plain">
-  <li><b>One path is left unwired.</b> The player reaches a branch that goes nowhere and the quest stalls. The editor flags it as <b>Dead end</b>.</li>
-  <li><b>The condition tests the wrong source.</b> Testing quest data while <b class="ui">Test against</b> says <b class="ui">Event</b> finds nothing to match, so the <b class="ui">No</b> path always runs.</li>
+  <li><b>One path wired and the rest left empty.</b> A pick that lands on an unwired path stops the story there. Wire every option.</li>
 </ul>
 
 <h2>Messages you might see</h2>
 <ul class="plain">
-  <li><a href="../checking.html#msg-dead-end">Dead end</a> — a <b class="ui">Yes</b> or <b class="ui">No</b> socket has nothing wired to it</li>
-  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so the split never happens</li>
+  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so nothing is ever picked</li>
 </ul>
 
 <h2>Related nodes</h2>
 <ul class="plain">
+  <li><a href="flow-branch.html">Branch</a> — Sends the story down one of two paths.</li>
   <li><a href="flow-delay.html">Wait</a> — Pauses the story.</li>
   <li><a href="flow-reroute.html">Reroute</a> — A tidy point for your wires.</li>
-  <li><a href="flow-random.html">Random pick</a> — Picks one path at random.</li>
   <li><a href="flow-sequence.html">Sequence</a> — Fires several outputs in order.</li>
   <li><a href="flow-debug.html">Debug probe</a> — Prints what is happening here.</li>
 </ul>
@@ -163,11 +143,11 @@ the connection takes, mismatch them and it will not.</p>
 </section>
 
 <div class="pagefoot">
-  <a href="fx-handbook.html">← Open handbook</a>
-  <a class="next" href="flow-delay.html">Wait →</a>
+  <a href="layout-group.html">← Group frame</a>
+  <a class="next" href="flow-sequence.html">Sequence →</a>
 </div>
 
-<a class="totop" href="#node-flow-branch-page">↑ back to top</a>
+<a class="totop" href="#node-flow-random-page">↑ back to top</a>
 
 <footer class="colophon">
   HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·

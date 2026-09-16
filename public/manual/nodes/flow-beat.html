@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Story Beat — HackHub Quest Editor handbook</title>
+<link rel="stylesheet" href="../manual.css" />
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="Handbook contents">
+  <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
+  <p class="build">Handbook · build 2026-09-14.r162</p>
+  <div class="search">
+    <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
+    <div class="results" role="listbox" aria-label="Search results"></div>
+  </div>
+  <ol>
+    <li><a href="../index.html">Start here</a></li>
+    <li><a href="../tutorial.html">Your first quest</a></li>
+    <li><a href="../concepts.html">How a quest works</a></li>
+    <li><a href="../nodes.html">Node reference</a>
+      <ul class="sub">
+        <li><a href="../nodes.html#cat-entry"><span class="cat-dot" style="background:var(--cat-entry)"></span>Quest lifecycle</a></li>
+        <li><a href="../nodes.html#cat-objective"><span class="cat-dot" style="background:var(--cat-objective)"></span>Objectives</a></li>
+        <li><a href="../nodes.html#cat-trigger"><span class="cat-dot" style="background:var(--cat-trigger)"></span>Triggers</a></li>
+        <li><a href="../nodes.html#cat-world"><span class="cat-dot" style="background:var(--cat-world)"></span>World building</a></li>
+        <li><a href="../nodes.html#cat-comms"><span class="cat-dot" style="background:var(--cat-comms)"></span>Communication</a></li>
+        <li><a href="../nodes.html#cat-reply"><span class="cat-dot" style="background:var(--cat-reply)"></span>Custom terminal</a></li>
+        <li><a href="../nodes.html#cat-effect"><span class="cat-dot" style="background:var(--cat-effect)"></span>Effects</a></li>
+        <li><a href="../nodes.html#cat-community"><span class="cat-dot" style="background:var(--cat-community)"></span>Community addons</a></li>
+        <li><a href="../nodes.html#cat-flow"><span class="cat-dot" style="background:var(--cat-flow)"></span>Flow control</a></li>
+        <li><a href="../nodes.html#cat-layout"><span class="cat-dot" style="background:var(--cat-layout)"></span>Layout</a></li>
+      </ul>
+    </li>
+    <li><a href="../guides.html">Feature guides</a></li>
+    <li><a href="../how-do-i.html">How do I…</a></li>
+    <li><a href="../checking.html">Checking your quest</a></li>
+    <li><a href="../export.html">Exporting and installing</a></li>
+    <li><a href="../troubleshooting.html">When something goes wrong</a></li>
+    <li><a href="../appendices.html">Glossary and limits</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <h1><span class="cat-dot" style="background:var(--cat-layout)"></span>Story Beat</h1>
+  <p class="tag"><span class="badge" style="color:var(--cat-layout)">Layout</span>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">flow.beat</code></p>
+</header>
+
+<section id="node-flow-beat-page">
+
+<h2>What it does</h2>
+<p>A planning card for one beat of your story. It is stripped from the exported mod and never runs.</p>
+
+<h2>When you'd use it</h2>
+<p>Use it to sketch a scene before you build it: what happens, and which ways it can go.</p>
+<p>Each row under <b class="ui">Branch choices</b> becomes an output socket, so you can wire the paths out and see the shape of the scene.</p>
+
+<h2>In the game, this looks like</h2>
+<p>Nothing. The card is a planning aid, and the story passes through it unchanged.</p>
+
+<h2>Fields</h2>
+
+<h3 id="node-flow-beat-field-title">Headline</h3>
+<blockquote class="blurb">A short name for this beat, e.g. “Act 2 — the firewall”. It is the card's title bar.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>The card's title bar. Name the beat after the scene.</dd>
+  <dt>Example</dt><dd><code>Act 2 — the firewall</code></dd>
+  <dt class="dt-mute">Default</dt><dd>empty</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>The card has no title, so on a crowded canvas you cannot tell one beat from another.</dd>
+</dl>
+
+<h3 id="node-flow-beat-field-text">Beat text</h3>
+<blockquote class="blurb">The key content of the beat. The card previews the top ~800 characters and expands into a scrollable panel for the rest.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>What happens in the beat. The card previews the top of it and expands in the inspector.</dd>
+  <dt class="dt-mute">Default</dt><dd>empty</dd>
+</dl>
+
+<h3 id="node-flow-beat-field-choices">Branch choices</h3>
+<blockquote class="blurb">Add a row for each path the story can take. Each gets its own output socket on the card, so you can wire each branch onward while planning.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>One row per path the story can take. Each row becomes an output socket on the card.</dd>
+  <dt class="dt-mute">Default</dt><dd>an empty list</dd>
+</dl>
+<p>The button reads <b class="ui">Add choice</b>.</p><h4 id="node-flow-beat-field-label">Choice</h4>
+<blockquote class="blurb">Short title for this path, e.g. “Go in through the front door”.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>A short title for the path.</dd>
+  <dt>Example</dt><dd><code>Go in through the front door</code></dd>
+</dl>
+<h4 id="node-flow-beat-field-note">What happens</h4>
+<blockquote class="blurb">One line on where this path leads, so a branching beat reads at a glance.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>One line on where this path leads, so a branching beat reads at a glance.</dd>
+</dl>
+
+<h3 id="node-flow-beat-field-width">Width (px)</h3>
+<blockquote class="blurb">How wide the card is on the canvas, in pixels.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Default</dt><dd><code>280</code></dd>
+  <dt>Limits</dt><dd>200 to 640. Whole numbers, in steps of 20.</dd>
+</dl>
+
+<h3 id="node-flow-beat-field-color">Card colour</h3>
+<blockquote class="blurb">Pick any colour. Colour-coding by act, character or branch is usually the clearest.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Colour the card by act, character or branch, so a big canvas reads at a glance.</dd>
+  <dt class="dt-mute">Default</dt><dd><code>"#64748b"</code></dd>
+</dl>
+
+
+
+<h2>Wires</h2>
+<table>
+  <thead><tr><th>Socket</th><th>Direction</th><th>What to connect</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="name kind-flow">In</td><td>input</td>
+      <td>Whatever should run immediately before this node.</td>
+    </tr>
+    <tr>
+      <td class="name kind-flow">Out</td><td>output</td>
+      <td>Whatever should happen after this node runs.</td>
+    </tr>
+  </tbody>
+</table>
+<p class="wire-legend">
+  <span class="wire-chip kind-flow"><i></i><b>Then</b> runs next</span>
+  <span class="wire-chip kind-condition"><i></i><b>When</b> tests a condition</span>
+  <span class="wire-chip kind-unlock"><i></i><b>Unlocks</b> opens an objective</span>
+  <span class="wire-chip kind-data"><i></i><b>Data</b> carries a value</span>
+</p>
+<p>A wire only joins two sockets of the same colour, and the editor draws the
+wire in that colour. That is what the colours are for: match the colours and
+the connection takes, mismatch them and it will not.</p>
+
+
+
+<figure>
+  <img src="../img/node-flow-beat-inspector.png"
+       alt="The Story Beat node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>Story Beat</b>.</figcaption>
+</figure>
+
+<h2>Common mistakes</h2>
+<ul class="plain">
+  <li><b>Expecting a beat to run.</b> It is planning only and is stripped from the mod. Build the real beat with the nodes it describes.</li>
+</ul>
+
+
+
+<h2>Related nodes</h2>
+<ul class="plain">
+  <li><a href="layout-group.html">Group frame</a> — A named box that moves its nodes.</li>
+  <li><a href="flow-note.html">Sticky note</a> — A comment on the canvas.</li>
+</ul>
+
+</section>
+
+<div class="pagefoot">
+  <a href="flow-note.html">← Sticky note</a>
+  
+</div>
+
+<a class="totop" href="#node-flow-beat-page">↑ back to top</a>
+
+<footer class="colophon">
+  HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·
+  field labels, hints, defaults and limits on this page are taken from the
+  editor's own node definitions.
+</footer>
+
+</main>
+</div>
+<script src="../search-index.js"></script>
+<script src="../manual.js"></script>
+</body>
+</html>

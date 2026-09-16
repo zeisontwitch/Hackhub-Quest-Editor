@@ -440,5 +440,367 @@
         "nothing leads to this node, so the split never happens"
       ]
     ]
+  },
+  "fx.setData": {
+    "oneliner": "Stores a value for later.",
+    "what": "Stores a value under a name you choose, so a later node can read it back.",
+    "when": [
+      "Use it to remember something the player did: which door they opened, who they met, what they paid.",
+      "Read the value back with a <a href=\"flow-branch.html\">Branch</a> set to test quest data, or drop it into a message with a tag.",
+      "The name is yours to pick. Use the same name to read it back."
+    ],
+    "game": "Nothing appears on screen. The value sits in the quest's memory until something reads it.",
+    "fields": {
+      "key": {
+        "put": "The name you will use to read this value back.",
+        "example": "doorCode",
+        "empty": "The value is stored under no name, so nothing can find it again."
+      },
+      "value": {
+        "example": "4417",
+        "watch": "The name has to match exactly when you read it back. A typo reads as an empty value and nothing warns you."
+      }
+    },
+    "steps": [
+      "Find <b class=\"ui\">Set quest data</b> under <b>Effects</b> in the palette.",
+      "Drag it onto the canvas at the moment the thing worth remembering happens.",
+      "Type a name in <b class=\"ui\">Key</b> and the thing to remember in <b class=\"ui\">Value</b>.",
+      "Later, add a <a href=\"flow-branch.html\">Branch</a> and set <b class=\"ui\">Test against</b> to <b class=\"ui\">Data</b> to read it."
+    ],
+    "mistakes": [
+      [
+        "The name does not match when you read it back.",
+        "Nothing warns you. The reader finds no value and treats it as empty."
+      ],
+      [
+        "A value is stored and never read.",
+        "The node runs and changes nothing. Delete it, or use the value somewhere."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the value is never stored"
+      ]
+    ]
+  },
+  "fx.claimQuest": {
+    "oneliner": "Starts the next quest.",
+    "what": "Accepts another quest for the player, so one story can lead into the next.",
+    "when": [
+      "Use it at the end of a quest that continues elsewhere. The player does not have to find and accept the next chapter themselves.",
+      "The quest you name has to exist. It can live in this mod or in another one the player has installed."
+    ],
+    "game": "The next quest appears in the player's list as accepted, and that quest's own opening runs.",
+    "fields": {
+      "questName": {
+        "put": "The identifier of the quest to start next, exactly as that quest names itself.",
+        "example": "meridian-act-two",
+        "empty": "There is no quest to claim, so the node does nothing.",
+        "watch": "The identifier has to match. A name that exists nowhere claims nothing, and the player is left with a finished story and no next chapter."
+      }
+    },
+    "mistakes": [
+      [
+        "The identifier is spelled differently from the quest's own.",
+        "Nothing is claimed and nothing warns you."
+      ],
+      [
+        "The next quest is not in the mod the player installed.",
+        "It cannot be claimed. Ship the two together, or point at a quest the player already has."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the next quest is never claimed"
+      ]
+    ]
+  },
+  "fx.shell": {
+    "oneliner": "Runs a command in the player's terminal.",
+    "what": "Runs a command in the player's terminal as if they had typed it themselves.",
+    "when": [
+      "Use it when the story should do something in the terminal that the player has not done: start a scan, open a connection, leave output where they will find it.",
+      "Keep it to something a player could have typed. The output lands in their terminal, so it has to read like the real thing."
+    ],
+    "game": "The command appears in the player's terminal and its output follows, exactly as though they had run it.",
+    "fields": {
+      "command": {
+        "put": "The command to run. Tags work here, so you can drop in a value you stored earlier.",
+        "example": "nmap {{data.targetIp}}",
+        "empty": "There is nothing to run, so the node does nothing.",
+        "watch": "It runs whether or not the player is ready for it. A command that needs an earlier step will fail in front of them."
+      }
+    },
+    "steps": [
+      "Find <b class=\"ui\">Run terminal command</b> under <b>Effects</b> in the palette.",
+      "Drag it onto the canvas at the point the command should run.",
+      "Type the command, with tags for anything that changes per player.",
+      "Add a <a href=\"fx-notify.html\">Notify</a> after it if the player should notice the output."
+    ],
+    "mistakes": [
+      [
+        "The command depends on something the player has not done.",
+        "It runs regardless and fails in their terminal. Move it after the step it needs."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the command never runs"
+      ]
+    ]
+  },
+  "fx.handbook": {
+    "oneliner": "Opens an in-game article.",
+    "what": "Opens a page of the game's own handbook for the player.",
+    "when": [
+      "Use it when the player needs background the story should not have to spell out: what a company does, who owns a domain, how a protocol behaves.",
+      "Pick a page that already exists in the game, or type the identifier of one your mod adds."
+    ],
+    "game": "The handbook opens on the page you chose.",
+    "fields": {
+      "articleId": {
+        "watch": "An identifier that matches no article opens nothing, and the player gets no explanation of why."
+      },
+      "category": {}
+    },
+    "mistakes": [
+      [
+        "The article belongs to another mod.",
+        "The player does not have it, so the handbook opens on nothing. Point at an article your own mod ships."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the article never opens"
+      ]
+    ]
+  },
+  "flow.delay": {
+    "oneliner": "Pauses the story.",
+    "what": "Pauses the story here for as long as you set, then carries on.",
+    "when": [
+      "Use it to let two beats land in a sensible order: a message, then the reply to it.",
+      "Keep pauses short. The player waits through every one, and a long pause reads as a frozen game."
+    ],
+    "game": "Nothing happens for the length of the pause, then the next node runs.",
+    "fields": {
+      "seconds": {
+        "example": "2",
+        "empty": "There is no pause. A blank value counts as zero and the story carries straight on."
+      }
+    },
+    "mistakes": [
+      [
+        "A long pause used to build tension.",
+        "The player cannot tell a pause from a crash. Two or three seconds is plenty."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the story never reaches the pause"
+      ]
+    ]
+  },
+  "flow.reroute": {
+    "oneliner": "A tidy point for your wires.",
+    "what": "A point to route wires through. It tidies the canvas and changes nothing about the story.",
+    "when": [
+      "Use it when one node has to feed several others, or when a wire would otherwise cross half the canvas.",
+      "Double-click any wire on the canvas to drop one in automatically."
+    ],
+    "game": "Nothing. It changes how the canvas looks, not how the quest runs.",
+    "mistakes": [
+      [
+        "Treating it as a choice.",
+        "It has one input and one output and always passes the story through. For a decision, use <a href=\"flow-branch.html\">Branch</a>."
+      ]
+    ]
+  },
+  "flow.random": {
+    "oneliner": "Picks one path at random.",
+    "what": "Picks one of its outgoing paths at random, and stores the name of the pick so you can read it back.",
+    "when": [
+      "Use it for variety that does not depend on the player: which guard is on duty, which route is blocked.",
+      "Wire each option to a different path. The story goes down one of them and skips the rest.",
+      "Read the pick back later with a <a href=\"flow-branch.html\">Branch</a> testing quest data."
+    ],
+    "game": "Nothing appears on screen. The pick happens quietly and the story takes one of the paths you wired.",
+    "fields": {
+      "options": {
+        "put": "The values to choose between. Add as many as you like.",
+        "watch": "With one option there is nothing random about it. With none, there is nothing to pick."
+      },
+      "storeAs": {
+        "put": "The name the picked value is stored under.",
+        "example": "guardOnDuty",
+        "empty": "The pick is not stored, so nothing can read it back later."
+      },
+      "label": {
+        "put": "The value stored if this option is the one picked."
+      }
+    },
+    "mistakes": [
+      [
+        "One path wired and the rest left empty.",
+        "A pick that lands on an unwired path stops the story there. Wire every option."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so nothing is ever picked"
+      ]
+    ]
+  },
+  "flow.sequence": {
+    "oneliner": "Fires several outputs in order.",
+    "what": "Takes one input and fires as many outputs as you like, from the top down, with a pause before each.",
+    "when": [
+      "Use it for a beat that lands in pieces: a door opens, then the lights come up, then a message arrives.",
+      "Each row you add is a socket on the node, so the shape of the beat is visible on the canvas."
+    ],
+    "game": "The outputs happen one after another, spaced by the pauses you set.",
+    "fields": {
+      "steps": {
+        "put": "One row per output, in the order they should fire.",
+        "watch": "Removing a row removes its socket, and any wire attached to it goes with it."
+      },
+      "label": {
+        "put": "A name for the output, so you can tell the sockets apart on the canvas."
+      },
+      "delayMs": {
+        "put": "How long to wait before this output fires, counted from the one before it.",
+        "example": "1500"
+      }
+    },
+    "mistakes": [
+      [
+        "A row is deleted without checking its wire.",
+        "The socket goes with it and whatever hung off it is orphaned."
+      ],
+      [
+        "Every pause left at zero.",
+        "The whole beat lands in one instant and the player misses most of it."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so no output fires"
+      ]
+    ]
+  },
+  "flow.debug": {
+    "oneliner": "Prints what is happening here.",
+    "what": "Prints what the quest is doing at this point, so you can see whether a node runs and what it carries.",
+    "when": [
+      "Drop one anywhere the story seems to stop. If it prints, the story got that far. If it stays silent, look upstream.",
+      "Turn on <b class=\"ui\">Show on screen too</b> while you test, so you do not have to open the log file."
+    ],
+    "game": "Nothing appears on screen unless you ask for it. The probe writes to the game's log.",
+    "fields": {
+      "toast": {
+        "watch": "Switch it off before you ship. Debug output a player can see shows them the seams."
+      }
+    },
+    "steps": [
+      "Find <b class=\"ui\">Debug probe</b> under <b>Flow control</b> in the palette.",
+      "Drop it on the wire you suspect, between the two nodes in question.",
+      "Turn on <b class=\"ui\">Show on screen too</b> if you would rather not open the log.",
+      "Run the quest. A printed label means the story reached that point; silence means it did not."
+    ],
+    "mistakes": [
+      [
+        "The probe is left on in a shipped quest.",
+        "The player reads your debugging notes. Turn <b class=\"ui\">Show on screen too</b> off before you export."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the probe never prints"
+      ]
+    ]
+  },
+  "flow.note": {
+    "oneliner": "A comment on the canvas.",
+    "what": "A note on the canvas for you. It never reaches the player.",
+    "when": [
+      "Use it to leave yourself a reason: why this branch exists, what a placeholder is standing in for, what you meant to come back to.",
+      "Notes are stripped from the exported mod, so nothing you write here can reach the player."
+    ],
+    "game": "Nothing. A note is a drawing aid and never runs."
+  },
+  "flow.beat": {
+    "oneliner": "Plans a story beat. Never runs.",
+    "what": "A planning card for one beat of your story. It is stripped from the exported mod and never runs.",
+    "when": [
+      "Use it to sketch a scene before you build it: what happens, and which ways it can go.",
+      "Each row under <b class=\"ui\">Branch choices</b> becomes an output socket, so you can wire the paths out and see the shape of the scene."
+    ],
+    "game": "Nothing. The card is a planning aid, and the story passes through it unchanged.",
+    "fields": {
+      "title": {
+        "put": "The card's title bar. Name the beat after the scene.",
+        "example": "Act 2 — the firewall",
+        "empty": "The card has no title, so on a crowded canvas you cannot tell one beat from another."
+      },
+      "text": {
+        "put": "What happens in the beat. The card previews the top of it and expands in the inspector."
+      },
+      "choices": {
+        "put": "One row per path the story can take. Each row becomes an output socket on the card."
+      },
+      "label": {
+        "put": "A short title for the path.",
+        "example": "Go in through the front door"
+      },
+      "note": {
+        "put": "One line on where this path leads, so a branching beat reads at a glance."
+      },
+      "color": {
+        "put": "Colour the card by act, character or branch, so a big canvas reads at a glance."
+      }
+    },
+    "mistakes": [
+      [
+        "Expecting a beat to run.",
+        "It is planning only and is stripped from the mod. Build the real beat with the nodes it describes."
+      ]
+    ]
+  },
+  "layout.group": {
+    "oneliner": "A named box that moves its nodes.",
+    "what": "A named box around part of your canvas. Drag it and everything inside moves with it.",
+    "when": [
+      "Use it to keep a long quest readable: one frame per act, per location, or per character.",
+      "It changes nothing about how the quest runs. It is a drawing aid."
+    ],
+    "game": "Nothing. A frame never reaches the mod.",
+    "fields": {
+      "label": {
+        "put": "The frame's title. Name the cluster after what it does.",
+        "example": "Act 1: the docks"
+      },
+      "color": {
+        "put": "Colour-code your frames however helps: one colour per act, or per character."
+      },
+      "comment": {
+        "put": "A note to future-you about what this cluster does."
+      }
+    }
   }
 }

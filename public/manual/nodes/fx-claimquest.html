@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Notify — HackHub Quest Editor handbook</title>
+<title>Claim another quest — HackHub Quest Editor handbook</title>
 <link rel="stylesheet" href="../manual.css" />
 </head>
 <body>
@@ -46,68 +46,34 @@
 <main>
 
 <header class="hero">
-  <h1><span class="cat-dot" style="background:var(--cat-effect)"></span>Notify</h1>
+  <h1><span class="cat-dot" style="background:var(--cat-effect)"></span>Claim another quest</h1>
   <p class="tag"><span class="badge" style="color:var(--cat-effect)">Effects</span>
-  &nbsp;<code class="mono" style="color:var(--ink-4)">fx.notify</code></p>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">fx.claimQuest</code></p>
 </header>
 
-<section id="node-fx-notify-page">
+<section id="node-fx-claimquest-page">
 
 <h2>What it does</h2>
-<p>Shows the player a message. Either a popup that stays until they dismiss it, or a toast that slides in and fades on its own.</p>
+<p>Accepts another quest for the player, so one story can lead into the next.</p>
 
 <h2>When you'd use it</h2>
-<p>Reach for it whenever something happens that the player should notice. A balance changing, a door opening, a contact going quiet — none of those announce themselves.</p>
-<p>Put it after the node that caused the change, never before. A message about money that has not arrived yet reads like a bug.</p>
-<p>Keep it short. It sits over the game, so a player mid-task reads it at a glance or not at all.</p>
+<p>Use it at the end of a quest that continues elsewhere. The player does not have to find and accept the next chapter themselves.</p>
+<p>The quest you name has to exist. It can live in this mod or in another one the player has installed.</p>
 
 <h2>In the game, this looks like</h2>
-<p>A box appears over the game. A notification waits for the player to close it. A toast slides in, holds for a moment, and fades.</p>
+<p>The next quest appears in the player's list as accepted, and that quest's own opening runs.</p>
 
 <h2>Fields</h2>
 
-<h3 id="node-fx-notify-field-message">Message</h3>
-<blockquote class="blurb">The text on the popup. Type {{data.name}} to insert a value you saved earlier.</blockquote>
+<h3 id="node-fx-claimquest-field-questName">Quest</h3>
+<blockquote class="blurb">The identifier of the quest to start next. It must exist in this mod or another installed one.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>One or two sentences is plenty. It sits over the game, not in a journal.</dd>
-  <dt>Example</dt><dd><code>Payment received: Meridian Capital.</code></dd>
+  <dt>What to put here</dt><dd>The identifier of the quest to start next, exactly as that quest names itself.</dd>
+  <dt>Example</dt><dd><code>meridian-act-two</code></dd>
   <dt class="dt-mute">Default</dt><dd>empty</dd>
-  <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
-  <dt class="dt-danger">If you leave it empty</dt><dd>The popup appears with nothing in it. The player sees an empty box and no idea why.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>There is no quest to claim, so the node does nothing.</dd>
+  <dt class="dt-warn">Watch out</dt><dd>The identifier has to match. A name that exists nowhere claims nothing, and the player is left with a finished story and no next chapter.</dd>
 </dl>
-
-<h3 id="node-fx-notify-field-variant">Style</h3>
-<blockquote class="blurb">A notification is a persistent popup; a toast slides in and fades on its own.</blockquote>
-<dl class="facts-list">
-  <dt>What to put here</dt><dd>Pick how insistent the message should be.</dd>
-  <dt class="dt-mute">Default</dt><dd><code>"notify"</code></dd>
-  <dt>Limits</dt><dd>One of the 2 listed below.</dd>
-  <dt class="dt-warn">Watch out</dt><dd>A notification waits for the player to close it. Use a toast for anything they can afford to miss.</dd>
-</dl>
-<table>
-  <thead><tr><th>Choice</th><th>What it is stored as</th></tr></thead>
-  <tbody>
-    <tr><td class="name">Notification popup</td><td><code>notify</code></td></tr>
-    <tr><td class="name">Toast</td><td><code>toast</code></td></tr>
-  </tbody>
-</table>
-
-<h3 id="node-fx-notify-field-tone">Tone</h3>
-<blockquote class="blurb">Sets the colour and icon: info, success, warning or error.</blockquote>
-<dl class="facts-list">
-  <dt>What to put here</dt><dd>Match it to what the message means: a success for a payment, a warning for a mistake.</dd>
-  <dt class="dt-mute">Default</dt><dd><code>"info"</code></dd>
-  <dt>Limits</dt><dd>One of the 4 listed below.</dd>
-</dl>
-<table>
-  <thead><tr><th>Choice</th><th>What it is stored as</th></tr></thead>
-  <tbody>
-    <tr><td class="name">Info</td><td><code>info</code></td></tr>
-    <tr><td class="name">Success</td><td><code>success</code></td></tr>
-    <tr><td class="name">Warning</td><td><code>warning</code></td></tr>
-    <tr><td class="name">Error</td><td><code>error</code></td></tr>
-  </tbody>
-</table>
 
 
 
@@ -135,38 +101,31 @@
 wire in that colour. That is what the colours are for: match the colours and
 the connection takes, mismatch them and it will not.</p>
 
-<h2>Step by step: add this node to a quest</h2>
-<ol class="plain">
-  <li>Find <b class="ui">Notify</b> under <b>Effects</b> in the palette.</li>
-  <li>Drag it onto the canvas, after the node that caused the change.</li>
-  <li>Wire the previous node's <b class="ui">Out</b> socket into this node's <b class="ui">In</b> socket.</li>
-  <li>Type the message.</li>
-  <li>Pick <b class="ui">Style</b> and <b class="ui">Tone</b> to match how much the message matters.</li>
-</ol>
+
 
 <figure>
-  <img src="../img/node-fx-notify-inspector.png"
-       alt="The Notify node selected on the canvas, with its inspector open on the right." />
-  <figcaption>The inspector for <b>Notify</b>.</figcaption>
+  <img src="../img/node-fx-claimquest-inspector.png"
+       alt="The Claim another quest node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>Claim another quest</b>.</figcaption>
 </figure>
 
 <h2>Common mistakes</h2>
 <ul class="plain">
-  <li><b>The message fires before the thing it describes.</b> Wire it after. The player reads about a payment, opens their bank, and finds nothing there.</li>
-  <li><b>Every message is a notification.</b> Popups that wait for a click pile up. Save those for the moments that matter and use toasts for the rest.</li>
+  <li><b>The identifier is spelled differently from the quest's own.</b> Nothing is claimed and nothing warns you.</li>
+  <li><b>The next quest is not in the mod the player installed.</b> It cannot be claimed. Ship the two together, or point at a quest the player already has.</li>
 </ul>
 
 <h2>Messages you might see</h2>
 <ul class="plain">
-  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so the player never sees the message</li>
+  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so the next quest is never claimed</li>
 </ul>
 
 <h2>Related nodes</h2>
 <ul class="plain">
   <li><a href="fx-pay.html">Pay the player</a> — Deposit money</li>
   <li><a href="fx-withdraw.html">Charge the player</a> — Takes money out of the player's account.</li>
+  <li><a href="fx-notify.html">Notify</a> — Puts a message on the player's screen.</li>
   <li><a href="fx-setdata.html">Set quest data</a> — Stores a value for later.</li>
-  <li><a href="fx-claimquest.html">Claim another quest</a> — Starts the next quest.</li>
   <li><a href="fx-shell.html">Run terminal command</a> — Runs a command in the player's terminal.</li>
   <li><a href="fx-handbook.html">Open handbook</a> — Opens an in-game article.</li>
 </ul>
@@ -174,11 +133,11 @@ the connection takes, mismatch them and it will not.</p>
 </section>
 
 <div class="pagefoot">
-  <a href="fx-withdraw.html">← Charge the player</a>
-  <a class="next" href="fx-setdata.html">Set quest data →</a>
+  <a href="fx-setdata.html">← Set quest data</a>
+  <a class="next" href="fx-shell.html">Run terminal command →</a>
 </div>
 
-<a class="totop" href="#node-fx-notify-page">↑ back to top</a>
+<a class="totop" href="#node-fx-claimquest-page">↑ back to top</a>
 
 <footer class="colophon">
   HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·

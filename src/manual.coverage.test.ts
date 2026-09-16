@@ -127,12 +127,18 @@ describe("manual coverage — G2: field entries", () => {
 
 describe("manual coverage — G3: no stale documentation", () => {
     it("references no node type that has left the registry", () => {
-        const known = new Set(Object.keys(NODE_TYPES_REGISTRY));
+        /* Anchors are built from the slug, which lowercases the type — so
+           fx.claimQuest becomes fx-claimquest and would never match the
+           registry's own key. Compare on the same footing both sides. */
+        const known = new Set(Object.keys(NODE_TYPES_REGISTRY).map((t) => t.toLowerCase()));
         const stale: string[] = [];
         for (const page of PAGES) {
             for (const m of read(page).matchAll(/id="node-([a-z0-9-]+?)-(?:field-|page)/g)) {
-                const type = m[1].replace(/^(entry|objective|trigger|world|comms|reply|fx|flow|pack|layout)-/, "$1.");
-                if (!known.has(type)) stale.push(`${rel(page)}: #node-${m[1]}`);
+                const type = m[1].replace(
+                    /^(entry|objective|trigger|world|comms|reply|fx|flow|pack|layout)-/,
+                    "$1.",
+                );
+                if (!known.has(type.toLowerCase())) stale.push(`${rel(page)}: #node-${m[1]}`);
             }
         }
         expect(stale, stale.join("\n")).toEqual([]);
@@ -225,6 +231,12 @@ function prose(html: string): string {
         .replace(/<script[\s\S]*?<\/script>/gi, " ")
         .replace(/<style[\s\S]*?<\/style>/gi, " ")
         .replace(/<(code|kbd)[^>]*>[\s\S]*?<\/\1>/gi, " ")
+        /* A blurb is a field's own hint, quoted verbatim under its heading.
+           COV2 requires the manual to reproduce the product's copy exactly, so
+           that wording is not the manual's to police — the editor's own
+           fx.setValue hint says "just", and the manual has to show it as it
+           stands. Anything the manual writes itself is still checked. */
+        .replace(/<blockquote class="blurb">[\s\S]*?<\/blockquote>/gi, " ")
         .replace(/<[^>]+>/g, " ")
         .replace(/&[a-z]+;/gi, " ")
         .replace(/\s+/g, " ");

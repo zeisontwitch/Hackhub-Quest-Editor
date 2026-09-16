@@ -34,25 +34,147 @@
   <p class="tag">The mental model — eight short pieces the rest of the handbook keeps referring back to.</p>
 </header>
 <section id="concepts">
-<div class="note warn"><b>Being written.</b> This page is scaffolding
-from the Phase 3 skeleton — the structure and anchors are final, the prose lands
-in Phase 4. Nothing here is a claim about the editor yet.</div>
+<p>Eight ideas, in the order you meet them. Read this once and the rest of the
+handbook stops needing to explain itself.</p>
+
 <h2 id="quest-map">Your quest map</h2>
-<p>Written in Phase 4.</p>
+<p>A project holds three things: quests, websites, and the mod settings that
+give the whole thing a name. A quest is a map of nodes joined by wires, laid
+out on a canvas you can pan and zoom.</p>
+<p>You build that map the way you would sketch one on paper. Drag a node in
+from the palette. Type into its fields in the inspector. Draw a wire from one
+of its sockets to a socket on another node.</p>
+<p>Where the nodes sit changes nothing. Two nodes side by side are not
+neighbours to the game; only a wire makes them neighbours. The order your story
+runs in comes from wires, and from nothing else. The canvas invites you to
+forget this, because a tidy layout looks like a sequence.</p>
+<div class="note"><b>Some things on the canvas exist only for you.</b> Group
+frame, Sticky note and Story Beat never reach the game. They keep a large map
+readable, and the export leaves them behind.</div>
+
 <h2 id="lifecycle">When your quest runs</h2>
-<p>Written in Phase 4.</p>
+<p>Four nodes cover the entire life of a quest. They are the only ones the game
+starts by itself, and nothing runs until one of them does.</p>
+<dl class="facts-list">
+  <dt>Quest start</dt><dd>Runs once, when the quest begins. Setup goes here:
+  build the network, place the files, tell the player what has happened.</dd>
+  <dt>On start &amp; reload</dt><dd>Runs when the quest is claimed, and again
+  every time the game loads. Anything that must be listening goes here, because
+  a listener set up in <b class="ui">Quest start</b> is gone after a reload.</dd>
+  <dt>On quest complete</dt><dd>Runs only if the quest completes. By default it
+  never does. <a href="concepts.html#why-no-complete">That is covered
+  below.</a></dd>
+  <dt>On quest abandoned</dt><dd>Runs if the player gives up. Cleanup goes
+  here.</dd>
+</dl>
+<p>You can use more than one <b class="ui">Quest start</b> node, and every one
+of them runs. Authors reach for that when a quest has several opening threads
+that do not depend on each other. Three short chains are easier to follow than
+one long one.</p>
+
 <h2 id="wire-kinds">Wires have kinds</h2>
-<p>Written in Phase 4.</p>
+<p>There are four kinds of wire. Each one answers a different question, which
+is why they look different.</p>
+<table>
+  <thead><tr><th>Wire</th><th>Colour</th><th>The question</th></tr></thead>
+  <tbody>
+    <tr><td><span class="wire-chip kind-flow"><i></i><b>Then</b></span></td><td>Blue</td><td>What happens next in the story?</td></tr>
+    <tr><td><span class="wire-chip kind-condition"><i></i><b>When</b></span></td><td>Cyan</td><td>What has to happen in the game?</td></tr>
+    <tr><td><span class="wire-chip kind-unlock"><i></i><b>Unlocks</b></span></td><td>Amber, dashed</td><td>Which objective comes after this one?</td></tr>
+    <tr><td><span class="wire-chip kind-data"><i></i><b>Data</b></span></td><td>Violet, dotted</td><td>Where does this value come from?</td></tr>
+  </tbody>
+</table>
+<p>A socket accepts only its own kind of wire. Dragging a flow wire at a
+condition socket will not connect. That is deliberate rather than fussy: a
+wire meaning "and then" arriving at something that asked "when" would be a
+question the game has no answer for.</p>
+
 <h2 id="objectives">Objectives are how the player knows what to do</h2>
-<p>Written in Phase 4.</p>
+<p>An objective is a line in the player's quest panel. It is the only part of
+your quest the player is told about, so it is where the story stops being
+yours and starts being theirs.</p>
+<p>An objective completes in one of two ways. Either the story flow reaches it,
+which ticks it off at that moment. Or an event is wired into its
+<b class="ui">Trigger</b> socket, and the objective completes when the player
+does that thing in the game.</p>
+<p>The second is the one you want most of the time. It is the difference
+between "the story says you did it" and "you did it". Wiring a
+<b class="ui">When event</b> node to an objective's trigger is how a quest
+notices real play instead of assuming it.</p>
+<div class="note warn"><b>Two details the game is strict about.</b> Only the
+first event wired into an objective's trigger is used; a second one is
+ignored. And the amber <b class="ui">Unlocked by</b> socket only takes a wire
+from another objective — from anything else it is quietly dropped.</div>
+<p>Set <b class="ui">Hidden until unlocked</b> on objectives the player should
+not see yet. Without it, your whole quest is visible from the first moment,
+spoiler and all.</p>
+
 <h2 id="events">Events are how your quest hears the player</h2>
-<p>Written in Phase 4.</p>
+<p>An event fires when the player does something in the game. Searching for
+something, logging into a bank, cracking a password, downloading a file — each
+of those has a name, and there are 92 of them in 10 groups.</p>
+<p>A <b class="ui">When event</b> node picks one of those names. When it fires,
+your quest hears about it and carries on down the wire. That single node is how
+a quest becomes reactive rather than scripted.</p>
+<p>Some events carry information with them. <code>Terminal.Lynx.Search</code>
+tells you what the player typed, which is how a quest reacts to a specific
+search rather than to searching in general. The groups are named after the part
+of the game they come from: terminal, browser, cracking, files, e-mail, social,
+and the rest.</p>
+<p>The full list is in the
+<a href="nodes/trigger-event.html">When event reference</a>. You do not need to
+learn the names. You need to know they exist, because an unwired quest can
+never notice anything.</p>
+
 <h2 id="what-export-means">What exporting means</h2>
-<p>Written in Phase 4.</p>
+<p>Your project is the editable thing: the canvas, the fields, the websites.
+The game cannot play a project. Exporting turns one into a mod, which is a
+folder the game loads.</p>
+<p>These two are not interchangeable, and treating them as the same thing is
+how work gets lost. The mod is finished output. You cannot open it again and
+carry on building.</p>
+<p>Everything about the file it produces, where it goes and what to do about
+updates is on the <a href="export.html">exporting and installing</a> page.</p>
+
 <h2 id="permissions">Permissions, in plain words</h2>
-<p>Written in Phase 4.</p>
+<p>A permission is a promise about what your mod is allowed to touch. The game
+shows the list to the player when they install, so it is a promise the player
+reads.</p>
+<p>You never pick permissions. The editor works out which ones your nodes
+need, from six in total, and asks for exactly those. Delete the node and the
+permission disappears with it.</p>
+<table>
+  <thead><tr><th>Permission</th><th>In plain words</th></tr></thead>
+  <tbody>
+    <tr><td class="name">network</td><td>The mod puts machines, names and files into the game's world.</td></tr>
+    <tr><td class="name">filesystem</td><td>The mod writes files onto the player's own machine.</td></tr>
+    <tr><td class="name">shell</td><td>The mod runs commands, answers for the game's tools, or adds a command of its own.</td></tr>
+    <tr><td class="name">events</td><td>The mod watches for what the player does, or starts another quest.</td></tr>
+    <tr><td class="name">bank</td><td>The mod moves money in or out of the player's account.</td></tr>
+    <tr><td class="name">ui</td><td>The mod puts a message on the player's screen.</td></tr>
+  </tbody>
+</table>
+<p>A quest that only talks to the player and pays them asks for two. One that
+builds a whole network to break into asks for four. Neither is wrong, but a
+short list is a friendlier one, and a player who sees <b class="mono">bank</b>
+wants to know why.</p>
+
 <h2 id="why-no-complete">Why quests do not complete</h2>
-<p>Written in Phase 4.</p>
+<p>There is a setting on every quest called <code>autoComplete</code>, and it
+starts switched off. While it is off, the game never marks your quest as
+finished, and <b class="ui">On quest complete</b> never runs.</p>
+<p>This surprises everybody once, so it is worth being blunt about. A node
+wired to <b class="ui">On quest complete</b> looks like the ending of your
+story. By default it is dead code that never fires, and the player's quest stays open.</p>
+<p>The way authors end a story instead is from the last objective. Wire your
+final node off the objective that closes the quest, and put the ending there.
+It runs when the player actually finishes, rather than waiting on a flag the
+game does not set.</p>
+<div class="note"><b>Or switch the setting on.</b> Turning
+<code>autoComplete</code> on makes the game close the quest when its
+objectives are done, and <b class="ui">On quest complete</b> starts working.
+Choose one of the two ways, and check your quest in a
+<a href="guides.html#dry-run">dry run</a> before you export either.</div>
 </section>
 
 <div class="pagefoot"><a href="tutorial.html">← Your first quest</a><a class="next" href="nodes.html">Node reference →</a></div>

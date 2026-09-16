@@ -34,31 +34,269 @@
   <p class="tag">One page per surface — how to get there, and what to do once you are.</p>
 </header>
 <section id="guides">
-<div class="note warn"><b>Being written.</b> This page is scaffolding
-from the Phase 3 skeleton — the structure and anchors are final, the prose lands
-in Phase 4. Nothing here is a claim about the editor yet.</div>
+<p>One page per surface of the editor, in the order you meet them. Each section
+says what the thing is for, what is on it, and what goes wrong when you ignore
+it. Where a setting has a consequence you cannot see, the consequence is
+stated.</p>
+
 <h2 id="inspector-tabs">The inspector's three tabs</h2>
-<p>Written in Phase 4.</p>
+<p>The panel on the right holds three tabs, and one of them is disabled until
+you need it.</p>
+<dl class="facts-list">
+  <dt>Node</dt><dd>Every field on the node you have selected. Greyed out when
+  nothing is selected, because there is nothing to show.</dd>
+  <dt>Quest</dt><dd>Settings for the quest you are looking at. This is the
+  default tab, so it is what you see on an empty canvas.</dd>
+  <dt>Mod</dt><dd>Settings for the whole file: the name on the box, the version,
+  the icon.</dd>
+</dl>
+<figure>
+  <img src="img/guide-inspector-tabs.png"
+       alt="The inspector at rest on the Quest tab, with the Node tab greyed out because nothing is selected." />
+  <figcaption>The inspector at rest. <b class="ui">Node</b> waits for a
+  selection.</figcaption>
+</figure>
+<p>The panel can also leave the side of the window. Drag its left edge outward
+and it floats, which helps when a node sits underneath it. Drag the title bar to
+move it and the bottom-right corner to resize it.</p>
+<figure>
+  <img src="img/guide-inspector-drawer.png"
+       alt="The inspector floating free of the window edge, dragged over the canvas." />
+  <figcaption>The same panel, floating. Its position is a preference, never part
+  of your project.</figcaption>
+</figure>
+<div class="note"><b>The floating panel and the docked one are the same
+inspector.</b> The fields
+are identical either way, so nothing is hidden in one mode. The editor also
+keeps the floating panel inside the window, so you cannot lose it past an
+edge.</div>
+
 <h2 id="quest-settings">Quest settings</h2>
-<p>Written in Phase 4.</p>
+<p>Five groups, thirteen settings. Most quests need four of them.</p>
+<h3>Identity</h3>
+<dl class="facts-list">
+  <dt>Quest identifier</dt><dd>Internal. Unique across your mod, and the thing
+  other quests name when they start this one.</dd>
+  <dt>Display title</dt><dd>What the player sees in their quest list.</dd>
+  <dt>Description</dt><dd>The pitch, shown before they accept. This is also the
+  only place to say which addons your quest needs.</dd>
+  <dt>Journal group</dt><dd>Folders the player's journal into groups. Two quests
+  in the same group read as one story.</dd>
+</dl>
+<h3>Rewards</h3>
+<p><b class="ui">Money</b> and <b class="ui">XP</b>, both plain numbers. These
+are what the game pays for finishing the quest, which is separate from anything
+a <b class="ui">Pay the player</b> node does mid-story.</p>
+<h3>Behaviour</h3>
+<dl class="facts-list">
+  <dt>Start automatically</dt><dd>The quest begins on its own instead of waiting
+  to be accepted.</dd>
+  <dt>Complete automatically</dt><dd>The game closes the quest once its
+  objectives are done. Off by default, which is why
+  <b class="ui">On quest complete</b> never fires out of the box. See
+  <a href="concepts.html#why-no-complete">why quests do not complete</a>.</dd>
+  <dt>Player can abandon</dt><dd>Lets them give up. Turning it off also means
+  <b class="ui">On quest abandoned</b> never runs.</dd>
+  <dt>Show a manual complete button</dt><dd>Puts a button in the player's hands
+  and lets them decide when the quest is over.</dd>
+  <dt>Tidy the objective list when the story ends</dt><dd>Clears completed
+  objectives so the panel is not a scroll of old text.</dd>
+  <dt>Closing line</dt><dd>One sentence shown when the quest ends. Cheapest
+  ending you can write, and often enough.</dd>
+</dl>
+<h3>Employer</h3>
+<p><b class="ui">First name</b>, <b class="ui">Last name</b> and
+<b class="ui">E-mail</b>. The person the quest is from. Worth filling in,
+because a job with no name behind it reads as a system message.</p>
+<h3>Health</h3>
+<p>Not a setting. This group reads your quest back to you: how many objectives
+it has, and how many of them nothing can ever complete. It is the fastest check
+in the editor.</p>
+<figure>
+  <img src="img/guide-quest-settings.png"
+       alt="The Quest tab scrolled to the Behaviour group, showing its six controls." />
+  <figcaption>The <b class="ui">Behaviour</b> group, where completion is
+  decided.</figcaption>
+</figure>
+
 <h2 id="mod-settings">Mod settings</h2>
-<p>Written in Phase 4.</p>
+<p>These describe the file, not the story. Everything here ends up on the card
+the game shows the player.</p>
+<dl class="facts-list">
+  <dt>Mod id</dt><dd>Internal, and part of the exported file's name. Changing it
+  later makes the game treat the result as a different mod.</dd>
+  <dt>Display name</dt><dd>The name on the box.</dd>
+  <dt>Version</dt><dd>Also part of the filename, which is how two builds of one
+  mod avoid overwriting each other.</dd>
+  <dt>Author</dt><dd>Your name. Defaults to the editor's name if you leave
+  it.</dd>
+  <dt>Description</dt><dd>The blurb in the mod list.</dd>
+  <dt>Cover image</dt><dd>and <b class="ui">Icon</b> — the two pictures. Both
+  optional, both shipped inside the <code>.zip</code>.</dd>
+  <dt>Tags</dt><dd>Search terms for the mod list.</dd>
+</dl>
+<figure>
+  <img src="img/guide-mod-settings.png"
+       alt="The Mod tab, with the identity fields and the permissions list visible." />
+  <figcaption>The <b class="ui">Mod</b> tab. Permissions appear here but are
+  not editable — your nodes choose them.</figcaption>
+</figure>
+
 <h2 id="dialogues">Dialogues</h2>
-<p>Written in Phase 4.</p>
+<p>The <b class="ui">Dialogues</b> button opens the phone conversations, in one
+place rather than scattered across the canvas. This is where you write who says
+what, in what order, and with what delay.</p>
+<figure>
+  <img src="img/guide-dialogues.png"
+       alt="The Dialogues window with one conversation open and its lines listed." />
+  <figcaption>One conversation, line by line.</figcaption>
+</figure>
+<p>A conversation needs something to reach it. Nothing wiring into a
+<b class="ui">Dialogue</b> node is a problem the export report will raise,
+because a conversation nobody triggers is a conversation the player never
+sees.</p>
+
 <h2 id="websites">Websites</h2>
-<p>Written in Phase 4.</p>
+<p>The <b class="ui">Websites</b> button opens the builder: your sites on the
+left, and the pages of whichever site you picked on the right. A site is a host;
+a page is a path on it.</p>
+<figure>
+  <img src="img/guide-websites.png"
+       alt="The Websites builder, with the site list on the left and one site's pages on the right." />
+  <figcaption>Sites and their pages.</figcaption>
+</figure>
+<p>Each page has a live preview beside the editor, so you see roughly what the
+player will see.</p>
+<figure>
+  <img src="img/guide-websites-page.png"
+       alt="A single page in the page editor, with its preview showing the rendered result." />
+  <figcaption>Editing one page, preview alongside.</figcaption>
+</figure>
+<div class="note warn"><b>A host belongs to the whole game.</b> Two mods claiming
+one domain collide, and the export report says so. A page can also be unlisted,
+which means only a direct address or a brute-force tool finds it. That is
+deliberate when you want a page hidden, and a mistake when you do not.</div>
+
 <h2 id="templates">Templates</h2>
-<p>Written in Phase 4.</p>
+<p>Thirteen starter projects, from a blank canvas to a 36-node quest, each with
+a difficulty and a node count. The window also imports a project file somebody
+else saved, which is how quests get shared.</p>
+<figure>
+  <img src="img/guide-templates.png"
+       alt="The Start from a template window, listing the templates with their difficulty and node counts." />
+  <figcaption>The template list.</figcaption>
+</figure>
+<p>Loading a template replaces what is on the canvas. That is why the editor
+offers <b class="ui">Save current quest first</b> before clearing anything.</p>
+<p>Two of the thirteen are not quests at all. <b class="ui">Node Reference</b>
+holds one of every node with example input, and <b class="ui">Quest
+Cookbook</b> collects common patterns. Neither is meant to ship — open them to
+read how something is done, then copy it into your own project.</p>
+
 <h2 id="dry-run">Dry run</h2>
-<p>Written in Phase 4.</p>
-<h2 id="addons">Addons and Editor Mods</h2>
-<p>Written in Phase 4.</p>
-<h2 id="settings">Settings and preferences</h2>
-<p>Written in Phase 4.</p>
+<p>The <b class="ui">Dry run</b> button walks through your quest the way the
+exported mod would run it, without installing anything. It is the closest thing
+to a test drive the editor has.</p>
+<figure>
+  <img src="img/guide-dryrun.png"
+       alt="The Dry run window part-way through a trace, showing which nodes have fired." />
+  <figcaption>A trace in progress. Nodes light up as the run reaches
+  them.</figcaption>
+</figure>
+<p>Watch the order rather than the outcome. If a node you expected never
+appears, nothing is wired to reach it. Drop a
+<a href="nodes/flow-debug.html">Debug probe</a> after it and run again: the
+probe prints what a node does when it fires, and whether it fires at all.</p>
+<div class="note"><b>Dry run is not the game.</b> It runs your logic, not the
+game's tools. A conversation, a scan or an exploit can still behave differently
+in the real thing, which is why the timed-conversation warning tells you to
+check in-game before you ship.</div>
+
+<h2 id="addons">Addons</h2>
+<p>Addons are packs made by other people that add events and tool actions to
+your editor. The window's own description of them:</p>
+<blockquote class="blurb">Community addons drop in here as data: their events join the trigger picker, their quest data becomes nodes. Addons are data only — the editor never runs code from them.</blockquote>
+<figure>
+  <img src="img/guide-addons.png"
+       alt="The Addons window, showing the drop area and any packs already loaded." />
+  <figcaption>The addons window. Drag a pack in, and its events and nodes
+  appear.</figcaption>
+</figure>
+<p>Once a pack is loaded, its events show up in the trigger picker under
+<b class="ui">Community addons</b>, and its tool actions appear in the palette
+under the same name. Nothing changes until you load one.</p>
+<div class="note warn"><b>Your players need the pack too.</b> A quest built on an
+addon does nothing for anyone without it, and the game will not tell them what
+is missing. Name the pack in your quest description — the editor warns you about
+this on the node, but it cannot write the description for you.</div>
+
+<h2 id="settings">Settings</h2>
+<p>The <b class="ui">Settings</b> button holds editor preferences. None of them
+reach your quest or the exported mod; they change how the editor looks and
+feels for you.</p>
+<dl class="facts-list">
+  <dt>Canvas</dt><dd><b class="ui">Show grid</b>, <b class="ui">Grid
+  colour</b>, <b class="ui">Grid opacity</b>, <b class="ui">Grid scale</b> and
+  <b class="ui">Snap to grid</b>.</dd>
+  <dt>Wires</dt><dd><b class="ui">Animated wires</b>,
+  <b class="ui">Springy wires</b>, <b class="ui">Line weight</b> and
+  <b class="ui">Mark size</b>.</dd>
+  <dt>Appearance</dt><dd><b class="ui">Interface font</b>, with a
+  <b class="ui">Follow the editor theme</b> option for the grid.</dd>
+  <dt>Getting out</dt><dd><b class="ui">Clear the autosaved draft</b> and
+  <b class="ui">Reset all editor preferences</b>. Both are deliberate and both
+  ask first.</dd>
+</dl>
+<figure>
+  <img src="img/guide-settings.png"
+       alt="The Settings window, with the canvas, wire and appearance controls listed." />
+  <figcaption>Preferences only. Your quest is untouched by anything
+  here.</figcaption>
+</figure>
+
 <h2 id="canvas-tools">Canvas tools</h2>
-<p>Written in Phase 4.</p>
-<h2 id="generate-tags">Generate and tags</h2>
-<p>Written in Phase 4.</p>
+<p>Top left of the canvas. These move nodes around; none of them change what
+your quest does.</p>
+<dl class="facts-list">
+  <dt>Tidy up</dt><dd>Arranges the whole graph left to right, by how far each
+  node sits from its entry point. The one to reach for after a long building
+  session.</dd>
+  <dt>Align in a row · Align in a column</dt><dd>Puts the selected nodes on one
+  line, centred.</dd>
+  <dt>Space out across · Space out down</dt><dd>Equalises the gaps without
+  moving anything onto a line. The outermost nodes stay where they are.</dd>
+  <dt>Springy wires</dt><dd>Switches the wires between settling and drifting.
+  Purely cosmetic, and off is calmer on a big map.</dd>
+  <dt>Debug</dt><dd>Opens the editor's own diagnostics: the build stamp, wire
+  numbers, counters and a recent-event log. <b>This is not the Debug probe
+  node</b> — that one goes on your canvas and prints what a node does at
+  runtime.</dd>
+</dl>
+<figure>
+  <img src="img/guide-canvas-tools.png"
+       alt="The canvas toolbar in the top-left corner, with the tidy-up and alignment buttons and the issue counter." />
+  <figcaption>The canvas tools, with the issue counter beside them.</figcaption>
+</figure>
+<p>Beside the tools is the counter described in
+<a href="checking.html#where-messages-appear">where messages appear</a>. It
+reads <span class="mono">No issues</span> when the quest is clean.</p>
+
+<h2 id="generate-tags">Two buttons beside a text field</h2>
+<p>Some text fields carry one or two small buttons. They look alike and do
+opposite things, which is worth getting straight early.</p>
+<dl class="facts-list">
+  <dt>The dice</dt><dd>Fills the field with a realistic value it makes up — a
+  plausible address, a named contractor, an e-mail. The result is fixed forever,
+  because it is now text you typed.</dd>
+  <dt>The sparkle</dt><dd>Inserts a tag the game fills in when the quest runs,
+  like the address the game allocates to your network. The value is different
+  every playthrough, because it does not exist yet.</dd>
+</dl>
+<p>Roll the dice when you want something concrete to look at while you build.
+Use the sparkle when the game is the only thing that knows the answer — a
+machine address is the common case, since the game allocates it.</p>
+<div class="note ok"><b>Both are ordinary edits.</b> Either one can be undone
+with <kbd>Ctrl</kbd>+<kbd>Z</kbd>, exactly like typing.</div>
 </section>
 
 <div class="pagefoot"><a href="nodes.html">← Node reference</a><a class="next" href="how-do-i.html">How do I… →</a></div>

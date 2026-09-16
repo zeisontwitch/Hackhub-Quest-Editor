@@ -220,7 +220,16 @@ const JARGON =
     /\b(JSON|schema|node type|d\.ts|Zod|esbuild|prop drill|nested path|apiVersion|minSdkVersion|runtime source|mod package|aggregate|declarative|descriptor|source map|compile|boolean|enum|string|integer|float|array|null|undefined|nullable|parse|serialize|deserialize|instantiate|initialise|deterministic|callback|API|SDK|interface|deprecated|regex|asynchronous)\b/;
 
 /** Deliberate exceptions: filenames, and UI text quoted verbatim. */
-const JARGON_ALLOWLIST = ["package.json", "tsconfig.json", "esbuild.config.mjs", "manifest.json"];
+/* Words the ban would catch in a legitimate use. "Interface font" is the
+   literal label on a control in the Settings window (SettingsDialog.tsx), so
+   quoting it is not jargon leaking into prose — it is the product's own word. */
+const JARGON_ALLOWLIST = [
+    "package.json",
+    "tsconfig.json",
+    "esbuild.config.mjs",
+    "manifest.json",
+    "Interface font",
+];
 
 const FILLERS =
     /\b(simply|just|easy|easily|obviously|trivial|trivially|merely|clearly|basically|essentially)\b/i;

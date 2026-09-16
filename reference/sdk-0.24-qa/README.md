@@ -12,11 +12,11 @@ This folder is a deliberately small, manual in-game harness for the r166 SDK 0.2
 
 ## Current raw-mod status from in-game QA
 
-As of the HackHub 1.3.0 / Steam build 25341308 run on 2026-09-16, the raw `mod` harness is green by tester report except for terminal `curl`, which is unavailable in that build/session. Browser HTTP, Browser intercept, Browser collaborator, `Http.fetch`, Scheduler, native Wi-Fi fields/connect/disconnect/reload, abandon/reset cleanup, and the separate quest lifecycle probes all behaved as expected with no freezes. The full step-by-step transcript is `QE24-TestResults - 3.md`.
+As of the HackHub 1.3.0 / Steam build 25341308 run on 2026-09-16, the raw `mod` harness is green by tester report except for terminal `curl`, which is unavailable in that build/session. Browser HTTP, Browser intercept, Browser collaborator, `Http.fetch`, Scheduler, native Wi-Fi fields/connect/disconnect/reload, abandon/reset-reseed command cleanup, and the separate quest lifecycle probes all behaved as expected with no freezes. The full step-by-step transcript is `QE24-TestResults - 3.md`.
 
 One raw Wi-Fi gameplay wart remains documented: Bettercap can set the AP by BSSID and capture/crack the handshake, but `set wifi.ap 02:24:00:00:24:01` logs `SSID: undefined` instead of `QE24-RAW-5G`. Treat that as a runtime UX issue to account for before exposing native Wi-Fi broadly.
 
-If you are continuing QA, the next useful target is the editor-generated scaffold (`editor-export/`): test `QE24-LAB-5G` and `http://qe24-website.test/`. The only raw collaborator edge still unclear is DNS-only lookup: run `qe24 collab`, then `nslookup <printed-subdomain>.qe24-collab.test` without `http://` or `/qe24`, and check `qe24 history` for `kind=dns`.
+If you are continuing QA, the next useful target is the editor-generated scaffold (`editor-export/`): test `QE24-LAB-5G` and `http://qe24-website.test/`. DNS-only collaborator lookup was tested with `nslookup <printed-subdomain>.qe24-collab.test`; it returned `No results found` and produced no new collaborator history entry, so treat DNS-only collaborator support as unsupported/fenced in this build. Browser HTTP collaborator remains green.
 
 ## Plain-English quick start
 
@@ -134,6 +134,17 @@ Then use the in-game Browser for browser-compatible URLs:
 - the `http://<random>.qe24-collab.test/qe24` URL printed by `qe24 collab`
 
 Record the curl subcase as `Blocked` if `curl` is missing. H-04 and H-06 can still pass through the in-game Browser fallback if the Browser URL is held/forwarded or the collaborator hit appears.
+
+
+## Editor-export test route
+
+Test this separately from the raw harness on a clean save when possible. Install `editor-export/` and check:
+
+1. Start/load: a mail/toast for `QESdk024EditorQa` appears and there is no startup error.
+2. Browser HTTP: open `http://qe24-website.test/`, then `http://qe24-website.test/echo`. The editor quest should tick `http-request` and/or `http-response`; record exactly which ones tick.
+3. Editor Wi-Fi: connect to `QE24-LAB-5G` with `correct-horse-battery`, then disconnect. Expected AP fields are BSSID `02:24:00:00:24:02`, channel `44`, WPS `true`.
+4. Save/reload: the editor AP should not duplicate, and event listeners/objectives should still work.
+5. Optional intercept: also install the raw harness, run `qe24 intercept on`, open `http://qe24-website.test/`, then `qe24 intercept queue` and `qe24 intercept forward`. The editor `http-intercepted` objective should tick if static website traffic emits `Http.Intercepted`.
 
 ## Raw harness commands
 

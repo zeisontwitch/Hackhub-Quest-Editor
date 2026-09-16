@@ -627,6 +627,7 @@ class QE24Command extends sdk.Command {
             tools.println("Expected: collaborator-hit objective ticks and qe24 status/history can show the hit. If nothing happens, record Partial/Fail.");
             tools.println("If curl says command not found, record the curl-only row as Blocked and try the Browser URL instead.");
             tools.println("Optional DNS-only check: run nslookup " + host + " without http/path, then qe24 history; look for a kind=dns collaborator hit.");
+            tools.println("If nslookup says No results found and history does not change, record DNS-only collaborator as unsupported/fail for this build.");
             return;
         }
         if (sub === "intercept") {

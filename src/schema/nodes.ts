@@ -240,7 +240,13 @@ export const WifiNodeDataSchema = z.object({
     password: z.string().default(""),
     signal: z.number().default(2),
     bssid: z.string().optional(),
-    channel: z.string().optional(),
+    /** Wi-Fi channel shown by scans. Old drafts may have stored it as text. */
+    channel: z.preprocess(
+        (value) => (value === "" || value == null ? undefined : value),
+        z.coerce.number().optional(),
+    ),
+    /** Whether the access point advertises WPS in Wi-Fi scans. */
+    wps: z.boolean().optional(),
     /** Always `random` — see NetworkNodeDataSchema.ipMode (r73). */
     ipMode: z.enum(["fixed", "random"]).catch("random").default("random")
         .transform(() => "random" as const),

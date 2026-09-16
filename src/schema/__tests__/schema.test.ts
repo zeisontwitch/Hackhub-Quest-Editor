@@ -286,6 +286,25 @@ describe("node documents", () => {
         expect(parsed.success).toBe(false);
     });
 
+    it("normalizes SDK 0.24 Wi-Fi channel drafts without turning blanks into channel 0", () => {
+        const stringChannel = NodeSchema.parse({
+            id: "n-wifi-string-channel",
+            type: "world.wifi",
+            position: { x: 0, y: 0 },
+            data: { ...nodeTypeDef("world.wifi").create(), channel: "44", wps: true },
+        }) as NodeDoc;
+        const blankChannel = NodeSchema.parse({
+            id: "n-wifi-blank-channel",
+            type: "world.wifi",
+            position: { x: 0, y: 0 },
+            data: { ...nodeTypeDef("world.wifi").create(), channel: "" },
+        }) as NodeDoc;
+
+        expect((stringChannel.data as Record<string, unknown>).channel).toBe(44);
+        expect((stringChannel.data as Record<string, unknown>).wps).toBe(true);
+        expect((blankChannel.data as Record<string, unknown>).channel).toBeUndefined();
+    });
+
     it("keeps each node type's data shape distinct", () => {
         // If the discriminated union ever collapses back to `unknown` (the bug
         // the generic `node<T, D>()` helper fixed), these two shapes become the

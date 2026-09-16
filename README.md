@@ -36,7 +36,7 @@ Only relevant to coders, if you just want to use the tool you can ignore this.
 
 ```bash
 npm run typecheck    # tsc --noEmit
-npm test             # 1,416 tests (vitest)
+npm test             # 1,521 tests (vitest)
 npm run build        # typecheck + vite build → dist/
 ```
 
@@ -98,11 +98,12 @@ foundation for everything that follows. The three findings that shape the whole 
    plus a small plain-JS runtime that walks the quest graph — which is exactly why
    exported mods need no build step.
 
-2. **The docs' event payload table is stale for roughly half the 92 events.**
-   The guide says `Terminal.NmapScan` is `{ ip, ports }`; it is `{ ip, versionScan? }`.
-   It says `Quest.Claimed` is `{ questName }`; it is `{ name, id }`. An editor built
-   from that table would generate triggers that never fire. The full diff is in
-   [§7.2](docs/01-analysis-and-architecture.md#72-payloads-where-the-events-guide-page-is-wrong).
+2. **The event catalogue must come from the pinned SDK, not stale prose.**
+   Older guide pages said `Terminal.NmapScan` was `{ ip, ports }`; the runtime
+   emits `{ ip, versionScan? }`. They said `Quest.Claimed` was `{ questName }`;
+   it is `{ name, id }`. The editor now generates its event list from the
+   installed SDK declarations (currently 99 events in SDK 0.24.0), because an
+   editor built from stale prose would generate triggers that never fire.
 
 3. **There is no SMS API.** Phone *calls* exist (`Quest.Dialog`); text messages do not.
    So no SMS editor ships — see decision 2 below.
@@ -119,7 +120,7 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
-| 1 | **Waiting on the game patch** | The developer has replied ([`docs/07-dev-response-mod-sdk-bug-report-response.md`](docs/07-dev-response-mod-sdk-bug-report-response.md), **fenced — read the banner first**): every reported item was reproduced, three were misdiagnosed (declarative triggers always worked — payload types were the lie), fixes ship in an upcoming patch. New surface (`this.complete()`, `Twotter.removeUser`, `Mail.remove`, …) is **not in the pinned SDK yet**: nothing implements it, no workaround comes off. Per Zeis the dev also verbally agreed on Discord (after the document, no timeline) to expose SMS; it appears nowhere in the written response — same fence. |
+| 1 | **SDK 0.24 in-game QA** | SDK 0.24.0 is pinned and the event catalogue is upgraded, but the risky surfaces remain fenced until real game evidence says otherwise. The active checklist and installable harnesses are in [`docs/plans/r166-sdk-0.24-ingame-qa.md`](docs/plans/r166-sdk-0.24-ingame-qa.md) and `reference/sdk-0.24-qa/`. |
 | 2 | Old quest mail is never cleaned up | Mail sent by an uninstalled mod stays in the inbox. The `Mail` namespace has no delete, so there may be nothing we can do — question 9 in the bug report. |
 | 3 | **Date deprecation warning (`moment` RFC2822)** | Only appears with a quest-editor mod installed, 30–90s after a mail is sent, when a browser or app screen is opened. The stack is the game's own date formatting and we never set a date on anything — question 10 in the bug report. |
 
@@ -134,6 +135,8 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
+| r166 | **SDK 0.24 in-game QA harness** | ([plan](docs/plans/r166-sdk-0.24-ingame-qa.md)) Adds the evidence-only checklist plus installable raw/editor QA harnesses under `reference/sdk-0.24-qa/`. Hidden/imported Wi-Fi now carries SDK 0.24's BSSID, numeric channel and WPS fields through the native creator when present, but the palette and higher-risk SDK surfaces stay fenced pending in-game results. |
+| r165 | **SDK 0.24 declaration and event-catalogue upgrade** | ([plan](docs/plans/r165-sdk-0.24-assessment.md)) Pins `@hotbunny/hackhub-content-sdk@0.24.0`, regenerates the 99-event catalogue/manual appendix, and records which new surfaces still require game verification before product exposure. |
 | r163 | **Standalone user manual** | ([plan](docs/plans/r163-user-manual.md)) A proper, self-contained user manual as a single HTML file at [`public/manual.html`](public/manual.html) — inline CSS, no build step, no JS, opens straight off disk. Sticky section nav (structure inspired by a single-page reference manual, content ours only) walks every surface: the top bar and quest strip, palette, canvas, inspector, status/issues; a full node reference of all **34** node types across their **10** categories; sockets & wires; Dialogues; Websites; the **92** events grouped ten ways; Generate (dice) & tags; Addons; the **13** templates; Dry run; export contents; Settings (6 themes, 7 fonts, grid, wires); the complete keyboard/mouse cheat sheet; saving; and the known limits (Wi-Fi/complete caveats). Every figure counted from the code, not the stale r148 doc. Documentation only — no compiler-output change, so `EDITOR_BUILD` is unchanged. |
 | r162 | **Dice icon + service-aware Version generator + long tail** | ([plan](docs/plans/r162-dice-icon-and-long-tail.md)) Finishes the auto-generate feature. The r161 dice icon was a plain square that read as a text box; it's replaced by a proper filled vector die (`Icon.tsx` gained filled-glyph support). Ports → **Version** now composes from the port's **Service** and obeys the game's real rule — three parts, first 1–9, rest 0–99 (e.g. `2.4.71`) — so an ssh port rolls `OpenSSH 8.4.71`, never a rejected banner. Long tail wired: port Service, vuln Version, Pay-node From IBAN + From name, Wi-Fi SSID, and the sims (Mail from, Kisscord handle, WeeChat host + per-line username). Still editor-only — nothing reaches the compiler or export. +5 tests. |
 | r161 | **Auto-generate (dice) button for name/IP-like fields** | ([plan](docs/plans/r161-autogen-dice-button.md)) Next-up #1: a flat dice button beside name/IP/domain fields fills them with a realistic **hardcoded** value in the editor (exports as plain text — the tag/sparkle button stays right beside it for the runtime-random `{{…}}` case, so IP fields now offer both). A pure, seedable `src/lib/generate` engine composes from curated wordlists rather than a flat firstname+lastname list, and reuses values already entered in the same section — roll First name → *John*, Last name → *Noble*, then E-mail → *jnoble@…* — reading siblings but only ever writing its own field, so one click is one undo step. IPs come public **or** private (RFC-1918) per field. Wired across the quest Employer, Create-network devices (IP/hostname/domain/router model), user accounts, and every IP/domain/host field. Fields opt in with a `generate` descriptor; nothing new reaches the compiler or export. +18 tests. |
@@ -154,7 +157,7 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 | Item | Why |
 |---|---|
 | No ctrl+drag to deselect | Three rounds (r93–r95) failed to make it work in a real browser and it was dropped as not worth the cost. React Flow sends no change events for a box over already-selected nodes, and the geometry workaround needed a store subscription firing every frame. **Ctrl+click** to deselect works. |
-| No Wi-Fi networks (node hidden) | SDK 0.21.0 has no wireless API. `world.wifi` is hidden from the palette but kept in the schema and compiler for forward-compat; Cold Storage models wireless as a router network. |
+| Wi-Fi node still hidden | SDK 0.24.0 declares `Network.createWifiNetwork`, and old/imported `world.wifi` nodes now export through it when present. The node stays out of the palette until the r166 in-game QA rows for scan fields, connection events, reload and cleanup are green. |
 | No Twotter | Removed in r31: the SDK declares it but this build does not honour it. Revisit if a newer build ships it. |
 | No log-cleaning node | Entirely engine-side: the game logs connections on the machine, and the player wipes them from its own UI. |
 
@@ -173,10 +176,10 @@ Rounds 130–153 are archived at
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-14.r162`: **1,498 tests** across 77
+Counted from the code at build `2026-09-16.r166`: **1,521 tests** across 79
 files, **34 node types** in 10 categories (33 in the palette — Wi-Fi is hidden),
-**13 templates** (11 playable + 2 reference sheets), **92 game events**,
-against `@hotbunny/hackhub-content-sdk@0.21.0`.
+**13 templates** (11 playable + 2 reference sheets), **99 game events**,
+against `@hotbunny/hackhub-content-sdk@0.24.0`.
 
 ### Documentation
 
@@ -215,7 +218,7 @@ docs/
   archive/                          # Retired roadmap history
 reference/
   generate-event-catalogue.mjs      # parses the SDK's index.d.ts → event palette data
-  hackhub-events.json               # all 92 events with verified payloads (generated)
+  hackhub-events.json               # all 99 events with verified payloads (generated)
   Official-Quest/                   # Zeis's transcriptions of the game's official quests
 scripts/
   build-naza-pages.mjs              # regenerates the "public agency" site template
@@ -225,7 +228,7 @@ src/
   schema/                           # the ProjectDocument model (Zod) — the product's spine
     registry.ts                     #   one description per node type: palette, handles,
                                     #   inspector fields and lifecycle hook all read this
-    events.ts                       #   the 92-event catalogue, with real payloads
+    events.ts                       #   the 99-event catalogue, with real payloads
     migrate.ts                      #   upgrades old drafts (e.g. the 4 comms node types
                                     #   that became one general dialogue node)
   analysis/                         # node + field warnings (issues with next steps)

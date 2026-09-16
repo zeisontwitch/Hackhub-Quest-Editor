@@ -1,13 +1,13 @@
 {
   "generatedBy": "scripts/extract-manual-inventory.mjs",
-  "editorBuild": "2026-09-16.r165",
+  "editorBuild": "2026-09-16.r166",
   "sdkVersion": "0.24.0",
   "counts": {
     "nodeTypes": 34,
     "obtainableNodeTypes": 33,
     "categories": 10,
-    "editableFields": 120,
-    "editableFieldsExcludingLists": 113,
+    "editableFields": 123,
+    "editableFieldsExcludingLists": 116,
     "sockets": 65,
     "events": 99,
     "eventGroups": 10
@@ -528,6 +528,35 @@
         },
         {
           "depth": 0,
+          "path": "bssid",
+          "kind": "text",
+          "key": "bssid",
+          "label": "BSSID",
+          "hint": "Optional MAC address shown for the access point. Leave blank to let the game pick one.",
+          "placeholder": "02:24:00:00:24:01",
+          "mono": true
+        },
+        {
+          "depth": 0,
+          "path": "channel",
+          "kind": "number",
+          "key": "channel",
+          "label": "Channel",
+          "hint": "Optional 2.4 GHz or 5 GHz channel shown by scans. Leave blank to let the game pick one for the SSID's band.",
+          "min": 1,
+          "max": 196,
+          "step": 1
+        },
+        {
+          "depth": 0,
+          "path": "wps",
+          "kind": "toggle",
+          "key": "wps",
+          "label": "Advertises WPS",
+          "hint": "Whether Wi-Fi scans show WPS for this access point. Leave off unless your QA case needs to pin it."
+        },
+        {
+          "depth": 0,
           "path": "model",
           "kind": "text",
           "key": "model",
@@ -712,7 +741,7 @@
           "hint": "Off by default: the access point stays in the world after the quest. Abandoning the quest removes it either way."
         }
       ],
-      "editableFieldCount": 19,
+      "editableFieldCount": 22,
       "defaults": {
         "ssid": "NEIGHBOUR_5Ghz",
         "password": "letmein123",

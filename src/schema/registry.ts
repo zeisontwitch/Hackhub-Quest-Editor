@@ -521,6 +521,9 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
             { kind: "text", key: "ssid", hint: "The network name shown in the in-game Wi-Fi list.", label: "Network name (SSID)", mono: true, generate: { kind: "ssid", label: "network name" } },
             { kind: "text", key: "password", label: "WPA passphrase", mono: true, hint: "The passphrase the player must discover. Make sure some node in your quest reveals it." },
             { kind: "slider", key: "signal", label: "Signal strength", min: 0, max: 3, step: 1, hint: "The game's Wi-Fi scale: 0 = weakest, 3 = strongest. It also drives how long joining takes." },
+            { kind: "text", key: "bssid", label: "BSSID", mono: true, placeholder: "02:24:00:00:24:01", hint: "Optional MAC address shown for the access point. Leave blank to let the game pick one." },
+            { kind: "number", key: "channel", label: "Channel", min: 1, max: 196, step: 1, hint: "Optional 2.4 GHz or 5 GHz channel shown by scans. Leave blank to let the game pick one for the SSID's band." },
+            { kind: "toggle", key: "wps", label: "Advertises WPS", hint: "Whether Wi-Fi scans show WPS for this access point. Leave off unless your QA case needs to pin it." },
             { kind: "text", key: "model", label: "Router model", mono: true, generate: { kind: "routerModel", label: "router model" }, hint: "Enables the in-game `fern` recovery route. Leave blank to disable it." },
             {
                 kind: "list",

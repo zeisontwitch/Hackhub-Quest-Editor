@@ -1098,18 +1098,23 @@ function __qeRegisterProject(sdk, PROJECT) {
                        older game build, and because the Wi-Fi palette entry is
                        still fenced until in-game QA confirms every field. */
                     if (sdk.Network.createWifiNetwork) {
-                        var madeWifiIp = sdk.Network.createWifiNetwork({
+                        var wifiDef = {
                             ssid: d.ssid,
                             password: d.password,
                             signal: d.signal,
-                            bssid: d.bssid,
-                            channel: d.channel,
                             ip: wifiIp,
                             model: d.model,
                             users: wifiRoot.users || [],
                             ports: wifiRoot.ports || [],
                             children: wifiRoot.children || [],
-                        });
+                        };
+                        if (d.bssid) wifiDef.bssid = d.bssid;
+                        if (d.channel != null && d.channel !== "") {
+                            var wifiChannel = Number(d.channel);
+                            if (!isNaN(wifiChannel)) wifiDef.channel = wifiChannel;
+                        }
+                        if (d.wps != null) wifiDef.wps = !!d.wps;
+                        var madeWifiIp = sdk.Network.createWifiNetwork(wifiDef);
                         questCleanup.push({ kind: "network", ip: madeWifiIp || wifiIp, onComplete: d.destroyOnComplete === true });
                         return next();
                     } else {

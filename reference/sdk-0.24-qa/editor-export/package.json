@@ -1,0 +1,12 @@
+{
+  "name": "qe-sdk-024-editor-qa",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node esbuild.config.mjs"
+  },
+  "devDependencies": {
+    "@hotbunny/hackhub-content-sdk": "latest",
+    "esbuild": "^0.24.0"
+  }
+}

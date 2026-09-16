@@ -49,7 +49,7 @@ public/manual/
   concepts.html         Core concepts
   nodes/<type>.html     33 files, one per obtainable node type
   guides/<feature>.html 10 files, one per feature surface
-  recipes.html          All recipes on one page (they are short and cross-link)
+  how-do-i.html          All recipes on one page (they are short and cross-link)
   checking.html         Every message the editor can show
   export.html           Exporting and installing
   troubleshooting.html  Decision tree + FAQ
@@ -204,7 +204,7 @@ big editor, linked from the node page.
   points, the Debug panel, the minimap, and the inspector drawer (float, dock,
   resize).
 
-### 6. Recipes — *recipes.html* — ~6,000 words
+### 6. How do I… — *how-do-i.html* — ~6,000 words
 > Sixteen goal-titled how-tos, each mined from a real template or an official
 > quest. No invented patterns, no late-story spoilers.
 
@@ -407,7 +407,7 @@ instead of a search through a 40,000-line document.
 | G2 | a field key has no entry on its node's page | `manual: world.port field "Version" has no "### Version" heading in nodes/world-port.html` |
 | G3 | a documented node or field no longer exists | `manual: nodes/flow-delay.html documents field "millis", which world… is not on flow.delay any more` |
 | G4 | an anchor the app links to is gone | `manual: anchor #node-fx-pay missing, referenced from InspectorPanel.tsx` |
-| G5 | an internal link points nowhere | `manual: recipes.html links to checking.html#msg-dead-end, which does not exist` |
+| G5 | an internal link points nowhere | `manual: how-do-i.html links to checking.html#msg-dead-end, which does not exist` |
 | G6 | a banned word appears in the body | `manual: concepts.html:88 uses "compile"; the UI word is "Export"` |
 | G7 | a message string has no index entry | `manual: compile.ts emits "…Kisscord uploads compile to…" with no entry in checking.html` |
 | **G8** | **an image is missing or orphaned** | `manual: nodes/fx-pay.html references img/node-fx-pay-inspector.png, which is not in public/manual/img/` |

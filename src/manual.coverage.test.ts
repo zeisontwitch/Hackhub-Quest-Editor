@@ -170,7 +170,7 @@ const EXPECTED_PAGES = new Set<string>([
     "concepts.html",
     "nodes.html",
     "guides.html",
-    "recipes.html",
+    "how-do-i.html",
     "checking.html",
     "export.html",
     "troubleshooting.html",

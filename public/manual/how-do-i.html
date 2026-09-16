@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Recipes — HackHub Quest Editor handbook</title>
+<title>How do I… — HackHub Quest Editor handbook</title>
 <link rel="stylesheet" href="manual.css" />
 </head>
 <body>
@@ -21,7 +21,7 @@
     <li><a href="concepts.html">How a quest works</a></li>
     <li><a href="nodes.html">Node reference</a></li>
     <li><a href="guides.html">Feature guides</a></li>
-    <li><a href="recipes.html">Recipes</a></li>
+    <li><a href="how-do-i.html">How do I…</a></li>
     <li><a href="checking.html">Checking your quest</a></li>
     <li><a href="export.html">Exporting and installing</a></li>
     <li><a href="troubleshooting.html">When something goes wrong</a></li>
@@ -30,19 +30,21 @@
 </nav>
 <main>
 <header class="hero">
-  <h1>Recipes</h1>
-  <p class="tag">Sixteen arrangements that work, each solving one thing an author actually wants.</p>
+  <h1>How do I…</h1>
+  <p class="tag">Sixteen walkthroughs, each one solving a single thing an author actually wants.</p>
 </header>
-<section id="recipes-list">
-<p>Each recipe names the nodes it uses, how long it takes, why the arrangement
-works, and the two or three ways it usually goes wrong. They are drawn from the
-built-in templates and from how the game's own quests are put together.</p>
+<section id="howto-list">
+<p>These are not a feature of the editor. They are arrangements other authors
+have built, written out as steps you can follow. Each one names the nodes it
+uses, how long it takes, why the arrangement works, and the two or three ways
+it usually goes wrong. They are drawn from the built-in templates and from how
+the game's own quests are put together.</p>
 <div class="note warn"><b>Being written.</b> This page is scaffolding
 from the Phase 3 skeleton — the structure and anchors are final, the prose lands
 in Phase 4. Nothing here is a claim about the editor yet.</div>
 </section>
 
-<section id="recipe-objective-that-ticks">
+<section id="howto-objective-that-ticks">
 <h2>Give the player an objective, and make it tick</h2>
 <dl class="facts-list">
   <dt>You'll need</dt><dd><a href="nodes/objective.html">Objective</a> · <a href="nodes/trigger-event.html">When event</a></dd>
@@ -72,7 +74,7 @@ never finish the quest.</p>
 </ol>
 
 <figure>
-  <img src="img/recipe-01-objective.png"
+  <img src="img/howto-01-objective.png"
        alt="An Objective node and a When event node side by side, joined by a single condition-coloured wire running from the trigger's When socket into the objective's Trigger socket." />
   <figcaption>The finished pair. One wire, and it goes into <b>Trigger</b> —
   not into <b>In</b>, which is a different kind of connection and will refuse

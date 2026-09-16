@@ -181,27 +181,27 @@ shot, `tutorial-14-installed.png`).
 
 ### 3.1 Recipes (16) — "the finished piece", 760 × 480
 
-Each is the node arrangement the recipe builds. Load the template named in the
-recipe and crop to the relevant cluster — not the whole canvas.
+Each is the node arrangement the walkthrough builds. Load the template named in the
+walkthrough and crop to the relevant cluster — not the whole canvas.
 
 | Filename | Recipe |
 |---|---|
-| `recipe-01-objective.png` | Give the player an objective and make it tick |
-| `recipe-02-npc-message.png` | Send the player a message from an NPC |
-| `recipe-03-gated-message.png` | Make an NPC message arrive only after something else happens |
-| `recipe-04-payment.png` | Pay the player, and charge them |
-| `recipe-05-branch.png` | Branch the story on something the player did |
-| `recipe-06-passphrase.png` | Ask the player for a passphrase, with a wrong-answer route |
-| `recipe-07-website.png` | Build a website the player has to find |
-| `recipe-08-hidden-page.png` | Hide a page so only a brute-force finds it |
-| `recipe-09-file-drop.png` | Put a file on a machine the player has to break into |
-| `recipe-10-scan-gate.png` | Make the player scan a target before the story moves on |
-| `recipe-11-lead.png` | Give the player a lead they can look up |
-| `recipe-12-tool-match.png` | Set up a target a tool mod actually matches |
-| `recipe-13-chained-talk.png` | Chain two conversations together |
-| `recipe-14-ending.png` | End the story cleanly without completing the quest |
-| `recipe-15-from-template.png` | Start from a template and make it yours |
-| `recipe-16-update.png` | Update a quest you already exported |
+| `howto-01-objective.png` | Give the player an objective and make it tick |
+| `howto-02-npc-message.png` | Send the player a message from an NPC |
+| `howto-03-gated-message.png` | Make an NPC message arrive only after something else happens |
+| `howto-04-payment.png` | Pay the player, and charge them |
+| `howto-05-branch.png` | Branch the story on something the player did |
+| `howto-06-passphrase.png` | Ask the player for a passphrase, with a wrong-answer route |
+| `howto-07-website.png` | Build a website the player has to find |
+| `howto-08-hidden-page.png` | Hide a page so only a brute-force finds it |
+| `howto-09-file-drop.png` | Put a file on a machine the player has to break into |
+| `howto-10-scan-gate.png` | Make the player scan a target before the story moves on |
+| `howto-11-lead.png` | Give the player a lead they can look up |
+| `howto-12-tool-match.png` | Set up a target a tool mod actually matches |
+| `howto-13-chained-talk.png` | Chain two conversations together |
+| `howto-14-ending.png` | End the story cleanly without completing the quest |
+| `howto-15-from-template.png` | Start from a template and make it yours |
+| `howto-16-update.png` | Update a quest you already exported |
 
 ### 3.2 Troubleshooting (3) — all cropped to **Region**
 

@@ -134,7 +134,7 @@ describe("analyseGraph", () => {
         expect(deadEnd?.nextStep).toMatch(/retrying/);
     });
 
-    it("flags a wired On quest complete as completion-gated", () => {
+    it("flags a wired On quest complete when the graph has no completion node", () => {
         const done = node("entry.complete");
         const pay = node("fx.pay");
 
@@ -143,7 +143,21 @@ describe("analyseGraph", () => {
         const gated = analysis.issues.find((i) => i.nodeId === done.id);
         expect(gated?.label).toBe("Only runs on completion");
         expect(gated?.severity).toBe("warn");
-        expect(gated?.nextStep).toMatch(/last objective/);
+        expect(gated?.nextStep).toMatch(/Complete quest node/);
+    });
+
+    it("accepts On quest complete when the graph contains a Complete quest node", () => {
+        const done = node("entry.complete");
+        const pay = node("fx.pay");
+        const start = node("entry.start");
+        const finish = node("fx.completeQuest");
+
+        const analysis = analyseGraph([done, pay, start, finish], [
+            edge(done, "out", pay, "in"),
+            edge(start, "out", finish, "in"),
+        ]);
+
+        expect(analysis.issues.some((i) => i.nodeId === done.id && i.label === "Only runs on completion")).toBe(false);
     });
 
     it("leaves an unwired On quest complete to the Empty rule", () => {

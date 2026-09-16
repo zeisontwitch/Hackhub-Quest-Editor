@@ -1,14 +1,15 @@
-# Engine bug: completing a mod-defined quest freezes the game
+# Historical engine bug: completing a mod-defined quest froze the game
 
-**Status:** reproduced minimally. Shipping quests work around it by never
-formally completing (see *Impact on this editor* below) — Zeis, r131: the
-whole "never complete a quest, let it vanish after the player runs through
-it" convention exists **because every completion path the SDK ships with
-crashes the game** in the current build; the workaround is slated for
-removal once the developer's patch lands and formal completion verifies
-in-game (fence-lift queue item).
-**Game version:** HackHub 1.1.2 (win32, x64)
-**SDK:** `@hotbunny/hackhub-content-sdk@0.21.0`
+**Status:** superseded by later QA. This bug was reproduced minimally on
+HackHub 1.1.2 with SDK 0.21.0 and drove the old "never complete a quest"
+workaround. In HackHub 1.3.0 with SDK 0.24.0, the r166 lifecycle harness and
+r168 phone `onEnd` probes verified `this.complete()`, `this.retire()`,
+`Quest.unclaim(name)`, auto-complete, and the Complete button without freezes.
+The editor restored author-facing quest-ending nodes in r169.
+
+Everything below is retained as historical evidence for the old workaround.
+**Game version at time found:** HackHub 1.1.2 (win32, x64)
+**SDK at time found:** `@hotbunny/hackhub-content-sdk@0.21.0`
 **Found:** 2026-09-04, over 10 in-game test runs
 
 ## Summary
@@ -155,12 +156,12 @@ Generated quests therefore now default to:
 The quest entry still cannot be removed from the list — there is no API for it
 — but it now reads as a finished contract rather than an abandoned one.
 
-## Impact on this editor
+## Current impact on this editor
 
-Every quest the editor generates is finite and meant to end. Until this is
-resolved the only shipping option is a quest that never formally completes:
-objectives tick, the story concludes with its closing mail and payment, but the
-engine is never asked to retire the quest. That leaves the entry sitting in the
-player's quest list forever, which is visible and unsatisfying.
+The old shipping constraint is lifted. Authors can now place a terminal
+**Complete quest**, **Retire quest**, or **Unclaim quest** node when a story
+should formally leave the player's active list. The legacy objective-hiding
+cleanup stays available for projects that intentionally remain active.
 
-Probes `K_never_completes` and `L_harbour_never_completes` test that workaround.
+This file remains useful because it explains why the old defaults, comments and
+templates were shaped around non-completion before r169.

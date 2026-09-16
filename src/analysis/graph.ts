@@ -151,19 +151,18 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
         // following an edge that targets it, so it always has an input.
         // Removed in r124 rather than kept as a guard no test can exercise.
 
-        /* A wired "On quest complete" that can never run. Quests ship with
-           auto-complete off and no Complete button, so completion never
-           happens and everything downstream is dead — four shipped templates
-           fell into this before the audit caught it. The copy stays accurate
-           for quests that do turn completion on: the condition is the point. */
-        if (node.type === "entry.complete" && wiredOut > 0) {
+        /* A wired "On quest complete" still needs an actual completion path.
+           The graph analysis can see an explicit Complete quest node; quest
+           Behaviour settings are checked elsewhere, so this rule stays as a
+           gentle reminder only when the graph itself has no formal ending. */
+        if (node.type === "entry.complete" && wiredOut > 0 && !nodes.some((n) => n.type === "fx.completeQuest")) {
             issues.push({
                 nodeId: node.id,
                 label: "Only runs on completion",
                 detail:
-                    "This is wired, but it only runs if the quest completes — with auto-complete off and no Complete button (the default) that never happens. End the story from the last objective's “done” instead.",
+                    "This is wired, but it only runs after the quest is marked complete. This graph has no Complete quest node yet.",
                 nextStep:
-                    "Move these nodes onto the last objective's “done” socket, or turn completion on in the quest's Behaviour settings if you mean it.",
+                    "Add a Complete quest node to the final story beat, or turn on auto-complete or the Complete button in the quest's Behaviour settings.",
                 severity: "warn",
             });
         }

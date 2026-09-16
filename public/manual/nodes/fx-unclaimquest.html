@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Give data to an addon — HackHub Quest Editor handbook</title>
+<title>Unclaim quest — HackHub Quest Editor handbook</title>
 <link rel="stylesheet" href="../manual.css" />
 </head>
 <body>
@@ -46,25 +46,37 @@
 <main>
 
 <header class="hero">
-  <h1><span class="cat-dot" style="background:var(--cat-community)"></span>Give data to an addon</h1>
-  <p class="tag"><span class="badge" style="color:var(--cat-community)">Community addons</span>
-  &nbsp;<code class="mono" style="color:var(--ink-4)">world.packData</code></p>
+  <h1><span class="cat-dot" style="background:var(--cat-effect)"></span>Unclaim quest</h1>
+  <p class="tag"><span class="badge" style="color:var(--cat-effect)">Effects</span>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">fx.unclaimQuest</code></p>
 </header>
 
-<section id="node-world-packdata-page">
+<section id="node-fx-unclaimquest-page">
 
 <h2>What it does</h2>
-<p>Hands a filled-in data shape to a community addon.</p>
+<p>Unclaims a quest by name. Blank removes the quest this node belongs to.</p>
 
 <h2>When you'd use it</h2>
-<p>Use it when an addon your quest depends on asks for data. Pick the pack, pick the shape, fill in what it wants.</p>
-<p>You need the addon installed to see its fields. Nothing appears here until it is.</p>
+<p>Use it to pull back a side job, reset a chapter handoff, or remove this quest without completion.</p>
+<p>If you are ending a successful path, use <b class="ui">Complete quest</b> instead.</p>
+<p>It has no output because the chosen quest is removed here.</p>
 
 <h2>In the game, this looks like</h2>
-<p>The addon receives the values you entered when the story reaches this node.</p>
+<p>The named quest leaves the player's active list without counting as completed.</p>
 
 <h2>Fields</h2>
-<p>This node has no fields of its own. Pick an installed addon pack and one of its data shapes, and the editor shows that pack's own fields for you to fill in. With no addon installed there is nothing here to configure.</p>
+
+<h3 id="node-fx-unclaimquest-field-questName">Quest</h3>
+<blockquote class="blurb">The identifier of the claimed quest to remove. Leave blank to remove this quest.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Copy the internal name from the quest strip or the other mod notes. Blank targets this quest.</dd>
+  <dt>Example</dt><dd><code>side-contract</code></dd>
+  <dt class="dt-mute">Default</dt><dd>empty</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>The current quest is removed.</dd>
+  <dt class="dt-warn">Watch out</dt><dd>A spelling mismatch removes nothing, so the unwanted quest stays active.</dd>
+</dl>
+
+
 
 <h2>Wires</h2>
 <table>
@@ -72,11 +84,7 @@
   <tbody>
     <tr>
       <td class="name kind-flow">In</td><td>input</td>
-      <td>Whatever should run immediately before this node.</td>
-    </tr>
-    <tr>
-      <td class="name kind-flow">Out</td><td>output</td>
-      <td>Whatever should happen after this node runs.</td>
+      <td>The point where the chosen quest should be removed.</td>
     </tr>
   </tbody>
 </table>
@@ -90,37 +98,51 @@
 wire in that colour. That is what the colours are for: match the colours and
 the connection takes, mismatch them and it will not.</p>
 
-
+<h2>Step by step: add this node to a quest</h2>
+<ol class="plain">
+  <li>Find <b class="ui">Unclaim quest</b> under <b>Effects</b>.</li>
+  <li>Type the quest identifier, or leave <b class="ui">Quest</b> blank for this quest.</li>
+  <li>Wire the cancellation beat into its input.</li>
+</ol>
 
 <figure>
-  <img src="../img/node-world-packdata-inspector.png"
-       alt="The Give data to an addon node selected on the canvas, with its inspector open on the right." />
-  <figcaption>The inspector for <b>Give data to an addon</b>.</figcaption>
+  <img src="../img/node-fx-unclaimquest-inspector.png"
+       alt="The Unclaim quest node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>Unclaim quest</b>.</figcaption>
 </figure>
 
 <h2>Common mistakes</h2>
 <ul class="plain">
-  <li><b>The addon is not installed.</b> The player has your quest and not the addon it hands data to. Ship them together, or say so up front.</li>
+  <li><b>The wrong quest name is typed.</b> Nothing is removed. Copy the identifier from the quest strip or the other mod's notes.</li>
+  <li><b>It replaces a success ending.</b> The quest disappears without completion. Use <b class="ui">Complete quest</b> for success.</li>
 </ul>
 
 <h2>Messages you might see</h2>
 <ul class="plain">
-  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so the addon never receives the data</li>
+  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so no quest is unclaimed</li>
 </ul>
 
 <h2>Related nodes</h2>
 <ul class="plain">
-  <li><a href="pack-node.html">Addon node</a> — A story node from an addon.</li>
+  <li><a href="fx-pay.html">Pay the player</a> — Deposits money in the player's bank.</li>
+  <li><a href="fx-withdraw.html">Charge the player</a> — Takes money out of the player's account.</li>
+  <li><a href="fx-notify.html">Notify</a> — Puts a message on the player's screen.</li>
+  <li><a href="fx-setdata.html">Set quest data</a> — Stores a value for later.</li>
+  <li><a href="fx-claimquest.html">Claim another quest</a> — Starts the next quest.</li>
+  <li><a href="fx-completequest.html">Complete quest</a> — Finishes the current quest.</li>
+  <li><a href="fx-retirequest.html">Retire quest</a> — Removes the current quest without completion.</li>
+  <li><a href="fx-shell.html">Run terminal command</a> — Runs a command in the player's terminal.</li>
+  <li><a href="fx-handbook.html">Open handbook</a> — Opens an in-game article.</li>
 </ul>
 
 </section>
 
 <div class="pagefoot">
-  <a href="world-files.html">← Place files</a>
-  <a class="next" href="pack-node.html">Addon node →</a>
+  <a href="fx-retirequest.html">← Retire quest</a>
+  <a class="next" href="fx-shell.html">Run terminal command →</a>
 </div>
 
-<a class="totop" href="#node-world-packdata-page">↑ back to top</a>
+<a class="totop" href="#node-fx-unclaimquest-page">↑ back to top</a>
 
 <footer class="colophon">
   HackHub Quest Editor handbook · documents editor build 2026-09-16.r169 ·

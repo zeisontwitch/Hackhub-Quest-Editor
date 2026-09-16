@@ -10,7 +10,7 @@
 <div class="wrap">
 <nav class="toc" aria-label="Handbook contents">
   <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
-  <p class="build">Handbook · build 2026-09-16.r167</p>
+  <p class="build">Handbook · build 2026-09-16.r169</p>
   <div class="search">
     <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
     <div class="results" role="listbox" aria-label="Search results"></div>
@@ -191,11 +191,11 @@ solvable, which is what
   <dt>Can I use two <b class="ui">Quest start</b> nodes?</dt><dd>Yes. Every one
   of them runs. Authors use that for opening threads that do not depend on each
   other.</dd>
-  <dt>My ending never plays</dt><dd><b class="ui">On quest complete</b> only
-  runs if the quest completes, and it does not by default. End the story from
-  your last objective instead, or switch on
-  <b class="ui">Complete automatically</b>. See
-  <a href="concepts.html#why-no-complete">why quests do not complete</a>.</dd>
+  <dt>My ending never plays</dt><dd><b class="ui">On quest complete</b> runs
+  after a finish path. Add <a href="nodes/fx-completequest.html">Complete
+  quest</a> to the final beat, or switch on <b class="ui">Complete
+  automatically</b>. See <a href="concepts.html#why-no-complete">how quests
+  finish</a>.</dd>
   <dt>The game does not list my mod</dt><dd>Check that you unzipped it, that the
   folder is directly inside <code>mods/</code>, and that the folder holds a
   <code>manifest.json</code> rather than another archive.</dd>
@@ -211,7 +211,7 @@ build stamp</a> explains where to find it.</p>
 
 <div class="pagefoot"><a href="export.html">← Exporting and installing</a><a class="next" href="appendices.html">Glossary and limits →</a></div>
 <footer class="colophon">
-  HackHub Quest Editor handbook · documents editor build 2026-09-16.r167 ·
+  HackHub Quest Editor handbook · documents editor build 2026-09-16.r169 ·
   every figure on these pages is taken from the editor's own source.
 </footer>
 </main>

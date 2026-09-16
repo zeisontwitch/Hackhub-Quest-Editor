@@ -1,5 +1,11 @@
 # HackHub 1.1.2 — bug report and questions from a mod author
 
+**Historical note, 2026-09-16:** this report was sent against HackHub 1.1.2 /
+SDK 0.21.0. SDK 0.24.0 plus HackHub 1.3.0 have since fixed the quest lifecycle
+blockers in BUG 1 and BUG 2: r166/r168 QA verified completion, retire, unclaim,
+auto-complete and the Complete button without freezes, and r169 restored those
+authoring nodes. The rest of the document remains a record of what was sent.
+
 **Game:** HackHub 1.1.2 (Windows, x64)
 **SDK:** `@hotbunny/hackhub-content-sdk@0.21.0`
 **Context:** We are building a visual quest-mod editor that generates mods from

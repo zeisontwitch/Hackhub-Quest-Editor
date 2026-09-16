@@ -16,7 +16,7 @@ const mapNode = (n: Loose): Loose => {
                 type: "comms.dialogue",
                 data: {
                     kind: "phone",
-                    phone: { branch: n.data?.branch ?? "default", startIndex: n.data?.startIndex ?? 0 },
+                    phone: { branch: n.data?.branch ?? "default", startIndex: n.data?.startIndex ?? 0, continueMode: "onEnd" },
                 },
             };
         case "comms.kisscord":

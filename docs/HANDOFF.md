@@ -1,3 +1,53 @@
+# Handoff — r169
+
+r169 implements the two surfaces cleared by SDK 0.24 / game 1.3.0 QA:
+phone-call end flow and real quest-ending nodes.
+
+Current shipped state:
+
+- Editor build stamp is `2026-09-16.r169`; SDK remains
+  `@hotbunny/hackhub-content-sdk@0.24.0`.
+- Manual inventory reports **37 node types / 37 obtainable**, **124 editable
+  fields**, **68 sockets**, **10 categories**, **99 events**, and no manual
+  exclusions.
+- Phone `comms.dialogue` nodes now expose **Out fires** in the inspector and
+  Dialogues modal. Default is **When the call ends**; **Right after starting the
+  call** keeps the old immediate behavior. The compiler maps the end timing to
+  `QuestDialogSpeech.onEnd` on ending lines and `QuestDialogOption.onSelect` on
+  ending options. No fake phone events were added to the When-event picker.
+- Quest-ending nodes are back as terminal effect nodes:
+  `fx.completeQuest` → `this.complete()`, `fx.retireQuest` → `this.retire()`,
+  and `fx.unclaimQuest` → `Quest.unclaim(name)` with a blank name defaulting to
+  the current quest.
+- If an objective's **On complete** wire reaches one of those terminal nodes
+  synchronously, the runtime defers the quest-ending call until after
+  `completeObjective(...)` so the final objective visibly ticks before the
+  quest entry goes away.
+- `entry.complete` wording and graph warnings now say it runs after a deliberate
+  finish path instead of claiming completion is unreachable by default.
+- The generated handbook is regenerated at r169, with new pages for
+  Complete/Retire/Unclaim quest and updated phone Dialogue prose.
+
+Validation for this pass: `npm ci`, `npm run gen:manual`, targeted Vitest for
+compiler/schema/dialogue/analysis/templates, `npm run typecheck`, `npm test`
+(**1,548 tests / 79 files**), and `npm run build`.
+
+Supporting notes:
+
+- [`plans/r169-phone-end-flow-and-quest-endings.md`](plans/r169-phone-end-flow-and-quest-endings.md)
+- [`plans/r168-phone-onend-completion-qa.md`](plans/r168-phone-onend-completion-qa.md)
+- [`plans/r166-sdk-0.24-ingame-qa.md`](plans/r166-sdk-0.24-ingame-qa.md)
+
+Next-up from the SDK 0.24 comparison: focused Mail QA for `Mail.send()` ids,
+`Mail.remove()` and `replyable`; a deliberate Scheduler/Time design pass; HTTP
+nodes only after SteelWaffe clarifies/fixes `curl`, DNS-only collaborator hits
+and static-site HTTP event semantics. Suspicion/log-forensics and SMS remain
+absent from the pinned SDK.
+
+Older handoff sections below are retained as history.
+
+---
+
 # Handoff — r168
 
 r168 adds a focused raw QA check for the old phone-call completion freeze. SDK
@@ -7,14 +57,13 @@ phone `onEnd` is a callback on `QuestDialogSpeech`, not a `ModEventMap` entry.
 Added to `reference/sdk-0.24-qa/mod` harness version `1.0.6`:
 
 - `qe24 claim phone-auto` then `qe24 phone-auto`: final phone line calls
-  `completeObjective("phone-ended")`; `AutoComplete = true` should finish the
+  `completeObjective("phone-ended")`; Zeis reported `AutoComplete = true` finished the
   quest without freezing.
 - `qe24 claim phone-direct` then `qe24 phone-direct`: final phone line calls
-  `this.complete()` from `onEnd`; it should finish without freezing.
+  `this.complete()` from `onEnd`; Zeis reported it finished without freezing.
 
-These probes are untested in-game until Zeis runs them. If they pass, do not add
-a fake global phone event; design a Dialogue-node phone-completion/callback
-surface instead.
+Zeis ran both probes in game and reported they worked. The r169 editor surface
+therefore uses the Dialogue-node callback model, not a fake global phone event.
 
 Supporting note: [`plans/r168-phone-onend-completion-qa.md`](plans/r168-phone-onend-completion-qa.md).
 
@@ -916,22 +965,13 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r155 (ports + vuln labels) on
-  `arena/01a09bf3-hackhub-quest-editor`, committed and pushed. Previous
-  rounds: r154 (UI words batch), r153 (warning severity), r152 (warning
-  cards, event labels), r151 (target-matching warnings), r150 (pack UX
-  polish). (Sandbox resets have rolled local history back more than once;
-  recovered from the remote tip per the standing fetch-first rule, then
-  `npm ci` when node_modules went with it. The remote is authoritative.)
-- **1,446 tests green** across 72 files, typecheck clean, build clean, and —
-  since the r138 prep rider — **vitest exits 0**: the 4 long-standing
-  unhandled d3-drag errors were diagnosed as load-bearing jsdom noise (they
-  aborted every canvas drag handler mid-gesture; four selection-gesture
-  tests had been passing *because of* the crash) and fixed in
-  `vitest.setup.ts` by giving MouseEvents the view a real browser would.
-  r139 also cleared the `pack.node` duplicate-key React warning.
-- **Editor build stamp:** `2026-09-13.r155` (bumps every round since r148 —
-  the stamp is a version, not a changelog).
+- **HEAD:** r169 (phone end flow + quest-ending nodes) on
+  `arena/01a0aaee-hackhub-quest-editor`, committed and pushed after validation.
+  Previous rounds: r168 phone `onEnd` completion QA probes, r167 Create Wi-Fi,
+  r166 SDK 0.24 in-game QA, r165 SDK 0.24 declaration/event upgrade.
+- **1,548 tests green** across 79 files, typecheck clean, build clean.
+- **Editor build stamp:** `2026-09-16.r169` (bumps every round since r148 — the
+  stamp is a version, not a changelog).
 - Tool-pack modules: `src/toolpacks/schema.ts` (format 2 + plain-language
   `parseToolPack`), `src/toolpacks/palette.ts` (pure `packNodeDefs`,
   `packEvents`, `packEventByName`, `paletteDefKey` — the synthesized palette
@@ -948,9 +988,9 @@ banner before acting on any of it.
 - Shared graph helpers extracted to `src/templates/kit.ts`; each template is its
   own module (`blank.ts`, `firstContact.ts`, `byline.ts`, `coldCall.ts`,
   `harbourManifest.ts`, `helpDeskLeak.ts`, `badAttachment.ts`, `sixTries.ts`,
-  `coldStorage.ts`, `ledgerContract.ts`, `reference.ts`, `cookbook.ts`).
-  `src/templates/index.ts` is a thin registry. `Template.difficulty` is
-  `Beginner | Advanced | Expert | Reference`.
+  `coldStorage.ts`, `ledgerContract.ts`, `longGame.ts`, `reference.ts`,
+  `cookbook.ts`). `src/templates/index.ts` is a thin registry.
+  `Template.difficulty` is `Beginner | Advanced | Expert | Reference`.
 
 ## Read these first, in this order
 
@@ -1015,7 +1055,7 @@ how hard the hack is.
 | The Help Desk Leak | Advanced | **Website #2:** the site *hides* something — `dirhunter` an unlisted page, credentials inside |
 | Bad Attachment | Advanced | Phishing: a lure goes out, the reply carries the credential. All mail, no shell |
 | Six Tries | Advanced | **The crack:** lynx → nmap → `hydra` → `ssh -h` with the cracked login → `cat` → report. The official quests' most common route; new in r128 |
-| The Ledger Contract | Expert | Long route, privilege escalation (old completion wiring kept — Zeis deferred it) |
+| The Ledger Contract | Expert | Long route, privilege escalation |
 | Cold Storage | Expert | scan edge → fern passphrase → shell → sqlmap a database |
 | Node Reference | — | Every node type, annotated |
 | Quest Cookbook | — | Official-quest techniques → the nodes that express them here; read-only, new in r128 |
@@ -1030,12 +1070,11 @@ Zeis's steers, verbatim in spirit:
 - Expert must be genuinely expert: multiple tools and techniques, not one
   clever trick.
 
-**Cold Storage** models the "wireless" identity as a plain `world.network`
-router (the SDK ships no wireless API) so the break-in machine is visible to
-the guard's device-tree walk. Every objective waits on an event the runtime
-actually emits; the wireless recon/join events are deliberately left out
-because they cannot be guaranteed to fire. Its `lead_ledger` table was seeded
-in r126 (r125 deferred it mid-playtest).
+**Cold Storage** still models its old "wireless" identity as a plain
+`world.network` router, because that template predates the r167 `world.wifi`
+surface and its route was already tested around a visible device tree. New Wi-Fi
+stories should use `world.wifi` when the access-point mechanics matter. Its
+`lead_ledger` table was seeded in r126 (r125 deferred it mid-playtest).
 
 **Bad Attachment** runs entirely on mail events — the plan's explicitly
 allowed fallback, since `Mail.registerTemplate` is not expressible in the
@@ -1113,73 +1152,33 @@ wants the *specific action* named.
    outlive the mod in the save; a fixed address collides with an older build.
 4. **A subnet must be rooted in a ROUTER** when it has children (r77).
 5. **Distinctive domains** — they are global and a generic one may collide.
-6. Every quest **ends without formally completing** (engine bug, see
-   `docs/04-engine-bug-quest-completion.md`) and leaves a closing line.
-   (The developer's reply promises a fix and `this.complete()` — fence: build
-   to what ships, not what's promised.)
+6. Every quest has a deliberate finish path: closing beat first, then
+   `fx.completeQuest` when the quest should formally complete, or an explicit
+   legacy objective-hiding choice when it should stay active.
 7. Each template states its tier and what it teaches in a sticky note.
 
 ## Queued next
 
-1. **Zeis's in-game QA list.** New templates: hydra rendering + `Terminal.Hydra`
-   credentials, `SSH.Connected` for `ssh -h`, `Terminal.Cat` remotely. r129:
-   does `description` render as the result snippet (strongly supported by
-   Zeis's Goagle screenshot — title → host → snippet —; confirm with a mod
-   page); are `search[]` terms matched (case-insensitively? alongside page
-   text?); do they matter for `seo:false` pages. Carried: ssh `-h` to a 10.x
-   box, Cold Storage's route, Cold Call's chat, `Terminal.SSH.Shutdown` on
-   mod machines, `Database.DataUpdate` from Database-Manager edits. New
-   from r131: does a created Kisscord contact render a proper card (the
-   proposal-B surface)? the campaign world checks, two parts (analysis
-   §4): **mid-line** — with quest 2 active, is quest 1's network still
-   reachable, or did quest 2's start replace/clear the world? **line-end**
-   — when the final quest of a line is run through, is the world torn
-   down? (Zeis's untested model, r131: quests are standalone, the world
-   accumulates through the line so a player can backtrack, and the whole
-   thing goes when the line ends.) And: does `hasCompleteButton`'s click
-   formally complete the quest (docs/04 territory — the flag ships today,
-   the completion path is the engine bug)? Plus the website-audit in-game
-   halves: the **`popular` self-test** (docs/03 Q12 — the flag is a builder
-   checkbox now: build two identical sites, flag one, compare their search
-   ranking); and eyes on an **iconless site** — generated sites ship
-   `Icon = ""` (Nemesis precedent) — does the in-game browser or Goagle
-   results show an ugly blank where an icon belongs? And the tool-pack
-   gate (r135 design): does `addCommandData` placed for a mod-registered
-   command surface when the player runs it (the tool mod reads its own
-   command's data)? Five-minute ask for any tool-mod author.
-2. **Zeis's build order: tool packs → editor mods** (roadmap row 12, the
-   [`r135 design v2.1`](plans/r135-tool-packs-design.md) has his go-in-
-   principle). **DONE in r137+r138:** pack schema (format 2), loader with
-   plain-language validation, community events in the trigger picker,
-   SharedStorage contract forms, **Editor Mods** (pack-authored palette
-   nodes with declarative emitters — one generic `pack.node` type, four
-   emitters, snapshot portability), starter pack + format spec. **r139**
-   cleaned up the debt that rail left (duplicate keys, giant warning
-   function, permission gap for pack nodes, clone DRY, module boundaries).
-   **DONE in r151:** the target-rule surfaces — intent-gated per-quest
-   warnings (unknown services, blank versions, unmatched weaknesses) at
-   export and in Dry run. The campaign template and the Campaign card are
-   DONE (r136).
-   The **Kisscord contact lifecycle is parked until the SDK moves** (the
-   2026-09-12 patch shipped none).
-
-3. **When the developer's patch lands, lift the fence in this order:** pin the
-   new SDK version → `npm ci` → `npm run gen:events` → diff
-   `reference/hackhub-events.json` → read the new `d.ts` → Zeis verifies
-   in-game → *then* plan the round (formal quest completion per `docs/04`
-   — which would touch every template's ending and the Ledger deferral —
-   Twotter's return with `removeUser` cleanup in `OnModPackageUnloaded`,
-   SMS if/when it actually appears in a pinned SDK). The dev also asked for:
-   retest of the completion path + Twotter on the patched build, and a minimal
-   mail repro if BUG 1 persists. Before all of that: nothing implements,
-   nothing is removed.
-4. **"Two Ways Out"** (roadmap item 7) — the approved branching-ending
-   template, not yet built. Cryptographer Hunt's fail-choice phone scene is
-   the in-game proof this shape matters.
-5. **Zeis's data requests** (nothing blocks on these): SMTP/POP3/IMAP version
-   banners + ports 25/110/143; Apache metasploit module for 2.4.49/50 or
-   flavour?; Handbook screenshot (titles + categories) + the id=title jump
-   test; eyes on the preview. Plus the Harbour `scp` hint fix noted above.
+1. **Mail cleanup/replyability QA.** SDK 0.24.0 declares `Mail.send(): string | null`,
+   `Mail.remove(id)`, and `QuestMailDefinition.replyable`. Do a focused in-game
+   pass before exposing cleanup/remove-mail authoring: id shape, remove timing,
+   reply-button behavior, and unload/complete cleanup.
+2. **Scheduler/Time design pass.** r166 proved Scheduler/Time can survive reload
+   in a raw probe. Design the editor surface deliberately rather than dropping a
+   generic timer node into the palette.
+3. **HTTP/curl/DNS collaborator remain fenced.** Static editor websites loaded
+   in game, but `http-request`/`http-response` objectives did not complete;
+   `curl` was missing as a terminal command; DNS-only collaborator hits produced
+   no result. Wait for SteelWaffe clarification or fresh in-game proof before
+   exposing authoring nodes.
+4. **"Contact-driven story" template.** Cold Call covers the conversation shape;
+   the phone-brief + objective-gated-drip variant is still open.
+5. **"Two Ways Out" template.** Approved branching consequence shape, possibly
+   morally grey. The Long Game includes a typed verdict with two endings, but a
+   standalone template may still be useful.
+6. **Data requests / eyes-on checks.** SMTP/POP3/IMAP version banners + ports;
+   Apache metasploit module for 2.4.49/50 or flavour; Handbook title/category
+   screenshot + id jump test; eyes on the preview; the Harbour `scp` hint fix.
 
 Tooling note (r129): the `lint` and `format` npm scripts are gone. ESLint
 was never installed (`npm run lint` failed with "not found"); a repo-wide

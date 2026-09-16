@@ -1,14 +1,14 @@
 {
   "generatedBy": "scripts/extract-manual-inventory.mjs",
-  "editorBuild": "2026-09-16.r167",
+  "editorBuild": "2026-09-16.r169",
   "sdkVersion": "0.24.0",
   "counts": {
-    "nodeTypes": 34,
-    "obtainableNodeTypes": 34,
+    "nodeTypes": 37,
+    "obtainableNodeTypes": 37,
     "categories": 10,
-    "editableFields": 123,
-    "editableFieldsExcludingLists": 116,
-    "sockets": 65,
+    "editableFields": 124,
+    "editableFieldsExcludingLists": 117,
+    "sockets": 68,
     "events": 99,
     "eventGroups": 10
   },
@@ -184,7 +184,7 @@
       "type": "entry.complete",
       "slug": "entry-complete",
       "label": "On quest complete",
-      "blurb": "Only runs if the quest completes — with auto-complete off and no Complete button (the default) that never happens. End the story from the last objective instead.",
+      "blurb": "Runs after a Complete quest node, auto-complete, or Complete button finishes the quest.",
       "icon": "check",
       "category": "entry",
       "hook": "onComplete",
@@ -1650,7 +1650,8 @@
         "kind": "phone",
         "phone": {
           "branch": "default",
-          "startIndex": 0
+          "startIndex": 0,
+          "continueMode": "onEnd"
         },
         "kisscord": {
           "contactId": "",
@@ -2154,6 +2155,107 @@
           "key": "questName",
           "label": "Quest",
           "hint": "The identifier of the quest to start next. It must exist in this mod or another installed one.",
+          "mono": true
+        }
+      ],
+      "editableFieldCount": 1,
+      "defaults": {
+        "questName": ""
+      }
+    },
+    {
+      "type": "fx.completeQuest",
+      "slug": "fx-completequest",
+      "label": "Complete quest",
+      "blurb": "Finish the current quest and run On quest complete",
+      "icon": "check",
+      "category": "effect",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "This is a terminal ending. Put closing mail, payments and notifications before it, or place them under On quest complete."
+        }
+      ],
+      "editableFieldCount": 0,
+      "defaults": {}
+    },
+    {
+      "type": "fx.retireQuest",
+      "slug": "fx-retirequest",
+      "label": "Retire quest",
+      "blurb": "Remove the current quest without marking it complete",
+      "icon": "trash",
+      "category": "effect",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "warn",
+          "text": "This is a terminal ending. The quest disappears without rewards and without On quest complete."
+        }
+      ],
+      "editableFieldCount": 0,
+      "defaults": {}
+    },
+    {
+      "type": "fx.unclaimQuest",
+      "slug": "fx-unclaimquest",
+      "label": "Unclaim quest",
+      "blurb": "Remove a claimed quest from the player's list",
+      "icon": "x",
+      "category": "effect",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "questName",
+          "kind": "text",
+          "key": "questName",
+          "label": "Quest",
+          "hint": "The identifier of the claimed quest to remove. Leave blank to remove this quest.",
+          "placeholder": "blank = this quest",
           "mono": true
         }
       ],

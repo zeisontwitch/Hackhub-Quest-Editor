@@ -11,7 +11,7 @@
 
 <nav class="toc" aria-label="Handbook contents">
   <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
-  <p class="build">Handbook · build 2026-09-16.r167</p>
+  <p class="build">Handbook · build 2026-09-16.r169</p>
   <div class="search">
     <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
     <div class="results" role="listbox" aria-label="Search results"></div>
@@ -54,15 +54,15 @@
 <section id="node-entry-complete-page">
 
 <h2>What it does</h2>
-<p>Runs when the quest is marked complete. Under the default settings, that never happens.</p>
+<p>Runs when the quest is marked complete. That can come from a Complete quest node, auto-complete, or the player's Complete button.</p>
 
 <h2>When you'd use it</h2>
-<p>By default a quest has no way to complete. The player gets no <b class="ui">Complete</b> button, and auto-complete is off.</p>
-<p>So end your story from the last objective's <b class="ui">On complete</b> socket instead. That path always runs when the objective ticks over.</p>
-<p>Keep this node for the day you switch on auto-complete or add a completion button. Until then it sits there doing nothing.</p>
+<p>Use it for cleanup or epilogue beats that should happen after the quest is finished.</p>
+<p>For a deliberate ending, place <b class="ui">Complete quest</b> where the story should finish.</p>
+<p>Anything wired here runs after that finish point, not before it.</p>
 
 <h2>In the game, this looks like</h2>
-<p>Under the default settings the player never sees the result of this node, because the quest never reaches the state that fires it.</p>
+<p>The player sees the quest finish, then this path runs through the game's quest-complete hook.</p>
 
 <h2>Fields</h2>
 <p>This node has nothing to configure. It marks a moment in the story and runs whatever is wired after it.</p>
@@ -89,9 +89,9 @@ the connection takes, mismatch them and it will not.</p>
 
 <h2>Step by step: add this node to a quest</h2>
 <ol class="plain">
-  <li>Decide first whether your quest can complete at all. If it cannot, wire your ending to the last objective instead.</li>
-  <li>If you have switched on completion, find <b class="ui">On quest complete</b> under <b>Quest lifecycle</b>.</li>
-  <li>Wire the closing beats of your story to its <b class="ui">Out</b> socket.</li>
+  <li>Find <b class="ui">On quest complete</b> under <b>Quest lifecycle</b>.</li>
+  <li>Wire its <b class="ui">Out</b> socket to the epilogue work.</li>
+  <li>Make sure your graph has a <b class="ui">Complete quest</b> node, or enable another finish path in Behaviour.</li>
 </ol>
 
 <figure>
@@ -102,12 +102,13 @@ the connection takes, mismatch them and it will not.</p>
 
 <h2>Common mistakes</h2>
 <ul class="plain">
-  <li><b>The ending of the quest is wired here.</b> The player finishes every objective and sees nothing, because the quest never completes. Wire the ending to the last objective's <b class="ui">On complete</b> instead.</li>
+  <li><b>No finish path exists.</b> The node waits forever. Add <b class="ui">Complete quest</b> to the final beat, or enable another finish path.</li>
+  <li><b>Important story happens only here.</b> If completion is skipped, the player misses it. Put critical mail or clues before <b class="ui">Complete quest</b>.</li>
 </ul>
 
 <h2>Messages you might see</h2>
 <ul class="plain">
-  <li><a href="../checking.html#msg-only-runs-on-completion">Only runs on completion</a> — the editor warns you this node will never fire under the default settings</li>
+  <li><a href="../checking.html#msg-only-runs-on-completion">Only runs on completion</a> — the editor warns you when this graph has no Complete quest node</li>
 </ul>
 
 <h2>Related nodes</h2>
@@ -127,7 +128,7 @@ the connection takes, mismatch them and it will not.</p>
 <a class="totop" href="#node-entry-complete-page">↑ back to top</a>
 
 <footer class="colophon">
-  HackHub Quest Editor handbook · documents editor build 2026-09-16.r167 ·
+  HackHub Quest Editor handbook · documents editor build 2026-09-16.r169 ·
   field labels, hints, defaults and limits on this page are taken from the
   editor's own node definitions.
 </footer>

@@ -10,7 +10,7 @@
 <div class="wrap">
 <nav class="toc" aria-label="Handbook contents">
   <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
-  <p class="build">Handbook · build 2026-09-16.r167</p>
+  <p class="build">Handbook · build 2026-09-16.r169</p>
   <div class="search">
     <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
     <div class="results" role="listbox" aria-label="Search results"></div>
@@ -64,9 +64,9 @@ starts by itself, and nothing runs until one of them does.</p>
   <dt>On start &amp; reload</dt><dd>Runs when the quest is claimed, and again
   every time the game loads. Anything that must be listening goes here, because
   a listener set up in <b class="ui">Quest start</b> is gone after a reload.</dd>
-  <dt>On quest complete</dt><dd>Runs only if the quest completes. By default it
-  never does. <a href="concepts.html#why-no-complete">That is covered
-  below.</a></dd>
+  <dt>On quest complete</dt><dd>Runs after the quest is marked complete.
+  A <b class="ui">Complete quest</b> node, auto-complete, or the player's
+  Complete button can do that.</dd>
   <dt>On quest abandoned</dt><dd>Runs if the player gives up. Cleanup goes
   here.</dd>
 </dl>
@@ -162,27 +162,22 @@ builds a whole network to break into asks for four. Neither is wrong, but a
 short list is a friendlier one, and a player who sees <b class="mono">bank</b>
 wants to know why.</p>
 
-<h2 id="why-no-complete">Why quests do not complete</h2>
-<p>There is a setting on every quest called <code>autoComplete</code>, and it
-starts switched off. While it is off, the game never marks your quest as
-finished, and <b class="ui">On quest complete</b> never runs.</p>
-<p>This surprises everybody once, so it is worth being blunt about. A node
-wired to <b class="ui">On quest complete</b> looks like the ending of your
-story. By default it is dead code that never fires, and the player's quest stays open.</p>
-<p>The way authors end a story instead is from the last objective. Wire your
-final node off the objective that closes the quest, and put the ending there.
-It runs when the player actually finishes, rather than waiting on a flag the
-game does not set.</p>
-<div class="note"><b>Or switch the setting on.</b> Turning
-<code>autoComplete</code> on makes the game close the quest when its
-objectives are done, and <b class="ui">On quest complete</b> starts working.
-Choose one of the two ways, and check your quest in a
-<a href="guides.html#dry-run">dry run</a> before you export either.</div>
+<h2 id="why-no-complete">How quests finish</h2>
+<p>A quest finishes when something marks it complete. The clearest way is the
+<b class="ui">Complete quest</b> node, placed at the end of a success path.</p>
+<p>You can also turn on <code>autoComplete</code>. Then the game closes the quest
+when every objective is done. Use that when the objectives alone prove success.</p>
+<p><b class="ui">On quest complete</b> is not the ending itself. It is the path
+that runs after one of those finish routes fires, so keep critical clues before
+the finish point.</p>
+<div class="note"><b>Keep one deliberate finish path.</b> A final objective, a
+closing message and then <b class="ui">Complete quest</b> is the easiest shape to
+read. Check it in a <a href="guides.html#dry-run">dry run</a> before export.</div>
 </section>
 
 <div class="pagefoot"><a href="tutorial.html">← Your first quest</a><a class="next" href="nodes.html">Node reference →</a></div>
 <footer class="colophon">
-  HackHub Quest Editor handbook · documents editor build 2026-09-16.r167 ·
+  HackHub Quest Editor handbook · documents editor build 2026-09-16.r169 ·
   every figure on these pages is taken from the editor's own source.
 </footer>
 </main>

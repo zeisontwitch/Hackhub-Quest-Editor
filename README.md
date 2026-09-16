@@ -36,7 +36,7 @@ Only relevant to coders, if you just want to use the tool you can ignore this.
 
 ```bash
 npm run typecheck    # tsc --noEmit
-npm test             # 1,527 tests (vitest)
+npm test             # 1,548 tests (vitest)
 npm run build        # typecheck + vite build → dist/
 ```
 
@@ -120,7 +120,7 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
-| 1 | **SDK 0.24 follow-up choices** | Wi-Fi is exposed in r167. The next safe candidates are mail cleanup/replyability QA and a Scheduler/Time design pass; HTTP/curl/DNS collaborator nodes stay fenced until SteelWaffe answers the upstream gaps. See [`docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md`](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md). |
+| 1 | **SDK 0.24 follow-up choices** | Wi-Fi is exposed, and phone end-flow / quest-ending APIs landed in r169 after raw QA. The next safe candidates are mail cleanup/replyability QA and a Scheduler/Time design pass; HTTP/curl/DNS collaborator nodes stay fenced until SteelWaffe answers the upstream gaps. See [`docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md`](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md). |
 | 2 | Old quest mail cleanup | SDK 0.24.0 now declares `Mail.send(): string \| null` and `Mail.remove(id)`, so this can become a real feature after a focused in-game QA pass verifies ids, replyable mail, and cleanup timing. |
 | 3 | **Date deprecation warning (`moment` RFC2822)** | Only appears with a quest-editor mod installed, 30–90s after a mail is sent, when a browser or app screen is opened. The stack is the game's own date formatting and we never set a date on anything — question 10 in the bug report. |
 
@@ -135,6 +135,8 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
+| r169 | **Phone end flow + quest-ending nodes** | ([plan](docs/plans/r169-phone-end-flow-and-quest-endings.md)) Phone Dialogue nodes now choose when **Out** fires: default when the call ends via SDK `QuestDialogSpeech.onEnd` / ending-option `onSelect`, or immediately for the old timing. `Complete quest`, `Retire quest`, and `Unclaim quest` return as terminal effect nodes and compile to `this.complete()`, `this.retire()`, and `Quest.unclaim(name)`. Handbook/manual counts are regenerated at 37 node types. |
+| r168 | **Phone `onEnd` completion QA probes** | ([plan](docs/plans/r168-phone-onend-completion-qa.md)) Added raw harness commands for phone-line `onEnd -> completeObjective` auto-complete and `onEnd -> this.complete()`. Zeis ran both in game and reported they worked, which cleared the r169 authoring surface. |
 | r167 | **Create Wi-Fi exposed** | ([plan](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md)) `world.wifi` is palette-visible, searchable, covered by the reference template and handbook, and exports through SDK 0.24's native Wi-Fi creator with BSSID/channel/WPS support. The remaining Bettercap `SSID: undefined` display wart is documented as an info note, not a blocker. Wi-Fi-specific dice outputs now generate BSSIDs and WPA-style passphrases. |
 | r166 | **SDK 0.24 in-game QA harness** | ([plan](docs/plans/r166-sdk-0.24-ingame-qa.md)) Adds the evidence-only checklist plus installable raw/editor QA harnesses under `reference/sdk-0.24-qa/`. The green native Wi-Fi rows became the r167 Create Wi-Fi exposure; HTTP/curl/DNS collaborator, Scheduler and mail/Twotter follow-ups remain separately gated. |
 | r165 | **SDK 0.24 declaration and event-catalogue upgrade** | ([plan](docs/plans/r165-sdk-0.24-assessment.md)) Pins `@hotbunny/hackhub-content-sdk@0.24.0`, regenerates the 99-event catalogue/manual appendix, and records which new surfaces still require game verification before product exposure. |
@@ -179,8 +181,8 @@ Rounds 130–153 are archived at
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-16.r167`: **1,527 tests** across 79
-files, **34 node types** in 10 categories (all palette-visible), **13 templates**
+Counted from the code at build `2026-09-16.r169`: **1,548 tests** across 79
+files, **37 node types** in 10 categories (all palette-visible), **13 templates**
 (11 playable + 2 reference sheets), **99 game events**, against
 `@hotbunny/hackhub-content-sdk@0.24.0`.
 
@@ -193,7 +195,7 @@ files, **34 node types** in 10 categories (all palette-visible), **13 templates*
 | [`docs/01-analysis-and-architecture.md`](docs/01-analysis-and-architecture.md) | The original design and its reasoning. |
 | [`docs/02-editor-shell.md`](docs/02-editor-shell.md) | Archive: the build log for rounds 1–74. Stale figures, load-bearing bug histories. |
 | [`docs/03-questions-for-the-developers.md`](docs/03-questions-for-the-developers.md) | Open questions about the game and SDK. |
-| [`docs/04-engine-bug-quest-completion.md`](docs/04-engine-bug-quest-completion.md) | The engine bug that stops a mod quest completing. |
+| [`docs/04-engine-bug-quest-completion.md`](docs/04-engine-bug-quest-completion.md) | Historical freeze-on-complete report; SDK 0.24 / game 1.3.0 QA now shows the completion APIs working. |
 | [`docs/05-bug-report-for-hotbunny.md`](docs/05-bug-report-for-hotbunny.md) | The consolidated report sent to the game's developer. |
 | [`docs/07-dev-response-mod-sdk-bug-report-response.md`](docs/07-dev-response-mod-sdk-bug-report-response.md) | The developer's reply — **fenced**: promised, not shipped. Read the banner before acting on it. |
 | [`docs/plans/`](docs/plans/) | Per-round working notes: the evidence behind specific fixes. |
@@ -212,7 +214,7 @@ docs/
   01-analysis-and-architecture.md   # Step 1 — schema, stack, architecture
   02-editor-shell.md                # Steps 2–4 — contracts + build log, rounds 1–74
   03-questions-for-the-developers.md# Open questions about the game and SDK
-  04-engine-bug-quest-completion.md # The freeze-on-complete engine bug
+  04-engine-bug-quest-completion.md # Historical freeze-on-complete report
   05-bug-report-for-hotbunny.md     # Consolidated report sent to the developer
   06-how-it-works-today.md          # How the editor is built as it stands
   HANDOFF.md                        # Current state, and what is next

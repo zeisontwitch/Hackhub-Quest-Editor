@@ -1,12 +1,12 @@
 # How the editor works today
 
-**Current as of build `2026-09-16.r167`.** Where the other documents are
+**Current as of build `2026-09-16.r169`.** Where the other documents are
 histories — how we got here, and what we learned on the way — this one is a
 snapshot of the thing as it stands. If it disagrees with an older document,
 this one is right.
 
-Verified figures, counted from the code rather than remembered: **1,527 tests**
-across 79 files, **34 node types** in 10 categories, **13 templates**, **99 game
+Verified figures, counted from the code rather than remembered: **1,548 tests**
+across 79 files, **37 node types** in 10 categories, **13 templates**, **99 game
 events**, against `@hotbunny/hackhub-content-sdk@0.24.0`.
 
 ---
@@ -173,6 +173,6 @@ The whole suite runs in about a minute. `npm run build` runs typecheck first.
 | `02-editor-shell.md` | **Archive.** An append-only build log, rounds 1–74. Not current, but the bug histories in it are load-bearing. |
 | `In-Game-Handbook.md` | **The game's own teaching material**, transcribed from in-game. Authoritative for how a player is expected to work — outranks the SDK on that question, and outranks the web entirely. |
 | `03-questions-for-the-developers.md` | Open questions about the game and SDK. |
-| `04-engine-bug-quest-completion.md` | The engine bug that stops a mod quest completing, with a minimal reproduction. |
+| `04-engine-bug-quest-completion.md` | Historical freeze-on-complete report. SDK 0.24 / game 1.3.0 QA now shows completion, retire and unclaim working. |
 | `05-bug-report-for-hotbunny.md` | The consolidated report sent to the game's developer. |
 | `plans/` | Per-round working notes: the evidence behind specific fixes. |

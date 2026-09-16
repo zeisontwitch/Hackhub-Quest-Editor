@@ -81,30 +81,34 @@
     ]
   },
   "entry.complete": {
-    "oneliner": "Runs only if the quest completes.",
-    "what": "Runs when the quest is marked complete. Under the default settings, that never happens.",
+    "oneliner": "Runs after the quest is completed.",
+    "what": "Runs when the quest is marked complete. That can come from a Complete quest node, auto-complete, or the player's Complete button.",
     "when": [
-      "By default a quest has no way to complete. The player gets no <b class=\"ui\">Complete</b> button, and auto-complete is off.",
-      "So end your story from the last objective's <b class=\"ui\">On complete</b> socket instead. That path always runs when the objective ticks over.",
-      "Keep this node for the day you switch on auto-complete or add a completion button. Until then it sits there doing nothing."
+      "Use it for cleanup or epilogue beats that should happen after the quest is finished.",
+      "For a deliberate ending, place <b class=\"ui\">Complete quest</b> where the story should finish.",
+      "Anything wired here runs after that finish point, not before it."
     ],
-    "game": "Under the default settings the player never sees the result of this node, because the quest never reaches the state that fires it.",
+    "game": "The player sees the quest finish, then this path runs through the game's quest-complete hook.",
     "steps": [
-      "Decide first whether your quest can complete at all. If it cannot, wire your ending to the last objective instead.",
-      "If you have switched on completion, find <b class=\"ui\">On quest complete</b> under <b>Quest lifecycle</b>.",
-      "Wire the closing beats of your story to its <b class=\"ui\">Out</b> socket."
+      "Find <b class=\"ui\">On quest complete</b> under <b>Quest lifecycle</b>.",
+      "Wire its <b class=\"ui\">Out</b> socket to the epilogue work.",
+      "Make sure your graph has a <b class=\"ui\">Complete quest</b> node, or enable another finish path in Behaviour."
     ],
     "mistakes": [
       [
-        "The ending of the quest is wired here.",
-        "The player finishes every objective and sees nothing, because the quest never completes. Wire the ending to the last objective's <b class=\"ui\">On complete</b> instead."
+        "No finish path exists.",
+        "The node waits forever. Add <b class=\"ui\">Complete quest</b> to the final beat, or enable another finish path."
+      ],
+      [
+        "Important story happens only here.",
+        "If completion is skipped, the player misses it. Put critical mail or clues before <b class=\"ui\">Complete quest</b>."
       ]
     ],
     "messages": [
       [
         "Only runs on completion",
         "msg-only-runs-on-completion",
-        "the editor warns you this node will never fire under the default settings"
+        "the editor warns you when this graph has no Complete quest node"
       ]
     ]
   },
@@ -1278,6 +1282,7 @@
     "what": "A conversation between the player and a character: a phone call, a Kisscord chat, an e-mail or a WeeChat session.",
     "when": [
       "Use it for anything a character says to the player. Pick the form the story wants: a call for urgency, mail for a paper trail.",
+      "For phone calls, choose when <b class=\"ui\">Out fires</b>: when the call hangs up, or right after it starts.",
       "The second output is there for conversations that can go badly. Wire it if the player can answer wrongly."
     ],
     "game": "The conversation appears in the game's own phone, chat or mail, in the form you chose.",
@@ -1286,7 +1291,7 @@
         "in": "Whatever should run immediately before the conversation."
       },
       "out": {
-        "out": "Whatever happens once the conversation ends."
+        "out": "Whatever happens after the conversation. For phone calls, the Out-fires setting controls the exact timing."
       },
       "failure": {
         "out": "The path that runs when the conversation goes down its wrong branch."
@@ -1296,6 +1301,7 @@
       "Find <b class=\"ui\">Dialogue</b> under <b>Communication</b> in the palette.",
       "Drag it onto the canvas where the conversation belongs.",
       "Pick the kind: phone call, Kisscord, e-mail or WeeChat.",
+      "For phone calls, set <b class=\"ui\">Out fires</b> before wiring the next beat.",
       "Write the lines in the conversation editor.",
       "Wire what should happen afterwards, and the wrong branch if there is one."
     ],
@@ -1382,6 +1388,126 @@
         "Unreachable",
         "msg-unreachable",
         "nothing leads to this node, so the command is never registered"
+      ]
+    ]
+  },
+  "fx.completeQuest": {
+    "oneliner": "Finishes the current quest.",
+    "what": "Marks this quest complete. Rewards can pay out, and <b class=\"ui\">On quest complete</b> runs next.",
+    "when": [
+      "Use it as the final node of a successful story path.",
+      "Put closing mail, payments and important clues before it, unless they belong under <b class=\"ui\">On quest complete</b>.",
+      "It has no output because the current story path ends here."
+    ],
+    "game": "The quest leaves the active list as completed. Quest rewards and complete-hook work can run.",
+    "sockets": {
+      "in": {
+        "in": "Whatever proves the player has reached the ending."
+      }
+    },
+    "steps": [
+      "Find <b class=\"ui\">Complete quest</b> under <b>Effects</b>.",
+      "Place it at the end of the success path.",
+      "Wire the final story beat into its input.",
+      "Put optional epilogue work under <b class=\"ui\">On quest complete</b>."
+    ],
+    "mistakes": [
+      [
+        "It comes too early.",
+        "The quest finishes before the player earns it. Move it after the final objective or choice."
+      ],
+      [
+        "Cleanup is wired before the ending by accident.",
+        "The player may lose evidence before seeing it. Keep cleanup under <b class=\"ui\">On quest complete</b> when possible."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the quest never finishes here"
+      ]
+    ]
+  },
+  "fx.retireQuest": {
+    "oneliner": "Removes the current quest without completion.",
+    "what": "Takes this quest out of the player's active list without marking it complete.",
+    "when": [
+      "Use it for fail states, cancelled jobs, or stories that should vanish without rewards.",
+      "Do not use it for a normal success ending. Use <b class=\"ui\">Complete quest</b> for that.",
+      "It has no output because the current story path ends here."
+    ],
+    "game": "The quest disappears from the active list. It does not count as completed.",
+    "sockets": {
+      "in": {
+        "in": "The point where the quest should be removed."
+      }
+    },
+    "steps": [
+      "Find <b class=\"ui\">Retire quest</b> under <b>Effects</b>.",
+      "Place it at the end of the path that cancels the job.",
+      "Wire the fail or cancellation beat into its input."
+    ],
+    "mistakes": [
+      [
+        "It is used for success.",
+        "The player may miss rewards and complete-only follow-up. Use <b class=\"ui\">Complete quest</b> instead."
+      ],
+      [
+        "It runs before the player reads the reason.",
+        "The quest vanishes with no explanation. Send the closing message first."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the quest is never retired"
+      ]
+    ]
+  },
+  "fx.unclaimQuest": {
+    "oneliner": "Removes a claimed quest.",
+    "what": "Unclaims a quest by name. Blank removes the quest this node belongs to.",
+    "when": [
+      "Use it to pull back a side job, reset a chapter handoff, or remove this quest without completion.",
+      "If you are ending a successful path, use <b class=\"ui\">Complete quest</b> instead.",
+      "It has no output because the chosen quest is removed here."
+    ],
+    "game": "The named quest leaves the player's active list without counting as completed.",
+    "fields": {
+      "questName": {
+        "put": "Copy the internal name from the quest strip or the other mod notes. Blank targets this quest.",
+        "example": "side-contract",
+        "empty": "The current quest is removed.",
+        "watch": "A spelling mismatch removes nothing, so the unwanted quest stays active."
+      }
+    },
+    "sockets": {
+      "in": {
+        "in": "The point where the chosen quest should be removed."
+      }
+    },
+    "steps": [
+      "Find <b class=\"ui\">Unclaim quest</b> under <b>Effects</b>.",
+      "Type the quest identifier, or leave <b class=\"ui\">Quest</b> blank for this quest.",
+      "Wire the cancellation beat into its input."
+    ],
+    "mistakes": [
+      [
+        "The wrong quest name is typed.",
+        "Nothing is removed. Copy the identifier from the quest strip or the other mod's notes."
+      ],
+      [
+        "It replaces a success ending.",
+        "The quest disappears without completion. Use <b class=\"ui\">Complete quest</b> for success."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so no quest is unclaimed"
       ]
     ]
   }

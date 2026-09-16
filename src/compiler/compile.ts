@@ -117,7 +117,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-16.r167";
+export const EDITOR_BUILD = "2026-09-16.r169";
 
 /** Warning severity (r153): info = good to know, warn = could cause issues,
     error = will break or strand the player. */
@@ -185,6 +185,7 @@ const PERMISSIONS_BY_NODE_TYPE: Record<string, string[]> = {
     "reply.input": ["shell"],
     "trigger.event": ["events"],
     "fx.claimQuest": ["events"],
+    "fx.unclaimQuest": ["events"],
     "fx.pay": ["bank"],
     "fx.withdraw": ["bank"],
     "fx.notify": ["ui"],

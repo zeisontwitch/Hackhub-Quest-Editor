@@ -10,7 +10,7 @@
 <div class="wrap">
 <nav class="toc" aria-label="Handbook contents">
   <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
-  <p class="build">Handbook · build 2026-09-16.r167</p>
+  <p class="build">Handbook · build 2026-09-16.r169</p>
   <div class="search">
     <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
     <div class="results" role="listbox" aria-label="Search results"></div>
@@ -144,10 +144,10 @@ cross one.</p>
   <dt class="dt-danger">It cannot give an objective two triggers</dt><dd>Only
   the first event wired to a trigger is used. A second one is ignored without a
   message. If you need two ways to finish, use two objectives.</dd>
-  <dt class="dt-danger">It cannot make a quest complete itself by default</dt><dd>
-  <b class="ui">Complete automatically</b> starts off, so
-  <b class="ui">On quest complete</b> never runs until you switch it on. End the
-  story from your last objective instead.</dd>
+  <dt class="dt-danger">It will not finish a quest without a finish path</dt><dd>
+  Add <a href="nodes/fx-completequest.html">Complete quest</a> to a success
+  ending, or switch on <b class="ui">Complete automatically</b>.
+  <b class="ui">On quest complete</b> runs after that path.</dd>
   <dt class="dt-warn">It cannot fix Bettercap's access-point name display</dt><dd>
   Create Wi-Fi now ships as a real access point. In the current game build,
   Bettercap may show no network name after you target a mod-created access point
@@ -289,7 +289,7 @@ game, not from this editor, so they read like
 one by hand.</div>
 
 <h2 id="version">Which handbook version is this</h2>
-<p>This handbook documents editor build <span class="mono">2026-09-16.r167</span>.
+<p>This handbook documents editor build <span class="mono">2026-09-16.r169</span>.
 The same stamp appears in the footer of every page, and the editor writes it
 into every mod it exports.</p>
 <dl class="facts-list">
@@ -307,7 +307,7 @@ into every mod it exports.</p>
 
 <div class="pagefoot"><a href="troubleshooting.html">← When something goes wrong</a></div>
 <footer class="colophon">
-  HackHub Quest Editor handbook · documents editor build 2026-09-16.r167 ·
+  HackHub Quest Editor handbook · documents editor build 2026-09-16.r169 ·
   every figure on these pages is taken from the editor's own source.
 </footer>
 </main>

@@ -139,10 +139,9 @@ export const QuestSchema = z.object({
     employer: EmployerSchema.default({}),
     autoStart: z.boolean().default(false),
     /**
-     * Defaults to false. HackHub 1.1.2 freezes the renderer whenever it
-     * finishes a mod-defined quest - both automatically and via the complete
-     * button - so generated quests end their story without formally
-     * completing. See docs/04-engine-bug-quest-completion.md.
+     * Defaults to false so authors decide when a quest should finish. Use the
+     * Complete quest node for a deliberate story ending, or turn this on when
+     * all objectives alone are enough.
      */
     autoComplete: z.boolean().default(false),
     questsToComplete: z.array(z.string()).default([]),
@@ -152,9 +151,8 @@ export const QuestSchema = z.object({
     hasCompleteButton: z.boolean().default(false),
     /**
      * Hide every objective from the quest panel once they have all been
-     * completed. A workaround for the engine bug in
-     * docs/04-engine-bug-quest-completion.md: a mod quest cannot be completed
-     * without freezing the game, so its entry lingers in the quest list.
+     * completed. Kept as a legacy cleanup option for quests that intentionally
+     * stay active instead of using the Complete quest node.
      */
     hideObjectivesWhenDone: z.boolean().default(true),
     /**
@@ -164,7 +162,7 @@ export const QuestSchema = z.object({
      */
     closingObjectiveText: z.string().default(""),
     hackhubPost: HackhubPostSchema.optional(),
-    /** Phone-call dialog trees, referenced by name from `comms.call` nodes. */
+    /** Phone-call dialog trees, referenced by name from phone `comms.dialogue` nodes. */
     dialog: z.array(DialogBranchSchema).default([]),
     /** Keys written by `fx.setData` / `flow.random`, so the inspector can offer them. */
     dataKeys: z.array(z.object({ key: z.string(), type: z.enum(["string", "number", "boolean"]).default("string") })).default([]),

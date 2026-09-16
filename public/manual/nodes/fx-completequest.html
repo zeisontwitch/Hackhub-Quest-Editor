@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Give data to an addon — HackHub Quest Editor handbook</title>
+<title>Complete quest — HackHub Quest Editor handbook</title>
 <link rel="stylesheet" href="../manual.css" />
 </head>
 <body>
@@ -46,25 +46,26 @@
 <main>
 
 <header class="hero">
-  <h1><span class="cat-dot" style="background:var(--cat-community)"></span>Give data to an addon</h1>
-  <p class="tag"><span class="badge" style="color:var(--cat-community)">Community addons</span>
-  &nbsp;<code class="mono" style="color:var(--ink-4)">world.packData</code></p>
+  <h1><span class="cat-dot" style="background:var(--cat-effect)"></span>Complete quest</h1>
+  <p class="tag"><span class="badge" style="color:var(--cat-effect)">Effects</span>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">fx.completeQuest</code></p>
 </header>
 
-<section id="node-world-packdata-page">
+<section id="node-fx-completequest-page">
 
 <h2>What it does</h2>
-<p>Hands a filled-in data shape to a community addon.</p>
+<p>Marks this quest complete. Rewards can pay out, and <b class="ui">On quest complete</b> runs next.</p>
 
 <h2>When you'd use it</h2>
-<p>Use it when an addon your quest depends on asks for data. Pick the pack, pick the shape, fill in what it wants.</p>
-<p>You need the addon installed to see its fields. Nothing appears here until it is.</p>
+<p>Use it as the final node of a successful story path.</p>
+<p>Put closing mail, payments and important clues before it, unless they belong under <b class="ui">On quest complete</b>.</p>
+<p>It has no output because the current story path ends here.</p>
 
 <h2>In the game, this looks like</h2>
-<p>The addon receives the values you entered when the story reaches this node.</p>
+<p>The quest leaves the active list as completed. Quest rewards and complete-hook work can run.</p>
 
 <h2>Fields</h2>
-<p>This node has no fields of its own. Pick an installed addon pack and one of its data shapes, and the editor shows that pack's own fields for you to fill in. With no addon installed there is nothing here to configure.</p>
+<p>This node has nothing to configure. It marks a moment in the story and runs whatever is wired after it.</p>
 
 <h2>Wires</h2>
 <table>
@@ -72,11 +73,7 @@
   <tbody>
     <tr>
       <td class="name kind-flow">In</td><td>input</td>
-      <td>Whatever should run immediately before this node.</td>
-    </tr>
-    <tr>
-      <td class="name kind-flow">Out</td><td>output</td>
-      <td>Whatever should happen after this node runs.</td>
+      <td>Whatever proves the player has reached the ending.</td>
     </tr>
   </tbody>
 </table>
@@ -90,37 +87,52 @@
 wire in that colour. That is what the colours are for: match the colours and
 the connection takes, mismatch them and it will not.</p>
 
-
+<h2>Step by step: add this node to a quest</h2>
+<ol class="plain">
+  <li>Find <b class="ui">Complete quest</b> under <b>Effects</b>.</li>
+  <li>Place it at the end of the success path.</li>
+  <li>Wire the final story beat into its input.</li>
+  <li>Put optional epilogue work under <b class="ui">On quest complete</b>.</li>
+</ol>
 
 <figure>
-  <img src="../img/node-world-packdata-inspector.png"
-       alt="The Give data to an addon node selected on the canvas, with its inspector open on the right." />
-  <figcaption>The inspector for <b>Give data to an addon</b>.</figcaption>
+  <img src="../img/node-fx-completequest-inspector.png"
+       alt="The Complete quest node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>Complete quest</b>.</figcaption>
 </figure>
 
 <h2>Common mistakes</h2>
 <ul class="plain">
-  <li><b>The addon is not installed.</b> The player has your quest and not the addon it hands data to. Ship them together, or say so up front.</li>
+  <li><b>It comes too early.</b> The quest finishes before the player earns it. Move it after the final objective or choice.</li>
+  <li><b>Cleanup is wired before the ending by accident.</b> The player may lose evidence before seeing it. Keep cleanup under <b class="ui">On quest complete</b> when possible.</li>
 </ul>
 
 <h2>Messages you might see</h2>
 <ul class="plain">
-  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so the addon never receives the data</li>
+  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so the quest never finishes here</li>
 </ul>
 
 <h2>Related nodes</h2>
 <ul class="plain">
-  <li><a href="pack-node.html">Addon node</a> — A story node from an addon.</li>
+  <li><a href="fx-pay.html">Pay the player</a> — Deposits money in the player's bank.</li>
+  <li><a href="fx-withdraw.html">Charge the player</a> — Takes money out of the player's account.</li>
+  <li><a href="fx-notify.html">Notify</a> — Puts a message on the player's screen.</li>
+  <li><a href="fx-setdata.html">Set quest data</a> — Stores a value for later.</li>
+  <li><a href="fx-claimquest.html">Claim another quest</a> — Starts the next quest.</li>
+  <li><a href="fx-retirequest.html">Retire quest</a> — Removes the current quest without completion.</li>
+  <li><a href="fx-unclaimquest.html">Unclaim quest</a> — Removes a claimed quest.</li>
+  <li><a href="fx-shell.html">Run terminal command</a> — Runs a command in the player's terminal.</li>
+  <li><a href="fx-handbook.html">Open handbook</a> — Opens an in-game article.</li>
 </ul>
 
 </section>
 
 <div class="pagefoot">
-  <a href="world-files.html">← Place files</a>
-  <a class="next" href="pack-node.html">Addon node →</a>
+  <a href="fx-claimquest.html">← Claim another quest</a>
+  <a class="next" href="fx-retirequest.html">Retire quest →</a>
 </div>
 
-<a class="totop" href="#node-world-packdata-page">↑ back to top</a>
+<a class="totop" href="#node-fx-completequest-page">↑ back to top</a>
 
 <footer class="colophon">
   HackHub Quest Editor handbook · documents editor build 2026-09-16.r169 ·

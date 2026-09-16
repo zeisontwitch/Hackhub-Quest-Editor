@@ -41,6 +41,29 @@ export function DialogueNodeEditor({ node }: { node: NodeOfType<"comms.dialogue"
                     "Nothing scripted yet."
                 )}
             </p>
+            {node.data.kind === "phone" && (
+                <FieldShell
+                    label="Out fires"
+                    hint="Choose whether this node's Out wire runs right after the call starts, or waits until the phone call hangs up."
+                >
+                    <SelectInput
+                        ariaLabel="Phone flow timing"
+                        value={node.data.phone.continueMode ?? "onEnd"}
+                        onChange={(continueMode) =>
+                            updateNodeData(node.id, {
+                                phone: {
+                                    ...node.data.phone,
+                                    continueMode: continueMode as "immediate" | "onEnd",
+                                },
+                            })
+                        }
+                        options={[
+                            { value: "onEnd", label: "When the call ends" },
+                            { value: "immediate", label: "Right after starting the call" },
+                        ]}
+                    />
+                </FieldShell>
+            )}
             {(node.data.kind === "kisscord" || node.data.kind === "weechat") && (
                 <div className="-mx-3 border-t border-line/70">
                     <Toggle

@@ -10,7 +10,7 @@
 <div class="wrap">
 <nav class="toc" aria-label="Handbook contents">
   <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
-  <p class="build">Handbook · build 2026-09-16.r167</p>
+  <p class="build">Handbook · build 2026-09-16.r169</p>
   <div class="search">
     <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
     <div class="results" role="listbox" aria-label="Search results"></div>
@@ -92,17 +92,18 @@ a <b class="ui">Pay the player</b> node does mid-story.</p>
   <dt>Start automatically</dt><dd>The quest begins on its own instead of waiting
   to be accepted.</dd>
   <dt>Complete automatically</dt><dd>The game closes the quest once its
-  objectives are done. Off by default, which is why
-  <b class="ui">On quest complete</b> never fires out of the box. See
-  <a href="concepts.html#why-no-complete">why quests do not complete</a>.</dd>
+  objectives are done. Leave it off when a <b class="ui">Complete quest</b>
+  node decides the ending. See <a href="concepts.html#why-no-complete">how
+  quests finish</a>.</dd>
   <dt>Player can abandon</dt><dd>Lets them give up. Turning it off also means
   <b class="ui">On quest abandoned</b> never runs.</dd>
   <dt>Show a manual complete button</dt><dd>Puts a button in the player's hands
   and lets them decide when the quest is over.</dd>
   <dt>Tidy the objective list when the story ends</dt><dd>Clears completed
   objectives so the panel is not a scroll of old text.</dd>
-  <dt>Closing line</dt><dd>One sentence shown when the quest ends. Cheapest
-  ending you can write, and often enough.</dd>
+  <dt>Closing line</dt><dd>One sentence shown when the quest ends. Use it with
+  the legacy tidy-up option, or as the final visible line before a Complete
+  quest node.</dd>
 </dl>
 <h3>Employer</h3>
 <p><b class="ui">First name</b>, <b class="ui">Last name</b> and
@@ -301,7 +302,7 @@ with <kbd>Ctrl</kbd>+<kbd>Z</kbd>, exactly like typing.</div>
 
 <div class="pagefoot"><a href="nodes.html">← Node reference</a><a class="next" href="how-do-i.html">How do I… →</a></div>
 <footer class="colophon">
-  HackHub Quest Editor handbook · documents editor build 2026-09-16.r167 ·
+  HackHub Quest Editor handbook · documents editor build 2026-09-16.r169 ·
   every figure on these pages is taken from the editor's own source.
 </footer>
 </main>

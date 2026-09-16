@@ -157,6 +157,10 @@ describe("phone flavour", () => {
         const node = addDialogue("phone");
         openEditor(node.id);
         expect(screen.getByText(/no conversation yet/i)).toBeInTheDocument();
+        expect(screen.getByLabelText("Phone flow timing")).toHaveValue("onEnd");
+
+        await user.selectOptions(screen.getByLabelText("Phone flow timing"), "immediate");
+        expect((nodeNow(node.id) as NodeOfType<"comms.dialogue">).data.phone.continueMode).toBe("immediate");
 
         await user.click(screen.getByRole("button", { name: /new branch/i }));
         const quest = useEditor.getState().project.quests[0];
@@ -203,7 +207,7 @@ describe("phone flavour", () => {
         expect(screen.getAllByText("First.").length).toBeGreaterThan(0);
         await user.click(screen.getByRole("button", { name: /continue/i }));
         expect(screen.getAllByText("Second.").length).toBeGreaterThan(0);
-        expect(screen.getByText(/call ends/i)).toBeInTheDocument();
+        expect(screen.getByText("— call ends —")).toBeInTheDocument();
 
         await user.click(screen.getByRole("button", { name: "Replay preview" }));
         expect(screen.getAllByText("First.").length).toBeGreaterThan(0);

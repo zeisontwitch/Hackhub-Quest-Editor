@@ -10,7 +10,7 @@
 <div class="wrap">
 <nav class="toc" aria-label="Handbook contents">
   <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
-  <p class="build">Handbook · build 2026-09-16.r167</p>
+  <p class="build">Handbook · build 2026-09-16.r169</p>
   <div class="search">
     <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
     <div class="results" role="listbox" aria-label="Search results"></div>
@@ -154,18 +154,18 @@ it.</p>
 </dl>
 
 <h3 id="msg-only-runs-on-completion">Only runs on completion</h3>
-<blockquote class="blurb">This is wired, but it only runs if the quest completes — with auto-complete off and no Complete button (the default) that never happens. End the story from the last objective's “done” instead.</blockquote>
+<blockquote class="blurb">This is wired, but it only runs after the quest is marked complete. This graph has no Complete quest node yet.</blockquote>
 <dl class="facts-list">
   <dt class="dt-mute">Colour</dt><dd><span class="sev warn">Amber</span></dd>
-  <dt class="dt-mute">Where</dt><dd>On the node, and in the status bar.</dd>
-  <dt>What it means</dt><dd>You have built the ending of your quest on
-  <a href="nodes/entry-complete.html">On quest complete</a>. Under the default
-  settings a quest never reaches that state, so everything you wired behind it
-  never runs. The player finishes the last objective and sees nothing.</dd>
-  <dt class="dt-ok">What to do</dt><dd>Move those nodes onto the last
-  objective's <b class="ui">On complete</b> socket. That path runs when the
-  objective ticks over, which is the moment you actually mean. If you really
-  want completion, turn it on in the quest's behaviour settings instead.</dd>
+  <dt class="dt-mute">Where</dt><dd>On the node, and in the canvas issue chip.</dd>
+  <dt>What it means</dt><dd>You have built follow-up work on
+  <a href="nodes/entry-complete.html">On quest complete</a>, but the graph has
+  no visible finish node. That path waits until something marks the quest
+  complete.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Add
+  <a href="nodes/fx-completequest.html">Complete quest</a> to the final story
+  beat, or use <b class="ui">Complete automatically</b> or the player's Complete
+  button from Behaviour.</dd>
 </dl>
 
 <h3 id="msg-empty">Empty</h3>
@@ -461,7 +461,7 @@ may already be using it.</p>
 <div class="pagefoot"><a href="how-do-i.html">← How do I…</a><a class="next" href="export.html">Exporting and installing →</a></div>
 <a class="totop" href="#checking">↑ back to top</a>
 <footer class="colophon">
-  HackHub Quest Editor handbook · documents editor build 2026-09-16.r167 ·
+  HackHub Quest Editor handbook · documents editor build 2026-09-16.r169 ·
   every message on this page is quoted from the editor's own source.
 </footer>
 </main>

@@ -45,12 +45,12 @@ of canvas beside it. Each table below has a **Crop to** column.
 
 | Kind | Shots | Subtotal |
 |---|---|---|
-| Panel (440 wide) | 41 | ~1.8 MB |
+| Panel (440 wide) | 45 | ~2.0 MB |
 | Region (≤900 wide) | 19 | ~1.7 MB |
 | Full editor (1280 × 800) | 5 | ~0.9 MB |
 | Recipe cluster (760 × 480) | 16 | ~1.4 MB |
 | In-game (1280 × 720) | 6 | ~0.9 MB |
-| **Total, before optimising** | **87** | **~6.7 MB** |
+| **Total, before optimising** | **91** | **~6.9 MB** |
 
 Optimised on ingest that should land around **4–5 MB**. I'll report the actual
 figure once the images are in, and if it's over budget I'll say so rather than
@@ -80,7 +80,7 @@ next to the picture.
 
 ---
 
-## 2. Tier 1 — 62 shots, the manual is incomplete without them
+## 2. Tier 1 — 67 shots, the manual is incomplete without them
 
 ### 2.1 The screen tour (2)
 
@@ -125,7 +125,7 @@ next to the picture.
 | `guide-canvas-tools.png` | Region | The small canvas toolbar with the arrange tools open. |
 | `guide-inspector-drawer.png` | Full editor | The inspector **torn off into a floating drawer** — worth the whole screen, because the point is where it sits relative to the canvas. |
 
-### 2.4 Node inspectors (33) — all cropped to **Panel**, 440 wide
+### 2.4 Node inspectors (37) — all cropped to **Panel**, 440 wide
 
 Load *Node Reference*, click the node, screenshot. Same three steps every time.
 
@@ -154,6 +154,9 @@ Load *Node Reference*, click the node, screenshot. Same three steps every time.
 | `node-fx-notify-inspector.png` | Notify | `fx.notify` |
 | `node-fx-setdata-inspector.png` | Set quest data | `fx.setData` |
 | `node-fx-claimquest-inspector.png` | Claim another quest | `fx.claimQuest` |
+| `node-fx-completequest-inspector.png` | Complete quest | `fx.completeQuest` |
+| `node-fx-retirequest-inspector.png` | Retire quest | `fx.retireQuest` |
+| `node-fx-unclaimquest-inspector.png` | Unclaim quest | `fx.unclaimQuest` |
 | `node-fx-shell-inspector.png` | Run terminal command | `fx.shell` |
 | `node-fx-handbook-inspector.png` | Open handbook | `fx.handbook` |
 | `node-flow-branch-inspector.png` | Branch | `flow.branch` |
@@ -173,7 +176,7 @@ Plus two, for the nodes whose real content is a bigger editor:
 | `node-world-network-devicetree.png` | Panel | *Create network* with the device tree expanded, showing a device's ports and accounts. Tall is fine. |
 | `node-trigger-event-conditions.png` | Panel | *When event* with the condition builder open and at least one clause filled in. |
 
-**Tier 1 total: 2 + 14 + 12 + 33 + 2 = 63 shots** (62 excluding the one in-game
+**Tier 1 total: 2 + 14 + 12 + 37 + 2 = 67 shots** (66 excluding the one in-game
 shot, `tutorial-14-installed.png`).
 
 ---
@@ -200,7 +203,7 @@ walkthrough and crop to the relevant cluster — not the whole canvas.
 | `howto-11-lead.png` | Give the player a lead they can look up |
 | `howto-12-tool-match.png` | Set up a target a tool mod actually matches |
 | `howto-13-chained-talk.png` | Chain two conversations together |
-| `howto-14-ending.png` | End the story cleanly without completing the quest |
+| `howto-14-ending.png` | End the story cleanly with Complete quest |
 | `howto-15-from-template.png` | Start from a template and make it yours |
 | `howto-16-update.png` | Update a quest you already exported |
 
@@ -261,10 +264,10 @@ say so in one line.
 
 | | Shots |
 |---|---|
-| Tier 1 — required | **64** (63 excluding its one in-game shot) |
+| Tier 1 — required | **67** (66 excluding its one in-game shot) |
 | Tier 2 — valuable | **19** |
 | In-game, only you, beyond the tutorial's | **5** |
-| **Total, all capturable** | **88** |
+| **Total, all capturable** | **91** |
 
 **No shot is impossible.** `world.wifi` is now palette-visible after the SDK 0.24
 QA pass, so it has a planned inspector screenshot like the other node pages.

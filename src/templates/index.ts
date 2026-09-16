@@ -132,7 +132,7 @@ export const TEMPLATES: Template[] = [
         description:
             "Every node type an author can build on one canvas, filled with example input. Open it to see what a field expects before you build your own.",
         difficulty: "Reference",
-        nodeCount: 44,
+        nodeCount: 47,
         build: buildReference,
     },
     {

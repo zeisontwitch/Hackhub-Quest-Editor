@@ -314,23 +314,65 @@ function __qeRegisterProject(sdk, PROJECT) {
             return out;
         });
 
-        var Dialog = {};
-        (qd.dialog || []).forEach(function (b) {
-            Dialog[b.name] = (b.lines || []).map(function (l) {
-                var out = { speaker: l.speaker, text: l.text };
-                if (l.isEnd) out.isEnd = true;
-                if (l.options && l.options.length) {
-                    out.options = l.options.map(function (o) {
-                        var oo = { label: o.label };
-                        if (o.text) oo.text = o.text;
-                        if (o.switchBranch) oo.switchBranch = o.switchBranch;
-                        if (o.isEnd) oo.isEnd = true;
-                        return oo;
-                    });
-                }
-                return out;
+        function mapDialogOption(o, scope, continueFlow, markCallback) {
+            var oo = { label: scope ? __QE.fill(o.label || "", scope) : (o.label || "") };
+            if (o.text) oo.text = scope ? __QE.fill(o.text, scope) : o.text;
+            if (o.switchBranch) oo.switchBranch = o.switchBranch;
+            if (o.nextIndex != null) oo.nextIndex = Number(o.nextIndex);
+            if (o.timeout != null) oo.timeout = Number(o.timeout);
+            if (o.isEnd) oo.isEnd = true;
+            if (continueFlow && o.isEnd) {
+                oo.onSelect = continueFlow;
+                if (markCallback) markCallback();
+            }
+            return oo;
+        }
+
+        function dialogLineEndsCall(l, index, lines) {
+            if (l.options && l.options.length) return false;
+            return !!l.isEnd || index >= lines.length - 1;
+        }
+
+        function mapDialogLine(l, scope, continueFlow, index, lines, markCallback) {
+            var out = {
+                speaker: l.speaker,
+                text: scope ? __QE.fill(l.text || "", scope) : (l.text || ""),
+            };
+            if (l.audio) out.audio = l.audio;
+            if (l.timeout != null) out.timeout = Number(l.timeout);
+            if (l.isEnd) out.isEnd = true;
+            if (continueFlow && dialogLineEndsCall(l, index, lines)) {
+                out.onEnd = continueFlow;
+                if (markCallback) markCallback();
+            }
+            if (l.options && l.options.length) {
+                out.options = l.options.map(function (o) {
+                    return mapDialogOption(o, scope, continueFlow, markCallback);
+                });
+            }
+            return out;
+        }
+
+        function buildDialog(scope, continueFlow, markCallback) {
+            var out = {};
+            (qd.dialog || []).forEach(function (b) {
+                var lines = b.lines || [];
+                out[b.name] = lines.map(function (l, i) {
+                    return mapDialogLine(l, scope, continueFlow, i, lines, markCallback);
+                });
             });
-        });
+            return out;
+        }
+
+        var Dialog = buildDialog(null, null, null);
+
+        function installDialog(scope, continueFlow) {
+            var callbacks = 0;
+            if (!questRef) return callbacks;
+            var filled = buildDialog(scope, continueFlow, function () { callbacks++; });
+            if (Object.keys(filled).length) questRef.Dialog = filled;
+            return callbacks;
+        }
 
         var kisscordNodes = g.nodes
             .filter(function (n) { return n.type === "comms.dialogue" && n.data.kind === "kisscord"; });
@@ -596,15 +638,10 @@ function __qeRegisterProject(sdk, PROJECT) {
         /* How many objectives have ticked, and whether the author asked for
            the panel to be emptied once they all have.
 
-           The engine cannot complete a mod quest without freezing (r86), so a
-           finished story leaves its entry in the quest list forever. There is
-           no removeObjective in the SDK, but QuestObjectiveDefinition has a
-           "hidden" flag, and refillObjectives already proves the engine re-reads
-           the array we hand it (r73 fixed visible {{tokens}} that way). So
-           when the last objective ticks we flip every row to hidden and ask
-           the panel to redraw. Whether the engine honours "hidden" after the
-           first render is exactly what probe M tests - it may only be read
-           when the list is first built. */
+           Current builds can formally finish a quest through the Complete quest
+           node. This legacy cleanup option remains for projects that choose to
+           leave a story in the active list: when the last objective ticks we
+           flip rows to hidden and ask the panel to redraw. */
         var objectivesDone = 0;
         function hideAllObjectives() {
             if (!questRef || !questRef.Objectives) return;
@@ -918,6 +955,55 @@ function __qeRegisterProject(sdk, PROJECT) {
                 if (inbox[i] && inbox[i].subject === subject) return true;
             }
             return false;
+        }
+
+        var objectiveDoneDepth = 0;
+        var pendingQuestEnd = null;
+
+        function performQuestEnd(req) {
+            if (!req) return;
+            try {
+                if (req.kind === "complete") {
+                    if (questRef && typeof questRef.complete === "function") {
+                        questRef.complete();
+                        __QE.log("quest completed by Complete quest node");
+                    } else {
+                        __QE.log("Complete quest node skipped: Quest.complete is unavailable");
+                    }
+                } else if (req.kind === "retire") {
+                    if (questRef && typeof questRef.retire === "function") {
+                        questRef.retire();
+                        __QE.log("quest retired by Retire quest node");
+                    } else {
+                        __QE.log("Retire quest node skipped: Quest.retire is unavailable");
+                    }
+                } else if (req.kind === "unclaim") {
+                    if (sdk.Quest && typeof sdk.Quest.unclaim === "function") {
+                        sdk.Quest.unclaim(req.name || qd.name);
+                        __QE.log("quest unclaimed by Unclaim quest node: " + (req.name || qd.name));
+                    } else {
+                        __QE.log("Unclaim quest node skipped: Quest.unclaim is unavailable");
+                    }
+                }
+            } catch (e) {
+                __QE.log("quest ending failed: " + (e && e.message ? e.message : e));
+            }
+        }
+
+        function requestQuestEnd(kind, name) {
+            var req = { kind: kind, name: name };
+            if (objectiveDoneDepth > 0) {
+                pendingQuestEnd = req;
+                return;
+            }
+            performQuestEnd(req);
+        }
+
+        function flushQuestEnd() {
+            if (!pendingQuestEnd) return;
+            var req = pendingQuestEnd;
+            pendingQuestEnd = null;
+            performQuestEnd(req);
         }
 
         function runFlow(nodeId, ctx, depth) {
@@ -1337,26 +1423,43 @@ function __qeRegisterProject(sdk, PROJECT) {
                     }
                     if (d.kind === "phone") {
                         var branchName = d.phone && d.phone.branch ? d.phone.branch : "default";
-                        var baseLines = Dialog[branchName];
-                        if (baseLines && questRef.Dialog && questRef.Dialog[branchName]) {
-                            questRef.Dialog[branchName] = baseLines.map(function (line) {
-                                var out = { speaker: line.speaker, text: __QE.fill(line.text, scope) };
-                                if (line.isEnd) out.isEnd = true;
-                                if (line.options) {
-                                    out.options = line.options.map(function (o) {
-                                        var oo = { label: o.label };
-                                        if (o.text) oo.text = __QE.fill(o.text, scope);
-                                        if (o.switchBranch) oo.switchBranch = o.switchBranch;
-                                        if (o.isEnd) oo.isEnd = true;
-                                        return oo;
-                                    });
-                                }
-                                return out;
-                            });
+                        var startIndex = d.phone && d.phone.startIndex ? d.phone.startIndex : 0;
+                        var waitForEnd = !(d.phone && d.phone.continueMode === "immediate");
+                        if (!questRef || typeof questRef.createDialog !== "function") {
+                            __QE.log("phone dialogue \"" + branchName + "\" could not start; continuing flow");
+                            return next();
                         }
-                        questRef.createDialog(branchName, d.phone && d.phone.startIndex ? d.phone.startIndex : 0);
+                        if (waitForEnd) {
+                            var continued = false;
+                            var continueOnce = function () {
+                                if (continued) return;
+                                continued = true;
+                                __QE.log("phone dialogue \"" + branchName + "\" ended; continuing flow");
+                                return next();
+                            };
+                            var callbacks = installDialog(scope, continueOnce);
+                            questRef.createDialog(branchName, startIndex);
+                            if (!callbacks) {
+                                __QE.log("phone dialogue \"" + branchName + "\" has no ending line; continuing flow now");
+                                return next();
+                            }
+                            return undefined;
+                        }
+                        installDialog(scope, null);
+                        questRef.createDialog(branchName, startIndex);
                     }
                     return next();
+                }
+                case "fx.completeQuest":
+                    requestQuestEnd("complete");
+                    return undefined;
+                case "fx.retireQuest":
+                    requestQuestEnd("retire");
+                    return undefined;
+                case "fx.unclaimQuest": {
+                    var unclaimName = __QE.fill(d.questName || qd.name, scope);
+                    requestQuestEnd("unclaim", unclaimName);
+                    return undefined;
                 }
                 case "fx.notify": {
                     var notifyMsg = __QE.fill(d.message, scope);
@@ -1944,9 +2047,9 @@ function __qeRegisterProject(sdk, PROJECT) {
                     if (qd.autoComplete != null) this.AutoComplete = !!qd.autoComplete;
                     if (qd.abandonable != null) this.Abandonable = !!qd.abandonable;
                     /* Assign explicitly either way. Leaving it unset inherits
-                       the engine's default, and Nemesis - the only mod known
-                       not to hit the completion crash - sets it to false
-                       outright. Matching that shape exactly matters (r86). */
+                       the engine's default; the editor setting should be the
+                       only source of truth for whether the player sees this
+                       manual finish button. */
                     this.HasCompleteButton = !!qd.hasCompleteButton;
                     if (qd.questsToComplete && qd.questsToComplete.length) this.QuestsToComplete = qd.questsToComplete;
                     if (qd.maxClaim != null) this.MaxClaim = qd.maxClaim;
@@ -2104,32 +2207,31 @@ function __qeRegisterProject(sdk, PROJECT) {
                             fired = true;
                             /* Story beats FIRST, tick the objective LAST.
 
-                               completeObjective on the final objective makes
-                               the engine retire the quest and call OnComplete
-                               synchronously, from inside this very handler -
-                               which is itself running inside the engine's own
-                               event dispatch. QA's log shows the nesting
-                               plainly: "OnComplete: starting" printed BEFORE
-                               "objective send-manifest completed by Mail.Sent".
-                               Anything we did after that call - sending the
-                               closing mail, paying the player - ran three
-                               levels deep inside a dispatch the engine thought
-                               it had finished, and the renderer froze (r82).
+                               completeObjective can synchronously run engine
+                               completion work before it returns. Running the
+                               author's "done" wires first preserves the event
+                               payload they expect and keeps closing mail,
+                               payments and notifications in the same trusted
+                               SDK call stack.
 
-                               Doing the author's wires first means that by the
-                               time the engine re-enters us there is nothing of
-                               ours left on the stack, so the nested OnComplete
-                               unwinds cleanly.
+                               A Complete quest / Retire quest / Unclaim quest
+                               node reached directly from this objective is
+                               deferred until after completeObjective below, so
+                               the visible objective ticks before the quest
+                               entry is formally ended.
 
                                Deliberately NOT deferred to a timer: r45 - the
                                engine only grants this mod permissions inside a
                                call it made, and work moved to a later tick
-                               loses that identity. Nemesis sends mail straight
-                               from a Mail.Sent handler and is fine; what it
-                               never does is call completeObjective there. */
-                            doneEdges.forEach(function (e) {
-                                runFlow(e.target, { payload: data, vars: {} }, 0);
-                            });
+                               loses that identity. */
+                            objectiveDoneDepth++;
+                            try {
+                                doneEdges.forEach(function (e) {
+                                    runFlow(e.target, { payload: data, vars: {} }, 0);
+                                });
+                            } finally {
+                                objectiveDoneDepth--;
+                            }
                             if (n.data.name) {
                                 try {
                                     self.completeObjective(n.data.name);
@@ -2143,6 +2245,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                             if (qd.hideObjectivesWhenDone && objectivesDone >= objectiveNodes.length) {
                                 hideAllObjectives();
                             }
+                            flushQuestEnd();
                         };
                         listenFor.forEach(function (evName) {
                             self.Events.on(evName, function (data) { onEvent(data, evName); });
@@ -2173,9 +2276,8 @@ function __qeRegisterProject(sdk, PROJECT) {
                        whatever the last constructor saw. */
                     questRef = this;
                     var ctx = { payload: {}, vars: {} };
-                    /* These traces exist because a freeze here leaves no other
-                       evidence: the renderer dies mid-hook and the log simply
-                       stops. Whichever line is last tells us the phase (r80). */
+                    /* These traces stay useful for in-game QA: whichever line
+                       appears last tells us which completion phase ran. */
                     __QE.log("OnComplete: starting");
                     runQuestCleanup("complete");
                     __QE.log("OnComplete: cleanup done, removing weechat servers");
@@ -2196,9 +2298,8 @@ function __qeRegisterProject(sdk, PROJECT) {
                        whatever the last constructor saw. */
                     questRef = this;
                     var ctx = { payload: {}, vars: {} };
-                    /* These traces exist because a freeze here leaves no other
-                       evidence: the renderer dies mid-hook and the log simply
-                       stops. Whichever line is last tells us the phase (r80). */
+                    /* These traces stay useful for in-game QA: whichever line
+                       appears last tells us which abandon phase ran. */
                     __QE.log("OnAbandon: starting");
                     runQuestCleanup("abandon");
                     __QE.log("OnAbandon: cleanup done, removing weechat servers");

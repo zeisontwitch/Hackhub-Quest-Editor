@@ -12,7 +12,7 @@ import { createProject, type ProjectDocument } from "@/schema/project";
 import { NodeSchema } from "@/schema/nodes";
 import { getTemplate, TEMPLATES } from "@/templates";
 import { EVENTS, getEvent, isPrimitivePayload, payloadFields } from "@/schema/events";
-import type { NodeDoc } from "@/schema/nodes";
+import type { DialogSpeech, NodeDoc } from "@/schema/nodes";
 import type { EdgeDoc } from "@/schema/edges";
 
 let seq = 0;
@@ -105,9 +105,13 @@ function stubSdk(calls: string[], listeners: [string, (d: unknown) => void][]) {
             off: () => {},
             offAll: () => {},
         };
+        static claim(name: string) { calls.push(`claim:${name}`); }
+        static unclaim(name: string) { calls.push(`unclaim:${name}`); }
         sendMail(i: number) { calls.push(`sendMail:${i}`); }
-        createDialog(b: string) { calls.push(`createDialog:${b}`); }
+        createDialog(b: string, _startIndex?: number) { calls.push(`createDialog:${b}`); }
         completeObjective(n: string) { calls.push(`complete:${n}`); }
+        complete() { calls.push("questComplete"); }
+        retire() { calls.push("questRetire"); }
         SetData(k: string, v: unknown) {
             calls.push(`setData:${k}=${v}`);
             // The real SDK persists it on the quest's Data; tests that read
@@ -784,6 +788,84 @@ describe("flow.sequence fires its outputs in order, with the author's pauses", (
         await settle();
 
         expect(calls).toEqual(["notify:one", "notify:three"]);
+    });
+});
+
+
+
+describe("phone dialogue flow callbacks", () => {
+    function phoneProject(
+        continueMode: "onEnd" | "immediate",
+        lines: DialogSpeech[] = [
+            { id: "l1", speaker: "Caller", text: "Listen.", isEnd: false, options: [] },
+            { id: "l2", speaker: "Caller", text: "That is all.", isEnd: true, options: [] },
+        ],
+    ) {
+        const p = createProject();
+        const quest = p.quests[0];
+        quest.name = "phone-flow";
+        quest.autoStart = true;
+        quest.dialog = [{ id: "b1", name: "default", lines }];
+        const entry = node("entry.start");
+        const call = node("comms.dialogue", {
+            kind: "phone",
+            phone: { branch: "default", startIndex: 0, continueMode },
+        });
+        const after = node("fx.notify", { message: "after call", variant: "notify", tone: "info" });
+        quest.graph.nodes = [entry, call, after];
+        quest.graph.edges = [edge(entry.id, call.id, "flow"), edge(call.id, after.id, "flow")];
+        return p;
+    }
+
+    function runPhone(project: ProjectDocument) {
+        const calls: string[] = [];
+        const sdk = stubSdk(calls, []) as any;
+        runMod(compileProject(project).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = q.CreateData();
+        q.OnStart();
+        return { calls, q };
+    }
+
+    it("waits for the phone line onEnd before following Out", () => {
+        const { calls, q } = runPhone(phoneProject("onEnd"));
+
+        expect(calls).toContain("createDialog:default");
+        expect(calls).not.toContain("notify:after call");
+        expect(typeof q.Dialog.default[1].onEnd).toBe("function");
+
+        q.Dialog.default[1].onEnd();
+        q.Dialog.default[1].onEnd();
+
+        expect(calls.filter((c) => c === "notify:after call")).toHaveLength(1);
+    });
+
+    it("can follow Out from an ending phone choice", () => {
+        const project = phoneProject("onEnd", [
+            {
+                id: "l1",
+                speaker: "Caller",
+                text: "Choose.",
+                isEnd: false,
+                options: [{ id: "o1", label: "Hang up", text: "Bye.", isEnd: true }],
+            },
+        ]);
+        const { calls, q } = runPhone(project);
+
+        expect(calls).not.toContain("notify:after call");
+        expect(typeof q.Dialog.default[0].options[0].onSelect).toBe("function");
+
+        q.Dialog.default[0].options[0].onSelect();
+
+        expect(calls).toContain("notify:after call");
+    });
+
+    it("keeps the immediate mode for authors who want the old timing", () => {
+        const { calls, q } = runPhone(phoneProject("immediate"));
+
+        expect(calls).toContain("createDialog:default");
+        expect(calls).toContain("notify:after call");
+        expect(q.Dialog.default[1].onEnd).toBeUndefined();
     });
 });
 
@@ -1692,7 +1774,7 @@ describe("tool responses speak the SDK's actual signature", () => {
     });
 });
 
-describe("other calls that never matched the SDK", () => {
+describe("SDK effect calls", () => {
     async function playOne(type: Parameters<typeof node>[0], data: Record<string, unknown>, sdkPatch: (s: any, calls: string[]) => void) {
         const calls: string[] = [];
         const sdk = stubSdk(calls, []) as any;
@@ -1723,6 +1805,49 @@ describe("other calls that never matched the SDK", () => {
             sdk.Quest.claim = (name: string) => c.push(`claim:${name}`);
         });
         expect(calls).toContain("claim:NextJob");
+    });
+
+    it("finishes the current quest through the quest-ending nodes", async () => {
+        const completed = await playOne("fx.completeQuest", {}, () => {});
+        expect(completed).toContain("questComplete");
+
+        const retired = await playOne("fx.retireQuest", {}, () => {});
+        expect(retired).toContain("questRetire");
+
+        const unclaimed = await playOne("fx.unclaimQuest", { questName: "OldJob" }, () => {});
+        expect(unclaimed).toContain("unclaim:OldJob");
+    });
+
+    it("defaults Unclaim quest to the current quest name", async () => {
+        const calls = await playOne("fx.unclaimQuest", { questName: "" }, () => {});
+        expect(calls).toContain("unclaim:FirstQuest");
+    });
+
+    it("defers a terminal quest ending reached from objective done until the objective ticks", async () => {
+        const calls: string[] = [];
+        const listeners: [string, (d: unknown) => void][] = [];
+        const sdk = stubSdk(calls, listeners);
+        const p = createProject();
+        const quest = p.quests[0];
+        quest.name = "ordered-ending";
+        const objective = node("objective", { name: "final", description: "Finish the job" });
+        const trigger = node("trigger.event", { event: "Terminal.NmapScan", conditions: [] });
+        const finish = node("fx.completeQuest");
+        quest.graph.nodes = [objective, trigger, finish];
+        quest.graph.edges = [
+            edge(trigger.id, objective.id, "condition", "trigger", "trigger"),
+            edge(objective.id, finish.id, "flow", "done", "in"),
+        ];
+
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.Data = q.CreateData();
+        q.OnObjectivesStart();
+        listeners.find(([event]) => event === "Terminal.NmapScan")![1]({ ip: "10.0.0.14" });
+        await settle();
+
+        expect(calls.indexOf("complete:final")).toBeGreaterThanOrEqual(0);
+        expect(calls.indexOf("questComplete")).toBeGreaterThan(calls.indexOf("complete:final"));
     });
 
     it("gives a toast its tone", async () => {

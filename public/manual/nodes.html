@@ -10,7 +10,7 @@
 <div class="wrap">
 <nav class="toc" aria-label="Handbook contents">
   <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
-  <p class="build">Handbook · build 2026-09-16.r167</p>
+  <p class="build">Handbook · build 2026-09-16.r169</p>
   <div class="search">
     <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
     <div class="results" role="listbox" aria-label="Search results"></div>
@@ -31,22 +31,19 @@
 <main>
 <header class="hero">
   <h1>Node reference</h1>
-  <p class="tag">All 34 node types you can add, grouped the way the palette groups them.</p>
+  <p class="tag">All 37 node types you can add, grouped the way the palette groups them.</p>
 </header>
 <section id="node-index">
 <p>Every page here follows the same shape: what the node does, when you would
 use it, what the player experiences, every setting it has, what to wire into
 it, how to add it, and the ways it usually goes wrong.</p>
-<div class="note warn"><b>Being written.</b> This page is scaffolding
-from the Phase 3 skeleton — the structure and anchors are final, the prose lands
-in Phase 4. Nothing here is a claim about the editor yet.</div>
   <h3 id="cat-entry"><span class="cat-dot" style="background:var(--cat-entry)"></span>Quest lifecycle</h3>
   <table>
     <thead><tr><th>Node</th><th>What it does</th></tr></thead>
     <tbody>
       <tr><td class="name"><a href="nodes/entry-start.html">Quest start</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">entry.start</span></td><td>Runs once when the quest begins. Setup goes here.</td></tr>
-      <tr><td class="name"><a href="nodes/entry-load.html">On start & reload</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">entry.load</span></td><td>Runs on claim and every load. Listeners go here.</td></tr>
-      <tr><td class="name"><a href="nodes/entry-complete.html">On quest complete</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">entry.complete</span></td><td>Only runs if the quest completes — with auto-complete off and no Complete button (the default) that never happens. End the story from the last objective instead.</td></tr>
+      <tr><td class="name"><a href="nodes/entry-load.html">On start &amp; reload</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">entry.load</span></td><td>Runs on claim and every load. Listeners go here.</td></tr>
+      <tr><td class="name"><a href="nodes/entry-complete.html">On quest complete</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">entry.complete</span></td><td>Runs after a Complete quest node, auto-complete, or Complete button finishes the quest.</td></tr>
       <tr><td class="name"><a href="nodes/entry-abandon.html">On quest abandoned</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">entry.abandon</span></td><td>Runs if the player gives up. Cleanup goes here.</td></tr>
     </tbody>
   </table>
@@ -107,6 +104,9 @@ in Phase 4. Nothing here is a claim about the editor yet.</div>
       <tr><td class="name"><a href="nodes/fx-notify.html">Notify</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.notify</span></td><td>A popup or toast</td></tr>
       <tr><td class="name"><a href="nodes/fx-setdata.html">Set quest data</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.setData</span></td><td>Store a value for later</td></tr>
       <tr><td class="name"><a href="nodes/fx-claimquest.html">Claim another quest</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.claimQuest</span></td><td>Chain into the next quest</td></tr>
+      <tr><td class="name"><a href="nodes/fx-completequest.html">Complete quest</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.completeQuest</span></td><td>Finish the current quest and run On quest complete</td></tr>
+      <tr><td class="name"><a href="nodes/fx-retirequest.html">Retire quest</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.retireQuest</span></td><td>Remove the current quest without marking it complete</td></tr>
+      <tr><td class="name"><a href="nodes/fx-unclaimquest.html">Unclaim quest</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.unclaimQuest</span></td><td>Remove a claimed quest from the player's list</td></tr>
       <tr><td class="name"><a href="nodes/fx-shell.html">Run terminal command</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.shell</span></td><td>Execute in the terminal</td></tr>
       <tr><td class="name"><a href="nodes/fx-handbook.html">Open handbook</a><span class="mono" style="display:block;font-size:11px;color:var(--ink-4)">fx.handbook</span></td><td>Jump to an in-game article</td></tr>
     </tbody>
@@ -148,7 +148,7 @@ in Phase 4. Nothing here is a claim about the editor yet.</div>
 
 <div class="pagefoot"><a href="concepts.html">← How a quest works</a><a class="next" href="guides.html">Feature guides →</a></div>
 <footer class="colophon">
-  HackHub Quest Editor handbook · documents editor build 2026-09-16.r167 ·
+  HackHub Quest Editor handbook · documents editor build 2026-09-16.r169 ·
   every figure on these pages is taken from the editor's own source.
 </footer>
 </main>

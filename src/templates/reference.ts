@@ -187,6 +187,7 @@ export const EXAMPLES: Partial<Record<NodeType, Record<string, unknown>>> = {
     },
     "fx.setData": { key: "containerId", value: "MSKU-4471" },
     "fx.claimQuest": { questName: "NextQuest" },
+    "fx.unclaimQuest": { questName: "SideQuest" },
     "fx.shell": { command: "echo 'manifest retrieved' >> ~/notes.txt" },
     "fx.handbook": { articleId: "night-shift", category: "Dock Operations" },
     "flow.branch": {

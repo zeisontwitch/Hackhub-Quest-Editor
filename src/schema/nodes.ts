@@ -348,9 +348,17 @@ export const MailNodeDataSchema = z.object({
 });
 export type MailNodeData = z.infer<typeof MailNodeDataSchema>;
 
+export const PhoneContinueModeSchema = z.enum(["immediate", "onEnd"]);
+export type PhoneContinueMode = z.infer<typeof PhoneContinueModeSchema>;
+
 export const CallNodeDataSchema = z.object({
     branch: z.string().default("default"),
     startIndex: z.number().default(0),
+    /**
+     * immediate = keep old flow semantics: Out fires after the call starts.
+     * onEnd = wire Out into the phone script's line/choice ending callbacks.
+     */
+    continueMode: PhoneContinueModeSchema.default("onEnd"),
 });
 
 
@@ -379,7 +387,7 @@ export type DialogueKind = z.infer<typeof DialogueKindSchema>;
 
 export const DialogueNodeDataSchema = z.object({
     kind: DialogueKindSchema.default("phone"),
-    phone: CallNodeDataSchema.default({ branch: "default", startIndex: 0 }),
+    phone: CallNodeDataSchema.default({ branch: "default", startIndex: 0, continueMode: "onEnd" }),
     kisscord: KisscordNodeDataSchema.default({ contactId: "", messages: [] }),
     mail: MailNodeDataSchema.default({ from: "", subject: "", content: "", replyable: false }),
     weechat: WeeChatNodeDataSchema.default({ host: "", password: "", registerServer: true, messages: [] }),
@@ -432,6 +440,14 @@ export const SetDataNodeDataSchema = z.object({
 });
 
 export const ClaimQuestNodeDataSchema = z.object({
+    questName: IdentifierSchema.optional().or(z.literal("")),
+});
+
+export const CompleteQuestNodeDataSchema = empty;
+export const RetireQuestNodeDataSchema = empty;
+
+export const UnclaimQuestNodeDataSchema = z.object({
+    /** Blank means the quest this node belongs to. */
     questName: IdentifierSchema.optional().or(z.literal("")),
 });
 
@@ -635,6 +651,9 @@ export const NodeSchema = z.discriminatedUnion("type", [
     node("fx.notify", NotifyNodeDataSchema),
     node("fx.setData", SetDataNodeDataSchema),
     node("fx.claimQuest", ClaimQuestNodeDataSchema),
+    node("fx.completeQuest", CompleteQuestNodeDataSchema),
+    node("fx.retireQuest", RetireQuestNodeDataSchema),
+    node("fx.unclaimQuest", UnclaimQuestNodeDataSchema),
     node("fx.shell", ShellExecNodeDataSchema),
     node("fx.handbook", HandbookNodeDataSchema),
     node("flow.branch", BranchNodeDataSchema),

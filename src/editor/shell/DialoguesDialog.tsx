@@ -210,7 +210,7 @@ function PhoneCore({
     caller: string;
     onWriteDialog: (next: DialogBranch[]) => void;
     onSelectBranch: (branch: string) => void;
-    onPatchPhone: (p: Partial<{ branch: string; startIndex: number }>) => void;
+    onPatchPhone: (p: Partial<{ branch: string; startIndex: number; continueMode: "immediate" | "onEnd" }>) => void;
 }) {
     const branch = dialog.find((b) => b.name === node.data.phone.branch) ?? dialog[0];
 
@@ -256,10 +256,28 @@ function PhoneCore({
             ) : (
                 <EmptyNote text="This quest has no conversation yet — create a branch to start scripting the call." />
             )}
-            <div className="px-4 pt-2">
+            <div className="grid gap-2 px-4 pt-2 sm:grid-cols-[1fr_auto]">
+                <FieldShell
+                    label="Out fires"
+                    hint="Choose whether this node's Out wire runs right after the call starts, or waits until the phone call hangs up."
+                    className="px-0 py-0"
+                >
+                    <SelectInput
+                        ariaLabel="Phone flow timing"
+                        value={node.data.phone.continueMode ?? "onEnd"}
+                        onChange={(continueMode) =>
+                            onPatchPhone({ continueMode: continueMode as "immediate" | "onEnd" })
+                        }
+                        options={[
+                            { value: "onEnd", label: "When the call ends" },
+                            { value: "immediate", label: "Right after starting the call" },
+                        ]}
+                    />
+                </FieldShell>
                 <FieldShell
                     label="Start at line"
                     hint="Which line of dialogue the call opens on. Use it to resume a conversation mid-script."
+                    className="px-0 py-0"
                 >
                     <input
                         type="number"

@@ -87,7 +87,7 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
         case "entry.load":
             return ["Runs on claim and after every reload"];
         case "entry.complete":
-            return ["Runs when all objectives are done"];
+            return ["Runs after the quest is completed"];
         case "entry.abandon":
             return ["Runs when the player abandons"];
 
@@ -179,10 +179,14 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
                     : d.kind === "mail"
                       ? 1
                       : ((d.kind === "kisscord" ? d.kisscord?.messages : d.weechat?.messages) as unknown[] | undefined)?.length ?? 0;
-            return [
+            const lines = [
                 `${DIALOGUE_KIND_LABELS[d.kind as DialogueKind] ?? "Dialogue"} · ${count} line${count === 1 ? "" : "s"}`,
                 first ? clip(String(first)) : "empty conversation",
             ];
+            if (d.kind === "phone") {
+                lines.push(d.phone?.continueMode === "immediate" ? "Out after call starts" : "Out when call ends");
+            }
+            return lines;
         }
 
         case "reply.input":
@@ -208,6 +212,15 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
 
         case "fx.claimQuest":
             return [d.questName ? String(d.questName) : "no quest chosen"];
+
+        case "fx.completeQuest":
+            return ["Finishes this quest"];
+
+        case "fx.retireQuest":
+            return ["Removes this quest"];
+
+        case "fx.unclaimQuest":
+            return [d.questName ? `Unclaims ${String(d.questName)}` : "Unclaims this quest"];
 
         case "fx.shell":
             return [d.command ? clip(String(d.command), 52) : "no command yet"];

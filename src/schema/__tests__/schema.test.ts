@@ -40,8 +40,8 @@ describe("registry ↔ node union", () => {
         expect([...NODE_TYPES].sort()).toEqual([...ALL_TYPES].sort());
     });
 
-    it("has 34 node types", () => {
-        expect(NODE_TYPES).toHaveLength(34);
+    it("has 37 node types", () => {
+        expect(NODE_TYPES).toHaveLength(37);
     });
 
     it.each(ALL_TYPES)("creates valid default data for %s", (type) => {
@@ -484,6 +484,20 @@ describe("choice-or-custom fields", () => {
         // arrives already called "3".
         expect(steps.newItem(2)).toMatchObject({ label: "3" });
         expect(steps.itemTitle({ label: "" }, 4)).toBe("5");
+    });
+
+
+    it("defaults phone calls to continuing when the call ends", () => {
+        const call = nodeTypeDef("comms.dialogue").create() as {
+            phone: { continueMode: string };
+        };
+        expect(call.phone.continueMode).toBe("onEnd");
+    });
+
+    it("makes quest-ending nodes terminal", () => {
+        expect(nodeTypeDef("fx.completeQuest").sources).toEqual([]);
+        expect(nodeTypeDef("fx.retireQuest").sources).toEqual([]);
+        expect(nodeTypeDef("fx.unclaimQuest").sources).toEqual([]);
     });
 
     it("starts payments at 100 with no percent option, but honours old ones", () => {

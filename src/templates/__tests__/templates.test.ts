@@ -265,13 +265,14 @@ describe("template registry", () => {
 /**
  * Round 125. The template audit read every template as a player would play
  * it and found stories that could not end: payments and closings wired to an
- * "On quest complete" that never fires, a database with no tables for its own
+ * "On quest complete" with no completion path, a database with no tables for its own
  * trigger to match, and a client confirming receipt of a file nobody sent.
  * These pins hold the fixes.
  */
 describe("template audit pins", () => {
-    it("no template wires On quest complete — it never fires with the defaults", () => {
-        // contract-hack still has the old wiring; Zeis deferred that one.
+    it("no template wires On quest complete without an explicit completion path", () => {
+        // contract-hack keeps its historical On quest complete cleanup hook; a later
+        // template pass can move it onto an explicit Complete quest ending.
         const wired: string[] = [];
         for (const t of TEMPLATES.filter((x) => x.id !== "reference" && x.id !== "contract-hack")) {
             for (const q of t.build().quests) {

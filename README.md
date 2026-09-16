@@ -120,7 +120,7 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
-| 1 | **SDK 0.24 follow-up choices** | Wi-Fi is exposed, and phone end-flow / quest-ending APIs landed in r169 after raw QA. The next safe candidates are mail cleanup/replyability QA and a Scheduler/Time design pass; HTTP/curl/DNS collaborator nodes stay fenced until SteelWaffe answers the upstream gaps. See [`docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md`](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md). |
+| 1 | **SDK 0.24 follow-up choices** | Wi-Fi is exposed, and phone end-flow / quest-ending APIs landed in r169 after raw QA. Current queue: UI.prompt options, mail cleanup/replyability QA, Twotter update/remove QA, then Scheduler/Time design. HTTP/curl/DNS collaborator nodes stay fenced until SteelWaffe answers the upstream gaps. See [`docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md`](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md). |
 | 2 | Old quest mail cleanup | SDK 0.24.0 now declares `Mail.send(): string \| null` and `Mail.remove(id)`, so this can become a real feature after a focused in-game QA pass verifies ids, replyable mail, and cleanup timing. |
 | 3 | **Date deprecation warning (`moment` RFC2822)** | Only appears with a quest-editor mod installed, 30–90s after a mail is sent, when a browser or app screen is opened. The stack is the game's own date formatting and we never set a date on anything — question 10 in the bug report. |
 
@@ -128,8 +128,12 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
-| 1 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
-| 2 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. The official Cryptographer Hunt (a phone social-engineering scene with a fail route on the wrong choice) is the strongest argument for it — see [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). The shape now ships inside The Long Game (r136, act III: a typed verdict with two endings); whether a standalone template still adds anything is Zeis's call. |
+| 1 | **UI.prompt options** | Low-risk SDK 0.24 surface: `UI.prompt({ title, label, placeholder, password, defaultValue })` returns the player's text or `null`. Likely editor shape: a branchable prompt node with success/cancel outputs and optional save-to-data. Start with one raw in-game smoke test, then expose it. |
+| 2 | **Mail cleanup / replyable mail QA** | Focused QA first: `Mail.send()` id shape, `Mail.remove(id)` timing, whether `QuestMailDefinition.replyable` actually renders a Reply button, what event a reply raises, and cleanup on complete/unload. Then turn the verified parts into authoring. |
+| 3 | **Twotter update/remove QA** | SDK 0.24 now declares `Twotter.updateUser(id, patch)` and `Twotter.removeUser(id)`, with cleanup semantics in the docs. Verify in game that they repair/remove save records, posts, follows and search safely before restoring Twotter authoring. |
+| 4 | **Scheduler / Time design pass** | r166 proved Scheduler survives reload in a raw probe. Design the editor surface around game-time delays, due dates, cancellation, and handler registration before adding nodes. |
+| 5 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
+| 6 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. The official Cryptographer Hunt (a phone social-engineering scene with a fail route on the wrong choice) is the strongest argument for it — see [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). The shape now ships inside The Long Game (r136, act III: a typed verdict with two endings); whether a standalone template still adds anything is Zeis's call. |
 
 ### Done recently
 
@@ -140,11 +144,6 @@ archived once it has stayed fixed for a few rounds.
 | r167 | **Create Wi-Fi exposed** | ([plan](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md)) `world.wifi` is palette-visible, searchable, covered by the reference template and handbook, and exports through SDK 0.24's native Wi-Fi creator with BSSID/channel/WPS support. The remaining Bettercap `SSID: undefined` display wart is documented as an info note, not a blocker. Wi-Fi-specific dice outputs now generate BSSIDs and WPA-style passphrases. |
 | r166 | **SDK 0.24 in-game QA harness** | ([plan](docs/plans/r166-sdk-0.24-ingame-qa.md)) Adds the evidence-only checklist plus installable raw/editor QA harnesses under `reference/sdk-0.24-qa/`. The green native Wi-Fi rows became the r167 Create Wi-Fi exposure; HTTP/curl/DNS collaborator, Scheduler and mail/Twotter follow-ups remain separately gated. |
 | r165 | **SDK 0.24 declaration and event-catalogue upgrade** | ([plan](docs/plans/r165-sdk-0.24-assessment.md)) Pins `@hotbunny/hackhub-content-sdk@0.24.0`, regenerates the 99-event catalogue/manual appendix, and records which new surfaces still require game verification before product exposure. |
-| r163 | **Standalone user manual** | ([plan](docs/plans/r163-user-manual.md)) A proper, self-contained user manual as a single HTML file at [`public/manual.html`](public/manual.html) — inline CSS, no build step, no JS, opens straight off disk. Sticky section nav (structure inspired by a single-page reference manual, content ours only) walks every surface: the top bar and quest strip, palette, canvas, inspector, status/issues; a full node reference of all **34** node types across their **10** categories; sockets & wires; Dialogues; Websites; the event appendix; Generate (dice) & tags; Addons; the **13** templates; Dry run; export contents; Settings (6 themes, 7 fonts, grid, wires); the complete keyboard/mouse cheat sheet; saving; and the known limits. Every figure counted from the code, not the stale r148 doc. Documentation only in that round. |
-| r162 | **Dice icon + service-aware Version generator + long tail** | ([plan](docs/plans/r162-dice-icon-and-long-tail.md)) Finishes the auto-generate feature. The r161 dice icon was a plain square that read as a text box; it's replaced by a proper filled vector die (`Icon.tsx` gained filled-glyph support). Ports → **Version** now composes from the port's **Service** and obeys the game's real rule — three parts, first 1–9, rest 0–99 (e.g. `2.4.71`) — so an ssh port rolls `OpenSSH 8.4.71`, never a rejected banner. Long tail wired: port Service, vuln Version, Pay-node From IBAN + From name, Wi-Fi SSID, and the sims (Mail from, Kisscord handle, WeeChat host + per-line username). Still editor-only — nothing reaches the compiler or export. +5 tests. |
-| r161 | **Auto-generate (dice) button for name/IP-like fields** | ([plan](docs/plans/r161-autogen-dice-button.md)) Next-up #1: a flat dice button beside name/IP/domain fields fills them with a realistic **hardcoded** value in the editor (exports as plain text — the tag/sparkle button stays right beside it for the runtime-random `{{…}}` case, so IP fields now offer both). A pure, seedable `src/lib/generate` engine composes from curated wordlists rather than a flat firstname+lastname list, and reuses values already entered in the same section — roll First name → *John*, Last name → *Noble*, then E-mail → *jnoble@…* — reading siblings but only ever writing its own field, so one click is one undo step. IPs come public **or** private (RFC-1918) per field. Wired across the quest Employer, Create-network devices (IP/hostname/domain/router model), user accounts, and every IP/domain/host field. Fields opt in with a `generate` descriptor; nothing new reaches the compiler or export. +18 tests. |
-| r160 | **The Inspector edge becomes a real drawer pull** | ([plan](docs/plans/r160-inspector-drawer-pull.md)) Follow-up on the user's annotated screenshot: the r159 edge handle now behaves like a drawer. It's a protruding pull tab centred on the docked inspector's left edge — **drag it left to widen the docked panel** (340px default/floor, up to 640px), and only when you pull *past* that ceiling does it tear off the wall into a floating drawer; a plain click still pops it out in place. Docked width is a new persisted per-author preference (`drawerLayout.ts`, same shape as the float rect, never in the mod); reset re-docks at 340px. The canvas minimap follows the panel while docked and returns to base when it floats — for free, because it already lives inside the flex-sibling canvas. +5 tests. |
-| r159 | **A discoverable grab handle for floating the Inspector** | ([plan](docs/plans/r159-inspector-dock-handle.md)) Usability fix on r158: the float feature shipped behind a small dim icon nobody found — the user reached for a handle to pull that wasn't there. Now the docked inspector's left edge carries a full-height grab handle: **click** it to float in place, **drag** it (past a 6px threshold) to pull the panel out under the cursor. The redundant top-right float icon button is retired (KISS — one obvious way); the collapse chevron stays. The handle is a real `<button>` so it's keyboard-focusable; its move/up listeners bind to `window`, not the handle, since the docked aside unmounts the instant it floats. New drag-to-float test; docked mode otherwise unchanged. |
 
 ---
 
@@ -162,7 +161,7 @@ rounds than any bug — see r41, r43, r55, r60, r61 and r66.
 | No ctrl+drag to deselect | Three rounds (r93–r95) failed to make it work in a real browser and it was dropped as not worth the cost. React Flow sends no change events for a box over already-selected nodes, and the geometry workaround needed a store subscription firing every frame. **Ctrl+click** to deselect works. |
 | Wi-Fi Bettercap name wart | Create Wi-Fi is visible and exports through SDK 0.24's native API. Current game builds can still print `SSID: undefined` after Bettercap targets an SDK-created AP by BSSID, even though scan, join, handshake capture and hashcat recovery worked in r166 QA. |
 | HTTP/curl and DNS collaborator nodes fenced | SDK 0.24 declares HTTP/collaborator events, but terminal `curl` was missing, DNS-only collaborator hits did not arrive, and static editor websites did not fire HTTP objectives in QA. Generic event triggers still list the raw events. |
-| No Twotter authoring | SDK 0.24 declares update/remove helpers, but historical in-game Twotter behavior was unreliable. Revisit only with a fresh QA scaffold. |
+| No Twotter authoring | SDK 0.24 declares update/remove helpers, but historical in-game Twotter behavior was unreliable. This is queued for a fresh QA scaffold before authoring returns. |
 | No suspicion or SMS nodes | SDK 0.24 still has no Suspicion/log-forensics API and no SMS/text-message namespace or events. |
 | No log-cleaning node | Entirely engine-side: the game logs connections on the machine, and the player wipes them from its own UI. |
 
@@ -173,8 +172,8 @@ are in the build log at [`docs/02-editor-shell.md`](docs/02-editor-shell.md),
 which is kept as an archive — the bug histories in it explain several of the
 rules the code now follows.
 
-Rounds 130–153 are archived at
-[`docs/archive/rounds-130-150.md`](docs/archive/rounds-130-150.md).
+Older **Done recently** rows are archived at
+[`docs/archive/rounds-130-150.md`](docs/archive/rounds-130-150.md) (historical filename).
 
 ### Build status
 
@@ -202,7 +201,7 @@ files, **37 node types** in 10 categories (all palette-visible), **13 templates*
 | [`docs/In-Game-Handbook.md`](docs/In-Game-Handbook.md) | Zeis's transcription of the game's handbook — the top authority for how a player acts. |
 | [`reference/Official-Quest/`](reference/Official-Quest/) | Zeis's transcriptions of the official quests (8 — the complete official set) — how real quests flow, cross-checked in [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md); the hardcoded Journalist's Sister line (13 quests) analyzed in [`docs/plans/r131-journalists-sister-analysis.md`](docs/plans/r131-journalists-sister-analysis.md). |
 | [`.github/agents/clean-code-architect.md`](.github/agents/clean-code-architect.md) | The clean-code & architecture agent brief — the code-quality rulebook LLM sessions work by. |
-| [`docs/archive/`](docs/archive/) | Retired roadmap history (rounds 100–115). |
+| [`docs/archive/`](docs/archive/) | Retired roadmap history that no longer fits in the living README. |
 
 ---
 

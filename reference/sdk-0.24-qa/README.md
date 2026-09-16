@@ -141,8 +141,8 @@ Record the curl subcase as `Blocked` if `curl` is missing. H-04 and H-06 can sti
 Test this separately from the raw harness on a clean save when possible. Install `editor-export/` and check:
 
 1. Start/load: a mail/toast for `QESdk024EditorQa` appears and there is no startup error.
-2. Browser HTTP: open `http://qe24-website.test/`, then `http://qe24-website.test/echo`. The editor quest should tick `http-request` and/or `http-response`; record exactly which ones tick.
-3. Editor Wi-Fi: connect to `QE24-LAB-5G` with `correct-horse-battery`, then disconnect. Expected AP fields are BSSID `02:24:00:00:24:02`, channel `44`, WPS `true`.
+2. Browser HTTP: open `http://qe24-website.test/`, then `http://qe24-website.test/echo`. "Tick" means the active quest/objective tracker line gets a checkmark or moves to completed; you may also see a debug toast like `Editor QA ticked: http-response`. Record exactly which of `http-request` and `http-response` tick. If the page loads but neither objective changes, report that.
+3. Editor Wi-Fi: connect to `QE24-LAB-5G` with `correct-horse-battery`, then disconnect. Expected AP fields are BSSID `02:24:00:00:24:02`, channel `44`, WPS `true`; record whether the `wifi-connect` and `wifi-disconnect` objective lines tick.
 4. Save/reload: the editor AP should not duplicate, and event listeners/objectives should still work.
 5. Optional intercept: also install the raw harness, run `qe24 intercept on`, open `http://qe24-website.test/`, then `qe24 intercept queue` and `qe24 intercept forward`. The editor `http-intercepted` objective should tick if static website traffic emits `Http.Intercepted`.
 

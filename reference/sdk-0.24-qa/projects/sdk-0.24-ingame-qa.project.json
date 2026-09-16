@@ -4,7 +4,7 @@
   "mod": {
     "id": "qe-sdk-024-editor-qa",
     "name": "QE SDK 0.24 Editor QA Scaffold",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "author": "HackHub Quest Editor",
     "description": "Evidence-only project for r166 SDK 0.24 in-game verification. Keeps native Wi-Fi and HTTP/curl event checks isolated from author-facing feature exposure.",
     "tags": [
@@ -21,7 +21,7 @@
       "id": "q-sdk-024-editor-qa",
       "name": "QESdk024EditorQa",
       "title": "QE SDK 0.24 editor QA",
-      "description": "Install on a throwaway save to verify editor-generated native Wi-Fi and SDK 0.24 HTTP/curl events. Record results in docs/plans/r166-sdk-0.24-ingame-qa.md.",
+      "description": "Install on a throwaway save to verify editor-generated native Wi-Fi and SDK 0.24 HTTP/browser events. When this checklist says an objective ticks, look at the active quest/objective tracker: the line should become checked/completed, often with a debug toast.",
       "group": "sandbox",
       "rewards": {
         "money": 0,
@@ -170,7 +170,7 @@
                 "from": "qa@qe24.test",
                 "to": "player@gomail.com",
                 "subject": "QE24 editor QA scaffold",
-                "content": "Editor QA scaffold is active. Connect to Wi-Fi QE24-LAB-5G with passphrase correct-horse-battery. Then browse or curl http://qe24-website.test/ and record event/objective behavior in docs/plans/r166-sdk-0.24-ingame-qa.md.",
+                "content": "Editor QA scaffold is active. Tick means the active quest/objective tracker line becomes checked/completed; the webpage loading by itself is not enough. Open http://qe24-website.test/ and /echo, then record which of http-request and http-response checked off. Connect to Wi-Fi QE24-LAB-5G with passphrase correct-horse-battery, then disconnect.",
                 "replyable": false
               },
               "weechat": {
@@ -322,8 +322,8 @@
             },
             "data": {
               "name": "http-response",
-              "description": "Run curl http://qe24-website.test/ or open it in the browser; verify Http.Response fires for the editor website.",
-              "hint": "Record pass/fail and payload notes in docs/plans/r166-sdk-0.24-ingame-qa.md.",
+              "description": "Open http://qe24-website.test/ and /echo in Browser. If this objective gets a checkmark/completed state, Http.Response fired for the editor website.",
+              "hint": "Report: page loaded yes/no, http-response checked yes/no, and any debug toast/log text. If the page loads but this stays unchecked, record Response as not fired.",
               "info": "r166 evidence-only SDK 0.24 QA scaffold; no feature fence should be lifted from this project alone.",
               "terminalCommand": "",
               "hidden": false
@@ -338,8 +338,8 @@
             },
             "data": {
               "name": "http-request",
-              "description": "Run curl http://qe24-website.test/ or open it in the browser; verify Http.Request fires before response.",
-              "hint": "Record pass/fail and payload notes in docs/plans/r166-sdk-0.24-ingame-qa.md.",
+              "description": "Open http://qe24-website.test/ and /echo in Browser. If this objective gets a checkmark/completed state, Http.Request fired before the response.",
+              "hint": "Report: page loaded yes/no, http-request checked yes/no, and any debug toast/log text. It may differ from http-response; that is the point of this check.",
               "info": "r166 evidence-only SDK 0.24 QA scaffold; no feature fence should be lifted from this project alone.",
               "terminalCommand": "",
               "hidden": false
@@ -354,8 +354,8 @@
             },
             "data": {
               "name": "http-intercepted",
-              "description": "If using the raw mod's interceptor with this project, verify Http.Intercepted payloads for browser/curl traffic.",
-              "hint": "Record pass/fail and payload notes in docs/plans/r166-sdk-0.24-ingame-qa.md.",
+              "description": "Optional: with the raw qe24 harness also installed, run qe24 intercept on, open http://qe24-website.test/, then qe24 intercept queue and qe24 intercept forward. Check whether this objective completes.",
+              "hint": "Report held request yes/no and http-intercepted checked yes/no. Run qe24 intercept off if anything appears stuck.",
               "info": "r166 evidence-only SDK 0.24 QA scaffold; no feature fence should be lifted from this project alone.",
               "terminalCommand": "",
               "hidden": false
@@ -370,8 +370,8 @@
             },
             "data": {
               "name": "wifi-connect",
-              "description": "Connect to QE24-LAB-5G using correct-horse-battery; verify the event payload includes wifiNetwork name/channel/WPS/MAC.",
-              "hint": "Record pass/fail and payload notes in docs/plans/r166-sdk-0.24-ingame-qa.md.",
+              "description": "Connect to QE24-LAB-5G using correct-horse-battery. A checkmark here means the editor-generated Wi-Fi connect event fired.",
+              "hint": "Report whether the objective checked and whether scan/status shows BSSID 02:24:00:00:24:02, channel 44, WPS true.",
               "info": "r166 evidence-only SDK 0.24 QA scaffold; no feature fence should be lifted from this project alone.",
               "terminalCommand": "",
               "hidden": false
@@ -386,8 +386,8 @@
             },
             "data": {
               "name": "wifi-disconnect",
-              "description": "Disconnect from the QE24-LAB-5G network; verify Network.WifiDisconnected fires with a null payload.",
-              "hint": "Record pass/fail and payload notes in docs/plans/r166-sdk-0.24-ingame-qa.md.",
+              "description": "Disconnect from QE24-LAB-5G. A checkmark here means Network.WifiDisconnected fired for the editor scaffold.",
+              "hint": "Report whether this objective checked after disconnecting and whether reload avoids duplicate QE24-LAB-5G networks.",
               "info": "r166 evidence-only SDK 0.24 QA scaffold; no feature fence should be lifted from this project alone.",
               "terminalCommand": "",
               "hidden": false
@@ -401,7 +401,7 @@
               "y": 460
             },
             "data": {
-              "label": "Objective completed: http-response",
+              "label": "Editor QA ticked: http-response",
               "labelAuto": false,
               "toast": true,
               "includeData": true,
@@ -416,7 +416,7 @@
               "y": 620
             },
             "data": {
-              "label": "Objective completed: http-request",
+              "label": "Editor QA ticked: http-request",
               "labelAuto": false,
               "toast": true,
               "includeData": true,
@@ -431,7 +431,7 @@
               "y": 780
             },
             "data": {
-              "label": "Objective completed: http-intercepted",
+              "label": "Editor QA ticked: http-intercepted",
               "labelAuto": false,
               "toast": true,
               "includeData": true,
@@ -446,7 +446,7 @@
               "y": 940
             },
             "data": {
-              "label": "Objective completed: wifi-connect",
+              "label": "Editor QA ticked: wifi-connect",
               "labelAuto": false,
               "toast": true,
               "includeData": true,
@@ -461,7 +461,7 @@
               "y": 1100
             },
             "data": {
-              "label": "Objective completed: wifi-disconnect",
+              "label": "Editor QA ticked: wifi-disconnect",
               "labelAuto": false,
               "toast": true,
               "includeData": true,
@@ -606,7 +606,7 @@
             "http"
           ],
           "template": "blank",
-          "content": "<h1>QE24 HTTP event target</h1><p>Use the in-game browser and terminal curl against this host, then record whether Http.Request, Http.Response, and Http.Intercepted events fire.</p><ul><li><a href=\"/echo\">Static echo page</a></li><li><a href=\"/hidden/result\">Nested static page</a></li></ul>"
+          "content": "<h1>QE24 HTTP event target</h1><p>This page loading proves the static website exists. Now check the active quest tracker: did http-request and/or http-response get checkmarks?</p><ul><li><a href=\"/echo\">Static echo page</a></li><li><a href=\"/hidden/result\">Nested static page</a></li></ul>"
         },
         {
           "id": "p-echo",
@@ -619,7 +619,7 @@
             "echo"
           ],
           "template": "blank",
-          "content": "<h1>Echo</h1><p>This page exists so repeated browser and curl probes can hit more than one path.</p>"
+          "content": "<h1>Echo</h1><p>After this page loads, check the quest tracker for http-request and http-response checkmarks.</p>"
         },
         {
           "id": "p-hidden",

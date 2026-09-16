@@ -22,6 +22,29 @@ npm run build
 - Websites: qe24-website.test
 - Permissions requested: network, mail, events
 
+
+## What to look at in-game
+
+When the checklist says an objective should "tick", it means the active quest/objective tracker line for `QESdk024EditorQa` should become checked/completed. The webpage loading is only half the test; the question is whether the SDK event reached the editor-generated objective.
+
+For the website check, open:
+
+```text
+http://qe24-website.test/
+http://qe24-website.test/echo
+```
+
+Then report these four simple facts:
+
+```text
+page loaded: yes/no
+http-request objective checked: yes/no
+http-response objective checked: yes/no
+any debug toast/log: ...
+```
+
+If the page loads but an objective stays unchecked, that means the static website works but that SDK event did not fire for the editor scaffold.
+
 ## Notes
 
 - QESdk024EditorQa: “Create Wi-Fi” now exports through the SDK wireless creator when the game provides it, but the node remains hidden from the palette until in-game QA verifies the whole shape. Test old projects that already contain it in game before shipping.

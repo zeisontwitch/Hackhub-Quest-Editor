@@ -16,7 +16,7 @@ As of the HackHub 1.3.0 / Steam build 25341308 run on 2026-09-16, the raw `mod` 
 
 One raw Wi-Fi gameplay wart remains documented: Bettercap can set the AP by BSSID and capture/crack the handshake, but `set wifi.ap 02:24:00:00:24:01` logs `SSID: undefined` instead of `QE24-RAW-5G`. Treat that as a runtime UX issue to account for before exposing native Wi-Fi broadly.
 
-Editor-export follow-up: `http://qe24-website.test/` and `/echo` loaded, but neither `http-request` nor `http-response` objective checked off; startup mail/toast did not appear; connecting to `QE24-LAB-5G` checked both Wi-Fi objectives and the BSSID matched. DNS-only collaborator lookup was tested with `nslookup <printed-subdomain>.qe24-collab.test`; it returned `No results found` and produced no new collaborator history entry, so treat DNS-only collaborator support as unsupported/fenced in this build. Browser HTTP collaborator remains green.
+Editor-export follow-up: `http://qe24-website.test/` and `/echo` loaded, but neither `http-request` nor `http-response` objective checked off. With editor export 1.0.2 on a fresh save, the setup mail appeared, debug toasts appeared, reload kept only one `QE24-LAB-5G`, and Wi-Fi objectives still completed after reload with the expected BSSID. DNS-only collaborator lookup was tested with `nslookup <printed-subdomain>.qe24-collab.test`; it returned `No results found` and produced no new collaborator history entry, so treat DNS-only collaborator support as unsupported/fenced in this build. Browser HTTP collaborator remains green.
 
 ## Plain-English quick start
 

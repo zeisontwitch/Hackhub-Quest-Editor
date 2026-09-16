@@ -30,6 +30,52 @@ Use a throwaway save. The harness is not a puzzle quest: its objectives are remi
 
    Then open the collaborator URL printed by `qe24 collab` in the in-game Browser, or run the printed `curl` command if your game build has `curl`. Use the clock Wait button for the scheduler job, and connect/disconnect from the `QE24-RAW-5G` Wi-Fi network.
 
+
+## If the raw surface quest already says 6/6
+
+The `QE24SurfaceProbe` quest is only the first smoke test for HTTP, collaborator, scheduler and Wi-Fi events. Once it says `6/6 completed`, stop chasing that objective list and move to the manual checks below. The raw harness also has a shortcut:
+
+```text
+qe24 next
+```
+
+Recommended next pass:
+
+1. Capture current evidence:
+
+   ```text
+   qe24 status
+   qe24 history
+   ```
+
+2. Wi-Fi details/reload check. You do **not** need to crack `QE24-RAW-5G`; the passphrase is intentionally known because this tests SDK network creation, not Wi-Fi gameplay. Connect with `correct-horse-battery`, run `qe24 status`, disconnect from the QE24 network, run `qe24 status` again, then reload and confirm the network is not duplicated.
+
+3. Quest lifecycle probes:
+
+   ```text
+   qe24 claim complete
+   qe24 complete
+   # save/reload, check no duplicate mail/reward/freeze
+
+   qe24 claim button
+   qe24 button-ready
+   # click the quest Complete button, then save/reload
+
+   qe24 claim retire
+   qe24 retire
+
+   qe24 claim unclaim
+   qe24 unclaim
+   ```
+
+4. Scheduler reload check. Because your observed game clock is fast, use a longer delay so you have time to save/reload:
+
+   ```text
+   qe24 schedule 10
+   ```
+
+5. Later, test the editor export separately: `QE24-LAB-5G` and `http://qe24-website.test/`.
+
 ## What the new checks mean
 
 - **HTTP/browser/curl events** — SDK 0.24 can report web traffic. A pass means a browser, `curl`, or `Http.fetch()` request prints a good response and/or ticks the `http-response` objective. If `curl` is not installed in that game build, mark only the curl-specific rows as `Blocked`, not failed.
@@ -83,6 +129,7 @@ Record the curl subcase as `Blocked` if `curl` is missing. H-04 and H-06 can sti
 ## Raw harness commands
 
 - `qe24 guide` — explain what each test is for and the safe run order.
+- `qe24 next` — print what to do after the raw surface quest is already 6/6.
 - `qe24 seed` — create/re-register the per-save HTTP host and native Wi-Fi AP.
 - `qe24 status` — print the current host, Wi-Fi password, Time.now, scheduler queue count, HTTP history/intercept state, target Wi-Fi details and connected Wi-Fi details.
 - `qe24 history` — print recent HTTP history, collaborator hits and held intercept requests; useful evidence when game logs are unavailable.

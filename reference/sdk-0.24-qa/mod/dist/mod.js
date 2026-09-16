@@ -290,15 +290,30 @@ function printGuide(tools) {
     tools.println("6. Quest completion APIs: complete, retire and unclaim should not freeze or leave stale quests.");
     tools.println("");
     tools.println("Easy first pass:");
-    tools.println("- Already done: qe24 http-fetch. If it printed status 200 and the http-response objective ticked, record that as a pass.");
+    tools.println("- qe24 http-fetch. If it printed status 200 and the http-response objective ticked, record that as a pass.");
     tools.println("- Optional proxy test: run qe24 intercept with no extra word to print the two-terminal steps.");
     tools.println("- Time test: qe24 schedule 1, then use the clock Wait button or wait until the scheduler mail/toast appears.");
     tools.println("- Collaborator test: qe24 collab, then open the printed URL in the in-game browser, or run the curl command if your build has curl.");
     tools.println("- Wi-Fi test: connect to " + WIFI_SSID + " with passphrase " + WIFI_PASSWORD + ", then disconnect.");
-    tools.println("- Completion tests: qe24 claim complete, then qe24 complete. Watch for freeze or duplicate rewards/mail after reload.");
     tools.println("");
+    tools.println("If the surface quest is already 6/6, run qe24 next. The remaining QA is in separate probe quests and reload checks.");
     tools.println("Safety: if any browser/curl request seems stuck after an intercept test, open another terminal and run qe24 intercept off.");
     tools.println("If curl says command not found, no request was made: run qe24 intercept off and mark curl-only rows Blocked for that game build.");
+}
+
+function printNextSteps(tools) {
+    tools.println("Next after QE24SurfaceProbe is 6/6:");
+    tools.println("1. Evidence snapshot: qe24 status, then qe24 history. Paste those lines if you can.");
+    tools.println("2. Wi-Fi: do NOT need to crack " + WIFI_SSID + "; the passphrase is intentionally known. We are checking SDK AP creation/events, not solving a Wi-Fi puzzle.");
+    tools.println("   Connect with " + WIFI_PASSWORD + ", run qe24 status, disconnect from the QE24 network, then run qe24 status again.");
+    tools.println("   Optional only: use normal Wi-Fi/recon tools if you want to test router/child reachability, but do not block on that.");
+    tools.println("3. Quest lifecycle probes, preferably on a clean throwaway save:");
+    tools.println("   qe24 claim complete  -> qe24 complete  -> save/reload and check no duplicate mail/reward/freeze.");
+    tools.println("   qe24 claim button    -> qe24 button-ready -> click the quest Complete button -> save/reload.");
+    tools.println("   qe24 claim retire    -> qe24 retire    -> quest should disappear without OnComplete/reward.");
+    tools.println("   qe24 claim unclaim   -> qe24 unclaim   -> quest should disappear without being completed.");
+    tools.println("4. Scheduler reload: qe24 schedule 10, save/reload before it fires if you can, then wait. It should fire once.");
+    tools.println("5. Later, install the editor export to test QE24-LAB-5G and qe24-website.test separately.");
 }
 
 function printInterceptGuide(tools) {
@@ -523,7 +538,7 @@ class QE24Command extends sdk.Command {
         this.Description = "SDK 0.24 QA harness commands";
         this.Autocomplete = [
             { label: "qe24", type: "STRING" },
-            { label: "guide|status|history|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|reset", type: "STRING" },
+            { label: "guide|next|status|history|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|reset", type: "STRING" },
         ];
     }
     async Run(tools) {
@@ -532,6 +547,10 @@ class QE24Command extends sdk.Command {
         if (sub === "help") sub = "guide";
         if (sub === "guide") {
             printGuide(tools);
+            return;
+        }
+        if (sub === "next") {
+            printNextSteps(tools);
             return;
         }
         if (sub === "status") {
@@ -552,8 +571,8 @@ class QE24Command extends sdk.Command {
             tools.println("Visible Wi-Fi networks: " + (wifis && wifis.length != null ? wifis.length : "?"));
             tools.println("Target Wi-Fi details: " + describeWifi(targetWifi));
             tools.println("Connected Wi-Fi: " + describeWifi(currentWifi));
-            tools.println("Tip: run qe24 guide for the plain-English checklist, qe24 intercept for proxy-test steps, or qe24 history for HTTP/collab evidence.");
-            tools.println("Commands: qe24 guide · qe24 status · qe24 history · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 reset");
+            tools.println("Tip: run qe24 next if the 6/6 surface objective quest is already done, qe24 intercept for proxy-test steps, or qe24 history for HTTP/collab evidence.");
+            tools.println("Commands: qe24 guide · qe24 next · qe24 status · qe24 history · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 reset");
             return;
         }
         if (sub === "history") {
@@ -668,7 +687,7 @@ class QE24Command extends sdk.Command {
             tools.println("QE24 saved IPs cleared and known networks removed. Run qe24 seed to recreate.");
             return;
         }
-        tools.printError("Unknown qe24 command. Run qe24 status.");
+        tools.printError("Unknown qe24 command. Run qe24 guide or qe24 next.");
     }
 }
 

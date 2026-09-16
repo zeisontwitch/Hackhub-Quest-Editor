@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>When event — HackHub Quest Editor handbook</title>
+<link rel="stylesheet" href="../manual.css" />
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="Handbook contents">
+  <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
+  <p class="build">Handbook · build 2026-09-14.r162</p>
+  <div class="search">
+    <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
+    <div class="results" role="listbox" aria-label="Search results"></div>
+  </div>
+  <ol>
+    <li><a href="../index.html">Start here</a></li>
+    <li><a href="../tutorial.html">Your first quest</a></li>
+    <li><a href="../concepts.html">How a quest works</a></li>
+    <li><a href="../nodes.html">Node reference</a>
+      <ul class="sub">
+        <li><a href="../nodes.html#cat-entry"><span class="cat-dot" style="background:var(--cat-entry)"></span>Quest lifecycle</a></li>
+        <li><a href="../nodes.html#cat-objective"><span class="cat-dot" style="background:var(--cat-objective)"></span>Objectives</a></li>
+        <li><a href="../nodes.html#cat-trigger"><span class="cat-dot" style="background:var(--cat-trigger)"></span>Triggers</a></li>
+        <li><a href="../nodes.html#cat-world"><span class="cat-dot" style="background:var(--cat-world)"></span>World building</a></li>
+        <li><a href="../nodes.html#cat-comms"><span class="cat-dot" style="background:var(--cat-comms)"></span>Communication</a></li>
+        <li><a href="../nodes.html#cat-reply"><span class="cat-dot" style="background:var(--cat-reply)"></span>Custom terminal</a></li>
+        <li><a href="../nodes.html#cat-effect"><span class="cat-dot" style="background:var(--cat-effect)"></span>Effects</a></li>
+        <li><a href="../nodes.html#cat-community"><span class="cat-dot" style="background:var(--cat-community)"></span>Community addons</a></li>
+        <li><a href="../nodes.html#cat-flow"><span class="cat-dot" style="background:var(--cat-flow)"></span>Flow control</a></li>
+        <li><a href="../nodes.html#cat-layout"><span class="cat-dot" style="background:var(--cat-layout)"></span>Layout</a></li>
+      </ul>
+    </li>
+    <li><a href="../guides.html">Feature guides</a></li>
+    <li><a href="../how-do-i.html">How do I…</a></li>
+    <li><a href="../checking.html">Checking your quest</a></li>
+    <li><a href="../export.html">Exporting and installing</a></li>
+    <li><a href="../troubleshooting.html">When something goes wrong</a></li>
+    <li><a href="../appendices.html">Glossary and limits</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <h1><span class="cat-dot" style="background:var(--cat-trigger)"></span>When event</h1>
+  <p class="tag"><span class="badge" style="color:var(--cat-trigger)">Triggers</span>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">trigger.event</code></p>
+</header>
+
+<section id="node-trigger-event-page">
+
+<h2>What it does</h2>
+<p>Watches for a single game event and fires when it happens. This is how your quest hears the player.</p>
+
+<h2>When you'd use it</h2>
+<p>Wire one into an objective's <b class="ui">Trigger</b> socket to make that objective tick over when the player does the thing.</p>
+<p>Wire one into a <a href="flow-branch.html">Branch</a> to make the story react. The event carries details with it, and the branch can test them.</p>
+<p>It has no input socket. A trigger is not part of the flow — it sits alongside it and fires on its own.</p>
+
+<h2>In the game, this looks like</h2>
+<p>Nothing appears on screen. The event fires inside the game and your quest reacts a moment later.</p>
+
+<h2>Fields</h2>
+
+<h3 id="node-trigger-event-field-event">Game event</h3>
+<blockquote class="blurb">All 92 HackHub events, listed with the details each one carries.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Default</dt><dd>empty</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>There is nothing to listen for, so the node never fires.</dd>
+</dl>
+
+<h3 id="node-trigger-event-field-conditions">Only when</h3>
+<blockquote class="blurb">Leave empty to fire on any occurrence.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Add one clause per thing that has to be true.</dd>
+  <dt class="dt-mute">Default</dt><dd>an empty list</dd>
+  <dt class="dt-warn">Watch out</dt><dd>The same action can raise more than one event. Check the list for the one that carries the details you need.</dd>
+</dl>
+
+
+
+<h2>Wires</h2>
+<table>
+  <thead><tr><th>Socket</th><th>Direction</th><th>What to connect</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="name kind-condition">When</td><td>output</td>
+      <td>The objective or branch that should react when the event fires.</td>
+    </tr>
+  </tbody>
+</table>
+<p class="wire-legend">
+  <span class="wire-chip kind-flow"><i></i><b>Then</b> runs next</span>
+  <span class="wire-chip kind-condition"><i></i><b>When</b> tests a condition</span>
+  <span class="wire-chip kind-unlock"><i></i><b>Unlocks</b> opens an objective</span>
+  <span class="wire-chip kind-data"><i></i><b>Data</b> carries a value</span>
+</p>
+<p>A wire only joins two sockets of the same colour, and the editor draws the
+wire in that colour. That is what the colours are for: match the colours and
+the connection takes, mismatch them and it will not.</p>
+
+<h2>Step by step: add this node to a quest</h2>
+<ol class="plain">
+  <li>Find <b class="ui">When event</b> under <b>Triggers</b> in the palette.</li>
+  <li>Drag it onto the canvas, next to the objective it should tick over.</li>
+  <li>Pick the game event that means the player did the thing.</li>
+  <li>Drag a wire from its <b class="ui">When</b> socket into the objective's <b class="ui">Trigger</b> socket.</li>
+  <li>Add a clause under <b class="ui">Only when</b> if the event should not count every time it happens.</li>
+</ol>
+
+<figure>
+  <img src="../img/node-trigger-event-inspector.png"
+       alt="The When event node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>When event</b>.</figcaption>
+</figure>
+
+<h2>Common mistakes</h2>
+<ul class="plain">
+  <li><b>The wire went into the objective's <b class="ui">In</b> socket.</b> The two sockets are different colours for exactly this reason. <b class="ui">In</b> is flow, <b class="ui">Trigger</b> is a condition.</li>
+  <li><b>No clauses, so the trigger is too loose.</b> The objective ticks over on the first occurrence, which may be before the player got there.</li>
+  <li><b>The event picked is not the one the action raises.</b> The player does the thing and nothing happens. Check the event list for what your action really fires.</li>
+</ul>
+
+
+
+
+
+</section>
+
+<div class="pagefoot">
+  <a href="objective.html">← Objective</a>
+  <a class="next" href="world-network.html">Create network →</a>
+</div>
+
+<a class="totop" href="#node-trigger-event-page">↑ back to top</a>
+
+<footer class="colophon">
+  HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·
+  field labels, hints, defaults and limits on this page are taken from the
+  editor's own node definitions.
+</footer>
+
+</main>
+</div>
+<script src="../search-index.js"></script>
+<script src="../manual.js"></script>
+</body>
+</html>

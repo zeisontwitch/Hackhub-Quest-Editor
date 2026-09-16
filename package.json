@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "gen:events": "node reference/generate-event-catalogue.mjs"
+    "gen:events": "node reference/generate-event-catalogue.mjs",
+        "gen:manual": "node scripts/extract-manual-inventory.mjs && node scripts/build-node-pages.mjs && node scripts/build-manual-index.mjs"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.23",

@@ -437,14 +437,14 @@
       "defaults": {
         "ipMode": "random",
         "device": {
-          "id": "shUJxS6T",
+          "id": "<generated>",
           "ip": "45.33.32.156",
           "type": "ROUTER",
           "vulnerabilities": [],
           "users": [],
           "ports": [
             {
-              "id": "KYPFkl8F",
+              "id": "<generated>",
               "external": 80,
               "internal": 80,
               "active": true,
@@ -849,7 +849,7 @@
       "defaults": {
         "ip": "{{data.targetIp}}",
         "rule": {
-          "id": "8G-Valn1",
+          "id": "<generated>",
           "allowed": false,
           "port": 22,
           "source": "*",
@@ -990,7 +990,7 @@
         "ip": "",
         "action": "open",
         "port": {
-          "id": "MtJLp5Bc",
+          "id": "<generated>",
           "external": 22,
           "internal": 22,
           "active": true,
@@ -2551,12 +2551,12 @@
       "defaults": {
         "steps": [
           {
-            "id": "xhzYFPYn",
+            "id": "<generated>",
             "label": "1",
             "delayMs": 0
           },
           {
-            "id": "2NxSkDuT",
+            "id": "<generated>",
             "label": "2",
             "delayMs": 1000
           }

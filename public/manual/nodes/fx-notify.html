@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Notify — HackHub Quest Editor handbook</title>
+<link rel="stylesheet" href="../manual.css" />
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="Handbook contents">
+  <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
+  <p class="build">Handbook · build 2026-09-14.r162</p>
+  <div class="search">
+    <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
+    <div class="results" role="listbox" aria-label="Search results"></div>
+  </div>
+  <ol>
+    <li><a href="../index.html">Start here</a></li>
+    <li><a href="../tutorial.html">Your first quest</a></li>
+    <li><a href="../concepts.html">How a quest works</a></li>
+    <li><a href="../nodes.html">Node reference</a>
+      <ul class="sub">
+        <li><a href="../nodes.html#cat-entry"><span class="cat-dot" style="background:var(--cat-entry)"></span>Quest lifecycle</a></li>
+        <li><a href="../nodes.html#cat-objective"><span class="cat-dot" style="background:var(--cat-objective)"></span>Objectives</a></li>
+        <li><a href="../nodes.html#cat-trigger"><span class="cat-dot" style="background:var(--cat-trigger)"></span>Triggers</a></li>
+        <li><a href="../nodes.html#cat-world"><span class="cat-dot" style="background:var(--cat-world)"></span>World building</a></li>
+        <li><a href="../nodes.html#cat-comms"><span class="cat-dot" style="background:var(--cat-comms)"></span>Communication</a></li>
+        <li><a href="../nodes.html#cat-reply"><span class="cat-dot" style="background:var(--cat-reply)"></span>Custom terminal</a></li>
+        <li><a href="../nodes.html#cat-effect"><span class="cat-dot" style="background:var(--cat-effect)"></span>Effects</a></li>
+        <li><a href="../nodes.html#cat-community"><span class="cat-dot" style="background:var(--cat-community)"></span>Community addons</a></li>
+        <li><a href="../nodes.html#cat-flow"><span class="cat-dot" style="background:var(--cat-flow)"></span>Flow control</a></li>
+        <li><a href="../nodes.html#cat-layout"><span class="cat-dot" style="background:var(--cat-layout)"></span>Layout</a></li>
+      </ul>
+    </li>
+    <li><a href="../guides.html">Feature guides</a></li>
+    <li><a href="../how-do-i.html">How do I…</a></li>
+    <li><a href="../checking.html">Checking your quest</a></li>
+    <li><a href="../export.html">Exporting and installing</a></li>
+    <li><a href="../troubleshooting.html">When something goes wrong</a></li>
+    <li><a href="../appendices.html">Glossary and limits</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <h1><span class="cat-dot" style="background:var(--cat-effect)"></span>Notify</h1>
+  <p class="tag"><span class="badge" style="color:var(--cat-effect)">Effects</span>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">fx.notify</code></p>
+</header>
+
+<section id="node-fx-notify-page">
+
+<h2>What it does</h2>
+<p>Shows the player a message. Either a popup that stays until they dismiss it, or a toast that slides in and fades on its own.</p>
+
+<h2>When you'd use it</h2>
+<p>Reach for it whenever something happens that the player should notice. A balance changing, a door opening, a contact going quiet — none of those announce themselves.</p>
+<p>Put it after the node that caused the change, never before. A message about money that has not arrived yet reads like a bug.</p>
+<p>Keep it short. It sits over the game, so a player mid-task reads it at a glance or not at all.</p>
+
+<h2>In the game, this looks like</h2>
+<p>A box appears over the game. A notification waits for the player to close it. A toast slides in, holds for a moment, and fades.</p>
+
+<h2>Fields</h2>
+
+<h3 id="node-fx-notify-field-message">Message</h3>
+<blockquote class="blurb">The text on the popup. Type {{data.name}} to insert a value you saved earlier.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>One or two sentences is plenty. It sits over the game, not in a journal.</dd>
+  <dt>Example</dt><dd><code>Payment received: Meridian Capital.</code></dd>
+  <dt class="dt-mute">Default</dt><dd>empty</dd>
+  <dt class="dt-mute">Tags work here</dt><dd>Type <code>{{data.something}}</code> to insert a value you saved with <a href="fx-setdata.html">Set quest data</a>.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>The popup appears with nothing in it. The player sees an empty box and no idea why.</dd>
+</dl>
+
+<h3 id="node-fx-notify-field-variant">Style</h3>
+<blockquote class="blurb">A notification is a persistent popup; a toast slides in and fades on its own.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Pick how insistent the message should be.</dd>
+  <dt class="dt-mute">Default</dt><dd><code>"notify"</code></dd>
+  <dt>Limits</dt><dd>One of the 2 listed below.</dd>
+  <dt class="dt-warn">Watch out</dt><dd>A notification waits for the player to close it. Use a toast for anything they can afford to miss.</dd>
+</dl>
+<table>
+  <thead><tr><th>Choice</th><th>What it is stored as</th></tr></thead>
+  <tbody>
+    <tr><td class="name">Notification popup</td><td><code>notify</code></td></tr>
+    <tr><td class="name">Toast</td><td><code>toast</code></td></tr>
+  </tbody>
+</table>
+
+<h3 id="node-fx-notify-field-tone">Tone</h3>
+<blockquote class="blurb">Sets the colour and icon: info, success, warning or error.</blockquote>
+<dl class="facts-list">
+  <dt>What to put here</dt><dd>Match it to what the message means: a success for a payment, a warning for a mistake.</dd>
+  <dt class="dt-mute">Default</dt><dd><code>"info"</code></dd>
+  <dt>Limits</dt><dd>One of the 4 listed below.</dd>
+</dl>
+<table>
+  <thead><tr><th>Choice</th><th>What it is stored as</th></tr></thead>
+  <tbody>
+    <tr><td class="name">Info</td><td><code>info</code></td></tr>
+    <tr><td class="name">Success</td><td><code>success</code></td></tr>
+    <tr><td class="name">Warning</td><td><code>warning</code></td></tr>
+    <tr><td class="name">Error</td><td><code>error</code></td></tr>
+  </tbody>
+</table>
+
+
+
+<h2>Wires</h2>
+<table>
+  <thead><tr><th>Socket</th><th>Direction</th><th>What to connect</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="name kind-flow">In</td><td>input</td>
+      <td>Whatever should run immediately before this node.</td>
+    </tr>
+    <tr>
+      <td class="name kind-flow">Out</td><td>output</td>
+      <td>Whatever should happen after this node runs.</td>
+    </tr>
+  </tbody>
+</table>
+<p class="wire-legend">
+  <span class="wire-chip kind-flow"><i></i><b>Then</b> runs next</span>
+  <span class="wire-chip kind-condition"><i></i><b>When</b> tests a condition</span>
+  <span class="wire-chip kind-unlock"><i></i><b>Unlocks</b> opens an objective</span>
+  <span class="wire-chip kind-data"><i></i><b>Data</b> carries a value</span>
+</p>
+<p>A wire only joins two sockets of the same colour, and the editor draws the
+wire in that colour. That is what the colours are for: match the colours and
+the connection takes, mismatch them and it will not.</p>
+
+<h2>Step by step: add this node to a quest</h2>
+<ol class="plain">
+  <li>Find <b class="ui">Notify</b> under <b>Effects</b> in the palette.</li>
+  <li>Drag it onto the canvas, after the node that caused the change.</li>
+  <li>Wire the previous node's <b class="ui">Out</b> socket into this node's <b class="ui">In</b> socket.</li>
+  <li>Type the message.</li>
+  <li>Pick <b class="ui">Style</b> and <b class="ui">Tone</b> to match how much the message matters.</li>
+</ol>
+
+<figure>
+  <img src="../img/node-fx-notify-inspector.png"
+       alt="The Notify node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>Notify</b>.</figcaption>
+</figure>
+
+<h2>Common mistakes</h2>
+<ul class="plain">
+  <li><b>The message fires before the thing it describes.</b> Wire it after. The player reads about a payment, opens their bank, and finds nothing there.</li>
+  <li><b>Every message is a notification.</b> Popups that wait for a click pile up. Save those for the moments that matter and use toasts for the rest.</li>
+</ul>
+
+<h2>Messages you might see</h2>
+<ul class="plain">
+  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so the player never sees the message</li>
+</ul>
+
+<h2>Related nodes</h2>
+<ul class="plain">
+  <li><a href="fx-pay.html">Pay the player</a> — Deposit money</li>
+  <li><a href="fx-withdraw.html">Charge the player</a> — Takes money out of the player's account.</li>
+  <li><a href="fx-setdata.html">Set quest data</a> — Store a value for later</li>
+  <li><a href="fx-claimquest.html">Claim another quest</a> — Chain into the next quest</li>
+  <li><a href="fx-shell.html">Run terminal command</a> — Execute in the terminal</li>
+  <li><a href="fx-handbook.html">Open handbook</a> — Jump to an in-game article</li>
+</ul>
+
+</section>
+
+<div class="pagefoot">
+  <a href="fx-withdraw.html">← Charge the player</a>
+  <a class="next" href="fx-setdata.html">Set quest data →</a>
+</div>
+
+<a class="totop" href="#node-fx-notify-page">↑ back to top</a>
+
+<footer class="colophon">
+  HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·
+  field labels, hints, defaults and limits on this page are taken from the
+  editor's own node definitions.
+</footer>
+
+</main>
+</div>
+<script src="../search-index.js"></script>
+<script src="../manual.js"></script>
+</body>
+</html>

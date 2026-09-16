@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>On start &amp; reload — HackHub Quest Editor handbook</title>
+<link rel="stylesheet" href="../manual.css" />
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc" aria-label="Handbook contents">
+  <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
+  <p class="build">Handbook · build 2026-09-14.r162</p>
+  <div class="search">
+    <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
+    <div class="results" role="listbox" aria-label="Search results"></div>
+  </div>
+  <ol>
+    <li><a href="../index.html">Start here</a></li>
+    <li><a href="../tutorial.html">Your first quest</a></li>
+    <li><a href="../concepts.html">How a quest works</a></li>
+    <li><a href="../nodes.html">Node reference</a>
+      <ul class="sub">
+        <li><a href="../nodes.html#cat-entry"><span class="cat-dot" style="background:var(--cat-entry)"></span>Quest lifecycle</a></li>
+        <li><a href="../nodes.html#cat-objective"><span class="cat-dot" style="background:var(--cat-objective)"></span>Objectives</a></li>
+        <li><a href="../nodes.html#cat-trigger"><span class="cat-dot" style="background:var(--cat-trigger)"></span>Triggers</a></li>
+        <li><a href="../nodes.html#cat-world"><span class="cat-dot" style="background:var(--cat-world)"></span>World building</a></li>
+        <li><a href="../nodes.html#cat-comms"><span class="cat-dot" style="background:var(--cat-comms)"></span>Communication</a></li>
+        <li><a href="../nodes.html#cat-reply"><span class="cat-dot" style="background:var(--cat-reply)"></span>Custom terminal</a></li>
+        <li><a href="../nodes.html#cat-effect"><span class="cat-dot" style="background:var(--cat-effect)"></span>Effects</a></li>
+        <li><a href="../nodes.html#cat-community"><span class="cat-dot" style="background:var(--cat-community)"></span>Community addons</a></li>
+        <li><a href="../nodes.html#cat-flow"><span class="cat-dot" style="background:var(--cat-flow)"></span>Flow control</a></li>
+        <li><a href="../nodes.html#cat-layout"><span class="cat-dot" style="background:var(--cat-layout)"></span>Layout</a></li>
+      </ul>
+    </li>
+    <li><a href="../guides.html">Feature guides</a></li>
+    <li><a href="../how-do-i.html">How do I…</a></li>
+    <li><a href="../checking.html">Checking your quest</a></li>
+    <li><a href="../export.html">Exporting and installing</a></li>
+    <li><a href="../troubleshooting.html">When something goes wrong</a></li>
+    <li><a href="../appendices.html">Glossary and limits</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <h1><span class="cat-dot" style="background:var(--cat-entry)"></span>On start &amp; reload</h1>
+  <p class="tag"><span class="badge" style="color:var(--cat-entry)">Quest lifecycle</span>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">entry.load</code></p>
+</header>
+
+<section id="node-entry-load-page">
+
+<h2>What it does</h2>
+<p>Runs when the quest is claimed, and again every time the game loads it. Anything that has to be true in every session goes here.</p>
+
+<h2>When you'd use it</h2>
+<p>Put anything that watches for a player action here rather than in <a href="entry-start.html">Quest start</a>. A watcher armed once stops working after the player reloads.</p>
+<p>Use it for the pieces a returning player expects to still be working: the listeners behind your triggers, the state of a machine they left mid-job.</p>
+<p>Keep one-off story beats out of it. They belong in <a href="entry-start.html">Quest start</a>, or the player sees them again on every load.</p>
+
+<h2>In the game, this looks like</h2>
+<p>The player loads a save with your quest in progress and this fires again, before they touch anything.</p>
+
+<h2>Fields</h2>
+<p>This node has nothing to configure. It marks a moment in the story and runs whatever is wired after it.</p>
+
+<h2>Wires</h2>
+<table>
+  <thead><tr><th>Socket</th><th>Direction</th><th>What to connect</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="name kind-flow">Out</td><td>output</td>
+      <td>Whatever should happen after this node runs.</td>
+    </tr>
+  </tbody>
+</table>
+<p class="wire-legend">
+  <span class="wire-chip kind-flow"><i></i><b>Then</b> runs next</span>
+  <span class="wire-chip kind-condition"><i></i><b>When</b> tests a condition</span>
+  <span class="wire-chip kind-unlock"><i></i><b>Unlocks</b> opens an objective</span>
+  <span class="wire-chip kind-data"><i></i><b>Data</b> carries a value</span>
+</p>
+<p>A wire only joins two sockets of the same colour, and the editor draws the
+wire in that colour. That is what the colours are for: match the colours and
+the connection takes, mismatch them and it will not.</p>
+
+<h2>Step by step: add this node to a quest</h2>
+<ol class="plain">
+  <li>Find <b class="ui">On start &amp; reload</b> under <b>Quest lifecycle</b> in the palette.</li>
+  <li>Drag it onto the canvas.</li>
+  <li>Wire the nodes that have to be re-armed each session to its <b class="ui">Out</b> socket.</li>
+</ol>
+
+<figure>
+  <img src="../img/node-entry-load-inspector.png"
+       alt="The On start &amp; reload node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>On start &amp; reload</b>.</figcaption>
+</figure>
+
+<h2>Common mistakes</h2>
+<ul class="plain">
+  <li><b>A one-off story beat is wired here.</b> This runs on every load, so the player meets the opening again. Move it to <a href="entry-start.html">Quest start</a>.</li>
+  <li><b>Nothing is wired to <b class="ui">Out</b>.</b> The node runs and does nothing. Delete it, or wire something to it.</li>
+</ul>
+
+<h2>Messages you might see</h2>
+<ul class="plain">
+  <li><a href="../checking.html#msg-empty">Empty</a> — nothing is wired to <b class="ui">Out</b>, so the node does nothing</li>
+</ul>
+
+<h2>Related nodes</h2>
+<ul class="plain">
+  <li><a href="entry-start.html">Quest start</a> — Runs once, when the quest is claimed.</li>
+  <li><a href="entry-complete.html">On quest complete</a> — Runs only if the quest completes.</li>
+  <li><a href="entry-abandon.html">On quest abandoned</a> — Runs if the player gives up.</li>
+</ul>
+
+</section>
+
+<div class="pagefoot">
+  <a href="entry-start.html">← Quest start</a>
+  <a class="next" href="entry-complete.html">On quest complete →</a>
+</div>
+
+<a class="totop" href="#node-entry-load-page">↑ back to top</a>
+
+<footer class="colophon">
+  HackHub Quest Editor handbook · documents editor build 2026-09-14.r162 ·
+  field labels, hints, defaults and limits on this page are taken from the
+  editor's own node definitions.
+</footer>
+
+</main>
+</div>
+<script src="../search-index.js"></script>
+<script src="../manual.js"></script>
+</body>
+</html>

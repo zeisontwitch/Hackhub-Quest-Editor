@@ -1,0 +1,444 @@
+{
+  "_readme": [
+    "Hand-written prose for the generated node reference pages.",
+    "scripts/build-node-pages.mjs reads this and docs/manual/inventory.json.",
+    "Facts (labels, hints, defaults, limits, sockets) come from inventory.json and",
+    "are never repeated here. This file holds only what a person has to decide:",
+    "what a node is for, when you would reach for it, and what goes wrong.",
+    "",
+    "A node with no entry here is skipped, not filled in with plausible filler.",
+    "",
+    "Rules for anything added here:",
+    "  - second person, present tense, active voice",
+    "  - no sentence over twenty words",
+    "  - the banned words in src/manual.coverage.test.ts (G6) are enforced on this text",
+    "  - every how gets a why",
+    "  - quote UI labels with <b class=\"ui\">, and only labels that really exist"
+  ],
+  "entry.start": {
+    "oneliner": "Runs once, when the quest is claimed.",
+    "what": "Runs the moment the quest is claimed. Anything the story needs in place before the player acts goes here.",
+    "when": [
+      "This is the front door of your quest. Wire the opening to its <b class=\"ui\">Out</b> socket: the briefing mail, the first objective, whatever the player should meet first.",
+      "You can have more than one, and the game runs all of them when the quest is claimed. Splitting a long opening across two is fine.",
+      "It has no input socket, because nothing runs before it."
+    ],
+    "game": "The player accepts the quest and this fires. Whatever you wired after it happens at once, before they have done anything.",
+    "steps": [
+      "Find <b class=\"ui\">Quest start</b> under <b>Quest lifecycle</b> in the palette on the left.",
+      "Drag it onto the canvas, or open the one your quest already has.",
+      "Drag a wire from its <b class=\"ui\">Out</b> socket into the first node of your story.",
+      "Look at the status bar. An <b>Empty</b> warning here means nothing is wired to <b class=\"ui\">Out</b>."
+    ],
+    "mistakes": [
+      [
+        "Something that has to survive a reload is wired here.",
+        "This runs once, when the quest is claimed. After the player reloads, anything you armed here is gone. Put that in <a href=\"entry-load.html\">On start &amp; reload</a> instead."
+      ],
+      [
+        "Nothing is wired to <b class=\"ui\">Out</b>.",
+        "The quest starts and then stops. The player gets an empty journal and no idea what to do next."
+      ]
+    ],
+    "messages": [
+      [
+        "Empty",
+        "msg-empty",
+        "nothing is wired to <b class=\"ui\">Out</b>, so the node does nothing"
+      ]
+    ]
+  },
+  "entry.load": {
+    "oneliner": "Runs on claim, and again on every load.",
+    "what": "Runs when the quest is claimed, and again every time the game loads it. Anything that has to be true in every session goes here.",
+    "when": [
+      "Put anything that watches for a player action here rather than in <a href=\"entry-start.html\">Quest start</a>. A watcher armed once stops working after the player reloads.",
+      "Use it for the pieces a returning player expects to still be working: the listeners behind your triggers, the state of a machine they left mid-job.",
+      "Keep one-off story beats out of it. They belong in <a href=\"entry-start.html\">Quest start</a>, or the player sees them again on every load."
+    ],
+    "game": "The player loads a save with your quest in progress and this fires again, before they touch anything.",
+    "steps": [
+      "Find <b class=\"ui\">On start &amp; reload</b> under <b>Quest lifecycle</b> in the palette.",
+      "Drag it onto the canvas.",
+      "Wire the nodes that have to be re-armed each session to its <b class=\"ui\">Out</b> socket."
+    ],
+    "mistakes": [
+      [
+        "A one-off story beat is wired here.",
+        "This runs on every load, so the player meets the opening again. Move it to <a href=\"entry-start.html\">Quest start</a>."
+      ],
+      [
+        "Nothing is wired to <b class=\"ui\">Out</b>.",
+        "The node runs and does nothing. Delete it, or wire something to it."
+      ]
+    ],
+    "messages": [
+      [
+        "Empty",
+        "msg-empty",
+        "nothing is wired to <b class=\"ui\">Out</b>, so the node does nothing"
+      ]
+    ]
+  },
+  "entry.complete": {
+    "oneliner": "Runs only if the quest completes.",
+    "what": "Runs when the quest is marked complete. Under the default settings, that never happens.",
+    "when": [
+      "By default a quest has no way to complete. The player gets no <b class=\"ui\">Complete</b> button, and auto-complete is off.",
+      "So end your story from the last objective's <b class=\"ui\">On complete</b> socket instead. That path always runs when the objective ticks over.",
+      "Keep this node for the day you switch on auto-complete or add a completion button. Until then it sits there doing nothing."
+    ],
+    "game": "Under the default settings the player never sees the result of this node, because the quest never reaches the state that fires it.",
+    "steps": [
+      "Decide first whether your quest can complete at all. If it cannot, wire your ending to the last objective instead.",
+      "If you have switched on completion, find <b class=\"ui\">On quest complete</b> under <b>Quest lifecycle</b>.",
+      "Wire the closing beats of your story to its <b class=\"ui\">Out</b> socket."
+    ],
+    "mistakes": [
+      [
+        "The ending of the quest is wired here.",
+        "The player finishes every objective and sees nothing, because the quest never completes. Wire the ending to the last objective's <b class=\"ui\">On complete</b> instead."
+      ]
+    ],
+    "messages": [
+      [
+        "Only runs on completion",
+        "msg-only-runs-on-completion",
+        "the editor warns you this node will never fire under the default settings"
+      ]
+    ]
+  },
+  "entry.abandon": {
+    "oneliner": "Runs if the player gives up.",
+    "what": "Runs if the player abandons the quest. Use it to tidy up whatever the quest left behind.",
+    "when": [
+      "Reach for it when your quest changes the world in a way that should not outlive a quit: a machine left unlocked, a contact left waiting mid-conversation.",
+      "Most quests do not need it. If nothing has to be undone, delete the node rather than leaving it sitting there empty."
+    ],
+    "game": "The player drops the quest and this fires. Anything you wired after it runs once, and the quest is gone.",
+    "steps": [
+      "Find <b class=\"ui\">On quest abandoned</b> under <b>Quest lifecycle</b> in the palette.",
+      "Drag it onto the canvas.",
+      "Wire the cleanup to its <b class=\"ui\">Out</b> socket."
+    ],
+    "mistakes": [
+      [
+        "Cleanup is wired to <a href=\"entry-start.html\">Quest start</a> instead.",
+        "That runs when the quest begins, which is the opposite of when you want the tidy-up."
+      ],
+      [
+        "Nothing is wired to <b class=\"ui\">Out</b>.",
+        "Delete the node. An empty one only adds an <b>Empty</b> warning to your status bar."
+      ]
+    ],
+    "messages": [
+      [
+        "Empty",
+        "msg-empty",
+        "nothing is wired to <b class=\"ui\">Out</b>, so the node does nothing"
+      ]
+    ]
+  },
+  "objective": {
+    "oneliner": "A task the player has to finish.",
+    "what": "A task for the player. It appears in their journal, and it ticks over when the condition you wire in comes true.",
+    "when": [
+      "Give the player one objective per thing they have to do. The journal is how they know what to do next, and a quest with no objectives reads as broken.",
+      "Wire a <a href=\"trigger-event.html\">When event</a> node into the <b class=\"ui\">Trigger</b> socket. That is the condition that ticks the objective over.",
+      "Keep objectives small. One objective per step gives the player a sense of progress, and gives you somewhere to hang the next beat."
+    ],
+    "game": "The player opens their journal and reads the line you wrote. When the trigger fires, the line moves to their completed list.",
+    "fields": {
+      "name": {
+        "example": "dock-shipment",
+        "empty": "Other nodes have nothing to refer to. Name the objective before you wire anything to it."
+      },
+      "description": {
+        "put": "Write it as an instruction: what to do, and where.",
+        "example": "Find the shipment manifest on the dock terminal.",
+        "empty": "The journal shows a blank task. The player has no idea what they are meant to do.",
+        "limits": "Technically any text, but keep it to one line. The journal truncates a long one."
+      },
+      "hint": {
+        "example": "The manifest sits on the machine by the gate, not the office."
+      },
+      "info": {
+        "put": "Lore belongs here rather than in the journal line.",
+        "example": "Meridian Capital moved the shipment twice after the strike."
+      },
+      "terminalCommand": {
+        "example": "ssh dock01.meridian.local",
+        "watch": "It runs nothing on its own. It is a nudge the player can copy, not a shortcut."
+      },
+      "hidden": {
+        "put": "Turn this on to keep the objective out of the journal until another objective unlocks it.",
+        "watch": "A hidden objective still has to be reachable. If nothing unlocks it, the player never sees it and the quest stalls."
+      }
+    },
+    "sockets": {
+      "in": {
+        "in": "Whatever should run immediately before the objective is handed to the player — usually <a href=\"entry-start.html\">Quest start</a> or the objective before it."
+      },
+      "trigger": {
+        "in": "The <a href=\"trigger-event.html\">When event</a> node that ticks this objective over."
+      },
+      "unlocked-by": {
+        "in": "An objective that has to finish before this one becomes available."
+      },
+      "done": {
+        "out": "Whatever should happen once the player finishes — the next objective, a payment, the ending."
+      },
+      "unlock": {
+        "out": "The objective this one opens up."
+      }
+    },
+    "steps": [
+      "Find <b class=\"ui\">Objective</b> under <b>Objectives</b> in the palette.",
+      "Drag it onto the canvas.",
+      "Wire something into its <b class=\"ui\">In</b> socket, so the player actually receives it.",
+      "Add a <a href=\"trigger-event.html\">When event</a> node and wire its <b class=\"ui\">When</b> socket into <b class=\"ui\">Trigger</b>.",
+      "Write the journal line in <b class=\"ui\">Shown to the player</b>.",
+      "Wire the next beat of the story to <b class=\"ui\">On complete</b>."
+    ],
+    "mistakes": [
+      [
+        "Nothing is wired to <b class=\"ui\">Trigger</b>.",
+        "The objective sits in the journal forever. The player can do everything right and it never ticks over."
+      ],
+      [
+        "Nothing is wired to <b class=\"ui\">In</b>.",
+        "The player never receives the objective at all, so the journal stays empty."
+      ],
+      [
+        "The trigger listens for the wrong event.",
+        "The player does the thing and nothing happens. Check the event list for the one your action really raises."
+      ]
+    ],
+    "messages": [
+      [
+        "No trigger",
+        "msg-no-trigger",
+        "nothing is wired to <b class=\"ui\">Trigger</b>, so the player can never finish this objective"
+      ],
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the player never receives the objective"
+      ]
+    ]
+  },
+  "trigger.event": {
+    "oneliner": "Watches for one thing the player does.",
+    "what": "Watches for a single game event and fires when it happens. This is how your quest hears the player.",
+    "when": [
+      "Wire one into an objective's <b class=\"ui\">Trigger</b> socket to make that objective tick over when the player does the thing.",
+      "Wire one into a <a href=\"flow-branch.html\">Branch</a> to make the story react. The event carries details with it, and the branch can test them.",
+      "It has no input socket. A trigger is not part of the flow — it sits alongside it and fires on its own."
+    ],
+    "game": "Nothing appears on screen. The event fires inside the game and your quest reacts a moment later.",
+    "fields": {
+      "event": {
+        "empty": "There is nothing to listen for, so the node never fires."
+      },
+      "conditions": {
+        "put": "Add one clause per thing that has to be true.",
+        "watch": "The same action can raise more than one event. Check the list for the one that carries the details you need."
+      }
+    },
+    "sockets": {
+      "when": {
+        "out": "The objective or branch that should react when the event fires."
+      }
+    },
+    "steps": [
+      "Find <b class=\"ui\">When event</b> under <b>Triggers</b> in the palette.",
+      "Drag it onto the canvas, next to the objective it should tick over.",
+      "Pick the game event that means the player did the thing.",
+      "Drag a wire from its <b class=\"ui\">When</b> socket into the objective's <b class=\"ui\">Trigger</b> socket.",
+      "Add a clause under <b class=\"ui\">Only when</b> if the event should not count every time it happens."
+    ],
+    "mistakes": [
+      [
+        "The wire went into the objective's <b class=\"ui\">In</b> socket.",
+        "The two sockets are different colours for exactly this reason. <b class=\"ui\">In</b> is flow, <b class=\"ui\">Trigger</b> is a condition."
+      ],
+      [
+        "No clauses, so the trigger is too loose.",
+        "The objective ticks over on the first occurrence, which may be before the player got there."
+      ],
+      [
+        "The event picked is not the one the action raises.",
+        "The player does the thing and nothing happens. Check the event list for what your action really fires."
+      ]
+    ]
+  },
+  "fx.notify": {
+    "oneliner": "Puts a message on the player's screen.",
+    "what": "Shows the player a message. Either a popup that stays until they dismiss it, or a toast that slides in and fades on its own.",
+    "when": [
+      "Reach for it whenever something happens that the player should notice. A balance changing, a door opening, a contact going quiet — none of those announce themselves.",
+      "Put it after the node that caused the change, never before. A message about money that has not arrived yet reads like a bug.",
+      "Keep it short. It sits over the game, so a player mid-task reads it at a glance or not at all."
+    ],
+    "game": "A box appears over the game. A notification waits for the player to close it. A toast slides in, holds for a moment, and fades.",
+    "fields": {
+      "message": {
+        "put": "One or two sentences is plenty. It sits over the game, not in a journal.",
+        "example": "Payment received: Meridian Capital.",
+        "empty": "The popup appears with nothing in it. The player sees an empty box and no idea why."
+      },
+      "variant": {
+        "put": "Pick how insistent the message should be.",
+        "watch": "A notification waits for the player to close it. Use a toast for anything they can afford to miss."
+      },
+      "tone": {
+        "put": "Match it to what the message means: a success for a payment, a warning for a mistake."
+      }
+    },
+    "steps": [
+      "Find <b class=\"ui\">Notify</b> under <b>Effects</b> in the palette.",
+      "Drag it onto the canvas, after the node that caused the change.",
+      "Wire the previous node's <b class=\"ui\">Out</b> socket into this node's <b class=\"ui\">In</b> socket.",
+      "Type the message.",
+      "Pick <b class=\"ui\">Style</b> and <b class=\"ui\">Tone</b> to match how much the message matters."
+    ],
+    "mistakes": [
+      [
+        "The message fires before the thing it describes.",
+        "Wire it after. The player reads about a payment, opens their bank, and finds nothing there."
+      ],
+      [
+        "Every message is a notification.",
+        "Popups that wait for a click pile up. Save those for the moments that matter and use toasts for the rest."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the player never sees the message"
+      ]
+    ]
+  },
+  "fx.withdraw": {
+    "oneliner": "Takes money out of the player's account.",
+    "what": "Takes money out of the player's bank account. Either a fixed sum, or a slice of whatever they currently have.",
+    "when": [
+      "Use it for a purchase, a fine, a bribe, or a tool the player buys. Anything where the story costs the player money.",
+      "The percentage mode is what you want for a fee that scales with wealth. A fixed sum is what you want for a price tag.",
+      "The player pays around $35 for a tool, so price story purchases somewhere near that."
+    ],
+    "game": "The player's balance drops, and their bank statement gains a line with the label you typed.",
+    "fields": {
+      "amountMode": {
+        "put": "Pick which of the two numbers below this node reads. <b class=\"ui\">Fixed amount</b> reads <b class=\"ui\">Amount</b>. <b class=\"ui\">Percentage of balance</b> reads <b class=\"ui\">Percent</b>.",
+        "watch": "Both number fields stay visible whichever you pick, and the one you did not pick is ignored. Check this first when a charge comes out wrong."
+      },
+      "amount": {
+        "put": "The sum to take, in dollars.",
+        "example": "35",
+        "empty": "Nothing happens. The charge is skipped with no warning and no line in the bank statement."
+      },
+      "percent": {
+        "put": "The share of the player's current balance to take. 10 takes a tenth of whatever they have right now.",
+        "watch": "The result is rounded to a whole number, so a small balance can produce a charge of zero."
+      },
+      "description": {
+        "example": "Tool licence — packet sniffer",
+        "empty": "The statement line has no label, so the player sees money vanish from nowhere.",
+        "limits": "Technically any text, but keep it short. A statement line is only a few words."
+      }
+    },
+    "steps": [
+      "Find <b class=\"ui\">Charge the player</b> under <b>Effects</b> in the palette.",
+      "Drag it onto the canvas where the purchase happens.",
+      "Pick <b class=\"ui\">Amount type</b> before you type a number.",
+      "Type the amount, then write a statement label the player will recognise.",
+      "Add a <a href=\"fx-notify.html\">Notify</a> after it so the player notices the charge."
+    ],
+    "mistakes": [
+      [
+        "The amount is 0 or blank.",
+        "Nothing happens and nothing warns you. Check <b class=\"ui\">Amount</b> before anything else."
+      ],
+      [
+        "The wrong <b class=\"ui\">Amount type</b> is selected.",
+        "Both fields sit on screen and only one is read. A 35 in <b class=\"ui\">Amount</b> does nothing while <b class=\"ui\">Amount type</b> says <b class=\"ui\">Percentage of balance</b>."
+      ],
+      [
+        "A percentage of a small balance rounds to zero.",
+        "Ten percent of $4 is $0.40, which rounds to nothing. Use a fixed sum for small amounts."
+      ]
+    ],
+    "messages": [
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the charge never happens"
+      ]
+    ]
+  },
+  "flow.branch": {
+    "oneliner": "Sends the story down one of two paths.",
+    "what": "Splits the story in two. One path runs when your condition holds, the other runs when it does not.",
+    "when": [
+      "Use it when the story should differ based on something the player did: whether they were spotted, whether they paid, which file they pulled.",
+      "Both paths need somewhere to go. A branch with an unwired <b class=\"ui\">Yes</b> or <b class=\"ui\">No</b> is a dead end the player walks into.",
+      "For three or more outcomes, chain branches. Each one splits again, and the canvas stays readable."
+    ],
+    "game": "Nothing appears on screen. The player only notices that the next message differs from the one their friend got.",
+    "fields": {
+      "source": {
+        "put": "Pick what the condition is tested against. <b class=\"ui\">Event</b> tests the details carried by the event that fired. <b class=\"ui\">Data</b> tests values you stored with <a href=\"fx-setdata.html\">Set quest data</a>.",
+        "watch": "Pick <b class=\"ui\">Data</b> when the thing you are testing happened earlier in the quest. The event that woke this branch only carries its own details."
+      },
+      "conditions": {
+        "put": "Add one clause per thing that has to be true.",
+        "empty": "With no clauses there is nothing to fail, so the <b class=\"ui\">Yes</b> path always runs and the <b class=\"ui\">No</b> path never does."
+      }
+    },
+    "sockets": {
+      "in": {
+        "in": "Whatever should run immediately before the split."
+      },
+      "trigger": {
+        "in": "The event that wakes the branch, when it should react to something the player does."
+      },
+      "yes": {
+        "out": "The path that runs when every clause holds."
+      },
+      "no": {
+        "out": "The path that runs when any clause fails."
+      }
+    },
+    "steps": [
+      "Find <b class=\"ui\">Branch</b> under <b>Flow control</b> in the palette.",
+      "Drag it onto the canvas where the story should split.",
+      "Wire the previous node into <b class=\"ui\">In</b>.",
+      "Pick what to test under <b class=\"ui\">Test against</b>, then add your clauses.",
+      "Wire both <b class=\"ui\">Yes</b> and <b class=\"ui\">No</b> to somewhere. Neither may be left empty."
+    ],
+    "mistakes": [
+      [
+        "One path is left unwired.",
+        "The player reaches a branch that goes nowhere and the quest stalls. The editor flags it as <b>Dead end</b>."
+      ],
+      [
+        "The condition tests the wrong source.",
+        "Testing quest data while <b class=\"ui\">Test against</b> says <b class=\"ui\">Event</b> finds nothing to match, so the <b class=\"ui\">No</b> path always runs."
+      ]
+    ],
+    "messages": [
+      [
+        "Dead end",
+        "msg-dead-end",
+        "a <b class=\"ui\">Yes</b> or <b class=\"ui\">No</b> socket has nothing wired to it"
+      ],
+      [
+        "Unreachable",
+        "msg-unreachable",
+        "nothing leads to this node, so the split never happens"
+      ]
+    ]
+  }
+}

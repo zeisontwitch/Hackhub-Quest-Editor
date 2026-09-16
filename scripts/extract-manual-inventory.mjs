@@ -106,6 +106,25 @@ function countKinds(fields, kind) {
 
 const types = Object.keys(registry.NODE_TYPES_REGISTRY);
 
+/**
+ * Freshly created defaults carry ids from nanoid(8), so they differ on every
+ * run. Ground truth that changes when nothing has changed is worse than no
+ * ground truth: it buries real drift under noise, and a reviewer learns to
+ * ignore the diff. The ids mean nothing to a reader either — what matters is
+ * that the editor generates one — so they become a stable marker.
+ */
+function stabilise(value) {
+    if (Array.isArray(value)) return value.map(stabilise);
+    if (value && typeof value === "object") {
+        const out = {};
+        for (const [k, v] of Object.entries(value)) {
+            out[k] = k === "id" && typeof v === "string" ? "<generated>" : stabilise(v);
+        }
+        return out;
+    }
+    return value;
+}
+
 const nodes = types.map((type) => {
     const def = registry.NODE_TYPES_REGISTRY[type];
     const socket = (h) => ({ id: h.id, kind: h.kind, label: h.label });
@@ -124,7 +143,7 @@ const nodes = types.map((type) => {
         hasDynamicSockets: Boolean(def.dynamicSources),
         fields: walkFields(def.fields),
         editableFieldCount: editableFields(def.fields).length,
-        defaults: def.create(),
+        defaults: stabilise(def.create()),
     };
 });
 

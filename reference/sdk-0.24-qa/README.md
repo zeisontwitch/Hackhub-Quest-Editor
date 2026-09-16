@@ -16,7 +16,7 @@ As of the HackHub 1.3.0 / Steam build 25341308 run on 2026-09-16, the raw `mod` 
 
 One raw Wi-Fi gameplay wart remains documented: Bettercap can set the AP by BSSID and capture/crack the handshake, but `set wifi.ap 02:24:00:00:24:01` logs `SSID: undefined` instead of `QE24-RAW-5G`. Treat that as a runtime UX issue to account for before exposing native Wi-Fi broadly.
 
-If you are continuing QA, the next useful target is the editor-generated scaffold (`editor-export/`): test `QE24-LAB-5G` and `http://qe24-website.test/`. DNS-only collaborator lookup was tested with `nslookup <printed-subdomain>.qe24-collab.test`; it returned `No results found` and produced no new collaborator history entry, so treat DNS-only collaborator support as unsupported/fenced in this build. Browser HTTP collaborator remains green.
+Editor-export follow-up: `http://qe24-website.test/` and `/echo` loaded, but neither `http-request` nor `http-response` objective checked off; startup mail/toast did not appear; connecting to `QE24-LAB-5G` checked both Wi-Fi objectives and the BSSID matched. DNS-only collaborator lookup was tested with `nslookup <printed-subdomain>.qe24-collab.test`; it returned `No results found` and produced no new collaborator history entry, so treat DNS-only collaborator support as unsupported/fenced in this build. Browser HTTP collaborator remains green.
 
 ## Plain-English quick start
 
@@ -141,7 +141,7 @@ Record the curl subcase as `Blocked` if `curl` is missing. H-04 and H-06 can sti
 Test this separately from the raw harness on a clean save when possible. Install `editor-export/` and check:
 
 1. Start/load: a mail/toast for `QESdk024EditorQa` appears and there is no startup error.
-2. Browser HTTP: open `http://qe24-website.test/`, then `http://qe24-website.test/echo`. "Tick" means the active quest/objective tracker line gets a checkmark or moves to completed; you may also see a debug toast like `Editor QA ticked: http-response`. Record exactly which of `http-request` and `http-response` tick. If the page loads but neither objective changes, report that.
+2. Browser HTTP: open `http://qe24-website.test/`, then `http://qe24-website.test/echo`. "Tick" means the active quest/objective tracker line gets a checkmark or moves to completed; you may also see a debug toast like `Editor QA ticked: http-response`. Current evidence: both pages load but neither HTTP objective ticks, so static website hosting works while editor HTTP events stay fenced.
 3. Editor Wi-Fi: connect to `QE24-LAB-5G` with `correct-horse-battery`, then disconnect. Expected AP fields are BSSID `02:24:00:00:24:02`, channel `44`, WPS `true`; record whether the `wifi-connect` and `wifi-disconnect` objective lines tick.
 4. Save/reload: the editor AP should not duplicate, and event listeners/objectives should still work.
 5. Optional intercept: also install the raw harness, run `qe24 intercept on`, open `http://qe24-website.test/`, then `qe24 intercept queue` and `qe24 intercept forward`. The editor `http-intercepted` objective should tick if static website traffic emits `Http.Intercepted`.

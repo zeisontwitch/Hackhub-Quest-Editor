@@ -20,8 +20,24 @@ npm run build
 
 - Quests: QESdk024EditorQa
 - Websites: qe24-website.test
-- Permissions requested: network, mail, events
+- Permissions requested: network, mail, events, ui
 
+
+
+## Current editor-export result
+
+Zeis tested the editor export on HackHub 1.3.0 / Steam build 25341308. Both pages loaded:
+
+```text
+http://qe24-website.test/
+http://qe24-website.test/echo
+```
+
+However, neither `http-request` nor `http-response` objective checked off. Record this as: static website hosting works, but editor-generated SDK HTTP event objectives do not fire for static website Browser traffic in this build.
+
+The startup mail/toast also did not appear in that run. The export now includes the `ui` permission for debug toasts because the debug nodes request on-screen output; if a future reinstall still has no startup mail, treat that as separate from the HTTP-event result.
+
+Wi-Fi did pass: connecting to `QE24-LAB-5G` checked both Wi-Fi objectives, and the BSSID matched `02:24:00:00:24:02`.
 
 ## What to look at in-game
 

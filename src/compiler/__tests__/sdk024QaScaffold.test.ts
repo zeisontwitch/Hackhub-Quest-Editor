@@ -22,7 +22,8 @@ describe("r166 SDK 0.24 in-game QA scaffold", () => {
 
         const output = compileProject(parsed.project);
         const mod = output.files.find((file) => file.path === "dist/mod.js")?.content ?? "";
-        expect(output.files.some((file) => file.path === "manifest.json")).toBe(true);
+        const manifest = JSON.parse(output.files.find((file) => file.path === "manifest.json")?.content ?? "{}");
+        expect(manifest.permissions).toEqual(expect.arrayContaining(["network", "mail", "events", "ui"]));
         expect(mod).toContain("Network.createWifiNetwork");
         expect(mod).toContain("wifiDef.wps");
         expect(mod).toContain("QE24-LAB-5G");

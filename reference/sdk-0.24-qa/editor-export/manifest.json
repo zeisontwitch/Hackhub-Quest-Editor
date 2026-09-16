@@ -1,7 +1,7 @@
 {
     "id": "qe-sdk-024-editor-qa",
     "name": "QE SDK 0.24 Editor QA Scaffold",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "author": "HackHub Quest Editor",
     "description": "Evidence-only project for r166 SDK 0.24 in-game verification. Keeps native Wi-Fi and HTTP/curl event checks isolated from author-facing feature exposure.",
     "apiVersion": 1,
@@ -9,7 +9,8 @@
     "permissions": [
         "network",
         "mail",
-        "events"
+        "events",
+        "ui"
     ],
     "tags": [
         "qa",

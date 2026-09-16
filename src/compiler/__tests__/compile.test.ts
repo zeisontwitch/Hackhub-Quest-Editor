@@ -185,6 +185,16 @@ describe("compile", () => {
         expect(manifest.permissions).toContain("network");
     });
 
+    it("grants UI permission when a debug probe asks for an on-screen toast", () => {
+        const loud = createProject();
+        loud.quests[0].graph.nodes = [node("flow.debug", { toast: true })];
+        expect(computePermissions(loud)).toContain("ui");
+
+        const quiet = createProject();
+        quiet.quests[0].graph.nodes = [node("flow.debug", { toast: false })];
+        expect(computePermissions(quiet)).not.toContain("ui");
+    });
+
     it("the emitted mod.js runs: OnStart builds the network and sends the mail", async () => {
         const calls: string[] = [];
         const listeners: [string, (d: unknown) => void][] = [];

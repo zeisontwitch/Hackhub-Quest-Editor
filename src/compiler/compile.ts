@@ -259,6 +259,10 @@ export function computePermissions(project: ProjectDocument): string[] {
         if (n.type === "comms.dialogue") {
             for (const p of permissionsForDialogueNode(n.data as never)) perms.add(p);
         }
+
+        if (n.type === "flow.debug" && (n.data as { toast?: boolean }).toast) {
+            perms.add("ui");
+        }
     }
 
     if (project.quests.some((q) => q.dialog.some((b) => b.lines.some((l) => l.input)))) {

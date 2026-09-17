@@ -53,6 +53,7 @@ import {
     type NodeType,
 } from "./nodes";
 import { TARGET_IP_TOKEN, VULNERABILITY_BLURBS, VULNERABILITY_TYPES } from "./common";
+import { MONTH_OPTIONS, timerSentence } from "./timer";
 
 /* ── Inspector field descriptors ─────────────────────────────────────────── */
 
@@ -76,6 +77,17 @@ export type FieldGenerate = {
     reuse?: readonly string[];
     /** Short noun for the button's accessible name, e.g. "e-mail". */
     label?: string;
+};
+
+export type NumberFieldDef = {
+    kind: "number";
+    key: string;
+    label: string;
+    hint?: string;
+    min?: number;
+    max?: number;
+    step?: number;
+    showWhen?: FieldShowWhen;
 };
 
 export type FieldDef =
@@ -104,7 +116,7 @@ export type FieldDef =
           rows?: number;
           showWhen?: FieldShowWhen;
       }
-    | { kind: "number"; key: string; label: string; hint?: string; min?: number; max?: number; step?: number; showWhen?: FieldShowWhen }
+    | NumberFieldDef
     | { kind: "slider"; key: string; label: string; hint?: string; min: number; max: number; step?: number; showWhen?: FieldShowWhen }
     | { kind: "toggle"; key: string; label: string; hint?: string; showWhen?: FieldShowWhen }
     | {
@@ -113,6 +125,10 @@ export type FieldDef =
           label: string;
           hint?: string;
           options: readonly { value: string; label: string; hint?: string }[];
+          /** Render as a segmented picker instead of a dropdown (2–4 short choices). */
+          display?: "segmented";
+          /** Store `Number(choice)` — for selects over numeric fields, like months. */
+          numeric?: boolean;
           showWhen?: FieldShowWhen;
       }
     | {
@@ -143,6 +159,33 @@ export type FieldDef =
           showWhen?: FieldShowWhen;
       }
     | { kind: "tables"; key: string; label: string; hint?: string }
+    | {
+          /**
+           * Several fields on one line, for values that only make sense read
+           * together: the Wait duration, "in 2 weeks", the date. Children keep
+           * their own labels, hints and warnings — a row is layout, not a
+           * control. Container kinds are transparent to the manual extractor,
+           * so the children are documented exactly as if they were stacked.
+           */
+          kind: "row";
+          label?: string;
+          hint?: string;
+          fields: FieldDef[];
+          showWhen?: FieldShowWhen;
+      }
+    | {
+          /**
+           * The hour and minute as a digital clock (r176). It reads and writes
+           * two existing number fields; the caption is the clock's own, so the
+           * fields keep their labels for the manual and for screen readers.
+           */
+          kind: "clock";
+          label?: string;
+          hint?: string;
+          hour: NumberFieldDef;
+          minute: NumberFieldDef;
+          showWhen?: FieldShowWhen;
+      }
     | { kind: "handbookArticle"; key: string; label: string; hint?: string }
     | { kind: "date"; key: string; label: string; hint?: string; showWhen?: FieldShowWhen }
     | { kind: "color"; key: string; label: string; hint?: string; showWhen?: FieldShowWhen }
@@ -359,6 +402,8 @@ export interface NodeTypeDef {
     label: string;
     /** One-line description shown in the palette. */
     blurb: string;
+    /** Live sentence above the fields: what the current settings will do. */
+    preview?: (data: Record<string, unknown>) => string | null;
     icon: string;
     targets: HandleSpec[];
     sources: HandleSpec[];
@@ -1118,29 +1163,76 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            { kind: "note", tone: "info", text: "Wait X amount of time until the next node fires. Great for when you want the story to hold for a moment. Unlike a Wait, the time keeps passing while the player is away — a timer set two in-game days out lands two in-game days later even if the player saves and quits." },
+            { kind: "note", tone: "info", text: "Fires the next node at a later in-game time. Wait holds the story for an exact stretch; A coming day fires on a clock time counted from now — “in 2 weeks, at 09:00” — so it stays right however long the player leaves the quest; An exact date pins a moment in the story's own calendar. A time that has already passed fires as soon as the story reaches the node." },
             {
                 kind: "select",
                 key: "mode",
-                hint: "A delay from when the story arrives, a clock time N in-game days from now, or a fixed in-game date & time.",
+                hint: "A stretch to wait, a clock time counted from now, or a fixed moment in the story's own calendar.",
                 label: "When it fires",
+                display: "segmented",
                 options: [
-                    { value: "after", label: "After a delay" },
-                    { value: "daytime", label: "In N days at a set time" },
-                    { value: "at", label: "On a specific in-game date & time" },
+                    { value: "after", label: "Wait" },
+                    { value: "daytime", label: "A coming day" },
+                    { value: "at", label: "An exact date" },
                 ],
             },
-            { kind: "number", key: "days", showWhen: { key: "mode", equals: "after" }, hint: "In-game days to wait first. 0 is fine — the units are added up.", label: "Days", min: 0, step: 1 },
-            { kind: "number", key: "hours", showWhen: { key: "mode", equals: "after" }, hint: "In-game hours, on top of the days. 25 hours is a legal value.", label: "Hours", min: 0, step: 1 },
-            { kind: "number", key: "minutes", showWhen: { key: "mode", equals: "after" }, hint: "In-game minutes, on top of the days and hours. At the default game speed one in-game minute passes every real second.", label: "Minutes", min: 0, step: 1 },
-            { kind: "number", key: "offsetDays", showWhen: { key: "mode", equals: "daytime" }, hint: "In-game days from now — 0 means today. Counted from when the story reaches this node.", label: "Days from now", min: 0, step: 1 },
-            { kind: "number", key: "hour", showWhen: { key: "mode", equals: ["daytime", "at"] }, hint: "The hour the in-game clock will show, 0–23. This is the player's clock, not the wall clock.", label: "Hour", min: 0, max: 23, step: 1 },
-            { kind: "number", key: "minute", showWhen: { key: "mode", equals: ["daytime", "at"] }, hint: "The minute the in-game clock will show, 0–59.", label: "Minute", min: 0, max: 59, step: 1 },
-            { kind: "number", key: "dateYear", showWhen: { key: "mode", equals: "at" }, hint: "The in-game year, e.g. 2026. Read it off the in-game clock, not your own calendar.", label: "Year", min: 1970, max: 9999, step: 1 },
-            { kind: "number", key: "dateMonth", showWhen: { key: "mode", equals: "at" }, hint: "The in-game month, 1–12, as the in-game clock shows it — January is 1.", label: "Month", min: 1, max: 12, step: 1 },
-            { kind: "number", key: "dateDay", showWhen: { key: "mode", equals: "at" }, hint: "The in-game day of month, 1–31, as the in-game clock shows it.", label: "Day", min: 1, max: 31, step: 1 },
+            {
+                kind: "row",
+                label: "Wait",
+                showWhen: { key: "mode", equals: "after" },
+                fields: [
+                    { kind: "number", key: "days", hint: "In-game days to wait first. 0 is fine — the units are added up.", label: "Days", min: 0, step: 1 },
+                    { kind: "number", key: "hours", hint: "In-game hours, on top of the days. 25 hours is a legal value.", label: "Hours", min: 0, step: 1 },
+                    { kind: "number", key: "minutes", hint: "In-game minutes, on top of the days and hours. At the default game speed one in-game minute passes every real second.", label: "Minutes", min: 0, step: 1 },
+                ],
+            },
+            {
+                kind: "row",
+                label: "In",
+                showWhen: { key: "mode", equals: "daytime" },
+                fields: [
+                    { kind: "number", key: "offsetAmount", hint: "How many of the unit beside it. 0 means today, so “0 days, at 09:00” fires the next time the clock reads 09:00.", label: "How many", min: 0, step: 1 },
+                    {
+                        kind: "select",
+                        key: "offsetUnit",
+                        label: "Time unit",
+                        hint: "What the number counts in. Months and years keep the day number, using the target month's last day when it is shorter.",
+                        options: [
+                            { value: "days", label: "Days" },
+                            { value: "weeks", label: "Weeks" },
+                            { value: "months", label: "Months" },
+                            { value: "years", label: "Years" },
+                        ],
+                    },
+                ],
+            },
+            {
+                kind: "row",
+                label: "On",
+                showWhen: { key: "mode", equals: "at" },
+                fields: [
+                    { kind: "number", key: "dateDay", hint: "The in-game day of the month, as the in-game clock shows it. The field warns when that day does not exist.", label: "Day", min: 1, max: 31, step: 1 },
+                    {
+                        kind: "select",
+                        key: "dateMonth",
+                        label: "Month",
+                        numeric: true,
+                        hint: "The in-game month, by name, as the in-game clock shows it.",
+                        options: MONTH_OPTIONS,
+                    },
+                    { kind: "number", key: "dateYear", hint: "The in-game year, e.g. 2026. Read it off the in-game clock, not your own calendar.", label: "Year", min: 1970, max: 9999, step: 1 },
+                ],
+            },
+            {
+                kind: "clock",
+                label: "At",
+                showWhen: { key: "mode", equals: ["daytime", "at"] },
+                hour: { kind: "number", key: "hour", hint: "The hour the in-game clock will show, 0–23. This is the player's clock, not the wall clock.", label: "Hour", min: 0, max: 23, step: 1 },
+                minute: { kind: "number", key: "minute", hint: "The minute the in-game clock will show, 0–59.", label: "Minute", min: 0, max: 59, step: 1 },
+            },
         ],
         create: () => seed(TimerNodeDataSchema),
+        preview: (data) => timerSentence(data as Record<string, unknown>),
     },
 
     "flow.reroute": {

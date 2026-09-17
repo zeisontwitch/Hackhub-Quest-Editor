@@ -554,8 +554,11 @@ export const DelayNodeDataSchema = z.object({
  * - `after`: a relative delay in the SDK's designer units — they are summed,
  *   so "25 hours" is a legal value. All three zero means "nothing scheduled":
  *   the analysis warns, the runtime fires immediately.
- * - `daytime`: N in-game days from now, at a set clock time — the day is
- *   resolved against `Time.date()` at arm time (r173).
+ * - `daytime`: N in-game days, weeks, months or years from now (r176), at a
+ *   set clock time — the whole rule is resolved against `Time.date()` at arm
+ *   time, so it stays right however long the player leaves the quest. Month
+ *   and year maths keeps the day number, clamped to the target month's last
+ *   day (31 Jan + 1 month = 28 Feb, and 29 Feb + 1 year = 28 Feb).
  * - `at`: a fixed in-game date and clock time (r173).
  * `hour`/`minute` are shared by `daytime` and `at`: they always mean "the
  * in-game clock shows HH:MM". In-game seconds are real-world milliseconds,
@@ -567,8 +570,9 @@ export const TimerNodeDataSchema = z.object({
     days: z.number().default(0),
     hours: z.number().default(0),
     minutes: z.number().default(0),
-    /* mode "daytime": days from now (0 = today) */
-    offsetDays: z.number().default(0),
+    /* mode "daytime": how far from now, and in what unit (r176) */
+    offsetAmount: z.number().default(0),
+    offsetUnit: z.enum(["days", "weeks", "months", "years"]).default("days"),
     /* modes "daytime" and "at": the time the in-game clock will show */
     hour: z.number().default(0),
     minute: z.number().default(0),

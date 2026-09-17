@@ -32,6 +32,25 @@ const mapNode = (n: Loose): Loose => {
             // unchanged, and `mode` plus the calendar fields are new, so they
             // take their schema defaults.
             return { ...n, type: "flow.timer" };
+        case "flow.timer":
+            // r176: "N days from now" became "in N days/weeks/months/years
+            // from now", so the one `offsetDays` field split into an amount and
+            // a unit. A project written before that keeps its meaning — the
+            // same number, still counted in days.
+            if (n.data && n.data.offsetDays !== undefined && n.data.offsetAmount === undefined) {
+                const data = { ...n.data };
+                const amount = Number(data.offsetDays);
+                delete data.offsetDays;
+                return {
+                    ...n,
+                    data: {
+                        ...data,
+                        offsetAmount: Number.isFinite(amount) ? amount : 0,
+                        offsetUnit: "days",
+                    },
+                };
+            }
+            return n;
         case "flow.delay":
             // ms → seconds (round 19)
             if (n.data && n.data.ms != null && n.data.seconds == null) {

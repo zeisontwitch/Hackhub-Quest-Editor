@@ -1117,12 +1117,12 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r171 (inspector polish + phone-proxy notes) on
-  `arena/01a0aaee-hackhub-quest-editor`, committed and pushed after validation.
-  Previous rounds: r170 Ask player prompt node, r169 phone end flow +
-  quest-ending nodes, r168 phone `onEnd` completion QA probes, r167 Create Wi-Fi.
-- **1,561 tests green** across 79 files, typecheck clean, build clean.
-- **Editor build stamp:** `2026-09-17.r171` (bumps every round since r148 — the
+- **HEAD:** r172 (Schedule beat node) on `arena/01a0af11-hackhub-quest-editor`,
+  committed and pushed after validation. Previous rounds: r171 inspector
+  polish + phone-proxy notes, r170 Ask player prompt node, r169 phone end flow
+  + quest-ending nodes, r168 phone `onEnd` completion QA probes, r167 Create Wi-Fi.
+- **1,577 tests green** across 80 files, typecheck clean, build clean.
+- **Editor build stamp:** `2026-09-17.r172` (bumps every round since r148 — the
   stamp is a version, not a changelog).
 - Tool-pack modules: `src/toolpacks/schema.ts` (format 2 + plain-language
   `parseToolPack`), `src/toolpacks/palette.ts` (pure `packNodeDefs`,
@@ -1359,7 +1359,10 @@ These are standing instructions, not preferences:
   transcriptions, or the Nemesis reference mod.** Test hypotheses before
   implementing. Evidence order: SDK d.ts → handbook → Official-Quest →
   shipped/QA (each wins in its own domain).
-- **Plan first, then execute** — write the plan down, audit it, then build.
+- **Plan first, then execute — but check in between.** Write the plan down,
+  present it to Zeis, and stop there: he reviews it, asks questions and
+  corrects assumptions before a line of code is written (r172 lesson — the
+  plan was committed and implementation started without that pause).
 - **Falsify every guard**: revert the fix and confirm the matching test fails.
   A test that cannot fail is worse than none, and several have shipped green
   while the feature was dead.
@@ -1369,6 +1372,8 @@ These are standing instructions, not preferences:
 - **Admit wrong theories plainly, with evidence.** Corrections belong in the
   docs, not quietly edited out.
 - **Be concise.** Expand only where the detail is load-bearing.
+- **Zeis only speaks English** — all replies to him are in English,
+  whatever the surrounding chat language is.
 - Always `git fetch` and compare against the remote before committing — Zeis
   commits to this branch too (docs/07 arrived that way in r128), and the
   remote is authoritative.

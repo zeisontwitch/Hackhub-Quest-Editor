@@ -247,6 +247,15 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
         case "flow.delay":
             return [`${Number(d.seconds ?? 0)} s`];
 
+        case "flow.schedule": {
+            const parts = [
+                Number(d.days ?? 0) ? `${Math.round(Number(d.days))}d` : "",
+                Number(d.hours ?? 0) ? `${Math.round(Number(d.hours))}h` : "",
+                Number(d.minutes ?? 0) ? `${Math.round(Number(d.minutes))}m` : "",
+            ].filter(Boolean);
+            return parts.length ? [parts.join(" ")] : ["no time set"];
+        }
+
         case "flow.random": {
             const options = d.options as { label: string }[] | undefined;
             return [options?.length ? `${options.length} options` : "no options yet"];

@@ -41,8 +41,8 @@ describe("registry ↔ node union", () => {
         expect([...NODE_TYPES].sort()).toEqual([...ALL_TYPES].sort());
     });
 
-    it("has 38 node types", () => {
-        expect(NODE_TYPES).toHaveLength(38);
+    it("has 39 node types", () => {
+        expect(NODE_TYPES).toHaveLength(39);
     });
 
     it.each(ALL_TYPES)("creates valid default data for %s", (type) => {

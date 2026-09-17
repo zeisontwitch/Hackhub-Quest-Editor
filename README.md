@@ -120,7 +120,7 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
-| 1 | **SDK 0.24 follow-up choices** | Wi-Fi, phone end-flow / quest-ending APIs, and the `Ask player` prompt node are exposed. Current queue: mail cleanup/replyability QA, Twotter update/remove QA, the new phone-proxy/eavesdrop investigation, then Scheduler/Time design. HTTP/curl/DNS collaborator nodes stay fenced until SteelWaffe answers the upstream gaps. See [`docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md`](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md). |
+| 1 | **SDK 0.24 follow-up choices** | Wi-Fi, phone end-flow / quest-ending APIs, the `Ask player` prompt node, and the Scheduler (as the r172 **Schedule beat** node) are exposed. Current queue: mail cleanup/replyability QA, Twotter update/remove QA, then the phone-proxy/eavesdrop investigation. HTTP/curl/DNS collaborator nodes stay fenced until SteelWaffe answers the upstream gaps. See [`docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md`](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md). |
 | 2 | **Date deprecation warning (`moment` RFC2822)** | Only appears with a quest-editor mod installed, 30–90s after a mail is sent, when a browser or app screen is opened. The stack is the game's own date formatting and we never set a date on anything — question 10 in the bug report. |
 
 ### Next up
@@ -130,20 +130,18 @@ archived once it has stayed fixed for a few rounds.
 | 1 | **Mail cleanup / replyable mail QA** | Focused QA first: `Mail.send()` id shape, `Mail.remove(id)` timing, whether `QuestMailDefinition.replyable` actually renders a Reply button, what event a reply raises, and cleanup on complete/unload. Then turn the verified parts into authoring. |
 | 2 | **Twotter update/remove QA** | SDK 0.24 now declares `Twotter.updateUser(id, patch)` and `Twotter.removeUser(id)`, with cleanup semantics in the docs. Verify in game that they repair/remove save records, posts, follows and search safely before restoring Twotter authoring. |
 | 3 | **Phone proxy / eavesdrop QA** | xu reports phone calls can be proxied/listened to without the callers knowing. First pass found no declared SDK phone-proxy API, so ask for a snippet or exact in-game route and run a raw probe before exposing anything. See [`docs/plans/r171-inspector-polish-and-phone-proxy-investigation.md`](docs/plans/r171-inspector-polish-and-phone-proxy-investigation.md). |
-| 4 | **Scheduler / Time design pass** | r166 proved Scheduler survives reload in a raw probe. Design the editor surface around game-time delays, due dates, cancellation, and handler registration before adding nodes. |
-| 5 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
-| 6 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. The official Cryptographer Hunt (a phone social-engineering scene with a fail route on the wrong choice) is the strongest argument for it — see [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). The shape now ships inside The Long Game (r136, act III: a typed verdict with two endings); whether a standalone template still adds anything is Zeis's call. |
+| 4 | "Contact-driven story" template | Cold Call (r122) covers the conversation shape — Kisscord plus WeeChat, no break-in. The phone-brief + objective-gated-drip variant from the original spec is still open. |
+| 5 | "Branching consequence" template | A choice that changes which ending the player gets. "Two Ways Out" is approved (may be morally grey) but not yet built. The official Cryptographer Hunt (a phone social-engineering scene with a fail route on the wrong choice) is the strongest argument for it — see [`docs/plans/r127-official-quest-comparison.md`](docs/plans/r127-official-quest-comparison.md). The shape now ships inside The Long Game (r136, act III: a typed verdict with two endings); whether a standalone template still adds anything is Zeis's call. |
 
 ### Done recently
 
 | # | Item | Notes |
 |---|---|---|
+| r172 | **Schedule beat node (game-time scheduling)** | ([plan](docs/plans/r172-schedule-beat.md)) Next-up #4: the SDK 0.24 `Scheduler` (reload-proof, r166 probe) is now exposed as the **Schedule beat** flow node — fire one wired story beat at a fixed in-game time (days/hours/minutes, 60× the game clock, so 2 in-game minutes is 2 real seconds). The beat re-arms briefly if it is due before the quest is live, and is cancelled on quest complete/abandon so a finished quest can't fire later. A second auto-start QA quest (S-01 fire / S-02 reload / S-03 cancel) rides in `reference/sdk-0.24-qa` for Zeis to verify in game. Manual regenerated at 39 node types. |
 | r171 | **Inspector polish + phone-proxy notes** | ([plan](docs/plans/r171-inspector-polish-and-phone-proxy-investigation.md)) Field warning popovers now use an opaque panel so **Worth checking** text stays readable over the inspector/canvas, and the docked inspector pull tab now protrudes toward the canvas instead of facing inward. The phone-proxy pass found no pinned SDK call-control/eavesdrop API yet, so that stays a QA item until xu can provide a snippet or exact route. |
 | r170 | **Ask player prompt node** | ([plan](docs/plans/r170-ui-prompt-node.md)) `UI.prompt` is now exposed as **Ask player** under Effects. It asks one line of text, can prefill/mask/save the answer, and branches through Submitted/Cancelled or Correct/Wrong/Cancelled. Runtime treats empty text as a real submission, saves it to quest data when requested, and guards blank accepted-answer checks. Handbook/manual counts are regenerated at 38 node types. |
 | r169 | **Phone end flow + quest-ending nodes** | ([plan](docs/plans/r169-phone-end-flow-and-quest-endings.md)) Phone Dialogue nodes now choose when **Out** fires: default when the call ends via SDK `QuestDialogSpeech.onEnd` / ending-option `onSelect`, or immediately for the old timing. `Complete quest`, `Retire quest`, and `Unclaim quest` return as terminal effect nodes and compile to `this.complete()`, `this.retire()`, and `Quest.unclaim(name)`. Handbook/manual counts are regenerated at 37 node types. |
 | r168 | **Phone `onEnd` completion QA probes** | ([plan](docs/plans/r168-phone-onend-completion-qa.md)) Added raw harness commands for phone-line `onEnd -> completeObjective` auto-complete and `onEnd -> this.complete()`. Zeis ran both in game and reported they worked, which cleared the r169 authoring surface. |
-| r167 | **Create Wi-Fi exposed** | ([plan](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md)) `world.wifi` is palette-visible, searchable, covered by the reference template and handbook, and exports through SDK 0.24's native Wi-Fi creator with BSSID/channel/WPS support. The remaining Bettercap `SSID: undefined` display wart is documented as an info note, not a blocker. Wi-Fi-specific dice outputs now generate BSSIDs and WPA-style passphrases. |
-
 ---
 
 ### Standing rule
@@ -179,8 +177,8 @@ Older **Done recently** rows are archived at
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-17.r171`: **1,561 tests** across 79
-files, **38 node types** in 10 categories (all palette-visible), **13 templates**
+Counted from the code at build `2026-09-17.r172`: **1,577 tests** across 80
+files, **39 node types** in 10 categories (all palette-visible), **13 templates**
 (11 playable + 2 reference sheets), **99 game events**, against
 `@hotbunny/hackhub-content-sdk@0.24.0`.
 

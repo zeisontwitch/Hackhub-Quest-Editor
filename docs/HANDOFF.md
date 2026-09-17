@@ -1,3 +1,61 @@
+# Handoff — r172
+
+r172 ships the **Schedule beat** node: the SDK 0.24 `Scheduler` (raw, reload-proof
+per the r166 probe) is now an editor surface.
+
+What shipped:
+
+- `flow.schedule` — **Schedule beat** under Flow control. Fields: **Days**,
+  **Hours**, **Minutes** of game time (the in-game clock runs at 60×, so 2
+  in-game minutes is 2 real seconds). One **Out** socket.
+- Runtime (generated mod code, one block per quest): registers a beat handler
+  at mod load, schedules the job at **OnStart** (re-armed from the stored job
+  when the quest resumes from a save), re-arms itself up to 20 ticks when the
+  job is due before the quest is live, and cancels the beat on **OnComplete** /
+  **OnAbandon** so a finished quest cannot fire later.
+- Two new **Worth checking** warnings, both documented in the manual's message
+  index: **Nothing scheduled** (no time set — the beat fires immediately) and
+  **The beat has nothing to do** (time set, **Out** unwired — the story stops at
+  the beat).
+- Node Reference template: gains one Schedule beat row with example values
+  (1 day, 2 hours, 30 minutes); its node count moves 48 → 49. (While there:
+  the Wait example carried the stale key `ms`, which the node does not have —
+  it now uses `seconds: 2.5`.)
+- Manual regenerated at **39 node types (39 obtainable, all palette-visible)**,
+  **136 editable fields**, **74 sockets**; `checking.html` gained the two new
+  message entries; the shot list gained `node-flow-schedule-inspector.png`
+  (capture still owed to Zeis with the in-game QA pass).
+- QA vehicle: `reference/sdk-0.24-qa` now ships a second auto-start quest,
+  **QESdk024BeatQa** — beat A at 2 in-game minutes (mail + toast = S-01 fire),
+  beat B at 2 in-game hours (S-02 reload survival; S-03 cancel when the quest
+  is completed or abandoned first). The scaffold test locks the quest's shape
+  and the emitted scheduler code.
+
+Validation for this pass: `npm run gen:manual`, targeted Vitest for the
+scheduler runtime, warnings, template and manual coverage, `npm run typecheck`,
+`npm test` (**1,577 tests / 80 files**), `npm run build`, and
+`git diff --check`.
+
+Owed to Zeis (in game): S-01 fire, S-02 reload, S-03 cancel on
+QESdk024BeatQa, plus the screenshot `node-flow-schedule-inspector.png`.
+
+Supporting notes:
+
+- [`plans/r172-schedule-beat.md`](plans/r172-schedule-beat.md)
+- [`plans/r171-inspector-polish-and-phone-proxy-investigation.md`](plans/r171-inspector-polish-and-phone-proxy-investigation.md)
+- [`plans/r166-sdk-0.24-ingame-qa.md`](plans/r166-sdk-0.24-ingame-qa.md)
+
+Next-up from the SDK 0.24 comparison: focused Mail QA for `Mail.send()` ids,
+`Mail.remove()` and `replyable`; fresh Twotter update/remove QA; phone-proxy QA
+if xu can provide concrete evidence; then the contact/branching template queue.
+HTTP nodes stay fenced until SteelWaffe clarifies/fixes `curl`, DNS-only
+collaborator hits and static-site HTTP event semantics. Suspicion/log-forensics
+and SMS remain absent from the pinned SDK.
+
+Older handoff sections below are retained as history.
+
+---
+
 # Handoff — r171
 
 r171 is a small polish pass plus the first phone-proxy evidence note.

@@ -117,7 +117,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-17.r171";
+export const EDITOR_BUILD = "2026-09-17.r172";
 
 /** Warning severity (r153): info = good to know, warn = could cause issues,
     error = will break or strand the player. */
@@ -655,6 +655,7 @@ function buildModJs(project: ProjectDocument, planningBlock: string): string {
     const PROJECT = {
         mod: project.mod,
         quests: project.quests.map((q) => ({
+            id: q.id,
             name: q.name,
             title: q.title,
             description: q.description,

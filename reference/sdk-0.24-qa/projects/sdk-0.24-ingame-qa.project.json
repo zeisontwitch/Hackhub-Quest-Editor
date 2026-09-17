@@ -584,6 +584,187 @@
           }
         ]
       }
+    },
+    {
+      "id": "qe-siv3sx5g",
+      "name": "QESdk024BeatQa",
+      "title": "Schedule beat QA (S-01/S-02/S-03)",
+      "description": "Auto-starts. Beat A (2 in-game minutes) must fire mail + toast. Beat B (2 in-game hours) must fire on reload survival, and must be cancelled if the quest is completed or abandoned first.",
+      "group": "sandbox",
+      "rewards": {
+        "money": 0,
+        "xp": 0
+      },
+      "employer": {},
+      "autoStart": true,
+      "autoComplete": false,
+      "questsToComplete": [],
+      "abandonable": true,
+      "hasCompleteButton": false,
+      "hideObjectivesWhenDone": false,
+      "closingObjectiveText": "",
+      "dialog": [],
+      "graph": {
+        "nodes": [
+          {
+            "id": "qe-5r4w5o8j",
+            "type": "entry.start",
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "data": {}
+          },
+          {
+            "id": "qe-j45yw3g4",
+            "type": "flow.debug",
+            "position": {
+              "x": 260,
+              "y": 0
+            },
+            "data": {
+              "label": "beat quest started",
+              "includeData": false,
+              "includePayload": false,
+              "toast": true
+            }
+          },
+          {
+            "id": "qe-tmrf7pia",
+            "type": "flow.schedule",
+            "position": {
+              "x": 520,
+              "y": 0
+            },
+            "data": {
+              "days": 0,
+              "hours": 0,
+              "minutes": 2
+            }
+          },
+          {
+            "id": "qe-vycm8q8p",
+            "type": "comms.dialogue",
+            "position": {
+              "x": 780,
+              "y": 0
+            },
+            "data": {
+              "kind": "mail",
+              "phone": {
+                "branch": "default",
+                "startIndex": 0
+              },
+              "kisscord": {
+                "contactId": "",
+                "messages": []
+              },
+              "mail": {
+                "from": "qe24-beats@test.net",
+                "to": "player@gomail.com",
+                "subject": "Schedule beat A arrived (S-01 green)",
+                "content": "<p>The 2 in-game minute beat fired. S-01 (fire) is green if you read this within a few seconds of loading the save.</p>",
+                "replyable": false
+              },
+              "weechat": {
+                "host": "",
+                "password": "",
+                "registerServer": true,
+                "messages": []
+              },
+              "postLive": false
+            }
+          },
+          {
+            "id": "qe-i5q1pcr0",
+            "type": "fx.notify",
+            "position": {
+              "x": 1040,
+              "y": 0
+            },
+            "data": {
+              "message": "Schedule beat A fired",
+              "variant": "toast"
+            }
+          },
+          {
+            "id": "qe-9b919r74",
+            "type": "flow.schedule",
+            "position": {
+              "x": 1300,
+              "y": 0
+            },
+            "data": {
+              "days": 0,
+              "hours": 2,
+              "minutes": 0
+            }
+          },
+          {
+            "id": "qe-i0duex84",
+            "type": "fx.notify",
+            "position": {
+              "x": 1560,
+              "y": 0
+            },
+            "data": {
+              "message": "Schedule beat B fired (do NOT see this if the quest ended first)",
+              "variant": "toast"
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "qe-hwwxxklz",
+            "source": "qe-5r4w5o8j",
+            "sourceHandle": "out",
+            "target": "qe-j45yw3g4",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "qe-9vctmhbs",
+            "source": "qe-j45yw3g4",
+            "sourceHandle": "out",
+            "target": "qe-tmrf7pia",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "qe-weelqqhd",
+            "source": "qe-tmrf7pia",
+            "sourceHandle": "out",
+            "target": "qe-vycm8q8p",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "qe-zqr85tzu",
+            "source": "qe-vycm8q8p",
+            "sourceHandle": "out",
+            "target": "qe-i5q1pcr0",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "qe-mkt997g6",
+            "source": "qe-i5q1pcr0",
+            "sourceHandle": "out",
+            "target": "qe-9b919r74",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "qe-hx2c4we3",
+            "source": "qe-9b919r74",
+            "sourceHandle": "out",
+            "target": "qe-i0duex84",
+            "targetHandle": "in",
+            "kind": "flow"
+          }
+        ]
+      },
+      "dataKeys": []
     }
   ],
   "websites": [

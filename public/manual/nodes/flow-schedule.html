@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Random pick — HackHub Quest Editor handbook</title>
+<title>Schedule beat — HackHub Quest Editor handbook</title>
 <link rel="stylesheet" href="../manual.css" />
 </head>
 <body>
@@ -46,44 +46,50 @@
 <main>
 
 <header class="hero">
-  <h1><span class="cat-dot" style="background:var(--cat-flow)"></span>Random pick</h1>
+  <h1><span class="cat-dot" style="background:var(--cat-flow)"></span>Schedule beat</h1>
   <p class="tag"><span class="badge" style="color:var(--cat-flow)">Flow control</span>
-  &nbsp;<code class="mono" style="color:var(--ink-4)">flow.random</code></p>
+  &nbsp;<code class="mono" style="color:var(--ink-4)">flow.schedule</code></p>
 </header>
 
-<section id="node-flow-random-page">
+<section id="node-flow-schedule-page">
 
 <h2>What it does</h2>
-<p>Picks one of its outgoing paths at random, and stores the name of the pick so you can read it back.</p>
+<p>Arms a beat on the in-game clock: the story stops here, and continues down “Out” when the game time you set has passed.</p>
 
 <h2>When you'd use it</h2>
-<p>Use it for variety that does not depend on the player: which guard is on duty, which route is blocked.</p>
-<p>Wire each option to a different path. The story goes down one of them and skips the rest.</p>
-<p>Read the pick back later with a <a href="flow-branch.html">Branch</a> testing quest data.</p>
+<p>For story beats that happen on the story's own schedule: an article hits the wire, a report gets triaged, a deadline lands — while the player is doing something else.</p>
+<p>Unlike a Wait, the time keeps passing while the player is away. A beat set two in-game days out lands two in-game days later even if the player saves and quits — which is what lets a campaign happen in the world's own time.</p>
 
 <h2>In the game, this looks like</h2>
-<p>Nothing appears on screen. The pick happens quietly and the story takes one of the paths you wired.</p>
+<p>The story pauses at the beat (the wires after it do not run yet). When the in-game clock reaches the due time, the beat's “Out” wire runs, as if the story jumped back to this point. If the quest finishes or is abandoned first, the beat is cancelled.</p>
 
 <h2>Fields</h2>
 
-<h3 id="node-flow-random-field-options">Options</h3>
-<blockquote class="blurb">One of these is picked at random and stored. Add as many as you like.</blockquote>
+<h3 id="node-flow-schedule-field-days">Days</h3>
+<blockquote class="blurb">In-game days to wait first. 0 is fine — the units are added up.</blockquote>
 <dl class="facts-list">
-  <dt>What to put here</dt><dd>The values to choose between. Add as many as you like.</dd>
-  <dt class="dt-mute">Default</dt><dd>an empty list</dd>
-  <dt class="dt-warn">Watch out</dt><dd>With one option there is nothing random about it. With none, there is nothing to pick.</dd>
-</dl>
-<p>The button reads <b class="ui">Add option</b>.</p><h4 id="node-flow-random-field-label">Value</h4>
-<blockquote class="blurb">The value stored if this option is picked.</blockquote>
-<dl class="facts-list">
-
+  <dt>Example</dt><dd><code>1</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
+  <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>Counts as zero. All three fields blank means nothing waits — the beat fires the moment the story reaches it.</dd>
 </dl>
 
-<h3 id="node-flow-random-field-storeAs">Store the result as</h3>
-<blockquote class="blurb">A name you choose. The picked value is saved under it so you can read it back later with {{data.name}}.</blockquote>
+<h3 id="node-flow-schedule-field-hours">Hours</h3>
+<blockquote class="blurb">In-game hours, on top of the days. 25 hours is a legal value.</blockquote>
 <dl class="facts-list">
-  <dt>Example</dt><dd><code>guardOnDuty</code></dd>
-  <dt class="dt-danger">If you leave it empty</dt><dd>The pick is not stored, so nothing can read it back later.</dd>
+  <dt>Example</dt><dd><code>2</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
+  <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>Counts as zero. The units are added up, so 25 hours is a legal value.</dd>
+</dl>
+
+<h3 id="node-flow-schedule-field-minutes">Minutes</h3>
+<blockquote class="blurb">In-game minutes, on top of the days and hours. At the default game speed one in-game minute passes every real second.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>30</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
+  <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>Counts as zero. These are in-game minutes: at the default game speed one in-game minute passes every real second, so 30 minutes is half a real minute.</dd>
 </dl>
 
 
@@ -115,27 +121,29 @@ the connection takes, mismatch them and it will not.</p>
 
 
 <figure>
-  <img src="../img/node-flow-random-inspector.png"
-       alt="The Random pick node selected on the canvas, with its inspector open on the right." />
-  <figcaption>The inspector for <b>Random pick</b>.</figcaption>
+  <img src="../img/node-flow-schedule-inspector.png"
+       alt="The Schedule beat node selected on the canvas, with its inspector open on the right." />
+  <figcaption>The inspector for <b>Schedule beat</b>.</figcaption>
 </figure>
 
 <h2>Common mistakes</h2>
 <ul class="plain">
-  <li><b>One path wired and the rest left empty.</b> A pick that lands on an unwired path stops the story there. Wire every option.</li>
+  <li><b>Treating the time as real minutes.</b> The clock is the game's, not the wall clock's. One in-game minute is one real second at default speed, and a full in-game day is about 24 real minutes of play.</li>
+  <li><b>Expecting the beat to fire after the quest is over.</b> A beat belongs to the quest's story. Complete or abandon the quest before the due time and the beat is cancelled — nothing arrives afterwards.</li>
 </ul>
 
 <h2>Messages you might see</h2>
 <ul class="plain">
-  <li><a href="../checking.html#msg-unreachable">Unreachable</a> — nothing leads to this node, so nothing is ever picked</li>
+  <li><a href="../checking.html#msg-nothing-scheduled">Nothing scheduled</a> — no days, hours or minutes are set, so the beat fires the moment the story reaches it</li>
+  <li><a href="../checking.html#msg-beat-nothing-to-do">The beat has nothing to do</a> — the “Out” socket is unwired, so the story stops at the beat when it fires</li>
 </ul>
 
 <h2>Related nodes</h2>
 <ul class="plain">
   <li><a href="flow-branch.html">Branch</a> — Sends the story down one of two paths.</li>
   <li><a href="flow-delay.html">Wait</a> — Pauses the story.</li>
-  <li><a href="flow-schedule.html">Schedule beat</a> — Runs part of the story at a later in-game time.</li>
   <li><a href="flow-reroute.html">Reroute</a> — A tidy point for your wires.</li>
+  <li><a href="flow-random.html">Random pick</a> — Picks one path at random.</li>
   <li><a href="flow-sequence.html">Sequence</a> — Fires several outputs in order.</li>
   <li><a href="flow-debug.html">Debug probe</a> — Prints what is happening here.</li>
 </ul>
@@ -143,11 +151,11 @@ the connection takes, mismatch them and it will not.</p>
 </section>
 
 <div class="pagefoot">
-  <a href="layout-group.html">← Group frame</a>
-  <a class="next" href="flow-sequence.html">Sequence →</a>
+  <a href="flow-delay.html">← Wait</a>
+  <a class="next" href="flow-reroute.html">Reroute →</a>
 </div>
 
-<a class="totop" href="#node-flow-random-page">↑ back to top</a>
+<a class="totop" href="#node-flow-schedule-page">↑ back to top</a>
 
 <footer class="colophon">
   HackHub Quest Editor handbook · documents editor build 2026-09-17.r172 ·

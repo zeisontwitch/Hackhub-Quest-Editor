@@ -548,6 +548,18 @@ export const DelayNodeDataSchema = z.object({
     seconds: z.number().default(1),
 });
 
+/**
+ * A story beat scheduled on the in-game clock (r172). The units are the
+ * SDK's designer units — they are summed, so "25 hours" is a legal value.
+ * All three zero means "nothing scheduled", which the analysis warns about
+ * and the runtime treats as "fire immediately".
+ */
+export const ScheduleNodeDataSchema = z.object({
+    days: z.number().default(0),
+    hours: z.number().default(0),
+    minutes: z.number().default(0),
+});
+
 export const RandomPickNodeDataSchema = z.object({
     options: z.array(z.object({ id: z.string(), label: z.string().default("") })).default([]),
     /** Data key the chosen option is written to, so later nodes can read it. */
@@ -674,6 +686,7 @@ export const NodeSchema = z.discriminatedUnion("type", [
     node("fx.handbook", HandbookNodeDataSchema),
     node("flow.branch", BranchNodeDataSchema),
     node("flow.delay", DelayNodeDataSchema),
+    node("flow.schedule", ScheduleNodeDataSchema),
     node("flow.random", RandomPickNodeDataSchema),
     node("flow.sequence", SequenceNodeDataSchema),
     node("flow.debug", DebugNodeDataSchema),

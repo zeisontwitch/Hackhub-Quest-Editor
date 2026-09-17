@@ -138,6 +138,34 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
             }
         }
 
+        // A scheduled beat (r172): no time set means it fires the moment the
+        // story reaches it, and an unwired "Out" means the beat does nothing.
+        if (node.type === "flow.schedule") {
+            const scheduled = (Number(node.data.days) || 0) + (Number(node.data.hours) || 0) + (Number(node.data.minutes) || 0);
+            if (scheduled <= 0) {
+                issues.push({
+                    nodeId: node.id,
+                    label: "Nothing scheduled",
+                    detail:
+                        "No days, hours or minutes are set, so the beat fires the moment the story reaches it — nothing waits.",
+                    nextStep:
+                        "Set a time in the node's Days / Hours / Minutes fields, or remove the node if the story should carry on.",
+                    severity: "warn",
+                });
+            }
+            if (wiredOut === 0) {
+                issues.push({
+                    nodeId: node.id,
+                    label: "The beat has nothing to do",
+                    detail:
+                        "When the in-game time comes, the story has nowhere to go from this beat — it stops at the beat.",
+                    nextStep:
+                        "Wire the beat's “Out” socket to the node that should run when the time comes, or leave it unwired if the story is meant to end there.",
+                    severity: "warn",
+                });
+            }
+        }
+
         // Anything that is neither a root nor reachable cannot run.
         if (!isRoot(node.type) && !reachable.has(node.id)) {
             issues.push({

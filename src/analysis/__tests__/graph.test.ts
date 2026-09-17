@@ -118,6 +118,45 @@ describe("analyseGraph", () => {
         expect(deadEnd?.detail).toMatch(/“Wrong” outcome goes nowhere/);
     });
 
+    it("flags a scheduled beat with no time set (r172)", () => {
+        const claim = node("entry.start");
+        const beat = node("flow.schedule", { days: 0, hours: 0, minutes: 0 });
+        const after = node("fx.notify");
+
+        const analysis = analyseGraph(
+            [claim, beat, after],
+            [edge(claim, "out", beat, "in"), edge(beat, "out", after, "in")],
+        );
+
+        const issue = analysis.issues.find((i) => i.label === "Nothing scheduled");
+        expect(issue?.nodeId).toBe(beat.id);
+        expect(issue?.severity).toBe("warn");
+    });
+
+    it("flags a scheduled beat whose Out goes nowhere (r172)", () => {
+        const claim = node("entry.start");
+        const beat = node("flow.schedule", { minutes: 30 });
+
+        const analysis = analyseGraph([claim, beat], [edge(claim, "out", beat, "in")]);
+
+        const issue = analysis.issues.find((i) => i.label === "The beat has nothing to do");
+        expect(issue?.nodeId).toBe(beat.id);
+        expect(issue?.severity).toBe("warn");
+    });
+
+    it("accepts a scheduled beat that has a time and a continuation (r172)", () => {
+        const claim = node("entry.start");
+        const beat = node("flow.schedule", { days: 1, hours: 2, minutes: 30 });
+        const after = node("fx.notify");
+
+        const analysis = analyseGraph(
+            [claim, beat, after],
+            [edge(claim, "out", beat, "in"), edge(beat, "out", after, "in")],
+        );
+
+        expect(analysis.issues.filter((i) => i.nodeId === beat.id)).toHaveLength(0);
+    });
+
     it("does not claim a wrong answer stalls the quest", () => {
         const claim = node("entry.start");
         const input = node("reply.input");

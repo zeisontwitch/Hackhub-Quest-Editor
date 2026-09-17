@@ -299,6 +299,46 @@ var __QE = (function () {
 
 function __qeRegisterProject(sdk, PROJECT) {
 
+    /* ── scheduled beats (SDK 0.24 Time/Scheduler) ───────────────────────
+       A Schedule beat arms a job on the in-game clock when the story
+       reaches the node; when the clock hits the due time the job fires
+       and the beat's "Out" wire runs.
+
+       The kind registry is SHARED across every installed pack (SDK docs):
+       two mods both using "beat" would silently answer each other's
+       jobs, so the mod id goes into the kind. The handler must exist on
+       every load, before anything schedules - hence here, at the top of
+       mod load, before any quest starts. */
+    var BEAT_KIND = "qe/" + String((PROJECT && PROJECT.mod && (PROJECT.mod.id || PROJECT.mod.name)) || "editor-mod") + "/beat";
+    /* questId -> fire(nodeId). Rebound by each quest's OnStart /
+       OnObjectivesStart to whichever instance the engine actually runs. */
+    var liveBeats = {};
+    /* How many times a due job may be re-armed while its quest is not
+       live yet (the engine can fire due jobs at mod load, before quest
+       start). A quest that auto-starts on load is live within a few
+       ticks; anything still missing after this many re-arms is dropped
+       with a log line instead of looping forever. */
+    var BEAT_REARM_MAX = 20;
+    if (sdk.Scheduler && sdk.Scheduler.register) {
+        sdk.Scheduler.register(BEAT_KIND, function (payload) {
+            var p = payload || {};
+            var fire = liveBeats[p.questId];
+            if (!fire) {
+                if ((p.attempts || 0) < BEAT_REARM_MAX) {
+                    /* Not live yet: re-arm for the next engine tick. */
+                    sdk.Scheduler.schedule(BEAT_KIND, { questId: p.questId, nodeId: p.nodeId, attempts: (p.attempts || 0) + 1 }, { ms: 10 });
+                    return;
+                }
+                __QE.log("schedule beat missed: quest " + p.questId + " is not active in this session");
+                return;
+            }
+            fire(p.nodeId);
+        });
+        __QE.log("schedule-beat handler registered (kind " + BEAT_KIND + ")");
+    } else {
+        __QE.log("no Scheduler API in this game build - schedule beats will not fire");
+    }
+
     /* ── one quest ─────────────────────────────────────────────────────── */
     function registerQuest(qd) {
         var g = qd.graph;
@@ -506,6 +546,10 @@ function __qeRegisterProject(sdk, PROJECT) {
            it. Filled as the flow runs (a node the story never reaches added
            nothing), drained in OnComplete/OnAbandon. */
         var questCleanup = [];
+
+        /* Job ids armed by flow.schedule nodes, cancelled when the quest
+           ends: a beat for a finished quest must not fire. */
+        var beatJobs = [];
 
         /* Has the quest already been torn down once?
 
@@ -1040,6 +1084,62 @@ function __qeRegisterProject(sdk, PROJECT) {
             return __QE.seq(flowOuts(nodeId), function (e) {
                 return runFlow(e.target, ctx, depth + 1);
             });
+        }
+
+        /* ── scheduled beats ───────────────────────────────────────────
+           Arming is synchronous inside the flow's call stack (the engine
+           only grants this mod permissions there). Firing happens inside
+           the Scheduler callback - a call the engine made, so the mod
+           still holds its permissions: r166 T-02 proved mail, toast and
+           objective completion all work from inside one. */
+        function armBeat(nodeId, delay) {
+            if (!sdk.Scheduler || !sdk.Scheduler.schedule) {
+                __QE.log("schedule node " + nodeId + ": no Scheduler API - the beat will not fire");
+                return;
+            }
+            /* Idempotent: the opening flow re-runs on a save reload, and a
+               re-run must not double-arm the same beat. */
+            var pending = (sdk.Scheduler.list ? sdk.Scheduler.list(BEAT_KIND) : []) || [];
+            for (var i = 0; i < pending.length; i++) {
+                var pp = pending[i].payload;
+                if (pp && pp.questId === qd.id && pp.nodeId === nodeId) {
+                    __QE.log("schedule node " + nodeId + " already armed - not double-arming");
+                    return;
+                }
+            }
+            var id = sdk.Scheduler.schedule(BEAT_KIND, { questId: qd.id, nodeId: nodeId, attempts: 0 }, delay);
+            beatJobs.push(id);
+            __QE.log("schedule node " + nodeId + " armed for " + delay.days + "d " + delay.hours + "h " + delay.minutes + "m (job " + id + ")");
+        }
+
+        function fireBeat(nodeId) {
+            var node = byId[nodeId];
+            if (!node) {
+                __QE.log("schedule beat: node " + nodeId + " no longer exists - nothing to fire");
+                return;
+            }
+            __QE.log("schedule beat " + nodeId + " fired");
+            /* The beat is a new entry point into the graph: a fresh
+               payload, quest data still resolving through dataScope(). */
+            flowOuts(nodeId).forEach(function (e) {
+                runFlow(e.target, { payload: {}, vars: {} }, 0);
+            });
+        }
+
+        function bindBeatFire(instance) {
+            liveBeats[qd.id] = function (nodeId) {
+                questRef = instance;
+                fireBeat(nodeId);
+            };
+        }
+
+        function cancelBeatJobs() {
+            if (!beatJobs.length) return;
+            beatJobs.forEach(function (id) {
+                __QE.safe(function () { if (sdk.Scheduler && sdk.Scheduler.cancel) sdk.Scheduler.cancel(id); });
+            });
+            __QE.log("cancelled " + beatJobs.length + " pending schedule beat(s)");
+            beatJobs.length = 0;
         }
 
         function runFlowStep(nodeId, ctx, depth) {
@@ -1620,6 +1720,22 @@ function __qeRegisterProject(sdk, PROJECT) {
                 }
                 case "flow.delay":
                     return __QE.sleep(Math.max(0, Number(d.seconds || 0)) * 1000).then(next);
+                case "flow.schedule": {
+                    var schedDays = Number(d.days) || 0;
+                    var schedHours = Number(d.hours) || 0;
+                    var schedMinutes = Number(d.minutes) || 0;
+                    if (schedDays <= 0 && schedHours <= 0 && schedMinutes <= 0) {
+                        /* Fail-open like the rest of the codebase: a beat with
+                           no time set fires immediately instead of stranding
+                           the story (analysis already warns about it). */
+                        __QE.log("schedule node " + nodeId + ": nothing scheduled - the beat fires immediately");
+                        return next();
+                    }
+                    armBeat(nodeId, { days: schedDays, hours: schedHours, minutes: schedMinutes });
+                    /* The flow ends here: the story continues down "Out"
+                       when the in-game clock reaches the due time (r172). */
+                    return Promise.resolve();
+                }
                 case "flow.sequence": {
                     /* Fire each output in author order, pausing the step's own
                        delay (milliseconds) before it. Steps own their sockets:
@@ -2148,6 +2264,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                        complete objectives, so bind it here rather than trusting
                        whatever the last constructor saw. */
                     questRef = this;
+                    bindBeatFire(this);
                     refillObjectives();
                     var ctx = { payload: {}, vars: {} };
                     var starts = g.nodes.filter(function (n) { return n.type === "entry.start"; });
@@ -2167,6 +2284,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                        whatever the last constructor saw. */
                     questRef = this;
                     var self = this;
+                    bindBeatFire(this);
                     __QE.log("quest \"" + qd.name + "\" objectives started");
                     var ctx = { payload: {}, vars: {} };
                     refillComms();
@@ -2331,6 +2449,10 @@ function __qeRegisterProject(sdk, PROJECT) {
                        appears last tells us which completion phase ran. */
                     __QE.log("OnComplete: starting");
                     runQuestCleanup("complete");
+                    /* Pending scheduled beats belong to a story that is over
+                       now: cancel them so they cannot fire later (r172). */
+                    cancelBeatJobs();
+                    delete liveBeats[qd.id];
                     __QE.log("OnComplete: cleanup done, removing weechat servers");
                     weechatServers.forEach(function (s) {
                         if (sdk.WeeChat && sdk.WeeChat.removeServer) sdk.WeeChat.removeServer(s.host, s.password);
@@ -2353,6 +2475,10 @@ function __qeRegisterProject(sdk, PROJECT) {
                        appears last tells us which abandon phase ran. */
                     __QE.log("OnAbandon: starting");
                     runQuestCleanup("abandon");
+                    /* The player walked away: pending beats go with the
+                       quest (r172). */
+                    cancelBeatJobs();
+                    delete liveBeats[qd.id];
                     __QE.log("OnAbandon: cleanup done, removing weechat servers");
                     weechatServers.forEach(function (s) {
                         if (sdk.WeeChat && sdk.WeeChat.removeServer) sdk.WeeChat.removeServer(s.host, s.password);

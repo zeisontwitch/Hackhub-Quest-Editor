@@ -773,6 +773,51 @@
       ]
     ]
   },
+  "flow.schedule": {
+    "oneliner": "Runs part of the story at a later in-game time.",
+    "what": "Arms a beat on the in-game clock: the story stops here, and continues down “Out” when the game time you set has passed.",
+    "when": [
+      "For story beats that happen on the story's own schedule: an article hits the wire, a report gets triaged, a deadline lands — while the player is doing something else.",
+      "Unlike a Wait, the time keeps passing while the player is away. A beat set two in-game days out lands two in-game days later even if the player saves and quits — which is what lets a campaign happen in the world's own time."
+    ],
+    "game": "The story pauses at the beat (the wires after it do not run yet). When the in-game clock reaches the due time, the beat's “Out” wire runs, as if the story jumped back to this point. If the quest finishes or is abandoned first, the beat is cancelled.",
+    "fields": {
+      "days": {
+        "example": "1",
+        "empty": "Counts as zero. All three fields blank means nothing waits — the beat fires the moment the story reaches it."
+      },
+      "hours": {
+        "example": "2",
+        "empty": "Counts as zero. The units are added up, so 25 hours is a legal value."
+      },
+      "minutes": {
+        "example": "30",
+        "empty": "Counts as zero. These are in-game minutes: at the default game speed one in-game minute passes every real second, so 30 minutes is half a real minute."
+      }
+    },
+    "mistakes": [
+      [
+        "Treating the time as real minutes.",
+        "The clock is the game's, not the wall clock's. One in-game minute is one real second at default speed, and a full in-game day is about 24 real minutes of play."
+      ],
+      [
+        "Expecting the beat to fire after the quest is over.",
+        "A beat belongs to the quest's story. Complete or abandon the quest before the due time and the beat is cancelled — nothing arrives afterwards."
+      ]
+    ],
+    "messages": [
+      [
+        "Nothing scheduled",
+        "msg-nothing-scheduled",
+        "no days, hours or minutes are set, so the beat fires the moment the story reaches it"
+      ],
+      [
+        "The beat has nothing to do",
+        "msg-beat-nothing-to-do",
+        "the “Out” socket is unwired, so the story stops at the beat when it fires"
+      ]
+    ]
+  },
   "flow.reroute": {
     "oneliner": "A tidy point for your wires.",
     "what": "A point to route wires through. It tidies the canvas and changes nothing about the story.",

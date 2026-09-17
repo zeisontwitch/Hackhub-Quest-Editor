@@ -10,7 +10,7 @@
 <div class="wrap">
 <nav class="toc" aria-label="Handbook contents">
   <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
-  <p class="build">Handbook · build 2026-09-17.r171</p>
+  <p class="build">Handbook · build 2026-09-17.r172</p>
   <div class="search">
     <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
     <div class="results" role="listbox" aria-label="Search results"></div>
@@ -151,6 +151,34 @@ it.</p>
   should run down that path, or remove the outcome if the path should not exist.
   On a <a href="nodes/reply-input.html">Manual input</a>, leaving it unwired is
   fine when retrying is the design.</dd>
+</dl>
+
+<h3 id="msg-nothing-scheduled">Nothing scheduled</h3>
+<blockquote class="blurb">No days, hours or minutes are set, so the beat fires the moment the story reaches it — nothing waits.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev warn">Amber</span></dd>
+  <dt class="dt-mute">Where</dt><dd>On the node, and in the status bar.</dd>
+  <dt>What it means</dt><dd>The
+  <a href="nodes/flow-schedule.html">Schedule beat</a> has no time set, so it
+  does not actually wait: the story carries straight on through it. That is
+  probably not the beat you meant to build.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Set a time in the node's
+  <b class="ui">Days</b>, <b class="ui">Hours</b> or <b class="ui">Minutes</b>
+  fields, or remove the node if the story should carry on.</dd>
+</dl>
+
+<h3 id="msg-beat-nothing-to-do">The beat has nothing to do</h3>
+<blockquote class="blurb">When the in-game time comes, the story has nowhere to go from this beat — it stops there.</blockquote>
+<dl class="facts-list">
+  <dt class="dt-mute">Colour</dt><dd><span class="sev warn">Amber</span></dd>
+  <dt class="dt-mute">Where</dt><dd>On the node, and in the status bar.</dd>
+  <dt>What it means</dt><dd>The <a href="nodes/flow-schedule.html">Schedule
+  beat</a> has a time, but nothing is wired to its <b class="ui">Out</b>
+  socket. When the in-game time comes, the beat fires and the story has no
+  next step.</dd>
+  <dt class="dt-ok">What to do</dt><dd>Wire the beat's <b class="ui">Out</b>
+  socket to the node that should run when the time comes, or leave it unwired
+  if the story is meant to end there.</dd>
 </dl>
 
 <h3 id="msg-only-runs-on-completion">Only runs on completion</h3>
@@ -461,7 +489,7 @@ may already be using it.</p>
 <div class="pagefoot"><a href="how-do-i.html">← How do I…</a><a class="next" href="export.html">Exporting and installing →</a></div>
 <a class="totop" href="#checking">↑ back to top</a>
 <footer class="colophon">
-  HackHub Quest Editor handbook · documents editor build 2026-09-17.r171 ·
+  HackHub Quest Editor handbook · documents editor build 2026-09-17.r172 ·
   every message on this page is quoted from the editor's own source.
 </footer>
 </main>

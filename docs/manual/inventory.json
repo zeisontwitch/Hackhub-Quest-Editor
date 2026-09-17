@@ -1,14 +1,14 @@
 {
   "generatedBy": "scripts/extract-manual-inventory.mjs",
-  "editorBuild": "2026-09-17.r171",
+  "editorBuild": "2026-09-17.r172",
   "sdkVersion": "0.24.0",
   "counts": {
-    "nodeTypes": 38,
-    "obtainableNodeTypes": 38,
+    "nodeTypes": 39,
+    "obtainableNodeTypes": 39,
     "categories": 10,
-    "editableFields": 133,
-    "editableFieldsExcludingLists": 126,
-    "sockets": 72,
+    "editableFields": 136,
+    "editableFieldsExcludingLists": 129,
+    "sockets": 74,
     "events": 99,
     "eventGroups": 10
   },
@@ -2657,6 +2657,79 @@
       "editableFieldCount": 1,
       "defaults": {
         "seconds": 1
+      }
+    },
+    {
+      "type": "flow.schedule",
+      "slug": "flow-schedule",
+      "label": "Schedule beat",
+      "blurb": "Do something at a later in-game time",
+      "icon": "hourglass",
+      "category": "flow",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "Arms a beat on the in-game clock: the story stops here, and continues down “Out” when the game time you set has passed. Unlike a Wait, the time keeps passing while the player is away — a beat set two in-game days out lands two in-game days later even if the player saves and quits."
+        },
+        {
+          "depth": 0,
+          "path": "days",
+          "kind": "number",
+          "key": "days",
+          "label": "Days",
+          "hint": "In-game days to wait first. 0 is fine — the units are added up.",
+          "min": 0,
+          "step": 1
+        },
+        {
+          "depth": 0,
+          "path": "hours",
+          "kind": "number",
+          "key": "hours",
+          "label": "Hours",
+          "hint": "In-game hours, on top of the days. 25 hours is a legal value.",
+          "min": 0,
+          "step": 1
+        },
+        {
+          "depth": 0,
+          "path": "minutes",
+          "kind": "number",
+          "key": "minutes",
+          "label": "Minutes",
+          "hint": "In-game minutes, on top of the days and hours. At the default game speed one in-game minute passes every real second.",
+          "min": 0,
+          "step": 1
+        }
+      ],
+      "editableFieldCount": 3,
+      "defaults": {
+        "days": 0,
+        "hours": 0,
+        "minutes": 0
       }
     },
     {

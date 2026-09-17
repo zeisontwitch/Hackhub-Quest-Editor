@@ -35,6 +35,7 @@ import {
     PromptNodeDataSchema,
     RandomPickNodeDataSchema,
     RetireQuestNodeDataSchema,
+    ScheduleNodeDataSchema,
     SetDataNodeDataSchema,
     SequenceNodeDataSchema,
     ShellExecNodeDataSchema,
@@ -1106,6 +1107,23 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         hook: "onStart",
         fields: [{ kind: "number", key: "seconds", hint: "How long the story pauses here. Fractions are fine — 0.5 waits half a second.", label: "Seconds", min: 0, step: 0.5 }],
         create: () => seed(DelayNodeDataSchema),
+    },
+
+    "flow.schedule": {
+        type: "flow.schedule",
+        category: "flow",
+        label: "Schedule beat",
+        blurb: "Do something at a later in-game time",
+        icon: "hourglass",
+        ...io,
+        hook: "onStart",
+        fields: [
+            { kind: "note", tone: "info", text: "Arms a beat on the in-game clock: the story stops here, and continues down “Out” when the game time you set has passed. Unlike a Wait, the time keeps passing while the player is away — a beat set two in-game days out lands two in-game days later even if the player saves and quits." },
+            { kind: "number", key: "days", hint: "In-game days to wait first. 0 is fine — the units are added up.", label: "Days", min: 0, step: 1 },
+            { kind: "number", key: "hours", hint: "In-game hours, on top of the days. 25 hours is a legal value.", label: "Hours", min: 0, step: 1 },
+            { kind: "number", key: "minutes", hint: "In-game minutes, on top of the days and hours. At the default game speed one in-game minute passes every real second.", label: "Minutes", min: 0, step: 1 },
+        ],
+        create: () => seed(ScheduleNodeDataSchema),
     },
 
     "flow.reroute": {

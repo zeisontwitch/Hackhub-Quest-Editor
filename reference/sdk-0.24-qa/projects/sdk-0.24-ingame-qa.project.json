@@ -660,7 +660,7 @@
                 "messages": []
               },
               "mail": {
-                "from": "qe24-beats@test.net",
+                "from": "qe24-timer@test.net",
                 "to": "player@gomail.com",
                 "subject": "Timer A arrived (S-01 green)",
                 "content": "<p>The 2 in-game minute timer fired. S-01 (fire) is green if you read this within a few seconds of loading the save.</p>",

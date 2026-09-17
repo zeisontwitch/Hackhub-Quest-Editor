@@ -1,3 +1,58 @@
+# Handoff — r174
+
+r174 is the read-back audit of the two Timer rounds (r172 "Schedule beat",
+r173 "Timer rename + calendar modes"). Git history here is squashed to a
+single root commit and `origin/main` is an unrelated r148 snapshot, so the
+audit ran on code, committed artifacts, the round plans, and tests proven to
+fail when a guard is reverted.
+
+**Verdict:** the Timer itself is sound — schema, registry, analysis, runtime
+(three modes, tz-corrected `at` arm pending S-04, fail-open on past or
+incomplete dates, idempotent arming, cancel on complete/abandon), dry run,
+manual page and tests all match the r173 plan, and the separate **Story
+beat** node was correctly left untouched by the "beat" purge. Two real
+defects were found and fixed:
+
+- **The rename shipped without a migration.** An r172 draft (localStorage)
+  or a `.quest-editor.json` still carrying `flow.schedule` failed
+  validation: `loadDraft` discarded the draft and an import answered
+  "Not a quest project — problem at quests.0.graph.nodes.0.type". Fixed in
+  `schema/migrate.ts` (`case "flow.schedule"` → `flow.timer`; the delay
+  fields survive, r173's fields default in) with four regression tests in
+  `migrate.test.ts`, falsified by removing the case.
+- **`public/manual/search-index.js` was stale** — five entries still said
+  build r172 while every page said r173, because the index is generated and
+  nothing checked it. Regenerated with `npm run gen:manual`, and the manual
+  gate (G15) now fails on any index stamp that is not `EDITOR_BUILD`.
+
+Also restored: the r173 plan's promised `"Timer"` label guard test now exists
+(`schema.test.ts`, falsified by reverting the label), and the QA quest's
+player-visible mail sender is `qe24-timer@test.net`, not `qe24-beats@test.net`.
+
+Bookkeeping: `EDITOR_BUILD` → `2026-09-17.r174`; manual regenerated
+(39 node types / 143 editable fields / 74 sockets); `docs/06` figures
+refreshed; README row added and the r169 row archived.
+
+Open for a decision (reported, not changed):
+
+- `reference/sdk-0.24-qa/editor-export/` is still the r166 export (quests:
+  `QESdk024EditorQa` only) while the QA project carries `QESdk024TimerQa`;
+  r172's S-01 says "Install the refreshed QA export". Export it from the
+  editor and commit it, or say in the QA README how to produce it.
+- The manual generator's "When it appears" line reads oddly for fields gated
+  on a select that has a default ("Only once *When it fires* is set") — a
+  generator wording issue across every conditional field, not a Timer fix.
+- S-04 still decides whether the `at` mode's timezone correction matches the
+  in-game clock.
+
+Supporting notes:
+
+- [`plans/r174-r172-r173-audit.md`](plans/r174-r172-r173-audit.md)
+- [`plans/r173-timer-rename-and-calendar.md`](plans/r173-timer-rename-and-calendar.md)
+- [`plans/r172-schedule-beat.md`](plans/r172-schedule-beat.md)
+
+---
+
 # Handoff — r173
 
 r173 is Zeis' feedback round on the r172 node: **rename + wording + calendar

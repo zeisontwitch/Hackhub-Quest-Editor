@@ -606,4 +606,19 @@ describe("manual coverage — G15: the build stamp", () => {
                 `  the stamp as literal text, so gen:manual will not fix them:\n  ${wrong.join("\n  ")}`,
         ).toEqual([]);
     });
+
+    /* r174: the search index is generated from the pages, so it can go stale on
+       its own — it did, carrying r172 while every page said r173 (found in the
+       r172/r173 audit). Pages are gate-checked above; this is the index's half. */
+    it("the search index carries the current build, not the one before it", () => {
+        const index = read(join(MANUAL, "search-index.js"));
+        const stamps = [...index.matchAll(/build (\d{4}-\d{2}-\d{2}\.r\d+)/g)].map((m) => m[1]);
+        const stale = stamps.filter((stamp) => stamp !== EDITOR_BUILD);
+        expect(stamps.length, "the search index carries no build stamp at all").toBeGreaterThan(0);
+        expect(
+            stale,
+            `public/manual/search-index.js quotes ${stale.length} stale build stamp(s): ${stale.join(", ")}.\n` +
+                "  It is generated — run `npm run gen:manual` instead of editing it by hand.",
+        ).toEqual([]);
+    });
 });

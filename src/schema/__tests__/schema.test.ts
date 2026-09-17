@@ -45,6 +45,12 @@ describe("registry ↔ node union", () => {
         expect(NODE_TYPES).toHaveLength(39);
     });
 
+    /* The r173 rename guard the r173 plan asked for: authors see "Timer", and
+       a revert of that label is a user-visible regression, not a tidy-up. */
+    it("names flow.timer exactly “Timer”", () => {
+        expect(NODE_TYPES_REGISTRY["flow.timer"].label).toBe("Timer");
+    });
+
     it.each(ALL_TYPES)("creates valid default data for %s", (type) => {
         const def = nodeTypeDef(type);
         const node = {

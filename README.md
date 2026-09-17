@@ -137,11 +137,11 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
+| r174 | **r172/r173 audit — the rename's missing migration + stale artifacts** | ([plan](docs/plans/r174-r172-r173-audit.md)) Full read-back of both Timer rounds against their own plans (history is squashed, so the evidence is code, artifacts and falsified tests). The Timer itself matches its plan — but the `flow.schedule` → `flow.timer` rename shipped **without a migration**, so an r172 draft or exported project failed validation and was discarded; fixed in `schema/migrate.ts` with 4 regression tests (falsified by revert). `public/manual/search-index.js` was stale (claimed r172 while every page said r173) and nothing guarded it — regenerated, and G15 now checks the index's stamp. The r173 plan's promised `"Timer"` label test was missing (added); the QA quest's mail sender is no longer `qe24-beats@test.net`; `docs/06` figures refreshed to r174. +6 tests. |
 | r173 | **Timer rename + calendar modes** | ([plan](docs/plans/r173-timer-rename-and-calendar.md)) Zeis feedback on the r172 node: "Schedule beat" becomes the **Timer** (`flow.schedule` → `flow.timer`), "beat" is purged from the wording (it is a utility, not a story tool), and a **When it fires** select gains two calendar modes: **In N days at a set time** — "in 3 days at 12:00", resolved against `Time.date()` at arm time — and **On a specific in-game date & time**, via `Scheduler.scheduleAt`. Incomplete or already-past dates fail open (fire immediately). In-game QA rows S-04…S-08 (timezone probe, calendar fire, past time) await Zeis. Manual regenerated at 39 node types / 143 fields. |
 | r172 | **Schedule beat node (game-time scheduling)** | ([plan](docs/plans/r172-schedule-beat.md)) Next-up #4: the SDK 0.24 `Scheduler` (reload-proof, r166 probe) is now exposed as the **Schedule beat** flow node — fire one wired story beat at a fixed in-game time (days/hours/minutes, 60× the game clock, so 2 in-game minutes is 2 real seconds). The beat re-arms briefly if it is due before the quest is live, and is cancelled on quest complete/abandon so a finished quest can't fire later. A second auto-start QA quest (S-01 fire / S-02 reload / S-03 cancel) rides in `reference/sdk-0.24-qa` for Zeis to verify in game. Manual regenerated at 39 node types. |
 | r171 | **Inspector polish + phone-proxy notes** | ([plan](docs/plans/r171-inspector-polish-and-phone-proxy-investigation.md)) Field warning popovers now use an opaque panel so **Worth checking** text stays readable over the inspector/canvas, and the docked inspector pull tab now protrudes toward the canvas instead of facing inward. The phone-proxy pass found no pinned SDK call-control/eavesdrop API yet, so that stays a QA item until xu can provide a snippet or exact route. |
 | r170 | **Ask player prompt node** | ([plan](docs/plans/r170-ui-prompt-node.md)) `UI.prompt` is now exposed as **Ask player** under Effects. It asks one line of text, can prefill/mask/save the answer, and branches through Submitted/Cancelled or Correct/Wrong/Cancelled. Runtime treats empty text as a real submission, saves it to quest data when requested, and guards blank accepted-answer checks. Handbook/manual counts are regenerated at 38 node types. |
-| r169 | **Phone end flow + quest-ending nodes** | ([plan](docs/plans/r169-phone-end-flow-and-quest-endings.md)) Phone Dialogue nodes now choose when **Out** fires: default when the call ends via SDK `QuestDialogSpeech.onEnd` / ending-option `onSelect`, or immediately for the old timing. `Complete quest`, `Retire quest`, and `Unclaim quest` return as terminal effect nodes and compile to `this.complete()`, `this.retire()`, and `Quest.unclaim(name)`. Handbook/manual counts are regenerated at 37 node types. |
 ---
 
 ### Standing rule
@@ -177,7 +177,7 @@ Older **Done recently** rows are archived at
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-17.r173`: **1,584 tests** across 80
+Counted from the code at build `2026-09-17.r174`: **1,590 tests** across 80
 files, **39 node types** in 10 categories (all palette-visible), **13 templates**
 (11 playable + 2 reference sheets), **99 game events**, against
 `@hotbunny/hackhub-content-sdk@0.24.0`.

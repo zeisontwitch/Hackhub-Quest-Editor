@@ -1,6 +1,6 @@
 {
   "generatedBy": "scripts/extract-manual-inventory.mjs",
-  "editorBuild": "2026-09-17.r173",
+  "editorBuild": "2026-09-17.r174",
   "sdkVersion": "0.24.0",
   "counts": {
     "nodeTypes": 39,

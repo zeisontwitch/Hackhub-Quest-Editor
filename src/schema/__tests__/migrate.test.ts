@@ -99,3 +99,58 @@ describe("older node shapes still migrate", () => {
         expect(migrateProject({ quests: "not an array" })).toEqual({ quests: "not an array" });
     });
 });
+
+/**
+ * The r172 "Schedule beat" node was renamed **Timer** in r173, and the type id
+ * moved `flow.schedule` → `flow.timer`. A project written in that window — a
+ * draft in localStorage, or a `.quest-editor.json` an author kept — still names
+ * the old id, and without a migration the whole document fails validation and
+ * is discarded. This is the shape r172 wrote: no `mode` (that field is r173's).
+ */
+function r172ProjectJson() {
+    const base = JSON.parse(JSON.stringify(createProject())) as Record<string, unknown>;
+    const quest = (base.quests as Record<string, unknown>[])[0];
+    quest.graph = {
+        nodes: [
+            {
+                id: "t1",
+                type: "flow.schedule",
+                position: { x: 0, y: 0 },
+                data: { days: 1, hours: 2, minutes: 30 },
+            },
+        ],
+        edges: [],
+    };
+    return base;
+}
+
+describe("projects made before the Timer rename (r173)", () => {
+    it("carries the old type id over to flow.timer, keeping the delay", () => {
+        const migrated = migrateProject(r172ProjectJson()) as {
+            quests: { graph: { nodes: { type: string; data: Record<string, unknown> }[] } }[];
+        };
+        const node = migrated.quests[0].graph.nodes[0];
+        expect(node.type).toBe("flow.timer");
+        expect(node.data).toMatchObject({ days: 1, hours: 2, minutes: 30 });
+    });
+
+    it("validates afterwards, so an r172 draft is not thrown away", () => {
+        const result = ProjectSchema.safeParse(migrateProject(r172ProjectJson()));
+        expect(result.success, JSON.stringify(result.success ? null : result.error.issues)).toBe(true);
+    });
+
+    it("opens as a file instead of being called “not a quest project”", () => {
+        const parsed = parseProjectFile(JSON.stringify(r172ProjectJson()));
+        expect(parsed.ok).toBe(true);
+        if (!parsed.ok) return;
+        const node = parsed.project.quests[0].graph.nodes[0];
+        expect(node.type).toBe("flow.timer");
+        // The r173 fields default in, so the node fires like the old one did.
+        expect(node.data).toMatchObject({ mode: "after", days: 1, hours: 2, minutes: 30 });
+    });
+
+    it("leaves a project that never used the old id untouched", () => {
+        const clean = JSON.parse(serializeProject(createProject()));
+        expect(migrateProject(clean)).toEqual(clean);
+    });
+});

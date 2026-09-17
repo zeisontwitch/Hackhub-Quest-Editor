@@ -25,6 +25,13 @@ const mapNode = (n: Loose): Loose => {
             return { ...n, type: "comms.dialogue", data: { kind: "mail", mail: n.data ?? {} } };
         case "comms.weechat":
             return { ...n, type: "comms.dialogue", data: { kind: "weechat", weechat: n.data ?? {} } };
+        case "flow.schedule":
+            // "Schedule beat" became "Timer" in round 173 (the id moved
+            // `flow.schedule` → `flow.timer`). A draft, or an exported
+            // project, written by r172 must still open — the delay fields are
+            // unchanged, and `mode` plus the calendar fields are new, so they
+            // take their schema defaults.
+            return { ...n, type: "flow.timer" };
         case "flow.delay":
             // ms → seconds (round 19)
             if (n.data && n.data.ms != null && n.data.seconds == null) {

@@ -11,7 +11,7 @@
 
 <nav class="toc" aria-label="Handbook contents">
   <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
-  <p class="build">Handbook · build 2026-09-18.r176</p>
+  <p class="build">Handbook · build 2026-09-18.r177</p>
   <div class="search">
     <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
     <div class="results" role="listbox" aria-label="Search results"></div>
@@ -81,13 +81,40 @@
   </tbody>
 </table>
 
+<h3 id="node-flow-timer-field-years">Years</h3>
+<blockquote class="blurb">Whole in-game years to wait, before the shorter units beside it. A target month with fewer days uses its last day.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>1</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
+  <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>Counts as zero. A whole in-game year added to the calendar — the day number is kept, and a leap day that does not exist next year falls back to 28 February.</dd>
+</dl>
+
+<h3 id="node-flow-timer-field-months">Months</h3>
+<blockquote class="blurb">Whole in-game months to wait, on top of the years. 31 January plus one month lands on 28 February, not in March.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>1</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
+  <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>Counts as zero. A whole in-game month added to the calendar: 31 January plus one month lands on 28 February, not in March, because February has no 31st.</dd>
+</dl>
+
+<h3 id="node-flow-timer-field-weeks">Weeks</h3>
+<blockquote class="blurb">In-game weeks to wait, on top of the months. One week is seven in-game days.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>2</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
+  <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>Counts as zero. A week is seven in-game days, so 2 weeks and 14 days wait exactly the same length of time.</dd>
+</dl>
+
 <h3 id="node-flow-timer-field-days">Days</h3>
 <blockquote class="blurb">In-game days to wait first. 0 is fine — the units are added up.</blockquote>
 <dl class="facts-list">
   <dt>Example</dt><dd><code>1</code></dd>
   <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
   <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
-  <dt class="dt-danger">If you leave it empty</dt><dd>Counts as zero. In “After a delay” mode, all three fields blank means nothing waits — the timer fires the moment the story reaches it.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>Counts as zero. Every unit is added up, so days, months and hours all count towards one due time — blank everywhere means nothing waits.</dd>
 </dl>
 
 <h3 id="node-flow-timer-field-hours">Hours</h3>
@@ -108,31 +135,41 @@
   <dt class="dt-danger">If you leave it empty</dt><dd>Counts as zero. These are in-game minutes: at the default game speed one in-game minute passes every real second, so 30 minutes is half a real minute.</dd>
 </dl>
 
-<h3 id="node-flow-timer-field-offsetAmount">How many</h3>
-<blockquote class="blurb">How many of the unit beside it. 0 means today, so “0 days, at 09:00” fires the next time the clock reads 09:00.</blockquote>
+<h3 id="node-flow-timer-field-offsetYears">Years</h3>
+<blockquote class="blurb">In-game years from now, counted from the day the story reaches this node. A target month with fewer days uses its last day.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>1</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
+  <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>0 means no years. Counted from the in-game day the player reaches this node, so “1 year, at 18:23” is that same date next year; a 29 February falls back to 28 February when the next year has no leap day.</dd>
+</dl>
+
+<h3 id="node-flow-timer-field-offsetMonths">Months</h3>
+<blockquote class="blurb">In-game months from now, on top of the years. 31 January plus one month lands on 28 February, not in March.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>1</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
+  <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>0 means no months. Whole in-game months, counted from the day the player gets here: 31 January plus one month lands on 28 February rather than skipping into March.</dd>
+</dl>
+
+<h3 id="node-flow-timer-field-offsetWeeks">Weeks</h3>
+<blockquote class="blurb">In-game weeks from now, on top of the months. One week is seven in-game days.</blockquote>
 <dl class="facts-list">
   <dt>Example</dt><dd><code>2</code></dd>
   <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
   <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
-  <dt class="dt-danger">If you leave it empty</dt><dd>0 means today — the next time the clock reads the time below. Counted from when the story reaches the timer, so “in 2 weeks at 04:20” lands two in-game weeks after the player gets there; read the day off the in-game clock.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>0 means no weeks. A week is seven in-game days, so 2 weeks is 14 days — the clock time below is what the timer rings at, whatever time the player arrived.</dd>
 </dl>
 
-<h3 id="node-flow-timer-field-offsetUnit">Time unit</h3>
-<blockquote class="blurb">What the number counts in. Months and years keep the day number, using the target month's last day when it is shorter.</blockquote>
+<h3 id="node-flow-timer-field-offsetDays">Days</h3>
+<blockquote class="blurb">In-game days from now, on top of the weeks and months. 0 means today, so “0 days, at 09:00” fires the next time the clock reads 09:00.</blockquote>
 <dl class="facts-list">
-  <dt>Example</dt><dd><code>weeks</code></dd>
-  <dt class="dt-mute">Default</dt><dd><code>"days"</code></dd>
-  <dt>Limits</dt><dd>Days, weeks, months or years. Months and years keep the day number, using the target month's last day when it is shorter — 31 January plus one month lands on 28 February.</dd>
+  <dt>Example</dt><dd><code>3</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
+  <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>0 means today — the next time the clock reads the time below. Days are added after the months and weeks, and 0 with 0 in the other boxes is a legal “today at 09:00”.</dd>
 </dl>
-<table>
-  <thead><tr><th>Choice</th><th>What it is stored as</th></tr></thead>
-  <tbody>
-    <tr><td class="name">Days</td><td><code>days</code></td></tr>
-    <tr><td class="name">Weeks</td><td><code>weeks</code></td></tr>
-    <tr><td class="name">Months</td><td><code>months</code></td></tr>
-    <tr><td class="name">Years</td><td><code>years</code></td></tr>
-  </tbody>
-</table>
 
 <h3 id="node-flow-timer-field-dateDay">Day</h3>
 <blockquote class="blurb">The in-game day of the month, as the in-game clock shows it. The field warns when that day does not exist.</blockquote>
@@ -264,7 +301,7 @@ the connection takes, mismatch them and it will not.</p>
 <a class="totop" href="#node-flow-timer-page">↑ back to top</a>
 
 <footer class="colophon">
-  HackHub Quest Editor handbook · documents editor build 2026-09-18.r176 ·
+  HackHub Quest Editor handbook · documents editor build 2026-09-18.r177 ·
   field labels, hints, defaults and limits on this page are taken from the
   editor's own node definitions.
 </footer>

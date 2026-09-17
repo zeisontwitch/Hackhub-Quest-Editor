@@ -177,7 +177,7 @@ describe("fieldWarnings", () => {
     it("does not read the calendar in Wait or coming-day mode", () => {
         const wait = makeNode("flow.timer", { x: 0, y: 0 }, { mode: "after", days: 0, hours: 0, minutes: 0 });
         expect(fieldWarnings(questWith(wait), wait).some((w) => w.path === "dateDay")).toBe(false);
-        const coming = makeNode("flow.timer", { x: 0, y: 0 }, { mode: "daytime", offsetAmount: 3, offsetUnit: "days" });
+        const coming = makeNode("flow.timer", { x: 0, y: 0 }, { mode: "daytime", offsetDays: 3 });
         expect(fieldWarnings(questWith(coming), coming).some((w) => w.path === "dateDay")).toBe(false);
     });
 });

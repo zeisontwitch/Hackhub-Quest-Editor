@@ -382,7 +382,21 @@ export function Field({
                             {def.hint && <HintBadge label={def.label} hint={def.hint} />}
                         </div>
                     )}
-                    <div className="grid auto-cols-fr grid-flow-col [&>*]:min-w-0">
+                    <div
+                        className={cn(
+                            "grid [&>*]:min-w-0",
+                            /* `columns` wraps a long row (six unit boxes) onto
+                               as many lines as it takes; without it the fields
+                               share one line. */
+                            def.columns === 2
+                                ? "grid-cols-2"
+                                : def.columns === 3
+                                  ? "grid-cols-3"
+                                  : def.columns === 4
+                                    ? "grid-cols-4"
+                                    : "auto-cols-fr grid-flow-col",
+                        )}
+                    >
                         {def.fields.map((child, i) => (
                             <Field
                                 key={"key" in child ? child.key : `${i}-${child.kind}`}

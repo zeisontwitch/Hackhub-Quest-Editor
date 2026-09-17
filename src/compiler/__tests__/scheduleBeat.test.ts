@@ -8,7 +8,10 @@
  * r173 adds the date modes: "daytime" resolves against Time.date() at arm
  * time (local-time constructor — the test asserts the exact fireAt), "at"
  * uses scheduleAt with the player-zone correction, and both fail open when
- * the due time is incomplete or already past.
+ * the due time is incomplete or already past. r176/r177 give both relative
+ * rules one box per unit: a coming day counts years/months/weeks/days from
+ * now and pins a clock time, Wait takes every unit, and the calendar part
+ * clamps to a short month exactly once before weeks and days are added.
  *
  * Technique: compile → evaluate the real dist/mod.js against a recording
  * stub SDK (the compiler test suite's approach), then drive the quest's own
@@ -262,7 +265,7 @@ describe("flow.timer (Timer)", () => {
 
     it("daytime mode: fires the relative offset from now at the set clock time, computed at arm time", async () => {
         const calls: string[] = [];
-        const { sdk, q } = boot(timerProject({ mode: "daytime", offsetAmount: 3, offsetUnit: "days", hour: 12, minute: 0 }), calls);
+        const { sdk, q } = boot(timerProject({ mode: "daytime", offsetDays: 3, hour: 12, minute: 0 }), calls);
         q.OnStart();
         await settle();
 
@@ -281,7 +284,7 @@ describe("flow.timer (Timer)", () => {
 
     it("daytime mode: an already-past time-of-day today fails open", async () => {
         const calls: string[] = [];
-        const { sdk, q } = boot(timerProject({ mode: "daytime", offsetAmount: 0, offsetUnit: "days", hour: 9, minute: 0 }), calls);
+        const { sdk, q } = boot(timerProject({ mode: "daytime", offsetDays: 0, hour: 9, minute: 0 }), calls);
         /* NOW is 10:00 — 09:00 today is already past. */
         q.OnStart();
         await settle();
@@ -291,7 +294,7 @@ describe("flow.timer (Timer)", () => {
 
     it("daytime mode: 'in 1 month' keeps the day number", async () => {
         const calls: string[] = [];
-        const { sdk, q } = boot(timerProject({ mode: "daytime", offsetAmount: 1, offsetUnit: "months", hour: 4, minute: 20 }), calls);
+        const { sdk, q } = boot(timerProject({ mode: "daytime", offsetMonths: 1, hour: 4, minute: 20 }), calls);
         q.OnStart();
         await settle();
         expect(sdk.__jobs).toHaveLength(1);
@@ -301,7 +304,7 @@ describe("flow.timer (Timer)", () => {
     it("daytime mode: a short month clamps instead of rolling over (31 January + 1 month)", async () => {
         const calls: string[] = [];
         const { sdk, q } = boot(
-            timerProject({ mode: "daytime", offsetAmount: 1, offsetUnit: "months", hour: 4, minute: 20 }),
+            timerProject({ mode: "daytime", offsetMonths: 1, hour: 4, minute: 20 }),
             calls,
             new Date(2026, 0, 31, 10, 0).getTime(),
         );
@@ -315,7 +318,7 @@ describe("flow.timer (Timer)", () => {
     it("daytime mode: a leap year keeps 29 February (31 January 2028 + 1 month)", async () => {
         const calls: string[] = [];
         const { sdk, q } = boot(
-            timerProject({ mode: "daytime", offsetAmount: 1, offsetUnit: "months", hour: 4, minute: 20 }),
+            timerProject({ mode: "daytime", offsetMonths: 1, hour: 4, minute: 20 }),
             calls,
             new Date(2028, 0, 31, 10, 0).getTime(),
         );
@@ -328,7 +331,7 @@ describe("flow.timer (Timer)", () => {
     it("daytime mode: 29 February + 1 year lands on 28 February", async () => {
         const calls: string[] = [];
         const { sdk, q } = boot(
-            timerProject({ mode: "daytime", offsetAmount: 1, offsetUnit: "years", hour: 4, minute: 20 }),
+            timerProject({ mode: "daytime", offsetYears: 1, hour: 4, minute: 20 }),
             calls,
             new Date(2028, 1, 29, 10, 0).getTime(),
         );
@@ -340,11 +343,59 @@ describe("flow.timer (Timer)", () => {
 
     it("daytime mode: 'in 2 weeks' is fourteen days on", async () => {
         const calls: string[] = [];
-        const { sdk, q } = boot(timerProject({ mode: "daytime", offsetAmount: 2, offsetUnit: "weeks", hour: 4, minute: 20 }), calls);
+        const { sdk, q } = boot(timerProject({ mode: "daytime", offsetWeeks: 2, hour: 4, minute: 20 }), calls);
         q.OnStart();
         await settle();
         expect(sdk.__jobs).toHaveLength(1);
         expect(sdk.__jobs[0].fireAt).toBe(new Date(2026, 9, 1, 4, 20).getTime());
+    });
+
+
+    it("a mixed offset sums the boxes: 1 month, 2 weeks and 2 days from 17 September", async () => {
+        const calls: string[] = [];
+        const { sdk, q } = boot(timerProject({
+            mode: "daytime", offsetMonths: 1, offsetWeeks: 2, offsetDays: 2, hour: 18, minute: 23,
+        }), calls);
+        q.OnStart();
+        await settle();
+        /* 2026-09-17 + 1 month = 17 October; + 14 + 2 days = 2 November. */
+        expect(sdk.__jobs).toHaveLength(1);
+        expect(sdk.__jobs[0].fireAt).toBe(new Date(2026, 10, 2, 18, 23).getTime());
+    });
+
+    it("clamps to the short month once, before weeks and days (31 January + 1 month + 1 day)", async () => {
+        const calls: string[] = [];
+        const { sdk, q } = boot(
+            timerProject({ mode: "daytime", offsetMonths: 1, offsetDays: 1, hour: 18, minute: 23 }),
+            calls,
+            new Date(2026, 0, 31, 10, 0).getTime(),
+        );
+        q.OnStart();
+        await settle();
+        /* 31 February does not exist: clamp to the 28th, then add the day —
+           so 1 March, never 3 March. */
+        expect(sdk.__jobs).toHaveLength(1);
+        expect(sdk.__jobs[0].fireAt).toBe(new Date(2026, 2, 1, 18, 23).getTime());
+    });
+
+    it("wait mode: months go through scheduleAt, because the duration form has no month field", async () => {
+        const calls: string[] = [];
+        const { sdk, q } = boot(timerProject({ mode: "after", months: 1 }), calls);
+        q.OnStart();
+        await settle();
+        expect(sdk.__jobs).toHaveLength(1);
+        expect(sdk.__jobs[0].fireAt).toBe(new Date(2026, 9, 17, 10, 0).getTime());
+        expect(calls.filter((c) => c.startsWith("timerScheduleAt:"))).toHaveLength(1);
+        expect(calls.filter((c) => c.startsWith("timerSchedule:"))).toHaveLength(0);
+    });
+
+    it("wait mode: weeks are folded into the engine's own duration, spelled in days", async () => {
+        const calls: string[] = [];
+        const { sdk, q } = boot(timerProject({ mode: "after", weeks: 2, days: 3 }), calls);
+        q.OnStart();
+        await settle();
+        expect(calls.filter((c) => c.startsWith("timerSchedule:"))).toHaveLength(1);
+        expect(sdk.__jobs[0].delay).toEqual({ days: 17, hours: 0, minutes: 0 });
     });
 
     it("at mode: scheduleAt with the player-zone correction for the chosen clock time", async () => {
@@ -418,7 +469,7 @@ describe("flow.timer (Timer)", () => {
     });
 
     it("dry run: a daytime timer fires through the real handler in the collapsed clock", async () => {
-        const report = await simulateProject(timerProject({ mode: "daytime", offsetAmount: 1, offsetUnit: "days", hour: 12, minute: 0 }));
+        const report = await simulateProject(timerProject({ mode: "daytime", offsetDays: 1, hour: 12, minute: 0 }));
         expect(report.errors).toEqual([]);
         for (const quest of report.quests) expect(quest.errors).toEqual([]);
         const text = report.trace.map((t) => t.text).join("\n");

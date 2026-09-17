@@ -8,6 +8,14 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Loose = any;
 
+/** r176's `offsetUnit` values to r177's per-unit box names. */
+const TIMER_BOX_KEYS: Record<string, string> = {
+    days: "Days",
+    weeks: "Weeks",
+    months: "Months",
+    years: "Years",
+};
+
 const mapNode = (n: Loose): Loose => {
     switch (n?.type) {
         case "comms.call":
@@ -33,20 +41,22 @@ const mapNode = (n: Loose): Loose => {
             // take their schema defaults.
             return { ...n, type: "flow.timer" };
         case "flow.timer":
-            // r176: "N days from now" became "in N days/weeks/months/years
-            // from now", so the one `offsetDays` field split into an amount and
-            // a unit. A project written before that keeps its meaning — the
-            // same number, still counted in days.
-            if (n.data && n.data.offsetDays !== undefined && n.data.offsetAmount === undefined) {
+            // r176 briefly modelled the coming-day offset as an amount plus a
+            // unit; r177 gave every unit its own box. A project saved in that
+            // window keeps its meaning — the same number, in the box for the
+            // unit it was counted in. (The pre-r176 `offsetDays` key kept its
+            // name through both rounds, so those drafts need no rewrite.)
+            if (n.data && n.data.offsetAmount !== undefined) {
                 const data = { ...n.data };
-                const amount = Number(data.offsetDays);
-                delete data.offsetDays;
+                const amount = Number(data.offsetAmount);
+                const key = `offset${TIMER_BOX_KEYS[String(data.offsetUnit ?? "days")] ?? "Days"}`;
+                delete data.offsetAmount;
+                delete data.offsetUnit;
                 return {
                     ...n,
                     data: {
                         ...data,
-                        offsetAmount: Number.isFinite(amount) ? amount : 0,
-                        offsetUnit: "days",
+                        [key]: Number.isFinite(amount) ? amount : 0,
                     },
                 };
             }

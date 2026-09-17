@@ -1,3 +1,57 @@
+# Handoff — r177
+
+r177 closes the gap Zeis found the moment he opened r176's Timer: the
+coming-day offset was **one amount × one unit**, so "in 1 month 2 weeks 2 days,
+at 18:23" had no home. Both relative rows now take one box per unit, and — his
+standing instruction — Wait gained the calendar units too, so nothing an author
+can name is unreachable. Plan: [`plans/r177-every-unit.md`](plans/r177-every-unit.md).
+
+- **A coming day** counts `offsetYears` / `offsetMonths` / `offsetWeeks` /
+  `offsetDays` from now and pins the clock time (r176's clock panel). The
+  calendar clamp is applied **once, on the calendar part, before weeks and
+  days**: 31 Jan + 1 month = 28 Feb, and + 1 day after that = 1 March — never
+  3 March, because 31 January's day number would otherwise roll through
+  February.
+- **Wait** takes every unit (`years` / `months` / `weeks` / `days` / `hours` /
+  `minutes`), all summed. It keeps the SDK's own
+  `Scheduler.schedule({days, hours, minutes})` whenever no calendar unit is
+  set — the exact path in-game rows S-01/S-02 verified — and switches to
+  `scheduleAt` only when months or years are involved, because the engine's
+  duration form has no month field.
+- **No hours/minutes boxes on the coming-day row, deliberately**: it pins a
+  time of day, so "at 18:23 plus 4 hours" would be a second way to write
+  "at 22:23". The freedom landed in Wait instead. A "keep whatever time of day
+  it is now" clock option is the honest way to add it later (§D3 of the plan).
+- **Words in one place**: `src/schema/timer.ts` now holds one six-unit
+  vocabulary with three readers — `unitsPhrase` (the preview sentence),
+  `unitsShort` (the canvas card: `in 1y 1mo 2w 2d at 18:23`) and
+  `unitsReadback` (the row's `= …` line, normalising days/hours/minutes among
+  themselves only, since a month has no fixed length).
+- **Migration**: r176's `offsetAmount` + `offsetUnit` move into the box for
+  their unit and disappear. The pre-r176 `offsetDays` key kept its name through
+  both rounds, so a draft from r172–r175 is already in the current shape and is
+  **not rewritten at all** — that is now asserted.
+- **Export**: regenerated at mod **1.0.5**, build r177, byte-guarded. New QA
+  rows **S-13–S-15** (mixed offset, Wait in months, an r176-era draft behaving
+  identically). S-04 (`qe24 clock`) still decides the `at` timezone correction.
+
+Gates: `npm run typecheck` 0 errors; `npm test` **1,634 passed / 82 files** (was
+1,620 — +14); `npm run build` succeeds; `npm run gen:manual` (149 editable
+fields now, chip and stamps swept to r177) and `npm run gen:qa-export`
+regenerated. Eight guards falsified by revert: the clamp, weeks in a daytime
+offset, the month→`scheduleAt` switch, weeks folded into days, the migration,
+the card's unit words, the readback's normalisation, and the row walkers.
+Nothing visual is claimed — the row layout is Zeis's check.
+
+Stamp: `2026-09-18.r177`.
+
+Supporting notes:
+
+- [`plans/r177-every-unit.md`](plans/r177-every-unit.md)
+- [`plans/r176-timer-calendar-ux.md`](plans/r176-timer-calendar-ux.md)
+
+---
+
 # Handoff — r176
 
 r176 is the Timer's UI/UX round: the node now looks and reads like the game's

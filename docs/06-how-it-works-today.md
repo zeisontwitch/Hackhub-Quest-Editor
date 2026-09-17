@@ -1,11 +1,11 @@
 # How the editor works today
 
-**Current as of build `2026-09-18.r176`.** Where the other documents are
+**Current as of build `2026-09-18.r177`.** Where the other documents are
 histories — how we got here, and what we learned on the way — this one is a
 snapshot of the thing as it stands. If it disagrees with an older document,
 this one is right.
 
-Verified figures, counted from the code rather than remembered: **1,620 tests**
+Verified figures, counted from the code rather than remembered: **1,634 tests**
 across 82 files, **39 node types** in 10 categories, **13 templates**, **99 game
 events**, against `@hotbunny/hackhub-content-sdk@0.24.0`.
 

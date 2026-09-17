@@ -1,13 +1,13 @@
 {
   "generatedBy": "scripts/extract-manual-inventory.mjs",
-  "editorBuild": "2026-09-18.r176",
+  "editorBuild": "2026-09-18.r177",
   "sdkVersion": "0.24.0",
   "counts": {
     "nodeTypes": 39,
     "obtainableNodeTypes": 39,
     "categories": 10,
-    "editableFields": 144,
-    "editableFieldsExcludingLists": 137,
+    "editableFields": 149,
+    "editableFieldsExcludingLists": 142,
     "sockets": 74,
     "events": 99,
     "eventGroups": 10
@@ -2692,7 +2692,7 @@
           "label": null,
           "hint": null,
           "tone": "info",
-          "text": "Fires the next node at a later in-game time. Wait holds the story for an exact stretch; A coming day fires on a clock time counted from now — “in 2 weeks, at 09:00” — so it stays right however long the player leaves the quest; An exact date pins a moment in the story's own calendar. A time that has already passed fires as soon as the story reaches the node."
+          "text": "Fires the next node at a later in-game time. Wait holds the story for an exact stretch — any mix of years, months, weeks, days, hours and minutes; A coming day counts calendar time from now and rings at a clock time — “in 1 month 2 weeks 2 days, at 18:23” — so it stays right however long the player leaves the quest; An exact date pins a moment in the story's own calendar. A time that has already passed fires as soon as the story reaches the node."
         },
         {
           "depth": 0,
@@ -2715,6 +2715,36 @@
               "label": "An exact date"
             }
           ]
+        },
+        {
+          "depth": 0,
+          "path": "years",
+          "kind": "number",
+          "key": "years",
+          "label": "Years",
+          "hint": "Whole in-game years to wait, before the shorter units beside it. A target month with fewer days uses its last day.",
+          "min": 0,
+          "step": 1
+        },
+        {
+          "depth": 0,
+          "path": "months",
+          "kind": "number",
+          "key": "months",
+          "label": "Months",
+          "hint": "Whole in-game months to wait, on top of the years. 31 January plus one month lands on 28 February, not in March.",
+          "min": 0,
+          "step": 1
+        },
+        {
+          "depth": 0,
+          "path": "weeks",
+          "kind": "number",
+          "key": "weeks",
+          "label": "Weeks",
+          "hint": "In-game weeks to wait, on top of the months. One week is seven in-game days.",
+          "min": 0,
+          "step": 1
         },
         {
           "depth": 0,
@@ -2748,39 +2778,43 @@
         },
         {
           "depth": 0,
-          "path": "offsetAmount",
+          "path": "offsetYears",
           "kind": "number",
-          "key": "offsetAmount",
-          "label": "How many",
-          "hint": "How many of the unit beside it. 0 means today, so “0 days, at 09:00” fires the next time the clock reads 09:00.",
+          "key": "offsetYears",
+          "label": "Years",
+          "hint": "In-game years from now, counted from the day the story reaches this node. A target month with fewer days uses its last day.",
           "min": 0,
           "step": 1
         },
         {
           "depth": 0,
-          "path": "offsetUnit",
-          "kind": "select",
-          "key": "offsetUnit",
-          "label": "Time unit",
-          "hint": "What the number counts in. Months and years keep the day number, using the target month's last day when it is shorter.",
-          "options": [
-            {
-              "value": "days",
-              "label": "Days"
-            },
-            {
-              "value": "weeks",
-              "label": "Weeks"
-            },
-            {
-              "value": "months",
-              "label": "Months"
-            },
-            {
-              "value": "years",
-              "label": "Years"
-            }
-          ]
+          "path": "offsetMonths",
+          "kind": "number",
+          "key": "offsetMonths",
+          "label": "Months",
+          "hint": "In-game months from now, on top of the years. 31 January plus one month lands on 28 February, not in March.",
+          "min": 0,
+          "step": 1
+        },
+        {
+          "depth": 0,
+          "path": "offsetWeeks",
+          "kind": "number",
+          "key": "offsetWeeks",
+          "label": "Weeks",
+          "hint": "In-game weeks from now, on top of the months. One week is seven in-game days.",
+          "min": 0,
+          "step": 1
+        },
+        {
+          "depth": 0,
+          "path": "offsetDays",
+          "kind": "number",
+          "key": "offsetDays",
+          "label": "Days",
+          "hint": "In-game days from now, on top of the weeks and months. 0 means today, so “0 days, at 09:00” fires the next time the clock reads 09:00.",
+          "min": 0,
+          "step": 1
         },
         {
           "depth": 0,
@@ -2889,14 +2923,19 @@
           "step": 1
         }
       ],
-      "editableFieldCount": 11,
+      "editableFieldCount": 16,
       "defaults": {
         "mode": "after",
+        "years": 0,
+        "months": 0,
+        "weeks": 0,
         "days": 0,
         "hours": 0,
         "minutes": 0,
-        "offsetAmount": 0,
-        "offsetUnit": "days",
+        "offsetYears": 0,
+        "offsetMonths": 0,
+        "offsetWeeks": 0,
+        "offsetDays": 0,
         "hour": 0,
         "minute": 0,
         "dateYear": 0,

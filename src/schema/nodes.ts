@@ -551,14 +551,15 @@ export const DelayNodeDataSchema = z.object({
 /**
  * The Timer (r172, renamed r173): a scheduled job on the in-game clock.
  * Three modes, picked by `mode`:
- * - `after`: a relative delay in the SDK's designer units — they are summed,
- *   so "25 hours" is a legal value. All three zero means "nothing scheduled":
- *   the analysis warns, the runtime fires immediately.
- * - `daytime`: N in-game days, weeks, months or years from now (r176), at a
- *   set clock time — the whole rule is resolved against `Time.date()` at arm
- *   time, so it stays right however long the player leaves the quest. Month
- *   and year maths keeps the day number, clamped to the target month's last
- *   day (31 Jan + 1 month = 28 Feb, and 29 Feb + 1 year = 28 Feb).
+ * - `after`: a relative delay — one box per unit, all summed, so "25 hours"
+ *   is a legal value and so is "1 month 2 weeks". Every unit zero means
+ *   "nothing scheduled": the analysis warns, the runtime fires immediately.
+ * - `daytime`: a calendar offset — years, months, weeks and days from now
+ *   (r176; one box per unit since r177), at a set clock time. The whole rule
+ *   is resolved against `Time.date()` at arm time, so it stays right however
+ *   long the player leaves the quest. Month and year maths keeps the day
+ *   number, clamped to the target month's last day (31 Jan + 1 month = 28 Feb,
+ *   and 29 Feb + 1 year = 28 Feb); weeks and days are added after that clamp.
  * - `at`: a fixed in-game date and clock time (r173).
  * `hour`/`minute` are shared by `daytime` and `at`: they always mean "the
  * in-game clock shows HH:MM". In-game seconds are real-world milliseconds,
@@ -566,13 +567,18 @@ export const DelayNodeDataSchema = z.object({
  */
 export const TimerNodeDataSchema = z.object({
     mode: z.enum(["after", "daytime", "at"]).default("after"),
-    /* mode "after": relative delay, units summed */
+    /* mode "after": relative delay, one box per unit, all summed */
+    years: z.number().default(0),
+    months: z.number().default(0),
+    weeks: z.number().default(0),
     days: z.number().default(0),
     hours: z.number().default(0),
     minutes: z.number().default(0),
-    /* mode "daytime": how far from now, and in what unit (r176) */
-    offsetAmount: z.number().default(0),
-    offsetUnit: z.enum(["days", "weeks", "months", "years"]).default("days"),
+    /* mode "daytime": how far from now, one box per unit (r176/r177) */
+    offsetYears: z.number().default(0),
+    offsetMonths: z.number().default(0),
+    offsetWeeks: z.number().default(0),
+    offsetDays: z.number().default(0),
     /* modes "daytime" and "at": the time the in-game clock will show */
     hour: z.number().default(0),
     minute: z.number().default(0),

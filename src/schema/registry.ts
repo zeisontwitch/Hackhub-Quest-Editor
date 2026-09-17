@@ -53,7 +53,7 @@ import {
     type NodeType,
 } from "./nodes";
 import { TARGET_IP_TOKEN, VULNERABILITY_BLURBS, VULNERABILITY_TYPES } from "./common";
-import { durationSentence, MONTH_OPTIONS, timerSentence } from "./timer";
+import { MONTH_OPTIONS, timerSentence, unitsReadback, WAIT_UNITS } from "./timer";
 
 /* ── Inspector field descriptors ─────────────────────────────────────────── */
 
@@ -173,6 +173,12 @@ export type FieldDef =
           label?: string;
           hint?: string;
           fields: FieldDef[];
+          /**
+           * Lay the children out in a fixed grid of this many columns, wrapping
+           * onto as many lines as it takes (r177: six unit boxes, three across).
+           * Without it they sit on one line.
+           */
+          columns?: 2 | 3 | 4;
           /**
            * A readback line under the row, in the words a human would say it
            * (r176: 25 hours reads "1 day, 1 hour"). Null hides the line.
@@ -1170,7 +1176,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            { kind: "note", tone: "info", text: "Fires the next node at a later in-game time. Wait holds the story for an exact stretch; A coming day fires on a clock time counted from now — “in 2 weeks, at 09:00” — so it stays right however long the player leaves the quest; An exact date pins a moment in the story's own calendar. A time that has already passed fires as soon as the story reaches the node." },
+            { kind: "note", tone: "info", text: "Fires the next node at a later in-game time. Wait holds the story for an exact stretch — any mix of years, months, weeks, days, hours and minutes; A coming day counts calendar time from now and rings at a clock time — “in 1 month 2 weeks 2 days, at 18:23” — so it stays right however long the player leaves the quest; An exact date pins a moment in the story's own calendar. A time that has already passed fires as soon as the story reaches the node." },
             {
                 kind: "select",
                 key: "mode",
@@ -1187,10 +1193,14 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                 kind: "row",
                 label: "Wait",
                 showWhen: { key: "mode", equals: "after" },
+                columns: 3,
                 /* The stored value stays exactly as typed; the readback only
                    says it in words ("25 hours" -> "1 day, 1 hour"). */
-                readback: (data) => durationSentence(data.days, data.hours, data.minutes),
+                readback: (data) => unitsReadback(data, WAIT_UNITS),
                 fields: [
+                    { kind: "number", key: "years", hint: "Whole in-game years to wait, before the shorter units beside it. A target month with fewer days uses its last day.", label: "Years", min: 0, step: 1, suffix: "years" },
+                    { kind: "number", key: "months", hint: "Whole in-game months to wait, on top of the years. 31 January plus one month lands on 28 February, not in March.", label: "Months", min: 0, step: 1, suffix: "months" },
+                    { kind: "number", key: "weeks", hint: "In-game weeks to wait, on top of the months. One week is seven in-game days.", label: "Weeks", min: 0, step: 1, suffix: "weeks" },
                     { kind: "number", key: "days", hint: "In-game days to wait first. 0 is fine — the units are added up.", label: "Days", min: 0, step: 1, suffix: "days" },
                     { kind: "number", key: "hours", hint: "In-game hours, on top of the days. 25 hours is a legal value.", label: "Hours", min: 0, step: 1, suffix: "hours" },
                     { kind: "number", key: "minutes", hint: "In-game minutes, on top of the days and hours. At the default game speed one in-game minute passes every real second.", label: "Minutes", min: 0, step: 1, suffix: "minutes" },
@@ -1200,20 +1210,17 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                 kind: "row",
                 label: "In",
                 showWhen: { key: "mode", equals: "daytime" },
+                columns: 4,
+                /* One box per unit, in the order a person says them — "1 year,
+                   1 month, 2 weeks, 2 days". Hours and minutes are deliberately
+                   absent: the clock below pins the time of day, so a box for
+                   them would be a second way to write the same number. Wait
+                   takes them instead, with no clock to collide with. */
                 fields: [
-                    { kind: "number", key: "offsetAmount", hint: "How many of the unit beside it. 0 means today, so “0 days, at 09:00” fires the next time the clock reads 09:00.", label: "How many", min: 0, step: 1 },
-                    {
-                        kind: "select",
-                        key: "offsetUnit",
-                        label: "Time unit",
-                        hint: "What the number counts in. Months and years keep the day number, using the target month's last day when it is shorter.",
-                        options: [
-                            { value: "days", label: "Days" },
-                            { value: "weeks", label: "Weeks" },
-                            { value: "months", label: "Months" },
-                            { value: "years", label: "Years" },
-                        ],
-                    },
+                    { kind: "number", key: "offsetYears", hint: "In-game years from now, counted from the day the story reaches this node. A target month with fewer days uses its last day.", label: "Years", min: 0, step: 1, suffix: "years" },
+                    { kind: "number", key: "offsetMonths", hint: "In-game months from now, on top of the years. 31 January plus one month lands on 28 February, not in March.", label: "Months", min: 0, step: 1, suffix: "months" },
+                    { kind: "number", key: "offsetWeeks", hint: "In-game weeks from now, on top of the months. One week is seven in-game days.", label: "Weeks", min: 0, step: 1, suffix: "weeks" },
+                    { kind: "number", key: "offsetDays", hint: "In-game days from now, on top of the weeks and months. 0 means today, so “0 days, at 09:00” fires the next time the clock reads 09:00.", label: "Days", min: 0, step: 1, suffix: "days" },
                 ],
             },
             {

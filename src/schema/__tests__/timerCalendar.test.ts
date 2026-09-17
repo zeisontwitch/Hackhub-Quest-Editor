@@ -1,22 +1,26 @@
 /**
- * The Timer's calendar vocabulary (r176): the words the inspector, the canvas
- * card and the field warnings all share. The runtime's own arithmetic is
- * exercised against the compiled mod in compiler/__tests__/scheduleBeat.test.ts;
- * these are the statements the editor can make before it ever exports.
+ * The Timer's calendar vocabulary (r176, one box per unit in r177): the words
+ * the inspector, the canvas card and the field warnings all share. The
+ * runtime's own arithmetic is exercised against the compiled mod in
+ * compiler/__tests__/scheduleBeat.test.ts; these are the statements the editor
+ * can make before it ever exports.
  */
 import { describe, expect, it } from "vitest";
 import {
     clockText,
     dateText,
     daysInMonth,
-    durationSentence,
     isRealDate,
     monthName,
+    OFFSET_UNITS,
     pad2,
     shortDateText,
     timerSentence,
     unitPhrase,
-    unitShort,
+    unitsPhrase,
+    unitsReadback,
+    unitsShort,
+    WAIT_UNITS,
 } from "@/schema/timer";
 
 describe("the clock's own words", () => {
@@ -57,20 +61,82 @@ describe("the calendar", () => {
     });
 });
 
+describe("the unit boxes", () => {
+    it("lists every set box in words, in inspector order", () => {
+        expect(
+            unitsPhrase(
+                { offsetYears: 1, offsetMonths: 1, offsetWeeks: 2, offsetDays: 2 },
+                OFFSET_UNITS,
+            ),
+        ).toBe("1 year, 1 month, 2 weeks and 2 days");
+        expect(unitsPhrase({ years: 1, months: 2 }, WAIT_UNITS)).toBe("1 year and 2 months");
+        expect(unitsPhrase({}, OFFSET_UNITS)).toBeNull();
+        expect(unitsPhrase({ offsetDays: 0 }, OFFSET_UNITS)).toBeNull();
+    });
+
+    it("shortens the same boxes for the canvas card", () => {
+        expect(
+            unitsShort(
+                { offsetYears: 1, offsetMonths: 1, offsetWeeks: 2, offsetDays: 2 },
+                OFFSET_UNITS,
+            ),
+        ).toBe("1y 1mo 2w 2d");
+        expect(unitsShort({ days: 2, hours: 4, minutes: 30 }, WAIT_UNITS)).toBe("2d 4h 30m");
+        expect(unitsShort({}, WAIT_UNITS)).toBeNull();
+    });
+
+    it("reads the row back in words, normalising only what is exact", () => {
+        expect(unitsReadback({ days: 2, hours: 4, minutes: 30 }, WAIT_UNITS)).toBe(
+            "2 days, 4 hours, 30 minutes",
+        );
+        // 25 hours is legal and means 1 day, 1 hour.
+        expect(unitsReadback({ hours: 25 }, WAIT_UNITS)).toBe("1 day, 1 hour");
+        expect(unitsReadback({ days: 1 }, WAIT_UNITS)).toBe("1 day");
+        // A month has no fixed day count to fold into, so it is echoed as typed.
+        expect(unitsReadback({ years: 1, months: 2, days: 1 }, WAIT_UNITS)).toBe(
+            "1 year, 2 months, 1 day",
+        );
+        expect(unitsReadback({}, WAIT_UNITS)).toBeNull();
+    });
+
+    it("speaks a single unit with its number, and falls back to days", () => {
+        expect(unitPhrase(1, "weeks")).toBe("1 week");
+        expect(unitPhrase(2, "months")).toBe("2 months");
+        expect(unitPhrase(3, "fortnights")).toBe("3 days");
+    });
+});
+
 describe("the sentences", () => {
     it("speaks a relative rule without resolving it", () => {
         expect(
-            timerSentence({ mode: "daytime", offsetAmount: 3, offsetUnit: "days", hour: 12, minute: 0 }),
+            timerSentence({ mode: "daytime", offsetDays: 3, hour: 12, minute: 0 }),
         ).toBe("Fires in 3 days, at 12:00 in-game, counted from the day the story reaches this node.");
         expect(
-            timerSentence({ mode: "daytime", offsetAmount: 0, offsetUnit: "days", hour: 4, minute: 20 }),
+            timerSentence({ mode: "daytime", hour: 4, minute: 20 }),
         ).toBe("Fires today at 04:20 in-game — or straight away if the clock has already passed that time.");
     });
 
+    it("names every box of a mixed offset", () => {
+        expect(
+            timerSentence({
+                mode: "daytime",
+                offsetYears: 1,
+                offsetMonths: 1,
+                offsetWeeks: 2,
+                offsetDays: 2,
+                hour: 18,
+                minute: 23,
+            }),
+        ).toBe(
+            "Fires in 1 year, 1 month, 2 weeks and 2 days, at 18:23 in-game, counted from the day the story " +
+                "reaches this node. A shorter month uses its last day.",
+        );
+    });
+
     it("adds the short-month clause only where clamping can happen", () => {
-        const months = timerSentence({ mode: "daytime", offsetAmount: 1, offsetUnit: "months", hour: 4, minute: 20 });
+        const months = timerSentence({ mode: "daytime", offsetMonths: 1, hour: 4, minute: 20 });
         expect(months).toContain("A shorter month uses its last day.");
-        const weeks = timerSentence({ mode: "daytime", offsetAmount: 2, offsetUnit: "weeks", hour: 4, minute: 20 });
+        const weeks = timerSentence({ mode: "daytime", offsetWeeks: 2, hour: 4, minute: 20 });
         expect(weeks).not.toContain("shorter month");
     });
 
@@ -84,20 +150,12 @@ describe("the sentences", () => {
         ).toContain("Monday, 21 September 2026, 04:20");
     });
 
-    it("reads the Wait row back in words, normalised", () => {
-        expect(durationSentence(2, 4, 30)).toBe("2 days, 4 hours, 30 minutes");
-        expect(durationSentence(0, 25, 0)).toBe("1 day, 1 hour");
-        expect(durationSentence(1, 0, 0)).toBe("1 day");
-        expect(durationSentence(0, 0, 0)).toBeNull();
-    });
-
-    it("shortens units for the canvas card, with the days fallback", () => {
-        expect(unitShort("days")).toBe("d");
-        expect(unitShort("weeks")).toBe("w");
-        expect(unitShort("months")).toBe("mo");
-        expect(unitShort("years")).toBe("y");
-        expect(unitShort("fortnights")).toBe("d");
-        expect(unitPhrase(1, "weeks")).toBe("1 week");
-        expect(unitPhrase(2, "months")).toBe("2 months");
+    it("speaks Wait with every unit, calendar included", () => {
+        expect(timerSentence({ mode: "after", years: 1, months: 1, weeks: 2, days: 2, hours: 4 })).toBe(
+            "Fires 1 year, 1 month, 2 weeks, 2 days and 4 hours after the story reaches this node.",
+        );
+        expect(timerSentence({ mode: "after" })).toBe(
+            "Fires as soon as the story reaches this node — nothing is set to wait.",
+        );
     });
 });

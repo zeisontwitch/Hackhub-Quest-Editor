@@ -147,10 +147,16 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
             let noTimeDetail = "";
             let noTimeNext = "";
             if (mode === "after") {
-                const scheduled = (Number(node.data.days) || 0) + (Number(node.data.hours) || 0) + (Number(node.data.minutes) || 0);
+                const scheduled =
+                    (Number(node.data.years) || 0) +
+                    (Number(node.data.months) || 0) +
+                    (Number(node.data.weeks) || 0) +
+                    (Number(node.data.days) || 0) +
+                    (Number(node.data.hours) || 0) +
+                    (Number(node.data.minutes) || 0);
                 nothingSet = scheduled <= 0;
-                noTimeDetail = "No days, hours or minutes are set, so the timer fires the moment the story reaches it — nothing waits.";
-                noTimeNext = "Set a time in the node's Days / Hours / Minutes fields, or remove the node if the story should carry on.";
+                noTimeDetail = "No years, months, weeks, days, hours or minutes are set, so the timer fires the moment the story reaches it — nothing waits.";
+                noTimeNext = "Set a time in the node's Wait fields, or remove the node if the story should carry on.";
             } else if (mode === "at") {
                 nothingSet = !(Number(node.data.dateYear) > 0 && Number(node.data.dateMonth) > 0 && Number(node.data.dateDay) > 0);
                 noTimeDetail = "No full date is set, so the timer fires the moment the story reaches it — nothing waits.";

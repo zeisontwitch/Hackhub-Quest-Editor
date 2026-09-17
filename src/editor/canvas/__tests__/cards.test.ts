@@ -60,11 +60,29 @@ describe("timer card", () => {
     });
 
     it("says a relative rule as a rule, not as a date the editor cannot know", () => {
-        expect(card({ mode: "daytime", offsetAmount: 2, offsetUnit: "weeks", hour: 4, minute: 20 })).toEqual([
+        expect(card({ mode: "daytime", offsetWeeks: 2, hour: 4, minute: 20 })).toEqual([
             "in 2w at 04:20",
         ]);
-        expect(card({ mode: "daytime", offsetAmount: 0, offsetUnit: "days", hour: 4, minute: 20 })).toEqual([
-            "today at 04:20",
+        expect(card({ mode: "daytime", hour: 4, minute: 20 })).toEqual(["today at 04:20"]);
+    });
+
+    it("reads a mixed offset as the boxes were typed", () => {
+        expect(
+            card({
+                mode: "daytime",
+                offsetYears: 1,
+                offsetMonths: 1,
+                offsetWeeks: 2,
+                offsetDays: 2,
+                hour: 18,
+                minute: 23,
+            }),
+        ).toEqual(["in 1y 1mo 2w 2d at 18:23"]);
+    });
+
+    it("takes every unit in Wait, calendar included", () => {
+        expect(card({ mode: "after", months: 1, weeks: 2, days: 2, hours: 4 })).toEqual([
+            "1mo 2w 2d 4h",
         ]);
     });
 

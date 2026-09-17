@@ -8,7 +8,7 @@
 import type { DialogueKind, NodeDoc } from "@/schema/nodes";
 import type { QuestDoc } from "@/schema/project";
 import { humanEventName } from "@/schema/events";
-import { clockText, shortDateText, unitShort } from "@/schema/timer";
+import { clockText, OFFSET_UNITS, shortDateText, unitsShort, WAIT_UNITS } from "@/schema/timer";
 import { DEVICE_TYPE_LABELS } from "@/schema/common";
 import { describePackNodeAction } from "@/toolpacks/palette";
 
@@ -251,24 +251,18 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
         case "flow.timer": {
             const mode = d.mode ?? "after";
             if (mode === "daytime") {
-                // "In 3 weeks, at 04:20": the editor never resolves a relative
-                // Timer — the mod does, in the game, at arm time (r176) — so
-                // the card says the rule rather than a date it cannot know.
-                const amount = Math.max(0, Math.round(Number(d.offsetAmount ?? 0)));
-                const when = amount === 0 ? "today" : `in ${amount}${unitShort(d.offsetUnit)}`;
-                return [`${when} at ${clockText(d.hour, d.minute)}`];
+                // "in 1mo 2w 2d at 18:23": the editor never resolves a relative
+                // Timer — the mod does, in the game, at arm time (r176/r177) —
+                // so the card says the rule rather than a date it cannot know.
+                const offset = unitsShort(d, OFFSET_UNITS);
+                return [`${offset ? `in ${offset}` : "today"} at ${clockText(d.hour, d.minute)}`];
             }
             if (mode === "at") {
                 const date = shortDateText(d.dateYear, d.dateMonth, d.dateDay);
                 if (!date) return ["no date set"];
                 return [`${date}, ${clockText(d.hour, d.minute)}`];
             }
-            const parts = [
-                Number(d.days ?? 0) ? `${Math.round(Number(d.days))}d` : "",
-                Number(d.hours ?? 0) ? `${Math.round(Number(d.hours))}h` : "",
-                Number(d.minutes ?? 0) ? `${Math.round(Number(d.minutes))}m` : "",
-            ].filter(Boolean);
-            return parts.length ? [parts.join(" ")] : ["no time set"];
+            return [unitsShort(d, WAIT_UNITS) ?? "no time set"];
         }
 
         case "flow.random": {

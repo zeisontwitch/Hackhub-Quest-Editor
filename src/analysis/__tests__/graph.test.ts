@@ -170,7 +170,7 @@ describe("analyseGraph", () => {
 
     it("accepts a daytime timer that only has a clock time (r173)", () => {
         const claim = node("entry.start");
-        const timer = node("flow.timer", { mode: "daytime", offsetAmount: 3, offsetUnit: "days", hour: 12, minute: 0 });
+        const timer = node("flow.timer", { mode: "daytime", offsetDays: 3, hour: 12, minute: 0 });
         const after = node("fx.notify");
 
         const analysis = analyseGraph(
@@ -182,6 +182,20 @@ describe("analyseGraph", () => {
            "now" can decide whether that time has passed; the runtime fails
            open, so the editor stays quiet. */
         expect(analysis.issues.filter((i) => i.nodeId === timer.id)).toHaveLength(0);
+    });
+
+    it("counts every Wait unit as a time being set (r177)", () => {
+        const claim = node("entry.start");
+        /* Only calendar units — no days, hours or minutes at all. */
+        const timer = node("flow.timer", { mode: "after", months: 1, weeks: 2 });
+        const after = node("fx.notify");
+
+        const analysis = analyseGraph(
+            [claim, timer, after],
+            [edge(claim, "out", timer, "in"), edge(timer, "out", after, "in")],
+        );
+
+        expect(analysis.issues.filter((i) => i.label === "Nothing scheduled")).toHaveLength(0);
     });
 
     it("does not claim a wrong answer stalls the quest", () => {

@@ -18,6 +18,8 @@ New after that run: raw harness version 1.0.6 adds two untested phone-call `onEn
 
 New again for the r175 pass: raw harness version **1.0.7** adds `qe24 clock`, which prints the current in-game time as raw `Time.now`, as UTC, as the machine-local rendering and as `Time.date()`. Comparing those lines with the clock on screen settles **S-04** (does the `at` mode's timezone correction match what the display shows?) without editing a calendar date.
 
+New for the r177 pass: both relative rows take one box per unit — a coming day counts **years / months / weeks / days** from now and pins a clock time, and **Wait** takes every unit including the calendar ones (months and years go through `scheduleAt`, since the engine's `schedule()` duration form has no month field). Rows **S-13–S-15** (a mixed `1 month 2 weeks 2 days` offset, Wait in months, and an r176-era draft still behaving identically) are in [`../../docs/plans/r177-every-unit.md`](../../docs/plans/r177-every-unit.md).
+
 New for the r176 pass: the Timer's *coming day* mode is now a real relative rule — in **[N] days / weeks / months / years** from now, at a clock time — resolved inside the mod at arm time, with short months clamped (31 Jan + 1 month = 28/29 Feb). The editor's clock panel and rows are editor-only. Rows **S-09–S-12** (one month on, short-month clamp, what `NEXT EVENT` shows, and a pre-r176 `after` project still behaving identically) are defined in [`../plans/r176-timer-calendar-ux.md`](../../docs/plans/r176-timer-calendar-ux.md).
 
 One raw Wi-Fi gameplay wart remains documented: Bettercap can set the AP by BSSID and capture/crack the handshake, but `set wifi.ap 02:24:00:00:24:01` logs `SSID: undefined` instead of `QE24-RAW-5G`. Treat that as a runtime UX issue to account for before exposing native Wi-Fi broadly.
@@ -194,4 +196,4 @@ Raw harness fixed values:
 - The harness uses `SaveStorage` to remember generated network IPs per save. It does not use shared/global storage for per-save state.
 - HTTP interception can make browser/curl requests appear hung. Run `qe24 intercept forward` or `qe24 intercept off` immediately after the intercepted request is recorded. If left on, the engine may show blank/dark pages until its held-request timeout forwards traffic.
 - `qe24 reset` is scoped to the IPs the harness stored in the current save, but use a throwaway save anyway.
-- Results should be recorded in `docs/plans/r166-sdk-0.24-ingame-qa.md`; the Timer rows are defined in `docs/plans/r173-timer-rename-and-calendar.md` (S-01–S-08) and `docs/plans/r176-timer-calendar-ux.md` (S-09–S-12); only lift editor fences after those rows are green in-game.
+- Results should be recorded in `docs/plans/r166-sdk-0.24-ingame-qa.md`; the Timer rows are defined in `docs/plans/r173-timer-rename-and-calendar.md` (S-01–S-08), `docs/plans/r176-timer-calendar-ux.md` (S-09–S-12) and `docs/plans/r177-every-unit.md` (S-13–S-15); only lift editor fences after those rows are green in-game.

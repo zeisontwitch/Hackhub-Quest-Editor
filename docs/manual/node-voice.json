@@ -1620,9 +1620,21 @@
   ],
   "game": "The story pauses at the timer (the wires after it do not run yet). When the in-game clock reaches the due time, the timer's “Out” wire runs, as if the story jumped back to this point. If the quest finishes or is abandoned first, the timer is cancelled.",
   "fields": {
+   "years": {
+    "example": "1",
+    "empty": "Counts as zero. A whole in-game year added to the calendar — the day number is kept, and a leap day that does not exist next year falls back to 28 February."
+   },
+   "months": {
+    "example": "1",
+    "empty": "Counts as zero. A whole in-game month added to the calendar: 31 January plus one month lands on 28 February, not in March, because February has no 31st."
+   },
+   "weeks": {
+    "example": "2",
+    "empty": "Counts as zero. A week is seven in-game days, so 2 weeks and 14 days wait exactly the same length of time."
+   },
    "days": {
     "example": "1",
-    "empty": "Counts as zero. In “After a delay” mode, all three fields blank means nothing waits — the timer fires the moment the story reaches it."
+    "empty": "Counts as zero. Every unit is added up, so days, months and hours all count towards one due time — blank everywhere means nothing waits."
    },
    "hours": {
     "example": "2",
@@ -1632,13 +1644,21 @@
     "example": "30",
     "empty": "Counts as zero. These are in-game minutes: at the default game speed one in-game minute passes every real second, so 30 minutes is half a real minute."
    },
-   "offsetAmount": {
-    "example": "2",
-    "empty": "0 means today — the next time the clock reads the time below. Counted from when the story reaches the timer, so “in 2 weeks at 04:20” lands two in-game weeks after the player gets there; read the day off the in-game clock."
+   "offsetYears": {
+    "example": "1",
+    "empty": "0 means no years. Counted from the in-game day the player reaches this node, so “1 year, at 18:23” is that same date next year; a 29 February falls back to 28 February when the next year has no leap day."
    },
-   "offsetUnit": {
-    "example": "weeks",
-    "limits": "Days, weeks, months or years. Months and years keep the day number, using the target month's last day when it is shorter — 31 January plus one month lands on 28 February."
+   "offsetMonths": {
+    "example": "1",
+    "empty": "0 means no months. Whole in-game months, counted from the day the player gets here: 31 January plus one month lands on 28 February rather than skipping into March."
+   },
+   "offsetWeeks": {
+    "example": "2",
+    "empty": "0 means no weeks. A week is seven in-game days, so 2 weeks is 14 days — the clock time below is what the timer rings at, whatever time the player arrived."
+   },
+   "offsetDays": {
+    "example": "3",
+    "empty": "0 means today — the next time the clock reads the time below. Days are added after the months and weeks, and 0 with 0 in the other boxes is a legal “today at 09:00”."
    },
    "hour": {
     "example": "12",

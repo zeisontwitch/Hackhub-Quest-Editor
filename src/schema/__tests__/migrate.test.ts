@@ -156,36 +156,46 @@ describe("projects made before the Timer rename (r173)", () => {
 });
 
 /**
- * The relative Timer (r176) replaced `offsetDays` with an amount plus a unit.
- * The old single field was honest only while every offset was in days; a draft
- * — or an exported file — saved before the rename still names it, and must
- * keep meaning exactly what it meant.
+ * r176 briefly modelled the coming-day offset as an amount plus a unit, before
+ * r177 gave every unit its own box. A draft — or an exported file — saved in
+ * that window still names them, and must keep meaning exactly what it meant.
  */
-function r176ProjectJson() {
+function r176ProjectJson(data: Record<string, unknown> = { mode: "daytime", offsetAmount: 2, offsetUnit: "weeks", hour: 12, minute: 0 }) {
     const base = JSON.parse(JSON.stringify(createProject())) as Record<string, unknown>;
     const quest = (base.quests as Record<string, unknown>[])[0];
     quest.graph = {
-        nodes: [
-            {
-                id: "t1",
-                type: "flow.timer",
-                position: { x: 0, y: 0 },
-                data: { mode: "daytime", offsetDays: 3, hour: 12, minute: 0 },
-            },
-        ],
+        nodes: [{ id: "t1", type: "flow.timer", position: { x: 0, y: 0 }, data }],
         edges: [],
     };
     return base;
 }
 
-describe("projects made before the Timer's relative units (r176)", () => {
-    it("splits the old offset into an amount and a unit of days", () => {
-        const migrated = migrateProject(r176ProjectJson()) as {
+describe("projects made with r176's amount + unit offset", () => {
+    const boxesOf = (data: Record<string, unknown>) => {
+        const migrated = migrateProject(r176ProjectJson(data)) as {
             quests: { graph: { nodes: { data: Record<string, unknown> }[] } }[];
         };
-        const data = migrated.quests[0].graph.nodes[0].data;
-        expect(data).toMatchObject({ mode: "daytime", offsetAmount: 3, offsetUnit: "days", hour: 12, minute: 0 });
-        expect("offsetDays" in data).toBe(false);
+        return migrated.quests[0].graph.nodes[0].data;
+    };
+
+    it("moves the amount into the box for its unit", () => {
+        /* The migration moves the number; the boxes it did not touch take
+           their schema defaults when the project is validated, not here. */
+        expect(boxesOf({ mode: "daytime", offsetAmount: 2, offsetUnit: "weeks", hour: 12, minute: 0 })).toEqual({
+            mode: "daytime",
+            hour: 12,
+            minute: 0,
+            offsetWeeks: 2,
+        });
+        expect(boxesOf({ mode: "daytime", offsetAmount: 1, offsetUnit: "months" })).toMatchObject({ offsetMonths: 1 });
+        expect(boxesOf({ mode: "daytime", offsetAmount: 4, offsetUnit: "days" })).toMatchObject({ offsetDays: 4 });
+        expect(boxesOf({ mode: "daytime", offsetAmount: 1, offsetUnit: "years" })).toMatchObject({ offsetYears: 1 });
+    });
+
+    it("drops the two old keys rather than leaving them behind", () => {
+        const data = boxesOf({ mode: "daytime", offsetAmount: 2, offsetUnit: "weeks" });
+        expect("offsetAmount" in data).toBe(false);
+        expect("offsetUnit" in data).toBe(false);
     });
 
     it("validates afterwards, so an old draft is not thrown away", () => {
@@ -198,11 +208,50 @@ describe("projects made before the Timer's relative units (r176)", () => {
         expect(parsed.ok).toBe(true);
         if (!parsed.ok) return;
         const data = parsed.project.quests[0].graph.nodes[0].data as Record<string, unknown>;
-        expect(data).toMatchObject({ offsetAmount: 3, offsetUnit: "days" });
+        expect(data).toMatchObject({ offsetWeeks: 2, offsetDays: 0, offsetYears: 0 });
+        expect("offsetAmount" in data).toBe(false);
+        expect("offsetUnit" in data).toBe(false);
     });
 
-    it("leaves a project that never used offsetDays untouched", () => {
+    it("leaves a project that never used the old pair untouched", () => {
         const clean = JSON.parse(serializeProject(createProject()));
         expect(migrateProject(clean)).toEqual(clean);
+    });
+});
+
+/**
+ * The key r172 wrote — `offsetDays` — kept its name through both r176's rename
+ * and r177's per-unit boxes, so a draft from that window is **already** in the
+ * current shape: nothing to rewrite, it just has to validate (r177).
+ */
+describe("projects made before the r176 rename (the old offsetDays key)", () => {
+    function r172TimerJson() {
+        const base = JSON.parse(JSON.stringify(createProject())) as Record<string, unknown>;
+        const quest = (base.quests as Record<string, unknown>[])[0];
+        quest.graph = {
+            nodes: [
+                {
+                    id: "t1",
+                    type: "flow.timer",
+                    position: { x: 0, y: 0 },
+                    data: { mode: "daytime", offsetDays: 3, hour: 12, minute: 0 },
+                },
+            ],
+            edges: [],
+        };
+        return base;
+    }
+
+    it("needs no rewrite at all: the key means the same thing today", () => {
+        const clean = r172TimerJson();
+        expect(migrateProject(clean)).toEqual(clean);
+    });
+
+    it("still validates and opens as a file", () => {
+        const parsed = parseProjectFile(JSON.stringify(r172TimerJson()));
+        expect(parsed.ok).toBe(true);
+        if (!parsed.ok) return;
+        const node = parsed.project.quests[0].graph.nodes[0];
+        expect(node.data).toMatchObject({ mode: "daytime", offsetDays: 3, hour: 12, minute: 0 });
     });
 });

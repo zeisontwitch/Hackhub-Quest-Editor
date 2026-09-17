@@ -1,31 +1,3 @@
-# QE SDK 0.24 Editor QA Scaffold
-
-Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, and the Timer node delay modes. Keeps those checks isolated from author-facing feature exposure.
-
-## Install (no coding needed)
-
-1. Copy this whole folder into the game's `mods/` directory.
-2. Start HackHub — the mod loads from `dist/mod.js`.
-
-## Rebuild (optional, for programmers)
-
-`src/index.ts` is the same code as `dist/mod.js`. With Node 18+:
-
-```
-npm install
-npm run build
-```
-
-## What the editor compiled for you
-
-- Quests: QESdk024EditorQa, QESdk024TimerQa
-- Websites: qe24-website.test
-- Permissions requested: network, mail, ui, events
-
-## Notes
-
-- QESdk024EditorQa: “Create Wi-Fi” exports as a native access point in HackHub 1.3.0+. Current QA found one game display wart: Bettercap may show no network name after targeting the AP by BSSID, but scanning, joining and cracking still worked.
-- qe24-website.test: 1 unlisted page (/hidden/result). Nothing links to it and the in-game search will not show it, so the player reaches it only by typing the address or by running dirhunter on the host — which is exactly what makes a good hiding place for a clue. If you meant this to be findable normally, turn on “Listed in search” for the page.
 <!--
 Hand-maintained. `npm run gen:qa-export` appends this file to the compiled
 README.md, and the guard test (`src/compiler/__tests__/sdk024QaExport.test.ts`)

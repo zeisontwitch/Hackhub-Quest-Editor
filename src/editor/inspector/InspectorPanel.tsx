@@ -253,7 +253,7 @@ function QuestInspector() {
             />
             <Toggle
                 label="Complete automatically"
-                hint="Best left off. HackHub 1.1.2 freezes whenever it finishes a quest that came from a mod, whether that happens automatically or through a complete button, so quests are built to end their story without formally completing."
+                hint="The game closes the quest itself once its objectives are all done, with no Complete quest node needed. Leave it off when the ending should be a deliberate story moment."
                 checked={quest.autoComplete}
                 onChange={(autoComplete) => write({ autoComplete })}
             />
@@ -264,7 +264,7 @@ function QuestInspector() {
             />
             <Toggle
                 label="Show a manual complete button"
-                hint="Also best left off, for the same reason: pressing it freezes the game."
+                hint="Puts a Complete button in the player's quest panel, so they decide when the quest is over."
                 checked={quest.hasCompleteButton}
                 onChange={(hasCompleteButton) => write({ hasCompleteButton })}
             />

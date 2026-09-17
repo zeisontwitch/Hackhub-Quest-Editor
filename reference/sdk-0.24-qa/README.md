@@ -5,9 +5,9 @@ This folder is a deliberately small, manual in-game harness for the r166 SDK 0.2
 ## Contents
 
 - `mod/manifest.json` — package metadata for the raw in-game harness.
-- `mod/dist/mod.js` — hand-authored HackHub content mod that uses SDK 0.24-only surfaces directly, including phone-call `onEnd` completion probes.
-- `projects/sdk-0.24-ingame-qa.project.json` — editor-importable project that exercises the editor's native `world.wifi` node path plus catalogue events; it was generated before r167 exposed Create Wi-Fi in the palette.
-- `editor-export/` — ready-to-install export generated from that project with editor build `2026-09-16.r166`.
+- `mod/dist/mod.js` — hand-authored HackHub content mod that uses SDK 0.24-only surfaces directly, including phone-call `onEnd` completion probes and the `qe24 clock` timezone probe (S-04, harness 1.0.7).
+- `projects/sdk-0.24-ingame-qa.project.json` — editor-importable project that exercises the editor's native `world.wifi` node path plus catalogue events; it was generated before r167 exposed Create Wi-Fi in the palette. It also carries `QESdk024TimerQa`, the Timer rows S-01–S-03.
+- `editor-export/` — ready-to-install export generated from that project with editor build `2026-09-17.r175` (mod `1.0.3`; quests `QESdk024EditorQa` and `QESdk024TimerQa`). Regenerate with `npm run gen:qa-export`; the guard test `src/compiler/__tests__/sdk024QaExport.test.ts` fails on a single byte of drift.
 
 
 ## Current raw-mod status from in-game QA
@@ -16,9 +16,13 @@ As of the HackHub 1.3.0 / Steam build 25341308 run on 2026-09-16, the raw `mod` 
 
 New after that run: raw harness version 1.0.6 adds two untested phone-call `onEnd` probes (`phone-auto` and `phone-direct`) for the old renderer-freeze bug. Run them on a clean throwaway save before changing the editor's phone-call completion behavior.
 
+New again for the r175 pass: raw harness version **1.0.7** adds `qe24 clock`, which prints the current in-game time as raw `Time.now`, as UTC, as the machine-local rendering and as `Time.date()`. Comparing those lines with the clock on screen settles **S-04** (does the `at` mode's timezone correction match what the display shows?) without editing a calendar date.
+
 One raw Wi-Fi gameplay wart remains documented: Bettercap can set the AP by BSSID and capture/crack the handshake, but `set wifi.ap 02:24:00:00:24:01` logs `SSID: undefined` instead of `QE24-RAW-5G`. Treat that as a runtime UX issue to account for before exposing native Wi-Fi broadly.
 
 Editor-export follow-up: `http://qe24-website.test/` and `/echo` loaded, but neither `http-request` nor `http-response` objective checked off. With editor export 1.0.2 on a fresh save, the setup mail appeared, debug toasts appeared, reload kept only one `QE24-LAB-5G`, and Wi-Fi objectives still completed after reload with the expected BSSID. DNS-only collaborator lookup was tested with `nslookup <printed-subdomain>.qe24-collab.test`; it returned `No results found` and produced no new collaborator history entry, so treat DNS-only collaborator support as unsupported/fenced in this build. Browser HTTP collaborator remains green.
+
+The refreshed `editor-export/` (mod 1.0.3, editor build r175) carries both quests; the Timer rows S-01–S-03 are described in the export README's appended notes, maintained in `editor-export.notes.md`.
 
 ## Plain-English quick start
 
@@ -91,7 +95,9 @@ Recommended next pass:
    qe24 schedule 10
    ```
 
-5. Later, test the editor export separately: `QE24-LAB-5G` and `http://qe24-website.test/`.
+5. Clock zone (S-04). Run `qe24 clock` and compare the two renderings it prints with the clock on screen. Screen matches "local time" → the editor's `at` correction stays as shipped; screen matches UTC → the editor drops the correction (one line in `computeTimerFireAt`).
+
+6. Later, test the editor export separately: `QE24-LAB-5G`, `http://qe24-website.test/` and the Timer quest's S-01–S-03 rows.
 
 ## What the new checks mean
 
@@ -147,13 +153,15 @@ Record the curl subcase as `Blocked` if `curl` is missing. H-04 and H-06 can sti
 
 ## Editor-export test route
 
-Test this separately from the raw harness on a clean save when possible. Install `editor-export/` and check:
+Test this separately from the raw harness on a clean save when possible. Install `editor-export/` (mod 1.0.3, editor build r175, both quests) and check:
 
 1. Start/load: a mail/toast for `QESdk024EditorQa` appears and there is no startup error.
 2. Browser HTTP: open `http://qe24-website.test/`, then `http://qe24-website.test/echo`. "Tick" means the active quest/objective tracker line gets a checkmark or moves to completed; you may also see a debug toast like `Editor QA ticked: http-response`. Current evidence: both pages load but neither HTTP objective ticks, so static website hosting works while editor HTTP events stay fenced.
 3. Editor Wi-Fi: connect to `QE24-LAB-5G` with `correct-horse-battery`, then disconnect. Expected AP fields are BSSID `02:24:00:00:24:02`, channel `44`, WPS `true`; record whether the `wifi-connect` and `wifi-disconnect` objective lines tick.
 4. Save/reload: the editor AP should not duplicate, and event listeners/objectives should still work.
-5. Optional intercept: also install the raw harness, run `qe24 intercept on`, open `http://qe24-website.test/`, then `qe24 intercept queue` and `qe24 intercept forward`. The editor `http-intercepted` objective should tick if static website traffic emits `Http.Intercepted`.
+5. Timer rows (S-01–S-03): `QESdk024TimerQa` auto-starts. Timer A is 2 in-game minutes (≈ 2 real seconds) and should send a mail plus a toast; Timer B is 2 in-game hours (≈ 2 real minutes) and should fire exactly once even if you save/reload before it (S-02). Complete or abandon the quest first and Timer B must never fire (S-03). Console lines: `timer node … armed for …`, `timer <id> fired`, and `timer missed: …` when a stale arm is dropped.
+
+6. Optional intercept: also install the raw harness, run `qe24 intercept on`, open `http://qe24-website.test/`, then `qe24 intercept queue` and `qe24 intercept forward`. The editor `http-intercepted` objective should tick if static website traffic emits `Http.Intercepted`.
 
 ## Raw harness commands
 
@@ -162,6 +170,7 @@ Test this separately from the raw harness on a clean save when possible. Install
 - `qe24 seed` — create/re-register the per-save HTTP host and native Wi-Fi AP.
 - `qe24 status` — print the current host, Wi-Fi password, Time.now, scheduler queue count, HTTP history/intercept state, target Wi-Fi match count/details, connected Wi-Fi details and whether the connected network is the QE24 target.
 - `qe24 history` — print recent HTTP history, collaborator hits and held intercept requests; useful evidence when game logs are unavailable.
+- `qe24 clock` — print the current in-game time as raw `Time.now`, as UTC, as the machine-local rendering and as `Time.date()`, to settle which zone the in-game clock displays (S-04).
 - `qe24 http-fetch` — make a server-origin HTTP request through `Http.fetch()`.
 - `qe24 schedule 1` — schedule a job one in-game minute in the future; use the clock Wait button or let game time advance.
 - `qe24 collab` — mint a collaborator subdomain and print a Browser URL, a `curl` command for builds that have curl, and an optional DNS-only `nslookup` hint.
@@ -183,4 +192,4 @@ Raw harness fixed values:
 - The harness uses `SaveStorage` to remember generated network IPs per save. It does not use shared/global storage for per-save state.
 - HTTP interception can make browser/curl requests appear hung. Run `qe24 intercept forward` or `qe24 intercept off` immediately after the intercepted request is recorded. If left on, the engine may show blank/dark pages until its held-request timeout forwards traffic.
 - `qe24 reset` is scoped to the IPs the harness stored in the current save, but use a throwaway save anyway.
-- Results should be recorded in `docs/plans/r166-sdk-0.24-ingame-qa.md`; only lift editor fences after those rows are green in-game.
+- Results should be recorded in `docs/plans/r166-sdk-0.24-ingame-qa.md`; the Timer rows are defined in `docs/plans/r173-timer-rename-and-calendar.md` (S-01–S-08); only lift editor fences after those rows are green in-game.

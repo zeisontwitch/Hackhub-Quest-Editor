@@ -523,9 +523,12 @@ describe("manual coverage — G12: furniture nodes", () => {
  *        in silence
  *   G14  appendices.html renders every event name; nothing compared them to
  *        the catalogue
- *   G15  the build stamp is in 43 pages. `npm run gen:manual` refreshes the 32
- *        generated node pages from inventory.editorBuild; the other 11 are
- *        hand-written and were never checked against EDITOR_BUILD.
+ *   G15  the build stamp is on every page. `npm run gen:manual` refreshes the
+ *        generated node pages from inventory.editorBuild; the hand-written
+ *        pages carry it as literal text and were never checked against
+ *        EDITOR_BUILD. (r175: the old comment here said "32 generated / 11
+ *        hand-written". Both counts had drifted — `nodes/fx-pay.html` moved to
+ *        the generated side and the node count grew — so they live nowhere now.)
  *
  * These read the live sources (reference/hackhub-events.json, EDITOR_BUILD)
  * rather than the checked-in inventory.json, so they stay honest even if
@@ -602,7 +605,7 @@ describe("manual coverage — G15: the build stamp", () => {
         }
         expect(
             wrong,
-            `${wrong.length} pages claim the wrong editor build. The 11 hand-written pages carry\n` +
+            `${wrong.length} pages claim the wrong editor build. The hand-written pages carry\n` +
                 `  the stamp as literal text, so gen:manual will not fix them:\n  ${wrong.join("\n  ")}`,
         ).toEqual([]);
     });
@@ -619,6 +622,34 @@ describe("manual coverage — G15: the build stamp", () => {
             stale,
             `public/manual/search-index.js quotes ${stale.length} stale build stamp(s): ${stale.join(", ")}.\n` +
                 "  It is generated — run `npm run gen:manual` instead of editing it by hand.",
+        ).toEqual([]);
+    });
+});
+
+/* ── G16: what a conditional field waits for ──────────────────────────────
+ * r175. Every `showWhen` gate in the registry is a select, and a select always
+ * has a value — its default. The generated wording said "only once <gate> is
+ * set", which is never true, and never named the value. The sentence now names
+ * both the gate field and the value it waits for, so each row carries two or
+ * more `.ui` labels (field + at least one value). One label means a page has
+ * gone back to naming the field alone.
+ */
+describe("manual coverage — G16: the When it appears rows", () => {
+    it("names the value a conditional field waits for", () => {
+        const rows = PAGES.flatMap((page) =>
+            [...read(page).matchAll(/<dt class="dt-mute">When it appears<\/dt><dd>(.*?)<\/dd>/g)].map(
+                (m) => ({ page: rel(page), sentence: m[1] }),
+            ),
+        );
+        const thin = rows
+            .filter((r) => (r.sentence.match(/class="ui"/g) ?? []).length < 2)
+            .map((r) => `${r.page}: ${r.sentence}`);
+        expect(rows.length, "no conditional-field rows found at all").toBeGreaterThan(0);
+        expect(
+            thin,
+            `${thin.length} "When it appears" rows name the gate field but not the value it waits for.\n` +
+                "  The sentence is generated — fix scripts/build-node-pages.mjs and re-run gen:manual:\n  " +
+                thin.join("\n  "),
         ).toEqual([]);
     });
 });

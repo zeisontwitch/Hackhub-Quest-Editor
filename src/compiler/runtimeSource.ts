@@ -1111,7 +1111,10 @@ function __qeRegisterProject(sdk, PROJECT) {
             if (!(y > 0 && m > 0 && day > 0)) return null;
             /* "The clock shows h:mi": interpret the chosen wall time in the
                player machine's zone (the one the in-game clock displays).
-               If S-04 proves the clock shows UTC, drop the tz correction. */
+               If S-04 proves the clock shows UTC, drop the tz correction.
+               Probe: the raw QA harness's "qe24 clock" (1.0.7) prints
+               Time.now in both renderings to compare with the in-game
+               clock, and this arm log prints ISO next to the raw value. */
             var tz = new Date().getTimezoneOffset() * 60000;
             return Date.UTC(y, m - 1, day, h, mi) - tz;
         }
@@ -1156,7 +1159,9 @@ function __qeRegisterProject(sdk, PROJECT) {
                 }
                 id = sdk.Scheduler.scheduleAt(BEAT_KIND, payload, fireAt);
                 /* ISO string next to the raw value: S-04 compares both with
-                   the on-screen clock to settle the display timezone. */
+                   the on-screen clock to settle the display timezone. The
+                   raw harness's "qe24 clock" does the same for the current
+                   time, so the answer needs no calendar date to be typed. */
                 __QE.log("timer node " + nodeId + " armed for in-game " + new Date(fireAt).toISOString() + " (fireAt " + fireAt + ", job " + id + ")");
             }
             beatJobs.push(id);

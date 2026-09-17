@@ -4,9 +4,9 @@
   "mod": {
     "id": "qe-sdk-024-editor-qa",
     "name": "QE SDK 0.24 Editor QA Scaffold",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "author": "HackHub Quest Editor",
-    "description": "Evidence-only project for r166 SDK 0.24 in-game verification. Keeps native Wi-Fi and HTTP/curl event checks isolated from author-facing feature exposure.",
+    "description": "Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, and the Timer node delay modes. Keeps those checks isolated from author-facing feature exposure.",
     "tags": [
       "qa",
       "sdk-0.24",

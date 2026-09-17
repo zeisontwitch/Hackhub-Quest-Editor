@@ -1,3 +1,58 @@
+# Handoff — r175
+
+r175 is the clean-up round that unblocks Zeis's in-game testing of the
+game/SDK catch-up. Three of the four items came from the r174 audit's
+"left for a decision" list; the fourth was the stale Quest-tab warnings.
+
+- **The installable QA export is current again.**
+  `reference/sdk-0.24-qa/editor-export/` is regenerated from
+  `projects/sdk-0.24-ingame-qa.project.json` with `npm run gen:qa-export`
+  (new script) at editor build r175, mod **1.0.3**, and carries both quests —
+  `QESdk024EditorQa` and the Timer's `QESdk024TimerQa` (S-01 fire, S-02 reload
+  survival, S-03 cancel). It had been the r166 artifact with one quest. The
+  compiled README is the compiler's own; the QA notes live in
+  `editor-export.notes.md` and the generator appends them, so nothing
+  hand-written is lost. `src/compiler/__tests__/sdk024QaExport.test.ts`
+  compiles the project in-process and compares every byte, then fails on a
+  file the compiler does not emit.
+- **The manual's "When it appears" rows name the value.** The generator used
+  to write "Only once *When it fires* is set." for every conditional field —
+  never true for a select with a default, and it never said which value
+  reveals the field. It now writes "Shown while **When it fires** is **After a
+  delay** — the option it starts on. The other options hide it." or "Shown
+  only when … is …" for the other values, lists array gates with "or", and
+  keeps the old sentence only when a gate carries no `equals`. G16 fails a row
+  that names fewer than two `.ui` labels. Manual regenerated (39 node types /
+  143 fields / 74 sockets) and the hand-written pages' stamps swept to r175.
+- **The stale freeze hints are gone.** **Complete automatically** and
+  **Show a manual complete button** in the inspector no longer tell authors
+  the game freezes; `QE24-TestResults - 3.md` shows completion, the complete
+  button, retire and unclaim all clean on HackHub 1.3.0, and `docs/04` is
+  already marked historical. No freeze copy is left in `src/` or the manual.
+- **S-04 has a probe that needs no date edit.** The Timer `at` mode corrects
+  the typed time by the machine's timezone offset, assuming the in-game clock
+  displays local time. Raw harness **1.0.7** adds `qe24 clock`, which prints
+  `Time.now` as raw ms, as UTC, as the machine-local rendering and as
+  `Time.date()`; the tester compares those lines with the clock on screen.
+  Local match keeps the correction; a UTC match drops the one line in
+  `computeTimerFireAt` (the code comment says which, and now names the probe).
+  The export's date-mode arm log still prints ISO next to the raw `fireAt`.
+
+Gates: `npm run typecheck` 0 errors; `npm test` **1,594 passed / 81 files**
+(was 1,590 / 80 — +3 export guard, +1 G16); `npm run build` succeeds (only the
+pre-existing chunk-size warning); `npm run gen:manual` and
+`npm run gen:qa-export` regenerated their artifacts. Nothing visual is
+claimed.
+
+Stamp: `2026-09-17.r175`.
+
+Supporting notes:
+
+- [`plans/r175-qa-export-and-leftovers.md`](plans/r175-qa-export-and-leftovers.md)
+- [`plans/r174-r172-r173-audit.md`](plans/r174-r172-r173-audit.md)
+
+---
+
 # Handoff — r174
 
 r174 is the read-back audit of the two Timer rounds (r172 "Schedule beat",
@@ -44,6 +99,9 @@ Open for a decision (reported, not changed):
   generator wording issue across every conditional field, not a Timer fix.
 - S-04 still decides whether the `at` mode's timezone correction matches the
   in-game clock.
+
+→ All three picked up in r175:
+[`plans/r175-qa-export-and-leftovers.md`](plans/r175-qa-export-and-leftovers.md).
 
 Supporting notes:
 

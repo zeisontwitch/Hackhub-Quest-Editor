@@ -225,11 +225,7 @@ function fieldBlock(node, f, vfield, depth = 0) {
     if (lim) rows.push(["Limits", esc(lim)]);
 
     if (f.showWhen) {
-        rows.push([
-            "When it appears",
-            `Only once <b class="ui">${esc(showWhenLabel(node, f.showWhen))}</b> is set. Until then the field is hidden.`,
-            "dt-mute",
-        ]);
+        rows.push(["When it appears", showWhenSentence(node, f.showWhen), "dt-mute"]);
     }
     if (f.tokens) {
         rows.push([
@@ -266,12 +262,55 @@ function fieldBlock(node, f, vfield, depth = 0) {
         .join("\n");
 }
 
-function showWhenLabel(node, cond) {
-    /* cond is the key the field waits on; speak its label, not its key. */
-    const key = typeof cond === "string" ? cond : cond?.key;
+/* The field a `showWhen` waits on, by key or path. */
+function gateFor(node, key) {
     const flat = (fields) => fields.flatMap((f) => [f, ...(f.fields ? flat(f.fields) : [])]);
-    const found = flat(node.fields).find((f) => f.key === key || f.path === key);
-    return found?.label ?? key ?? "another field";
+    return flat(node.fields).find((f) => f.key === key || f.path === key);
+}
+
+/* A field's starting value, for comparing against `showWhen.equals`. The same
+   three lookups defaultValue() does (key, path, one unambiguous holder), but it
+   returns the raw value rather than something printable. */
+function rawDefault(node, f) {
+    const d = node.defaults ?? {};
+    if (!f) return undefined;
+    if (f.key in d) return d[f.key];
+    const byPath = String(f.path ?? "")
+        .split(".")
+        .reduce((o, part) => (o && typeof o === "object" ? o[part] : undefined), d);
+    if (byPath !== undefined) return byPath;
+    const holders = Object.values(d).filter(
+        (o) => o && typeof o === "object" && !Array.isArray(o) && f.key in o,
+    );
+    return holders.length === 1 ? holders[0][f.key] : undefined;
+}
+
+/*
+ * The `When it appears` sentence. The pre-r175 wording said "only once <gate>
+ * is set", which is never true: every gate in the registry is a select, and a
+ * select always has a value — its default. The reader needs the *value* the
+ * field waits for, and needs to be told when the field is there from the
+ * start rather than hidden.
+ */
+function showWhenSentence(node, cond) {
+    const key = typeof cond === "string" ? cond : cond?.key;
+    const gate = key ? gateFor(node, key) : undefined;
+    const gateLabel = esc(gate?.label ?? key ?? "another field");
+    const wanted = cond?.equals === undefined ? [] : [cond.equals].flat();
+    if (!wanted.length) {
+        /* No value to name (nothing in the registry looks like this) — the old
+           sentence is the honest fallback. */
+        return `Shown only once <b class="ui">${gateLabel}</b> is set. Until then the field is hidden.`;
+    }
+    const labels = wanted.map((value) => {
+        const option = gate?.options?.find((o) => o.value === value);
+        return esc(option?.label ?? String(value));
+    });
+    const list = labels.length > 1 ? `${labels.slice(0, -1).join(", ")} or ${labels.at(-1)}` : labels[0];
+    if (wanted.includes(rawDefault(node, gate))) {
+        return `Shown while <b class="ui">${gateLabel}</b> is <b class="ui">${list}</b> — the option it starts on. The other options hide it.`;
+    }
+    return `Shown only when <b class="ui">${gateLabel}</b> is <b class="ui">${list}</b>. Until then the field is hidden.`;
 }
 
 /* ── Sockets ────────────────────────────────────────────────────────────── */

@@ -277,6 +277,34 @@ function sendMailSafe(subject, body) {
     });
 }
 
+/* S-04 (the r173 Timer's `at` mode): the editor corrects a typed clock time by
+ * the machine's timezone offset so that "09:00" means the in-game clock DISPLAYS
+ * 09:00. That is only right if the game's clock UI renders in the player
+ * machine's zone, which the pinned SDK does not state. Print both candidate
+ * renderings so the tester can compare them with the clock on screen. */
+function printClockProbe(tools) {
+    tools.println("QE24 clock probe (S-04: which zone does the game clock display?)");
+    if (!sdk.Time || !sdk.Time.now) {
+        tools.println("Time.now unavailable in this build - S-04 cannot be answered here.");
+        return;
+    }
+    var now = safe("Time.now", function () { return sdk.Time.now(); }, null);
+    if (now == null) {
+        tools.println("Time.now threw - paste that as the result.");
+        return;
+    }
+    var d = new Date(now);
+    var gameDate = sdk.Time.date ? safe("Time.date", function () { return sdk.Time.date(); }, null) : null;
+    tools.println("Time.now:            " + now);
+    tools.println("if the clock is UTC: " + d.toISOString());
+    tools.println("if it is local time: " + d.toString());
+    tools.println("Time.date() reads:   " + (gameDate ? String(gameDate) : "unavailable"));
+    tools.println("");
+    tools.println("Now read the in-game clock on screen and compare its hour with the two lines above.");
+    tools.println("Report: the on-screen clock plus both lines. Screen matches 'local time' -> the Timer's at-mode correction stays; screen matches UTC -> drop it.");
+    tools.println("Tip: run qe24 clock twice, a minute apart, if the first read is ambiguous.");
+}
+
 function printGuide(tools) {
     ensureSession();
     tools.println("QE24 is a QA harness, not a puzzle quest. The quest objectives are reminders for tests you can run in any order.");
@@ -294,6 +322,7 @@ function printGuide(tools) {
     tools.println("- qe24 http-fetch. If it printed status 200 and the http-response objective ticked, record that as a pass.");
     tools.println("- Optional proxy test: run qe24 intercept with no extra word to print the two-terminal steps.");
     tools.println("- Time test: qe24 schedule 1, then use the clock Wait button or wait until the scheduler mail/toast appears.");
+    tools.println("- Clock zone test: qe24 clock prints two renderings of the current in-game time; compare them with the clock on screen (S-04).");
     tools.println("- Collaborator test: qe24 collab, then open the printed URL in the in-game browser, or run the curl command if your build has curl.");
     tools.println("- Wi-Fi test: connect to " + WIFI_SSID + " with passphrase " + WIFI_PASSWORD + ", then disconnect.");
     tools.println("");
@@ -317,7 +346,8 @@ function printNextSteps(tools) {
     tools.println("   qe24 claim phone-auto -> qe24 phone-auto -> let the call end; AutoComplete should finish without freezing.");
     tools.println("   qe24 claim phone-direct -> qe24 phone-direct -> let the call end; onEnd calls complete() without freezing.");
     tools.println("4. Scheduler reload: qe24 schedule 10, save/reload before it fires if you can, then wait. It should fire once.");
-    tools.println("5. Later, install the editor export to test QE24-LAB-5G and qe24-website.test separately.");
+    tools.println("5. Clock zone (S-04): qe24 clock, then compare its two renderings with the in-game clock on screen.");
+    tools.println("6. Later, install the editor export to test QE24-LAB-5G, qe24-website.test and the QESdk024TimerQa rows.");
 }
 
 function printInterceptGuide(tools) {
@@ -637,7 +667,7 @@ class QE24Command extends sdk.Command {
         this.Description = "SDK 0.24 QA harness commands";
         this.Autocomplete = [
             { label: "qe24", type: "STRING" },
-            { label: "guide|next|status|history|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
+            { label: "guide|next|status|history|clock|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
         ];
     }
     async Run(tools) {
@@ -676,11 +706,15 @@ class QE24Command extends sdk.Command {
             tools.println("Connected Wi-Fi is QE24 target: " + (connectedMatchesTarget ? "yes" : "no"));
             if (targetWifi && currentWifi && !connectedMatchesTarget) tools.println("Note: if the game UI says QE24 is connected, paste this mismatch before we unhide Wi-Fi.");
             tools.println("Tip: run qe24 next if the 6/6 surface objective quest is already done, qe24 intercept for proxy-test steps, or qe24 history for HTTP/collab evidence.");
-            tools.println("Commands: qe24 guide · qe24 next · qe24 status · qe24 history · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
+            tools.println("Commands: qe24 guide · qe24 next · qe24 status · qe24 history · qe24 clock · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
             return;
         }
         if (sub === "history") {
             printHttpHistory(tools);
+            return;
+        }
+        if (sub === "clock") {
+            printClockProbe(tools);
             return;
         }
         if (sub === "seed") {

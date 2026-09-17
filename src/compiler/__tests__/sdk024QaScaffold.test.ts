@@ -29,16 +29,16 @@ describe("r166 SDK 0.24 in-game QA scaffold", () => {
         expect(mod).toContain("QE24-LAB-5G");
     });
 
-    it("ships a schedule-beat quest (S-01 fire / S-02 reload / S-03 cancel)", () => {
+    it("ships a timer quest (S-01 fire / S-02 reload / S-03 cancel)", () => {
         const text = readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/projects/sdk-0.24-ingame-qa.project.json"), "utf8");
         const parsed = parseProjectFile(text);
         expect(parsed.ok).toBe(true);
         if (!parsed.ok) throw new Error(parsed.error);
 
-        const beatQuest = parsed.project.quests.find((quest) => quest.name === "QESdk024BeatQa");
+        const beatQuest = parsed.project.quests.find((quest) => quest.name === "QESdk024TimerQa");
         expect(beatQuest).toBeDefined();
         expect(beatQuest?.autoStart).toBe(true);
-        const beats = (beatQuest?.graph.nodes ?? []).filter((node) => node.type === "flow.schedule");
+        const beats = (beatQuest?.graph.nodes ?? []).filter((node) => node.type === "flow.timer");
         expect(beats.map((node) => node.data.minutes).concat(beats.map((node) => node.data.hours))).toEqual([2, 0, 0, 2]);
 
         const output = compileProject(parsed.project);
@@ -46,7 +46,10 @@ describe("r166 SDK 0.24 in-game QA scaffold", () => {
         /* One beat registration per quest; both quest ids reach the Scheduler. */
         expect(mod.split("Scheduler.register").length).toBe(3);
         expect(mod).toContain('"id":"' + beatQuest!.id + '"');
-        expect(mod).toContain("schedule beat missed");
-        expect(mod).toContain("Schedule beat A arrived (S-01 green)");
+        expect(mod).toContain("timer missed");
+        /* The mod-unique kind is composed at runtime (mod id is data), but
+           the "/timer" suffix ships as a source literal. */
+        expect(mod).toContain('"/timer"');
+        expect(mod).toContain("Timer A arrived (S-01 green)");
     });
 });

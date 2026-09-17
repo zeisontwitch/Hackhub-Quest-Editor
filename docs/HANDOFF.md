@@ -1,3 +1,76 @@
+# Handoff — r173
+
+r173 is Zeis' feedback round on the r172 node: **rename + wording + calendar
+modes.**
+
+What shipped:
+
+- **Rename:** "Schedule beat" is now the **Timer**; the internal type id
+  moved `flow.schedule` → `flow.timer` (the only cheap window — r172 was
+  never played in game). Palette tag, manual page (`nodes/flow-timer.html`),
+  shot-list row and all references follow.
+- **"Beat" purge:** the word is gone from every user-facing string of the
+  node (warnings, checking.html entries, manual voice, console logs the QA
+  checklist reads, QA-quest title/mail/toasts). "The beat has nothing to do"
+  is now **"The timer has nothing to do"**.
+- **Info text:** Zeis' sentence verbatim — "Wait X amount of time until the
+  next node fires. Great for when you want the story to hold for a moment." —
+  followed by the existing second sentence with "beat" → "timer".
+- **Calendar modes:** a **When it fires** select with three options
+  (`showWhen` hides the unused field groups):
+  - **After a delay** (default) — Days/Hours/Minutes from when the story
+    arrives (the r172 behavior).
+  - **In N days at a set time** — *Days from now* (0 = today) + shared
+    Hour/Minute, resolved against `Time.date()` at arm time via the
+    local-time `Date` constructor (no timezone math). Zeis' most-likely
+    use case: "in 3 days at exactly 12:00".
+  - **On a specific in-game date & time** — Year/Month/Day + shared
+    Hour/Minute, via `Scheduler.scheduleAt` with a player-zone correction
+    for the chosen clock time.
+  - Incomplete or already-past dates **fail open** (fire immediately + log),
+    same policy as an empty timer. `daytime` gets no editor warning — 0 days
+    and 00:00 are both legal values.
+- **Dry run:** the Simulator stub gained `scheduleAt`; every mode fires
+  through the real registered handler in the collapsed clock.
+- **QA vehicle:** `QESdk024BeatQa` → **QESdk024TimerQa** (player-visible
+  strings de-beated); new checklist rows S-04 (timezone probe — the arm log
+  prints `fireAt` + ISO string for comparison with the on-screen clock),
+  S-05 (daytime fire across a reload), S-06 (past time → immediate), S-08
+  (optional multi-day offset watch).
+- Manual regenerated at **39 node types / 143 editable fields / 74 sockets**
+  (mode + 7 new fields); `checking.html` entries reworded and
+  `msg-beat-nothing-to-do` → `msg-timer-nothing-to-do`.
+- Node Reference template example now demonstrates `daytime` mode
+  (in 3 days at 12:00) — one deliberate deviation from the plan, which said
+  keep the `after` example; the new mode is the headline feature.
+
+Validation for this pass: `npm run gen:manual`, targeted Vitest (13 timer
+runtime tests incl. a fixed-clock `daytime` arm and the tz-corrected `at`
+arm), `npm run typecheck`, `npm test` (**1,584 tests / 80 files**),
+`npm run build`, and `git diff --check`. One hiccup: an edit mangled
+`runtimeSource.ts` (truncated it mid-file); caught by typecheck, restored
+from git, and the change was re-applied through a verified replacement
+script.
+
+Owed to Zeis (in game): S-01…S-03 on QESdk024TimerQa (unchanged), plus the
+new S-04…S-08 rows, and the `node-flow-timer-inspector.png` screenshot.
+
+Supporting notes:
+
+- [`plans/r173-timer-rename-and-calendar.md`](plans/r173-timer-rename-and-calendar.md)
+- [`plans/r172-schedule-beat.md`](plans/r172-schedule-beat.md)
+
+Next-up from the SDK 0.24 comparison: focused Mail QA for `Mail.send()` ids,
+`Mail.remove()` and `replyable`; fresh Twotter update/remove QA; phone-proxy
+QA if xu can provide concrete evidence; then the contact/branching template
+queue. HTTP nodes stay fenced until SteelWaffe clarifies/fixes `curl`,
+DNS-only collaborator hits and static-site HTTP event semantics.
+Suspicion/log-forensics and SMS remain absent from the pinned SDK.
+
+Older handoff sections below are retained as history.
+
+---
+
 # Handoff — r172
 
 r172 ships the **Schedule beat** node: the SDK 0.24 `Scheduler` (raw, reload-proof
@@ -1117,12 +1190,14 @@ banner before acting on any of it.
 
 ## Where things stand
 
-- **HEAD:** r172 (Schedule beat node) on `arena/01a0af11-hackhub-quest-editor`,
-  committed and pushed after validation. Previous rounds: r171 inspector
-  polish + phone-proxy notes, r170 Ask player prompt node, r169 phone end flow
-  + quest-ending nodes, r168 phone `onEnd` completion QA probes, r167 Create Wi-Fi.
-- **1,577 tests green** across 80 files, typecheck clean, build clean.
-- **Editor build stamp:** `2026-09-17.r172` (bumps every round since r148 — the
+- **HEAD:** r173 (Timer rename + calendar modes) on
+  `arena/01a0af11-hackhub-quest-editor`, committed and pushed after
+  validation. Previous rounds: r172 Schedule beat node (now the Timer), r171
+  inspector polish + phone-proxy notes, r170 Ask player prompt node, r169
+  phone end flow + quest-ending nodes, r168 phone `onEnd` completion QA
+  probes, r167 Create Wi-Fi.
+- **1,584 tests green** across 80 files, typecheck clean, build clean.
+- **Editor build stamp:** `2026-09-17.r173` (bumps every round since r148 — the
   stamp is a version, not a changelog).
 - Tool-pack modules: `src/toolpacks/schema.ts` (format 2 + plain-language
   `parseToolPack`), `src/toolpacks/palette.ts` (pure `packNodeDefs`,

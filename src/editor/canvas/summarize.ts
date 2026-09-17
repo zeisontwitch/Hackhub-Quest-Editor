@@ -247,7 +247,18 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
         case "flow.delay":
             return [`${Number(d.seconds ?? 0)} s`];
 
-        case "flow.schedule": {
+        case "flow.timer": {
+            const mode = d.mode ?? "after";
+            if (mode === "daytime") {
+                return [`${Math.round(Number(d.offsetDays ?? 0))}d at ${String(Math.round(Number(d.hour ?? 0))).padStart(2, "0")}:${String(Math.round(Number(d.minute ?? 0))).padStart(2, "0")}`];
+            }
+            if (mode === "at") {
+                const y = Number(d.dateYear ?? 0);
+                const m = Number(d.dateMonth ?? 0);
+                const day = Number(d.dateDay ?? 0);
+                if (!(y > 0 && m > 0 && day > 0)) return ["no date set"];
+                return [`${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")} ${String(Math.round(Number(d.hour ?? 0))).padStart(2, "0")}:${String(Math.round(Number(d.minute ?? 0))).padStart(2, "0")}`];
+            }
             const parts = [
                 Number(d.days ?? 0) ? `${Math.round(Number(d.days))}d` : "",
                 Number(d.hours ?? 0) ? `${Math.round(Number(d.hours))}h` : "",

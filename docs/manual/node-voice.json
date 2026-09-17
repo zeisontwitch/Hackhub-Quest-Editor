@@ -1,1658 +1,1687 @@
 {
-  "_readme": [
-    "Hand-written prose for the generated node reference pages.",
-    "scripts/build-node-pages.mjs reads this and docs/manual/inventory.json.",
-    "Facts (labels, hints, defaults, limits, sockets) come from inventory.json and",
-    "are never repeated here. This file holds only what a person has to decide:",
-    "what a node is for, when you would reach for it, and what goes wrong.",
-    "",
-    "A node with no entry here is skipped, not filled in with plausible filler.",
-    "",
-    "Rules for anything added here:",
-    "  - second person, present tense, active voice",
-    "  - no sentence over twenty words",
-    "  - the banned words in src/manual.coverage.test.ts (G6) are enforced on this text",
-    "  - every how gets a why",
-    "  - quote UI labels with <b class=\"ui\">, and only labels that really exist"
+ "_readme": [
+  "Hand-written prose for the generated node reference pages.",
+  "scripts/build-node-pages.mjs reads this and docs/manual/inventory.json.",
+  "Facts (labels, hints, defaults, limits, sockets) come from inventory.json and",
+  "are never repeated here. This file holds only what a person has to decide:",
+  "what a node is for, when you would reach for it, and what goes wrong.",
+  "",
+  "A node with no entry here is skipped, not filled in with plausible filler.",
+  "",
+  "Rules for anything added here:",
+  "  - second person, present tense, active voice",
+  "  - no sentence over twenty words",
+  "  - the banned words in src/manual.coverage.test.ts (G6) are enforced on this text",
+  "  - every how gets a why",
+  "  - quote UI labels with <b class=\"ui\">, and only labels that really exist"
+ ],
+ "entry.start": {
+  "oneliner": "Runs once, when the quest is claimed.",
+  "what": "Runs the moment the quest is claimed. Anything the story needs in place before the player acts goes here.",
+  "when": [
+   "This is the front door of your quest. Wire the opening to its <b class=\"ui\">Out</b> socket: the briefing mail, the first objective, whatever the player should meet first.",
+   "You can have more than one, and the game runs all of them when the quest is claimed. Splitting a long opening across two is fine.",
+   "It has no input socket, because nothing runs before it."
   ],
-  "entry.start": {
-    "oneliner": "Runs once, when the quest is claimed.",
-    "what": "Runs the moment the quest is claimed. Anything the story needs in place before the player acts goes here.",
-    "when": [
-      "This is the front door of your quest. Wire the opening to its <b class=\"ui\">Out</b> socket: the briefing mail, the first objective, whatever the player should meet first.",
-      "You can have more than one, and the game runs all of them when the quest is claimed. Splitting a long opening across two is fine.",
-      "It has no input socket, because nothing runs before it."
-    ],
-    "game": "The player accepts the quest and this fires. Whatever you wired after it happens at once, before they have done anything.",
-    "steps": [
-      "Find <b class=\"ui\">Quest start</b> under <b>Quest lifecycle</b> in the palette on the left.",
-      "Drag it onto the canvas, or open the one your quest already has.",
-      "Drag a wire from its <b class=\"ui\">Out</b> socket into the first node of your story.",
-      "Look at the status bar. An <b>Empty</b> warning here means nothing is wired to <b class=\"ui\">Out</b>."
-    ],
-    "mistakes": [
-      [
-        "Something that has to survive a reload is wired here.",
-        "This runs once, when the quest is claimed. After the player reloads, anything you armed here is gone. Put that in <a href=\"entry-load.html\">On start &amp; reload</a> instead."
-      ],
-      [
-        "Nothing is wired to <b class=\"ui\">Out</b>.",
-        "The quest starts and then stops. The player gets an empty journal and no idea what to do next."
-      ]
-    ],
-    "messages": [
-      [
-        "Empty",
-        "msg-empty",
-        "nothing is wired to <b class=\"ui\">Out</b>, so the node does nothing"
-      ]
-    ]
+  "game": "The player accepts the quest and this fires. Whatever you wired after it happens at once, before they have done anything.",
+  "steps": [
+   "Find <b class=\"ui\">Quest start</b> under <b>Quest lifecycle</b> in the palette on the left.",
+   "Drag it onto the canvas, or open the one your quest already has.",
+   "Drag a wire from its <b class=\"ui\">Out</b> socket into the first node of your story.",
+   "Look at the status bar. An <b>Empty</b> warning here means nothing is wired to <b class=\"ui\">Out</b>."
+  ],
+  "mistakes": [
+   [
+    "Something that has to survive a reload is wired here.",
+    "This runs once, when the quest is claimed. After the player reloads, anything you armed here is gone. Put that in <a href=\"entry-load.html\">On start &amp; reload</a> instead."
+   ],
+   [
+    "Nothing is wired to <b class=\"ui\">Out</b>.",
+    "The quest starts and then stops. The player gets an empty journal and no idea what to do next."
+   ]
+  ],
+  "messages": [
+   [
+    "Empty",
+    "msg-empty",
+    "nothing is wired to <b class=\"ui\">Out</b>, so the node does nothing"
+   ]
+  ]
+ },
+ "entry.load": {
+  "oneliner": "Runs on claim, and again on every load.",
+  "what": "Runs when the quest is claimed, and again every time the game loads it. Anything that has to be true in every session goes here.",
+  "when": [
+   "Put anything that watches for a player action here rather than in <a href=\"entry-start.html\">Quest start</a>. A watcher armed once stops working after the player reloads.",
+   "Use it for the pieces a returning player expects to still be working: the listeners behind your triggers, the state of a machine they left mid-job.",
+   "Keep one-off story beats out of it. They belong in <a href=\"entry-start.html\">Quest start</a>, or the player sees them again on every load."
+  ],
+  "game": "The player loads a save with your quest in progress and this fires again, before they touch anything.",
+  "steps": [
+   "Find <b class=\"ui\">On start &amp; reload</b> under <b>Quest lifecycle</b> in the palette.",
+   "Drag it onto the canvas.",
+   "Wire the nodes that have to be re-armed each session to its <b class=\"ui\">Out</b> socket."
+  ],
+  "mistakes": [
+   [
+    "A one-off story beat is wired here.",
+    "This runs on every load, so the player meets the opening again. Move it to <a href=\"entry-start.html\">Quest start</a>."
+   ],
+   [
+    "Nothing is wired to <b class=\"ui\">Out</b>.",
+    "The node runs and does nothing. Delete it, or wire something to it."
+   ]
+  ],
+  "messages": [
+   [
+    "Empty",
+    "msg-empty",
+    "nothing is wired to <b class=\"ui\">Out</b>, so the node does nothing"
+   ]
+  ]
+ },
+ "entry.complete": {
+  "oneliner": "Runs after the quest is completed.",
+  "what": "Runs when the quest is marked complete. That can come from a Complete quest node, auto-complete, or the player's Complete button.",
+  "when": [
+   "Use it for cleanup or epilogue beats that should happen after the quest is finished.",
+   "For a deliberate ending, place <b class=\"ui\">Complete quest</b> where the story should finish.",
+   "Anything wired here runs after that finish point, not before it."
+  ],
+  "game": "The player sees the quest finish, then this path runs through the game's quest-complete hook.",
+  "steps": [
+   "Find <b class=\"ui\">On quest complete</b> under <b>Quest lifecycle</b>.",
+   "Wire its <b class=\"ui\">Out</b> socket to the epilogue work.",
+   "Make sure your graph has a <b class=\"ui\">Complete quest</b> node, or enable another finish path in Behaviour."
+  ],
+  "mistakes": [
+   [
+    "No finish path exists.",
+    "The node waits forever. Add <b class=\"ui\">Complete quest</b> to the final beat, or enable another finish path."
+   ],
+   [
+    "Important story happens only here.",
+    "If completion is skipped, the player misses it. Put critical mail or clues before <b class=\"ui\">Complete quest</b>."
+   ]
+  ],
+  "messages": [
+   [
+    "Only runs on completion",
+    "msg-only-runs-on-completion",
+    "the editor warns you when this graph has no Complete quest node"
+   ]
+  ]
+ },
+ "entry.abandon": {
+  "oneliner": "Runs if the player gives up.",
+  "what": "Runs if the player abandons the quest. Use it to tidy up whatever the quest left behind.",
+  "when": [
+   "Reach for it when your quest changes the world in a way that should not outlive a quit: a machine left unlocked, a contact left waiting mid-conversation.",
+   "Most quests do not need it. If nothing has to be undone, delete the node rather than leaving it sitting there empty."
+  ],
+  "game": "The player drops the quest and this fires. Anything you wired after it runs once, and the quest is gone.",
+  "steps": [
+   "Find <b class=\"ui\">On quest abandoned</b> under <b>Quest lifecycle</b> in the palette.",
+   "Drag it onto the canvas.",
+   "Wire the cleanup to its <b class=\"ui\">Out</b> socket."
+  ],
+  "mistakes": [
+   [
+    "Cleanup is wired to <a href=\"entry-start.html\">Quest start</a> instead.",
+    "That runs when the quest begins, which is the opposite of when you want the tidy-up."
+   ],
+   [
+    "Nothing is wired to <b class=\"ui\">Out</b>.",
+    "Delete the node. An empty one only adds an <b>Empty</b> warning to your status bar."
+   ]
+  ],
+  "messages": [
+   [
+    "Empty",
+    "msg-empty",
+    "nothing is wired to <b class=\"ui\">Out</b>, so the node does nothing"
+   ]
+  ]
+ },
+ "objective": {
+  "oneliner": "A task the player has to finish.",
+  "what": "A task for the player. It appears in their journal, and it ticks over when the condition you wire in comes true.",
+  "when": [
+   "Give the player one objective per thing they have to do. The journal is how they know what to do next, and a quest with no objectives reads as broken.",
+   "Wire a <a href=\"trigger-event.html\">When event</a> node into the <b class=\"ui\">Trigger</b> socket. That is the condition that ticks the objective over.",
+   "Keep objectives small. One objective per step gives the player a sense of progress, and gives you somewhere to hang the next beat."
+  ],
+  "game": "The player opens their journal and reads the line you wrote. When the trigger fires, the line moves to their completed list.",
+  "fields": {
+   "name": {
+    "example": "dock-shipment",
+    "empty": "Other nodes have nothing to refer to. Name the objective before you wire anything to it."
+   },
+   "description": {
+    "put": "Write it as an instruction: what to do, and where.",
+    "example": "Find the shipment manifest on the dock terminal.",
+    "empty": "The journal shows a blank task. The player has no idea what they are meant to do.",
+    "limits": "Technically any text, but keep it to one line. The journal truncates a long one."
+   },
+   "hint": {
+    "example": "The manifest sits on the machine by the gate, not the office."
+   },
+   "info": {
+    "put": "Lore belongs here rather than in the journal line.",
+    "example": "Meridian Capital moved the shipment twice after the strike."
+   },
+   "terminalCommand": {
+    "example": "ssh dock01.meridian.local",
+    "watch": "It runs nothing on its own. It is a nudge the player can copy, not a shortcut."
+   }
   },
-  "entry.load": {
-    "oneliner": "Runs on claim, and again on every load.",
-    "what": "Runs when the quest is claimed, and again every time the game loads it. Anything that has to be true in every session goes here.",
-    "when": [
-      "Put anything that watches for a player action here rather than in <a href=\"entry-start.html\">Quest start</a>. A watcher armed once stops working after the player reloads.",
-      "Use it for the pieces a returning player expects to still be working: the listeners behind your triggers, the state of a machine they left mid-job.",
-      "Keep one-off story beats out of it. They belong in <a href=\"entry-start.html\">Quest start</a>, or the player sees them again on every load."
-    ],
-    "game": "The player loads a save with your quest in progress and this fires again, before they touch anything.",
-    "steps": [
-      "Find <b class=\"ui\">On start &amp; reload</b> under <b>Quest lifecycle</b> in the palette.",
-      "Drag it onto the canvas.",
-      "Wire the nodes that have to be re-armed each session to its <b class=\"ui\">Out</b> socket."
-    ],
-    "mistakes": [
-      [
-        "A one-off story beat is wired here.",
-        "This runs on every load, so the player meets the opening again. Move it to <a href=\"entry-start.html\">Quest start</a>."
-      ],
-      [
-        "Nothing is wired to <b class=\"ui\">Out</b>.",
-        "The node runs and does nothing. Delete it, or wire something to it."
-      ]
-    ],
-    "messages": [
-      [
-        "Empty",
-        "msg-empty",
-        "nothing is wired to <b class=\"ui\">Out</b>, so the node does nothing"
-      ]
-    ]
+  "sockets": {
+   "in": {
+    "in": "Whatever should run immediately before the objective is handed to the player — usually <a href=\"entry-start.html\">Quest start</a> or the objective before it."
+   },
+   "trigger": {
+    "in": "The <a href=\"trigger-event.html\">When event</a> node that ticks this objective over."
+   },
+   "unlocked-by": {
+    "in": "An objective that has to finish before this one becomes available."
+   },
+   "done": {
+    "out": "Whatever should happen once the player finishes — the next objective, a payment, the ending."
+   },
+   "unlock": {
+    "out": "The objective this one opens up."
+   }
   },
-  "entry.complete": {
-    "oneliner": "Runs after the quest is completed.",
-    "what": "Runs when the quest is marked complete. That can come from a Complete quest node, auto-complete, or the player's Complete button.",
-    "when": [
-      "Use it for cleanup or epilogue beats that should happen after the quest is finished.",
-      "For a deliberate ending, place <b class=\"ui\">Complete quest</b> where the story should finish.",
-      "Anything wired here runs after that finish point, not before it."
-    ],
-    "game": "The player sees the quest finish, then this path runs through the game's quest-complete hook.",
-    "steps": [
-      "Find <b class=\"ui\">On quest complete</b> under <b>Quest lifecycle</b>.",
-      "Wire its <b class=\"ui\">Out</b> socket to the epilogue work.",
-      "Make sure your graph has a <b class=\"ui\">Complete quest</b> node, or enable another finish path in Behaviour."
-    ],
-    "mistakes": [
-      [
-        "No finish path exists.",
-        "The node waits forever. Add <b class=\"ui\">Complete quest</b> to the final beat, or enable another finish path."
-      ],
-      [
-        "Important story happens only here.",
-        "If completion is skipped, the player misses it. Put critical mail or clues before <b class=\"ui\">Complete quest</b>."
-      ]
-    ],
-    "messages": [
-      [
-        "Only runs on completion",
-        "msg-only-runs-on-completion",
-        "the editor warns you when this graph has no Complete quest node"
-      ]
-    ]
+  "steps": [
+   "Find <b class=\"ui\">Objective</b> under <b>Objectives</b> in the palette.",
+   "Drag it onto the canvas.",
+   "Wire something into its <b class=\"ui\">In</b> socket, so the player actually receives it.",
+   "Add a <a href=\"trigger-event.html\">When event</a> node and wire its <b class=\"ui\">When</b> socket into <b class=\"ui\">Trigger</b>.",
+   "Write the journal line in <b class=\"ui\">Shown to the player</b>.",
+   "Wire the next beat of the story to <b class=\"ui\">On complete</b>."
+  ],
+  "mistakes": [
+   [
+    "Nothing is wired to <b class=\"ui\">Trigger</b>.",
+    "The objective sits in the journal forever. The player can do everything right and it never ticks over."
+   ],
+   [
+    "Nothing is wired to <b class=\"ui\">In</b>.",
+    "The player never receives the objective at all, so the journal stays empty."
+   ],
+   [
+    "The trigger listens for the wrong event.",
+    "The player does the thing and nothing happens. Check the event list for the one your action really raises."
+   ]
+  ],
+  "messages": [
+   [
+    "No trigger",
+    "msg-no-trigger",
+    "nothing is wired to <b class=\"ui\">Trigger</b>, so the player can never finish this objective"
+   ],
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the player never receives the objective"
+   ]
+  ]
+ },
+ "trigger.event": {
+  "oneliner": "Watches for one thing the player does.",
+  "what": "Watches for a single game event and fires when it happens. This is how your quest hears the player.",
+  "when": [
+   "Wire one into an objective's <b class=\"ui\">Trigger</b> socket to make that objective tick over when the player does the thing.",
+   "Wire one into a <a href=\"flow-branch.html\">Branch</a> to make the story react. The event carries details with it, and the branch can test them.",
+   "It has no input socket. A trigger is not part of the flow — it sits alongside it and fires on its own."
+  ],
+  "game": "Nothing appears on screen. The event fires inside the game and your quest reacts a moment later.",
+  "fields": {
+   "event": {
+    "empty": "There is nothing to listen for, so the node never fires."
+   },
+   "conditions": {
+    "put": "Add one clause per thing that has to be true.",
+    "watch": "The same action can raise more than one event. Check the list for the one that carries the details you need."
+   }
   },
-  "entry.abandon": {
-    "oneliner": "Runs if the player gives up.",
-    "what": "Runs if the player abandons the quest. Use it to tidy up whatever the quest left behind.",
-    "when": [
-      "Reach for it when your quest changes the world in a way that should not outlive a quit: a machine left unlocked, a contact left waiting mid-conversation.",
-      "Most quests do not need it. If nothing has to be undone, delete the node rather than leaving it sitting there empty."
-    ],
-    "game": "The player drops the quest and this fires. Anything you wired after it runs once, and the quest is gone.",
-    "steps": [
-      "Find <b class=\"ui\">On quest abandoned</b> under <b>Quest lifecycle</b> in the palette.",
-      "Drag it onto the canvas.",
-      "Wire the cleanup to its <b class=\"ui\">Out</b> socket."
-    ],
-    "mistakes": [
-      [
-        "Cleanup is wired to <a href=\"entry-start.html\">Quest start</a> instead.",
-        "That runs when the quest begins, which is the opposite of when you want the tidy-up."
-      ],
-      [
-        "Nothing is wired to <b class=\"ui\">Out</b>.",
-        "Delete the node. An empty one only adds an <b>Empty</b> warning to your status bar."
-      ]
-    ],
-    "messages": [
-      [
-        "Empty",
-        "msg-empty",
-        "nothing is wired to <b class=\"ui\">Out</b>, so the node does nothing"
-      ]
-    ]
+  "sockets": {
+   "when": {
+    "out": "The objective or branch that should react when the event fires."
+   }
   },
-  "objective": {
-    "oneliner": "A task the player has to finish.",
-    "what": "A task for the player. It appears in their journal, and it ticks over when the condition you wire in comes true.",
-    "when": [
-      "Give the player one objective per thing they have to do. The journal is how they know what to do next, and a quest with no objectives reads as broken.",
-      "Wire a <a href=\"trigger-event.html\">When event</a> node into the <b class=\"ui\">Trigger</b> socket. That is the condition that ticks the objective over.",
-      "Keep objectives small. One objective per step gives the player a sense of progress, and gives you somewhere to hang the next beat."
-    ],
-    "game": "The player opens their journal and reads the line you wrote. When the trigger fires, the line moves to their completed list.",
-    "fields": {
-      "name": {
-        "example": "dock-shipment",
-        "empty": "Other nodes have nothing to refer to. Name the objective before you wire anything to it."
-      },
-      "description": {
-        "put": "Write it as an instruction: what to do, and where.",
-        "example": "Find the shipment manifest on the dock terminal.",
-        "empty": "The journal shows a blank task. The player has no idea what they are meant to do.",
-        "limits": "Technically any text, but keep it to one line. The journal truncates a long one."
-      },
-      "hint": {
-        "example": "The manifest sits on the machine by the gate, not the office."
-      },
-      "info": {
-        "put": "Lore belongs here rather than in the journal line.",
-        "example": "Meridian Capital moved the shipment twice after the strike."
-      },
-      "terminalCommand": {
-        "example": "ssh dock01.meridian.local",
-        "watch": "It runs nothing on its own. It is a nudge the player can copy, not a shortcut."
-      }
-    },
-    "sockets": {
-      "in": {
-        "in": "Whatever should run immediately before the objective is handed to the player — usually <a href=\"entry-start.html\">Quest start</a> or the objective before it."
-      },
-      "trigger": {
-        "in": "The <a href=\"trigger-event.html\">When event</a> node that ticks this objective over."
-      },
-      "unlocked-by": {
-        "in": "An objective that has to finish before this one becomes available."
-      },
-      "done": {
-        "out": "Whatever should happen once the player finishes — the next objective, a payment, the ending."
-      },
-      "unlock": {
-        "out": "The objective this one opens up."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Objective</b> under <b>Objectives</b> in the palette.",
-      "Drag it onto the canvas.",
-      "Wire something into its <b class=\"ui\">In</b> socket, so the player actually receives it.",
-      "Add a <a href=\"trigger-event.html\">When event</a> node and wire its <b class=\"ui\">When</b> socket into <b class=\"ui\">Trigger</b>.",
-      "Write the journal line in <b class=\"ui\">Shown to the player</b>.",
-      "Wire the next beat of the story to <b class=\"ui\">On complete</b>."
-    ],
-    "mistakes": [
-      [
-        "Nothing is wired to <b class=\"ui\">Trigger</b>.",
-        "The objective sits in the journal forever. The player can do everything right and it never ticks over."
-      ],
-      [
-        "Nothing is wired to <b class=\"ui\">In</b>.",
-        "The player never receives the objective at all, so the journal stays empty."
-      ],
-      [
-        "The trigger listens for the wrong event.",
-        "The player does the thing and nothing happens. Check the event list for the one your action really raises."
-      ]
-    ],
-    "messages": [
-      [
-        "No trigger",
-        "msg-no-trigger",
-        "nothing is wired to <b class=\"ui\">Trigger</b>, so the player can never finish this objective"
-      ],
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the player never receives the objective"
-      ]
-    ]
+  "steps": [
+   "Find <b class=\"ui\">When event</b> under <b>Triggers</b> in the palette.",
+   "Drag it onto the canvas, next to the objective it should tick over.",
+   "Pick the game event that means the player did the thing.",
+   "Drag a wire from its <b class=\"ui\">When</b> socket into the objective's <b class=\"ui\">Trigger</b> socket.",
+   "Add a clause under <b class=\"ui\">Only when</b> if the event should not count every time it happens."
+  ],
+  "mistakes": [
+   [
+    "The wire went into the objective's <b class=\"ui\">In</b> socket.",
+    "The two sockets are different colours for exactly this reason. <b class=\"ui\">In</b> is flow, <b class=\"ui\">Trigger</b> is a condition."
+   ],
+   [
+    "No clauses, so the trigger is too loose.",
+    "The objective ticks over on the first occurrence, which may be before the player got there."
+   ],
+   [
+    "The event picked is not the one the action raises.",
+    "The player does the thing and nothing happens. Check the event list for what your action really fires."
+   ]
+  ]
+ },
+ "fx.pay": {
+  "oneliner": "Deposits money in the player's bank.",
+  "what": "Pays the player at this point in the story. Use it for rewards, refunds, bounties or contract settlements.",
+  "when": [
+   "Put it after the objective or branch that earns the reward. Paying early makes the ending feel already solved.",
+   "Add a <a href=\"fx-notify.html\">Notify</a> after it if the player should notice the balance change immediately.",
+   "Older saved projects may still carry percentage payout data. New projects use the fixed amount shown here."
+  ],
+  "game": "The player's bank balance rises, and the transfer appears with the statement label and sender you typed.",
+  "fields": {
+   "amount": {
+    "put": "The dollars to award when this node runs.",
+    "example": "250",
+    "empty": "A zero payout still runs, but the player receives nothing."
+   },
+   "description": {
+    "put": "Write how the client names the job when the transfer appears.",
+    "example": "Meridian Capital — contract settlement",
+    "empty": "The money arrives with no useful label, so the reward looks unexplained."
+   },
+   "fromIBAN": {
+    "put": "Use this when a client, shell company or agency should appear as the sender.",
+    "example": "BG80BNBG96611020345678",
+    "emptySafe": "The game still creates a transfer. Fill it when the sender matters to the fiction."
+   },
+   "fromName": {
+    "put": "Name the sender shown in the transfer details.",
+    "example": "Meridian Capital",
+    "emptySafe": "The payment still arrives. Fill it when the player should recognise who paid them."
+   }
   },
-  "trigger.event": {
-    "oneliner": "Watches for one thing the player does.",
-    "what": "Watches for a single game event and fires when it happens. This is how your quest hears the player.",
-    "when": [
-      "Wire one into an objective's <b class=\"ui\">Trigger</b> socket to make that objective tick over when the player does the thing.",
-      "Wire one into a <a href=\"flow-branch.html\">Branch</a> to make the story react. The event carries details with it, and the branch can test them.",
-      "It has no input socket. A trigger is not part of the flow — it sits alongside it and fires on its own."
-    ],
-    "game": "Nothing appears on screen. The event fires inside the game and your quest reacts a moment later.",
-    "fields": {
-      "event": {
-        "empty": "There is nothing to listen for, so the node never fires."
-      },
-      "conditions": {
-        "put": "Add one clause per thing that has to be true.",
-        "watch": "The same action can raise more than one event. Check the list for the one that carries the details you need."
-      }
-    },
-    "sockets": {
-      "when": {
-        "out": "The objective or branch that should react when the event fires."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">When event</b> under <b>Triggers</b> in the palette.",
-      "Drag it onto the canvas, next to the objective it should tick over.",
-      "Pick the game event that means the player did the thing.",
-      "Drag a wire from its <b class=\"ui\">When</b> socket into the objective's <b class=\"ui\">Trigger</b> socket.",
-      "Add a clause under <b class=\"ui\">Only when</b> if the event should not count every time it happens."
-    ],
-    "mistakes": [
-      [
-        "The wire went into the objective's <b class=\"ui\">In</b> socket.",
-        "The two sockets are different colours for exactly this reason. <b class=\"ui\">In</b> is flow, <b class=\"ui\">Trigger</b> is a condition."
-      ],
-      [
-        "No clauses, so the trigger is too loose.",
-        "The objective ticks over on the first occurrence, which may be before the player got there."
-      ],
-      [
-        "The event picked is not the one the action raises.",
-        "The player does the thing and nothing happens. Check the event list for what your action really fires."
-      ]
-    ]
+  "sockets": {
+   "in": {
+    "in": "Whatever moment earns the money."
+   },
+   "out": {
+    "out": "The closing message, next objective, or follow-up effect after the payment lands."
+   }
   },
-  "fx.pay": {
-    "oneliner": "Deposits money in the player's bank.",
-    "what": "Pays the player at this point in the story. Use it for rewards, refunds, bounties or contract settlements.",
-    "when": [
-      "Put it after the objective or branch that earns the reward. Paying early makes the ending feel already solved.",
-      "Add a <a href=\"fx-notify.html\">Notify</a> after it if the player should notice the balance change immediately.",
-      "Older saved projects may still carry percentage payout data. New projects use the fixed amount shown here."
-    ],
-    "game": "The player's bank balance rises, and the transfer appears with the statement label and sender you typed.",
-    "fields": {
-      "amount": {
-        "put": "The dollars to award when this node runs.",
-        "example": "250",
-        "empty": "A zero payout still runs, but the player receives nothing."
-      },
-      "description": {
-        "put": "Write how the client names the job when the transfer appears.",
-        "example": "Meridian Capital — contract settlement",
-        "empty": "The money arrives with no useful label, so the reward looks unexplained."
-      },
-      "fromIBAN": {
-        "put": "Use this when a client, shell company or agency should appear as the sender.",
-        "example": "BG80BNBG96611020345678",
-        "emptySafe": "The game still creates a transfer. Fill it when the sender matters to the fiction."
-      },
-      "fromName": {
-        "put": "Name the sender shown in the transfer details.",
-        "example": "Meridian Capital",
-        "emptySafe": "The payment still arrives. Fill it when the player should recognise who paid them."
-      }
-    },
-    "sockets": {
-      "in": {
-        "in": "Whatever moment earns the money."
-      },
-      "out": {
-        "out": "The closing message, next objective, or follow-up effect after the payment lands."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Pay the player</b> under <b>Effects</b> in the palette.",
-      "Drag it after the step that deserves a reward.",
-      "Set <b class=\"ui\">Amount</b>, then write a short statement label.",
-      "Fill sender details if the payer matters to the story.",
-      "Wire the next beat from <b class=\"ui\">Out</b>."
-    ],
-    "mistakes": [
-      [
-        "The payment is wired before the win condition.",
-        "The player gets paid before proving anything. Move it after the objective's <b class=\"ui\">On complete</b> socket."
-      ],
-      [
-        "No message follows the transfer.",
-        "The balance changes quietly. Add a notification or closing mail if the reward should land with weight."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the payment never happens"
-      ]
-    ]
+  "steps": [
+   "Find <b class=\"ui\">Pay the player</b> under <b>Effects</b> in the palette.",
+   "Drag it after the step that deserves a reward.",
+   "Set <b class=\"ui\">Amount</b>, then write a short statement label.",
+   "Fill sender details if the payer matters to the story.",
+   "Wire the next beat from <b class=\"ui\">Out</b>."
+  ],
+  "mistakes": [
+   [
+    "The payment is wired before the win condition.",
+    "The player gets paid before proving anything. Move it after the objective's <b class=\"ui\">On complete</b> socket."
+   ],
+   [
+    "No message follows the transfer.",
+    "The balance changes quietly. Add a notification or closing mail if the reward should land with weight."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the payment never happens"
+   ]
+  ]
+ },
+ "fx.notify": {
+  "oneliner": "Puts a message on the player's screen.",
+  "what": "Shows the player a message. Either a popup that stays until they dismiss it, or a toast that slides in and fades on its own.",
+  "when": [
+   "Reach for it whenever something happens that the player should notice. A balance changing, a door opening, a contact going quiet — none of those announce themselves.",
+   "Put it after the node that caused the change, never before. A message about money that has not arrived yet reads like a bug.",
+   "Keep it short. It sits over the game, so a player mid-task reads it at a glance or not at all."
+  ],
+  "game": "A box appears over the game. A notification waits for the player to close it. A toast slides in, holds for a moment, and fades.",
+  "fields": {
+   "message": {
+    "put": "One or two sentences is plenty. It sits over the game, not in a journal.",
+    "example": "Payment received: Meridian Capital.",
+    "empty": "The popup appears with nothing in it. The player sees an empty box and no idea why."
+   },
+   "variant": {
+    "put": "Pick how insistent the message should be.",
+    "watch": "A notification waits for the player to close it. Use a toast for anything they can afford to miss."
+   },
+   "tone": {
+    "put": "Match it to what the message means: a success for a payment, a warning for a mistake."
+   }
   },
-  "fx.notify": {
-    "oneliner": "Puts a message on the player's screen.",
-    "what": "Shows the player a message. Either a popup that stays until they dismiss it, or a toast that slides in and fades on its own.",
-    "when": [
-      "Reach for it whenever something happens that the player should notice. A balance changing, a door opening, a contact going quiet — none of those announce themselves.",
-      "Put it after the node that caused the change, never before. A message about money that has not arrived yet reads like a bug.",
-      "Keep it short. It sits over the game, so a player mid-task reads it at a glance or not at all."
-    ],
-    "game": "A box appears over the game. A notification waits for the player to close it. A toast slides in, holds for a moment, and fades.",
-    "fields": {
-      "message": {
-        "put": "One or two sentences is plenty. It sits over the game, not in a journal.",
-        "example": "Payment received: Meridian Capital.",
-        "empty": "The popup appears with nothing in it. The player sees an empty box and no idea why."
-      },
-      "variant": {
-        "put": "Pick how insistent the message should be.",
-        "watch": "A notification waits for the player to close it. Use a toast for anything they can afford to miss."
-      },
-      "tone": {
-        "put": "Match it to what the message means: a success for a payment, a warning for a mistake."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Notify</b> under <b>Effects</b> in the palette.",
-      "Drag it onto the canvas, after the node that caused the change.",
-      "Wire the previous node's <b class=\"ui\">Out</b> socket into this node's <b class=\"ui\">In</b> socket.",
-      "Type the message.",
-      "Pick <b class=\"ui\">Style</b> and <b class=\"ui\">Tone</b> to match how much the message matters."
-    ],
-    "mistakes": [
-      [
-        "The message fires before the thing it describes.",
-        "Wire it after. The player reads about a payment, opens their bank, and finds nothing there."
-      ],
-      [
-        "Every message is a notification.",
-        "Popups that wait for a click pile up. Save those for the moments that matter and use toasts for the rest."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the player never sees the message"
-      ]
-    ]
+  "steps": [
+   "Find <b class=\"ui\">Notify</b> under <b>Effects</b> in the palette.",
+   "Drag it onto the canvas, after the node that caused the change.",
+   "Wire the previous node's <b class=\"ui\">Out</b> socket into this node's <b class=\"ui\">In</b> socket.",
+   "Type the message.",
+   "Pick <b class=\"ui\">Style</b> and <b class=\"ui\">Tone</b> to match how much the message matters."
+  ],
+  "mistakes": [
+   [
+    "The message fires before the thing it describes.",
+    "Wire it after. The player reads about a payment, opens their bank, and finds nothing there."
+   ],
+   [
+    "Every message is a notification.",
+    "Popups that wait for a click pile up. Save those for the moments that matter and use toasts for the rest."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the player never sees the message"
+   ]
+  ]
+ },
+ "fx.prompt": {
+  "oneliner": "Asks the player a one-line question.",
+  "what": "Opens a question box, waits for the player to type one line, then sends the story onward. It can accept any answer, check for one expected answer, save what the player typed, or treat closing the box as its own path.",
+  "when": [
+   "Use it when the quest needs the player to give a name, code, verdict, passphrase or confirmation outside a terminal command.",
+   "Use Manual input instead when the player should type a custom command first. Use Ask player when the question itself should appear at this point in the story.",
+   "Save the answer when later mail, notifications or branches need to mention it again. If the answer only chooses the next path, you can leave saving off."
+  ],
+  "game": "A question box appears over the game. The player types one line and submits it, or closes the box. Password mode hides their typing.",
+  "fields": {
+   "title": {
+    "example": "Security check",
+    "emptySafe": "The box can still read well if the question says enough on its own."
+   },
+   "label": {
+    "example": "Enter the recovery code:",
+    "empty": "The player sees an input box with little context. Usually this should ask the actual question."
+   },
+   "placeholder": {
+    "put": "A sample shape helps when the answer has dashes, spaces or a special format.",
+    "example": "ABCD-1234",
+    "emptySafe": "Nothing grey appears inside the empty box. That is fine for plain questions."
+   },
+   "defaultValue": {
+    "put": "Use this when editing an answer is faster than typing it from scratch.",
+    "example": "MSKU-",
+    "emptySafe": "The answer box starts empty. That is the normal choice."
+   },
+   "password": {
+    "put": "Turn it on for secrets the player should not see echoed back on screen."
+   },
+   "storeAs": {
+    "put": "Use a short name such as verdict, handle or recoveryCode.",
+    "example": "recoveryCode",
+    "emptySafe": "The answer is not kept after this node. That is fine when the outgoing wire is all you need.",
+    "watch": "If later text says {{data.recoveryCode}}, this field must say recoveryCode."
+   },
+   "matchMode": {
+    "put": "Pick Any submitted text for open questions. Pick one of the checked choices when a specific answer should unlock the next beat.",
+    "watch": "Once you choose a checked answer, the node grows a Wrong output. Wire it if a miss should do more than stop this beat."
+   },
+   "expected": {
+    "example": "ABCD-1234",
+    "empty": "Every typed answer misses. Fill this in, or switch Accept back to Any submitted text.",
+    "watch": "The accepted answer needs a clue somewhere in the quest. Without that, the player is guessing."
+   },
+   "caseSensitive": {
+    "watch": "Left on, apple and Apple are different answers. Keep it off unless capitals matter."
+   }
   },
-  "fx.prompt": {
-    "oneliner": "Asks the player a one-line question.",
-    "what": "Opens a question box, waits for the player to type one line, then sends the story onward. It can accept any answer, check for one expected answer, save what the player typed, or treat closing the box as its own path.",
-    "when": [
-      "Use it when the quest needs the player to give a name, code, verdict, passphrase or confirmation outside a terminal command.",
-      "Use Manual input instead when the player should type a custom command first. Use Ask player when the question itself should appear at this point in the story.",
-      "Save the answer when later mail, notifications or branches need to mention it again. If the answer only chooses the next path, you can leave saving off."
-    ],
-    "game": "A question box appears over the game. The player types one line and submits it, or closes the box. Password mode hides their typing.",
-    "fields": {
-      "title": {
-        "example": "Security check",
-        "emptySafe": "The box can still read well if the question says enough on its own."
-      },
-      "label": {
-        "example": "Enter the recovery code:",
-        "empty": "The player sees an input box with little context. Usually this should ask the actual question."
-      },
-      "placeholder": {
-        "put": "A sample shape helps when the answer has dashes, spaces or a special format.",
-        "example": "ABCD-1234",
-        "emptySafe": "Nothing grey appears inside the empty box. That is fine for plain questions."
-      },
-      "defaultValue": {
-        "put": "Use this when editing an answer is faster than typing it from scratch.",
-        "example": "MSKU-",
-        "emptySafe": "The answer box starts empty. That is the normal choice."
-      },
-      "password": {
-        "put": "Turn it on for secrets the player should not see echoed back on screen."
-      },
-      "storeAs": {
-        "put": "Use a short name such as verdict, handle or recoveryCode.",
-        "example": "recoveryCode",
-        "emptySafe": "The answer is not kept after this node. That is fine when the outgoing wire is all you need.",
-        "watch": "If later text says {{data.recoveryCode}}, this field must say recoveryCode."
-      },
-      "matchMode": {
-        "put": "Pick Any submitted text for open questions. Pick one of the checked choices when a specific answer should unlock the next beat.",
-        "watch": "Once you choose a checked answer, the node grows a Wrong output. Wire it if a miss should do more than stop this beat."
-      },
-      "expected": {
-        "example": "ABCD-1234",
-        "empty": "Every typed answer misses. Fill this in, or switch Accept back to Any submitted text.",
-        "watch": "The accepted answer needs a clue somewhere in the quest. Without that, the player is guessing."
-      },
-      "caseSensitive": {
-        "watch": "Left on, apple and Apple are different answers. Keep it off unless capitals matter."
-      }
-    },
-    "sockets": {
-      "in": {
-        "in": "Whatever should happen right before the question appears."
-      },
-      "success": {
-        "out": "The path after a submitted answer. When Accept checks for a specific answer, this is the Correct path."
-      },
-      "failure": {
-        "out": "The path for a submitted answer that does not match. This socket appears only after Accept checks for a specific answer."
-      },
-      "cancel": {
-        "out": "The path for closing the question without submitting text."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Ask player</b> under <b>Effects</b> in the palette.",
-      "Wire it to the story beat that should ask the question.",
-      "Write the title and question the player will see.",
-      "Decide whether any answer continues, or whether one answer is required.",
-      "If later nodes need the answer, fill in <b class=\"ui\">Save answer as</b>.",
-      "Wire Submitted or Correct onward, and wire Cancelled if closing the box should recover."
-    ],
-    "mistakes": [
-      [
-        "The accepted answer is blank.",
-        "The node is set to check the answer but has nothing to check against. Fill in <b class=\"ui\">Answer to accept</b>."
-      ],
-      [
-        "The answer is saved under one name and read under another.",
-        "If the field says recoveryCode, later text must use {{data.recoveryCode}} exactly."
-      ],
-      [
-        "Cancelled goes nowhere by accident.",
-        "If closing the box should remind, punish or retry, wire <b class=\"ui\">Cancelled</b> to that follow-up."
-      ]
-    ],
-    "messages": [
-      [
-        "Dead end",
-        "msg-dead-end",
-        "one of the question's outcomes has no follow-up"
-      ],
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the question never appears"
-      ]
-    ]
+  "sockets": {
+   "in": {
+    "in": "Whatever should happen right before the question appears."
+   },
+   "success": {
+    "out": "The path after a submitted answer. When Accept checks for a specific answer, this is the Correct path."
+   },
+   "failure": {
+    "out": "The path for a submitted answer that does not match. This socket appears only after Accept checks for a specific answer."
+   },
+   "cancel": {
+    "out": "The path for closing the question without submitting text."
+   }
   },
-  "fx.withdraw": {
-    "oneliner": "Takes money out of the player's account.",
-    "what": "Takes money out of the player's bank account. Either a fixed sum, or a slice of whatever they currently have.",
-    "when": [
-      "Use it for a purchase, a fine, a bribe, or a tool the player buys. Anything where the story costs the player money.",
-      "The percentage mode is what you want for a fee that scales with wealth. A fixed sum is what you want for a price tag.",
-      "The player pays around $35 for a tool, so price story purchases somewhere near that."
-    ],
-    "game": "The player's balance drops, and their bank statement gains a line with the label you typed.",
-    "fields": {
-      "amountMode": {
-        "put": "Pick which of the two numbers below this node reads. <b class=\"ui\">Fixed amount</b> reads <b class=\"ui\">Amount</b>. <b class=\"ui\">Percentage of balance</b> reads <b class=\"ui\">Percent</b>.",
-        "watch": "Both number fields stay visible whichever you pick, and the one you did not pick is ignored. Check this first when a charge comes out wrong."
-      },
-      "amount": {
-        "put": "The sum to take, in dollars.",
-        "example": "35",
-        "empty": "Nothing happens. The charge is skipped with no warning and no line in the bank statement."
-      },
-      "percent": {
-        "put": "The share of the player's current balance to take. 10 takes a tenth of whatever they have right now.",
-        "watch": "The result is rounded to a whole number, so a small balance can produce a charge of zero."
-      },
-      "description": {
-        "example": "Tool licence — packet sniffer",
-        "empty": "The statement line has no label, so the player sees money vanish from nowhere.",
-        "limits": "Technically any text, but keep it short. A statement line is only a few words."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Charge the player</b> under <b>Effects</b> in the palette.",
-      "Drag it onto the canvas where the purchase happens.",
-      "Pick <b class=\"ui\">Amount type</b> before you type a number.",
-      "Type the amount, then write a statement label the player will recognise.",
-      "Add a <a href=\"fx-notify.html\">Notify</a> after it so the player notices the charge."
-    ],
-    "mistakes": [
-      [
-        "The amount is 0 or blank.",
-        "Nothing happens and nothing warns you. Check <b class=\"ui\">Amount</b> before anything else."
-      ],
-      [
-        "The wrong <b class=\"ui\">Amount type</b> is selected.",
-        "Both fields sit on screen and only one is read. A 35 in <b class=\"ui\">Amount</b> does nothing while <b class=\"ui\">Amount type</b> says <b class=\"ui\">Percentage of balance</b>."
-      ],
-      [
-        "A percentage of a small balance rounds to zero.",
-        "Ten percent of $4 is $0.40, which rounds to nothing. Use a fixed sum for small amounts."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the charge never happens"
-      ]
-    ]
+  "steps": [
+   "Find <b class=\"ui\">Ask player</b> under <b>Effects</b> in the palette.",
+   "Wire it to the story beat that should ask the question.",
+   "Write the title and question the player will see.",
+   "Decide whether any answer continues, or whether one answer is required.",
+   "If later nodes need the answer, fill in <b class=\"ui\">Save answer as</b>.",
+   "Wire Submitted or Correct onward, and wire Cancelled if closing the box should recover."
+  ],
+  "mistakes": [
+   [
+    "The accepted answer is blank.",
+    "The node is set to check the answer but has nothing to check against. Fill in <b class=\"ui\">Answer to accept</b>."
+   ],
+   [
+    "The answer is saved under one name and read under another.",
+    "If the field says recoveryCode, later text must use {{data.recoveryCode}} exactly."
+   ],
+   [
+    "Cancelled goes nowhere by accident.",
+    "If closing the box should remind, punish or retry, wire <b class=\"ui\">Cancelled</b> to that follow-up."
+   ]
+  ],
+  "messages": [
+   [
+    "Dead end",
+    "msg-dead-end",
+    "one of the question's outcomes has no follow-up"
+   ],
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the question never appears"
+   ]
+  ]
+ },
+ "fx.withdraw": {
+  "oneliner": "Takes money out of the player's account.",
+  "what": "Takes money out of the player's bank account. Either a fixed sum, or a slice of whatever they currently have.",
+  "when": [
+   "Use it for a purchase, a fine, a bribe, or a tool the player buys. Anything where the story costs the player money.",
+   "The percentage mode is what you want for a fee that scales with wealth. A fixed sum is what you want for a price tag.",
+   "The player pays around $35 for a tool, so price story purchases somewhere near that."
+  ],
+  "game": "The player's balance drops, and their bank statement gains a line with the label you typed.",
+  "fields": {
+   "amountMode": {
+    "put": "Pick which of the two numbers below this node reads. <b class=\"ui\">Fixed amount</b> reads <b class=\"ui\">Amount</b>. <b class=\"ui\">Percentage of balance</b> reads <b class=\"ui\">Percent</b>.",
+    "watch": "Both number fields stay visible whichever you pick, and the one you did not pick is ignored. Check this first when a charge comes out wrong."
+   },
+   "amount": {
+    "put": "The sum to take, in dollars.",
+    "example": "35",
+    "empty": "Nothing happens. The charge is skipped with no warning and no line in the bank statement."
+   },
+   "percent": {
+    "put": "The share of the player's current balance to take. 10 takes a tenth of whatever they have right now.",
+    "watch": "The result is rounded to a whole number, so a small balance can produce a charge of zero."
+   },
+   "description": {
+    "example": "Tool licence — packet sniffer",
+    "empty": "The statement line has no label, so the player sees money vanish from nowhere.",
+    "limits": "Technically any text, but keep it short. A statement line is only a few words."
+   }
   },
-  "flow.branch": {
-    "oneliner": "Sends the story down one of two paths.",
-    "what": "Splits the story in two. One path runs when your condition holds, the other runs when it does not.",
-    "when": [
-      "Use it when the story should differ based on something the player did: whether they were spotted, whether they paid, which file they pulled.",
-      "Both paths need somewhere to go. A branch with an unwired <b class=\"ui\">Yes</b> or <b class=\"ui\">No</b> is a dead end the player walks into.",
-      "For three or more outcomes, chain branches. Each one splits again, and the canvas stays readable."
-    ],
-    "game": "Nothing appears on screen. The player only notices that the next message differs from the one their friend got.",
-    "fields": {
-      "source": {
-        "put": "Pick what the condition is tested against. <b class=\"ui\">Event</b> tests the details carried by the event that fired. <b class=\"ui\">Data</b> tests values you stored with <a href=\"fx-setdata.html\">Set quest data</a>.",
-        "watch": "Pick <b class=\"ui\">Data</b> when the thing you are testing happened earlier in the quest. The event that woke this branch only carries its own details."
-      },
-      "conditions": {
-        "put": "Add one clause per thing that has to be true.",
-        "empty": "With no clauses there is nothing to fail, so the <b class=\"ui\">Yes</b> path always runs and the <b class=\"ui\">No</b> path never does."
-      }
-    },
-    "sockets": {
-      "in": {
-        "in": "Whatever should run immediately before the split."
-      },
-      "trigger": {
-        "in": "The event that wakes the branch, when it should react to something the player does."
-      },
-      "true": {
-        "out": "The path that runs when every clause holds."
-      },
-      "false": {
-        "out": "The path that runs when any clause fails."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Branch</b> under <b>Flow control</b> in the palette.",
-      "Drag it onto the canvas where the story should split.",
-      "Wire the previous node into <b class=\"ui\">In</b>.",
-      "Pick what to test under <b class=\"ui\">Test against</b>, then add your clauses.",
-      "Wire both <b class=\"ui\">Yes</b> and <b class=\"ui\">No</b> to somewhere. Neither may be left empty."
-    ],
-    "mistakes": [
-      [
-        "One path is left unwired.",
-        "The player reaches a branch that goes nowhere and the quest stalls. The editor flags it as <b>Dead end</b>."
-      ],
-      [
-        "The condition tests the wrong source.",
-        "Testing quest data while <b class=\"ui\">Test against</b> says <b class=\"ui\">Event</b> finds nothing to match, so the <b class=\"ui\">No</b> path always runs."
-      ]
-    ],
-    "messages": [
-      [
-        "Dead end",
-        "msg-dead-end",
-        "a <b class=\"ui\">Yes</b> or <b class=\"ui\">No</b> socket has nothing wired to it"
-      ],
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the split never happens"
-      ]
-    ]
+  "steps": [
+   "Find <b class=\"ui\">Charge the player</b> under <b>Effects</b> in the palette.",
+   "Drag it onto the canvas where the purchase happens.",
+   "Pick <b class=\"ui\">Amount type</b> before you type a number.",
+   "Type the amount, then write a statement label the player will recognise.",
+   "Add a <a href=\"fx-notify.html\">Notify</a> after it so the player notices the charge."
+  ],
+  "mistakes": [
+   [
+    "The amount is 0 or blank.",
+    "Nothing happens and nothing warns you. Check <b class=\"ui\">Amount</b> before anything else."
+   ],
+   [
+    "The wrong <b class=\"ui\">Amount type</b> is selected.",
+    "Both fields sit on screen and only one is read. A 35 in <b class=\"ui\">Amount</b> does nothing while <b class=\"ui\">Amount type</b> says <b class=\"ui\">Percentage of balance</b>."
+   ],
+   [
+    "A percentage of a small balance rounds to zero.",
+    "Ten percent of $4 is $0.40, which rounds to nothing. Use a fixed sum for small amounts."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the charge never happens"
+   ]
+  ]
+ },
+ "flow.branch": {
+  "oneliner": "Sends the story down one of two paths.",
+  "what": "Splits the story in two. One path runs when your condition holds, the other runs when it does not.",
+  "when": [
+   "Use it when the story should differ based on something the player did: whether they were spotted, whether they paid, which file they pulled.",
+   "Both paths need somewhere to go. A branch with an unwired <b class=\"ui\">Yes</b> or <b class=\"ui\">No</b> is a dead end the player walks into.",
+   "For three or more outcomes, chain branches. Each one splits again, and the canvas stays readable."
+  ],
+  "game": "Nothing appears on screen. The player only notices that the next message differs from the one their friend got.",
+  "fields": {
+   "source": {
+    "put": "Pick what the condition is tested against. <b class=\"ui\">Event</b> tests the details carried by the event that fired. <b class=\"ui\">Data</b> tests values you stored with <a href=\"fx-setdata.html\">Set quest data</a>.",
+    "watch": "Pick <b class=\"ui\">Data</b> when the thing you are testing happened earlier in the quest. The event that woke this branch only carries its own details."
+   },
+   "conditions": {
+    "put": "Add one clause per thing that has to be true.",
+    "empty": "With no clauses there is nothing to fail, so the <b class=\"ui\">Yes</b> path always runs and the <b class=\"ui\">No</b> path never does."
+   }
   },
-  "fx.setData": {
-    "oneliner": "Stores a value for later.",
-    "what": "Stores a value under a name you choose, so a later node can read it back.",
-    "when": [
-      "Use it to remember something the player did: which door they opened, who they met, what they paid.",
-      "Read the value back with a <a href=\"flow-branch.html\">Branch</a> set to test quest data, or drop it into a message with a tag.",
-      "The name is yours to pick. Use the same name to read it back."
-    ],
-    "game": "Nothing appears on screen. The value sits in the quest's memory until something reads it.",
-    "fields": {
-      "key": {
-        "example": "doorCode",
-        "empty": "The value is stored under no name, so nothing can find it again."
-      },
-      "value": {
-        "example": "4417",
-        "watch": "The name has to match exactly when you read it back. A typo reads as an empty value and nothing warns you."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Set quest data</b> under <b>Effects</b> in the palette.",
-      "Drag it onto the canvas at the moment the thing worth remembering happens.",
-      "Type a name in <b class=\"ui\">Key</b> and the thing to remember in <b class=\"ui\">Value</b>.",
-      "Later, add a <a href=\"flow-branch.html\">Branch</a> and set <b class=\"ui\">Test against</b> to <b class=\"ui\">Data</b> to read it."
-    ],
-    "mistakes": [
-      [
-        "The name does not match when you read it back.",
-        "Nothing warns you. The reader finds no value and treats it as empty."
-      ],
-      [
-        "A value is stored and never read.",
-        "The node runs and changes nothing. Delete it, or use the value somewhere."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the value is never stored"
-      ]
-    ]
+  "sockets": {
+   "in": {
+    "in": "Whatever should run immediately before the split."
+   },
+   "trigger": {
+    "in": "The event that wakes the branch, when it should react to something the player does."
+   },
+   "true": {
+    "out": "The path that runs when every clause holds."
+   },
+   "false": {
+    "out": "The path that runs when any clause fails."
+   }
   },
-  "fx.claimQuest": {
-    "oneliner": "Starts the next quest.",
-    "what": "Accepts another quest for the player, so one story can lead into the next.",
-    "when": [
-      "Use it at the end of a quest that continues elsewhere. The player does not have to find and accept the next chapter themselves.",
-      "The quest you name has to exist. It can live in this mod or in another one the player has installed."
-    ],
-    "game": "The next quest appears in the player's list as accepted, and that quest's own opening runs.",
-    "fields": {
-      "questName": {
-        "put": "The identifier of the quest to start next, exactly as that quest names itself.",
-        "example": "meridian-act-two",
-        "empty": "There is no quest to claim, so the node does nothing.",
-        "watch": "The identifier has to match. A name that exists nowhere claims nothing, and the player is left with a finished story and no next chapter."
-      }
-    },
-    "mistakes": [
-      [
-        "The identifier is spelled differently from the quest's own.",
-        "Nothing is claimed and nothing warns you."
-      ],
-      [
-        "The next quest is not in the mod the player installed.",
-        "It cannot be claimed. Ship the two together, or point at a quest the player already has."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the next quest is never claimed"
-      ]
-    ]
+  "steps": [
+   "Find <b class=\"ui\">Branch</b> under <b>Flow control</b> in the palette.",
+   "Drag it onto the canvas where the story should split.",
+   "Wire the previous node into <b class=\"ui\">In</b>.",
+   "Pick what to test under <b class=\"ui\">Test against</b>, then add your clauses.",
+   "Wire both <b class=\"ui\">Yes</b> and <b class=\"ui\">No</b> to somewhere. Neither may be left empty."
+  ],
+  "mistakes": [
+   [
+    "One path is left unwired.",
+    "The player reaches a branch that goes nowhere and the quest stalls. The editor flags it as <b>Dead end</b>."
+   ],
+   [
+    "The condition tests the wrong source.",
+    "Testing quest data while <b class=\"ui\">Test against</b> says <b class=\"ui\">Event</b> finds nothing to match, so the <b class=\"ui\">No</b> path always runs."
+   ]
+  ],
+  "messages": [
+   [
+    "Dead end",
+    "msg-dead-end",
+    "a <b class=\"ui\">Yes</b> or <b class=\"ui\">No</b> socket has nothing wired to it"
+   ],
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the split never happens"
+   ]
+  ]
+ },
+ "fx.setData": {
+  "oneliner": "Stores a value for later.",
+  "what": "Stores a value under a name you choose, so a later node can read it back.",
+  "when": [
+   "Use it to remember something the player did: which door they opened, who they met, what they paid.",
+   "Read the value back with a <a href=\"flow-branch.html\">Branch</a> set to test quest data, or drop it into a message with a tag.",
+   "The name is yours to pick. Use the same name to read it back."
+  ],
+  "game": "Nothing appears on screen. The value sits in the quest's memory until something reads it.",
+  "fields": {
+   "key": {
+    "example": "doorCode",
+    "empty": "The value is stored under no name, so nothing can find it again."
+   },
+   "value": {
+    "example": "4417",
+    "watch": "The name has to match exactly when you read it back. A typo reads as an empty value and nothing warns you."
+   }
   },
-  "fx.shell": {
-    "oneliner": "Runs a command in the player's terminal.",
-    "what": "Runs a command in the player's terminal as if they had typed it themselves.",
-    "when": [
-      "Use it when the story should do something in the terminal that the player has not done: start a scan, open a connection, leave output where they will find it.",
-      "Keep it to something a player could have typed. The output lands in their terminal, so it has to read like the real thing."
-    ],
-    "game": "The command appears in the player's terminal and its output follows, exactly as though they had run it.",
-    "fields": {
-      "command": {
-        "put": "The command to run. Tags work here, so you can drop in a value you stored earlier.",
-        "example": "nmap {{data.targetIp}}",
-        "empty": "There is nothing to run, so the node does nothing.",
-        "watch": "It runs whether or not the player is ready for it. A command that needs an earlier step will fail in front of them."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Run terminal command</b> under <b>Effects</b> in the palette.",
-      "Drag it onto the canvas at the point the command should run.",
-      "Type the command, with tags for anything that changes per player.",
-      "Add a <a href=\"fx-notify.html\">Notify</a> after it if the player should notice the output."
-    ],
-    "mistakes": [
-      [
-        "The command depends on something the player has not done.",
-        "It runs regardless and fails in their terminal. Move it after the step it needs."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the command never runs"
-      ]
-    ]
+  "steps": [
+   "Find <b class=\"ui\">Set quest data</b> under <b>Effects</b> in the palette.",
+   "Drag it onto the canvas at the moment the thing worth remembering happens.",
+   "Type a name in <b class=\"ui\">Key</b> and the thing to remember in <b class=\"ui\">Value</b>.",
+   "Later, add a <a href=\"flow-branch.html\">Branch</a> and set <b class=\"ui\">Test against</b> to <b class=\"ui\">Data</b> to read it."
+  ],
+  "mistakes": [
+   [
+    "The name does not match when you read it back.",
+    "Nothing warns you. The reader finds no value and treats it as empty."
+   ],
+   [
+    "A value is stored and never read.",
+    "The node runs and changes nothing. Delete it, or use the value somewhere."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the value is never stored"
+   ]
+  ]
+ },
+ "fx.claimQuest": {
+  "oneliner": "Starts the next quest.",
+  "what": "Accepts another quest for the player, so one story can lead into the next.",
+  "when": [
+   "Use it at the end of a quest that continues elsewhere. The player does not have to find and accept the next chapter themselves.",
+   "The quest you name has to exist. It can live in this mod or in another one the player has installed."
+  ],
+  "game": "The next quest appears in the player's list as accepted, and that quest's own opening runs.",
+  "fields": {
+   "questName": {
+    "put": "The identifier of the quest to start next, exactly as that quest names itself.",
+    "example": "meridian-act-two",
+    "empty": "There is no quest to claim, so the node does nothing.",
+    "watch": "The identifier has to match. A name that exists nowhere claims nothing, and the player is left with a finished story and no next chapter."
+   }
   },
-  "fx.handbook": {
-    "oneliner": "Opens an in-game article.",
-    "what": "Opens a page of the game's own handbook for the player.",
-    "when": [
-      "Use it when the player needs background the story should not have to spell out: what a company does, who owns a domain, how a protocol behaves.",
-      "Pick a page that already exists in the game, or type the identifier of one your mod adds."
-    ],
-    "game": "The handbook opens on the page you chose.",
-    "fields": {
-      "articleId": {
-        "watch": "An identifier that matches no article opens nothing, and the player gets no explanation of why."
-      },
-      "category": {}
-    },
-    "mistakes": [
-      [
-        "The article belongs to another mod.",
-        "The player does not have it, so the handbook opens on nothing. Point at an article your own mod ships."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the article never opens"
-      ]
-    ]
+  "mistakes": [
+   [
+    "The identifier is spelled differently from the quest's own.",
+    "Nothing is claimed and nothing warns you."
+   ],
+   [
+    "The next quest is not in the mod the player installed.",
+    "It cannot be claimed. Ship the two together, or point at a quest the player already has."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the next quest is never claimed"
+   ]
+  ]
+ },
+ "fx.shell": {
+  "oneliner": "Runs a command in the player's terminal.",
+  "what": "Runs a command in the player's terminal as if they had typed it themselves.",
+  "when": [
+   "Use it when the story should do something in the terminal that the player has not done: start a scan, open a connection, leave output where they will find it.",
+   "Keep it to something a player could have typed. The output lands in their terminal, so it has to read like the real thing."
+  ],
+  "game": "The command appears in the player's terminal and its output follows, exactly as though they had run it.",
+  "fields": {
+   "command": {
+    "put": "The command to run. Tags work here, so you can drop in a value you stored earlier.",
+    "example": "nmap {{data.targetIp}}",
+    "empty": "There is nothing to run, so the node does nothing.",
+    "watch": "It runs whether or not the player is ready for it. A command that needs an earlier step will fail in front of them."
+   }
   },
-  "flow.delay": {
-    "oneliner": "Pauses the story.",
-    "what": "Pauses the story here for as long as you set, then carries on.",
-    "when": [
-      "Use it to let two beats land in a sensible order: a message, then the reply to it.",
-      "Keep pauses short. The player waits through every one, and a long pause reads as a frozen game."
-    ],
-    "game": "Nothing happens for the length of the pause, then the next node runs.",
-    "fields": {
-      "seconds": {
-        "example": "2",
-        "empty": "There is no pause. A blank value counts as zero and the story carries straight on."
-      }
-    },
-    "mistakes": [
-      [
-        "A long pause used to build tension.",
-        "The player cannot tell a pause from a crash. Two or three seconds is plenty."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the story never reaches the pause"
-      ]
-    ]
+  "steps": [
+   "Find <b class=\"ui\">Run terminal command</b> under <b>Effects</b> in the palette.",
+   "Drag it onto the canvas at the point the command should run.",
+   "Type the command, with tags for anything that changes per player.",
+   "Add a <a href=\"fx-notify.html\">Notify</a> after it if the player should notice the output."
+  ],
+  "mistakes": [
+   [
+    "The command depends on something the player has not done.",
+    "It runs regardless and fails in their terminal. Move it after the step it needs."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the command never runs"
+   ]
+  ]
+ },
+ "fx.handbook": {
+  "oneliner": "Opens an in-game article.",
+  "what": "Opens a page of the game's own handbook for the player.",
+  "when": [
+   "Use it when the player needs background the story should not have to spell out: what a company does, who owns a domain, how a protocol behaves.",
+   "Pick a page that already exists in the game, or type the identifier of one your mod adds."
+  ],
+  "game": "The handbook opens on the page you chose.",
+  "fields": {
+   "articleId": {
+    "watch": "An identifier that matches no article opens nothing, and the player gets no explanation of why."
+   },
+   "category": {}
   },
-  "flow.schedule": {
-    "oneliner": "Runs part of the story at a later in-game time.",
-    "what": "Arms a beat on the in-game clock: the story stops here, and continues down “Out” when the game time you set has passed.",
-    "when": [
-      "For story beats that happen on the story's own schedule: an article hits the wire, a report gets triaged, a deadline lands — while the player is doing something else.",
-      "Unlike a Wait, the time keeps passing while the player is away. A beat set two in-game days out lands two in-game days later even if the player saves and quits — which is what lets a campaign happen in the world's own time."
-    ],
-    "game": "The story pauses at the beat (the wires after it do not run yet). When the in-game clock reaches the due time, the beat's “Out” wire runs, as if the story jumped back to this point. If the quest finishes or is abandoned first, the beat is cancelled.",
-    "fields": {
-      "days": {
-        "example": "1",
-        "empty": "Counts as zero. All three fields blank means nothing waits — the beat fires the moment the story reaches it."
-      },
-      "hours": {
-        "example": "2",
-        "empty": "Counts as zero. The units are added up, so 25 hours is a legal value."
-      },
-      "minutes": {
-        "example": "30",
-        "empty": "Counts as zero. These are in-game minutes: at the default game speed one in-game minute passes every real second, so 30 minutes is half a real minute."
-      }
-    },
-    "mistakes": [
-      [
-        "Treating the time as real minutes.",
-        "The clock is the game's, not the wall clock's. One in-game minute is one real second at default speed, and a full in-game day is about 24 real minutes of play."
-      ],
-      [
-        "Expecting the beat to fire after the quest is over.",
-        "A beat belongs to the quest's story. Complete or abandon the quest before the due time and the beat is cancelled — nothing arrives afterwards."
-      ]
-    ],
-    "messages": [
-      [
-        "Nothing scheduled",
-        "msg-nothing-scheduled",
-        "no days, hours or minutes are set, so the beat fires the moment the story reaches it"
-      ],
-      [
-        "The beat has nothing to do",
-        "msg-beat-nothing-to-do",
-        "the “Out” socket is unwired, so the story stops at the beat when it fires"
-      ]
-    ]
+  "mistakes": [
+   [
+    "The article belongs to another mod.",
+    "The player does not have it, so the handbook opens on nothing. Point at an article your own mod ships."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the article never opens"
+   ]
+  ]
+ },
+ "flow.delay": {
+  "oneliner": "Pauses the story.",
+  "what": "Pauses the story here for as long as you set, then carries on.",
+  "when": [
+   "Use it to let two beats land in a sensible order: a message, then the reply to it.",
+   "Keep pauses short. The player waits through every one, and a long pause reads as a frozen game."
+  ],
+  "game": "Nothing happens for the length of the pause, then the next node runs.",
+  "fields": {
+   "seconds": {
+    "example": "2",
+    "empty": "There is no pause. A blank value counts as zero and the story carries straight on."
+   }
   },
-  "flow.reroute": {
-    "oneliner": "A tidy point for your wires.",
-    "what": "A point to route wires through. It tidies the canvas and changes nothing about the story.",
-    "when": [
-      "Use it when one node has to feed several others, or when a wire would otherwise cross half the canvas.",
-      "Double-click any wire on the canvas to drop one in automatically."
-    ],
-    "game": "Nothing. It changes how the canvas looks, not how the quest runs.",
-    "mistakes": [
-      [
-        "Treating it as a choice.",
-        "It has one input and one output and always passes the story through. For a decision, use <a href=\"flow-branch.html\">Branch</a>."
-      ]
-    ]
+  "mistakes": [
+   [
+    "A long pause used to build tension.",
+    "The player cannot tell a pause from a crash. Two or three seconds is plenty."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the story never reaches the pause"
+   ]
+  ]
+ },
+ "flow.reroute": {
+  "oneliner": "A tidy point for your wires.",
+  "what": "A point to route wires through. It tidies the canvas and changes nothing about the story.",
+  "when": [
+   "Use it when one node has to feed several others, or when a wire would otherwise cross half the canvas.",
+   "Double-click any wire on the canvas to drop one in automatically."
+  ],
+  "game": "Nothing. It changes how the canvas looks, not how the quest runs.",
+  "mistakes": [
+   [
+    "Treating it as a choice.",
+    "It has one input and one output and always passes the story through. For a decision, use <a href=\"flow-branch.html\">Branch</a>."
+   ]
+  ]
+ },
+ "flow.random": {
+  "oneliner": "Picks one path at random.",
+  "what": "Picks one of its outgoing paths at random, and stores the name of the pick so you can read it back.",
+  "when": [
+   "Use it for variety that does not depend on the player: which guard is on duty, which route is blocked.",
+   "Wire each option to a different path. The story goes down one of them and skips the rest.",
+   "Read the pick back later with a <a href=\"flow-branch.html\">Branch</a> testing quest data."
+  ],
+  "game": "Nothing appears on screen. The pick happens quietly and the story takes one of the paths you wired.",
+  "fields": {
+   "options": {
+    "put": "The values to choose between. Add as many as you like.",
+    "watch": "With one option there is nothing random about it. With none, there is nothing to pick."
+   },
+   "storeAs": {
+    "example": "guardOnDuty",
+    "empty": "The pick is not stored, so nothing can read it back later."
+   }
   },
-  "flow.random": {
-    "oneliner": "Picks one path at random.",
-    "what": "Picks one of its outgoing paths at random, and stores the name of the pick so you can read it back.",
-    "when": [
-      "Use it for variety that does not depend on the player: which guard is on duty, which route is blocked.",
-      "Wire each option to a different path. The story goes down one of them and skips the rest.",
-      "Read the pick back later with a <a href=\"flow-branch.html\">Branch</a> testing quest data."
-    ],
-    "game": "Nothing appears on screen. The pick happens quietly and the story takes one of the paths you wired.",
-    "fields": {
-      "options": {
-        "put": "The values to choose between. Add as many as you like.",
-        "watch": "With one option there is nothing random about it. With none, there is nothing to pick."
-      },
-      "storeAs": {
-        "example": "guardOnDuty",
-        "empty": "The pick is not stored, so nothing can read it back later."
-      }
-    },
-    "mistakes": [
-      [
-        "One path wired and the rest left empty.",
-        "A pick that lands on an unwired path stops the story there. Wire every option."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so nothing is ever picked"
-      ]
-    ]
+  "mistakes": [
+   [
+    "One path wired and the rest left empty.",
+    "A pick that lands on an unwired path stops the story there. Wire every option."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so nothing is ever picked"
+   ]
+  ]
+ },
+ "flow.sequence": {
+  "oneliner": "Fires several outputs in order.",
+  "what": "Takes one input and fires as many outputs as you like, from the top down, with a pause before each.",
+  "when": [
+   "Use it for a beat that lands in pieces: a door opens, then the lights come up, then a message arrives.",
+   "Each row you add is a socket on the node, so the shape of the beat is visible on the canvas."
+  ],
+  "game": "The outputs happen one after another, spaced by the pauses you set.",
+  "fields": {
+   "steps": {
+    "put": "One row per output, in the order they should fire.",
+    "watch": "Removing a row removes its socket, and any wire attached to it goes with it."
+   },
+   "label": {
+    "put": "A name for the output, so you can tell the sockets apart on the canvas."
+   },
+   "delayMs": {
+    "example": "1500"
+   }
   },
-  "flow.sequence": {
-    "oneliner": "Fires several outputs in order.",
-    "what": "Takes one input and fires as many outputs as you like, from the top down, with a pause before each.",
-    "when": [
-      "Use it for a beat that lands in pieces: a door opens, then the lights come up, then a message arrives.",
-      "Each row you add is a socket on the node, so the shape of the beat is visible on the canvas."
-    ],
-    "game": "The outputs happen one after another, spaced by the pauses you set.",
-    "fields": {
-      "steps": {
-        "put": "One row per output, in the order they should fire.",
-        "watch": "Removing a row removes its socket, and any wire attached to it goes with it."
-      },
-      "label": {
-        "put": "A name for the output, so you can tell the sockets apart on the canvas."
-      },
-      "delayMs": {
-        "example": "1500"
-      }
-    },
-    "mistakes": [
-      [
-        "A row is deleted without checking its wire.",
-        "The socket goes with it and whatever hung off it is orphaned."
-      ],
-      [
-        "Every pause left at zero.",
-        "The whole beat lands in one instant and the player misses most of it."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so no output fires"
-      ]
-    ]
+  "mistakes": [
+   [
+    "A row is deleted without checking its wire.",
+    "The socket goes with it and whatever hung off it is orphaned."
+   ],
+   [
+    "Every pause left at zero.",
+    "The whole beat lands in one instant and the player misses most of it."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so no output fires"
+   ]
+  ]
+ },
+ "flow.debug": {
+  "oneliner": "Prints what is happening here.",
+  "what": "Prints what the quest is doing at this point, so you can see whether a node runs and what it carries.",
+  "when": [
+   "Drop one anywhere the story seems to stop. If it prints, the story got that far. If it stays silent, look upstream.",
+   "Turn on <b class=\"ui\">Show on screen too</b> while you test, so you do not have to open the log file."
+  ],
+  "game": "Nothing appears on screen unless you ask for it. The probe writes to the game's log.",
+  "fields": {
+   "toast": {
+    "watch": "Switch it off before you ship. Debug output a player can see shows them the seams."
+   }
   },
-  "flow.debug": {
-    "oneliner": "Prints what is happening here.",
-    "what": "Prints what the quest is doing at this point, so you can see whether a node runs and what it carries.",
-    "when": [
-      "Drop one anywhere the story seems to stop. If it prints, the story got that far. If it stays silent, look upstream.",
-      "Turn on <b class=\"ui\">Show on screen too</b> while you test, so you do not have to open the log file."
-    ],
-    "game": "Nothing appears on screen unless you ask for it. The probe writes to the game's log.",
-    "fields": {
-      "toast": {
-        "watch": "Switch it off before you ship. Debug output a player can see shows them the seams."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Debug probe</b> under <b>Flow control</b> in the palette.",
-      "Drop it on the wire you suspect, between the two nodes in question.",
-      "Turn on <b class=\"ui\">Show on screen too</b> if you would rather not open the log.",
-      "Run the quest. A printed label means the story reached that point; silence means it did not."
-    ],
-    "mistakes": [
-      [
-        "The probe is left on in a shipped quest.",
-        "The player reads your debugging notes. Turn <b class=\"ui\">Show on screen too</b> off before you export."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the probe never prints"
-      ]
-    ]
+  "steps": [
+   "Find <b class=\"ui\">Debug probe</b> under <b>Flow control</b> in the palette.",
+   "Drop it on the wire you suspect, between the two nodes in question.",
+   "Turn on <b class=\"ui\">Show on screen too</b> if you would rather not open the log.",
+   "Run the quest. A printed label means the story reached that point; silence means it did not."
+  ],
+  "mistakes": [
+   [
+    "The probe is left on in a shipped quest.",
+    "The player reads your debugging notes. Turn <b class=\"ui\">Show on screen too</b> off before you export."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the probe never prints"
+   ]
+  ]
+ },
+ "flow.note": {
+  "oneliner": "A comment on the canvas.",
+  "what": "A note on the canvas for you. It never reaches the player.",
+  "when": [
+   "Use it to leave yourself a reason: why this branch exists, what a placeholder is standing in for, what you meant to come back to.",
+   "Notes are stripped from the exported mod, so nothing you write here can reach the player."
+  ],
+  "game": "Nothing. A note is a drawing aid and never runs."
+ },
+ "flow.beat": {
+  "oneliner": "Plans a story beat. Never runs.",
+  "what": "A planning card for one beat of your story. It is stripped from the exported mod and never runs.",
+  "when": [
+   "Use it to sketch a scene before you build it: what happens, and which ways it can go.",
+   "Each row under <b class=\"ui\">Branch choices</b> becomes an output socket, so you can wire the paths out and see the shape of the scene."
+  ],
+  "game": "Nothing. The card is stripped from the mod, and the wires that ran through it are spliced together, so the story reaches the same place it would have. The beat describes a moment; it does not create one.",
+  "fields": {
+   "title": {
+    "put": "The card's title bar. Name the beat after the scene.",
+    "example": "Act 2 — the firewall",
+    "empty": "The card has no title, so on a crowded canvas you cannot tell one beat from another."
+   },
+   "text": {
+    "put": "What happens in the beat. The card previews the top of it and expands in the inspector."
+   },
+   "label": {
+    "example": "Go in through the front door"
+   },
+   "color": {
+    "put": "Colour the card by act, character or branch, so a big canvas reads at a glance."
+   }
   },
-  "flow.note": {
-    "oneliner": "A comment on the canvas.",
-    "what": "A note on the canvas for you. It never reaches the player.",
-    "when": [
-      "Use it to leave yourself a reason: why this branch exists, what a placeholder is standing in for, what you meant to come back to.",
-      "Notes are stripped from the exported mod, so nothing you write here can reach the player."
-    ],
-    "game": "Nothing. A note is a drawing aid and never runs."
-  },
-  "flow.beat": {
-    "oneliner": "Plans a story beat. Never runs.",
-    "what": "A planning card for one beat of your story. It is stripped from the exported mod and never runs.",
-    "when": [
-      "Use it to sketch a scene before you build it: what happens, and which ways it can go.",
-      "Each row under <b class=\"ui\">Branch choices</b> becomes an output socket, so you can wire the paths out and see the shape of the scene."
-    ],
-    "game": "Nothing. The card is stripped from the mod, and the wires that ran through it are spliced together, so the story reaches the same place it would have. The beat describes a moment; it does not create one.",
-    "fields": {
-      "title": {
-        "put": "The card's title bar. Name the beat after the scene.",
-        "example": "Act 2 — the firewall",
-        "empty": "The card has no title, so on a crowded canvas you cannot tell one beat from another."
-      },
-      "text": {
-        "put": "What happens in the beat. The card previews the top of it and expands in the inspector."
-      },
-      "label": {
-        "example": "Go in through the front door"
-      },
-      "color": {
-        "put": "Colour the card by act, character or branch, so a big canvas reads at a glance."
-      }
-    },
-    "mistakes": [
-      [
-        "Expecting a beat to run.",
-        "It is planning only and is stripped from the mod. Build the real beat with the nodes it describes."
-      ]
-    ]
-  },
-  "layout.group": {
-    "oneliner": "A named box that moves its nodes.",
-    "what": "A named box around part of your canvas. Drag it and everything inside moves with it.",
-    "when": [
-      "Use it to keep a long quest readable: one frame per act, per location, or per character.",
-      "It changes nothing about how the quest runs. Its name and comment still travel with the export."
-    ],
-    "game": "The frame itself never runs. Its Name and Comment do ship: the export writes each group as a comment near the top of the mod, so somebody reading that file without this editor can still follow how you laid the quest out. Sticky notes ship nothing at all.",
-    "fields": {
-      "comment": {
-        "put": "Worth writing as though a stranger will read it, because they might. This text is the part of the frame that survives into the exported mod.",
-        "watch": "A comment containing the two characters that close a block comment cannot break the export. The compiler escapes it for you."
-      }
-    }
-  },
-  "world.network": {
-    "oneliner": "Builds the machines the player breaks into.",
-    "what": "Creates a network in the game's world: a router at the root, and every machine behind it, with their ports, users and weaknesses.",
-    "when": [
-      "Use it for any quest where the player has to break into something. The machines exist because your quest put them there.",
-      "Build the shape of the network in the <b class=\"ui\">Devices</b> editor: the router first, then the machines the player has to reach behind it.",
-      "Leave the player a way in. A network with every port closed and no weakness to exploit is a wall, not a puzzle."
-    ],
-    "game": "The network appears in the game's world. The player can scan it, find what is open, and connect.",
-    "fields": {
-      "device": {
-        "put": "The router at the root, and every machine behind it. The editor beside this field is where you add them.",
-        "watch": "The player needs a route in. If the router exposes nothing and has no weakness, nothing behind it can be reached."
-      },
-      "destroyOnComplete": {
-        "put": "Turn this on to take the network back out of the world when the quest completes."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Create network</b> under <b>World building</b> in the palette.",
-      "Drag it onto the canvas early, before anything that depends on the machines existing.",
-      "Open <b class=\"ui\">Devices</b> and build the network: the router, then what sits behind it.",
-      "Give the player a way in — an open port, or a weakness a scanner will report.",
-      "Point later nodes at the machines with the address you stored in quest data."
-    ],
-    "mistakes": [
-      [
-        "No route in.",
-        "The player can see the network and cannot touch it. Open one port, or leave one weakness to find."
-      ],
-      [
-        "The network is created after the node that uses it.",
-        "Wire it first. A node that targets a machine which does not exist yet finds nothing."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the network is never created"
-      ]
-    ]
-  },
-  "world.wifi": {
-    "oneliner": "Creates a wireless target the player can crack and join.",
-    "what": "Adds a Wi-Fi access point to the game's world, with a passphrase, signal strength, optional BSSID and optional devices behind it.",
-    "when": [
-      "Use it when the player should work through Bettercap and hashcat before reaching a network.",
-      "Give the access point a clue trail. The player needs to learn which network to attack and how to recover the passphrase.",
-      "Put machines behind the access point when joining the Wi-Fi should open the rest of the job."
-    ],
-    "game": "The network appears in the Wi-Fi list and Bettercap scan output. The player can capture a handshake, crack the passphrase, join it, and then reach whatever you placed behind the access point.",
-    "fields": {
-      "ssid": {
-        "example": "DOCKNET-5G",
-        "empty": "The access point has no visible name, so the player cannot recognise the right target."
-      },
-      "password": {
-        "example": "forklift-1948",
-        "watch": "If the player must type or crack this value later, make sure they can earn it first."
-      },
-      "signal": {
-        "put": "How strong and quick to join the access point should feel."
-      },
-      "bssid": {
-        "example": "02:24:00:00:17:48",
-        "emptySafe": "The game picks one for you. Fill it only when a clue or test needs a fixed value.",
-        "watch": "Current game builds may show no network name after Bettercap targets this value, but the attack still works."
-      },
-      "channel": {
-        "example": "44",
-        "emptySafe": "The game chooses a channel that fits the network name."
-      },
-      "wps": {
-        "put": "Turn it on for targets that should look old, consumer-grade, or poorly locked down."
-      },
-      "model": {
-        "example": "TP-Link Archer C6",
-        "emptySafe": "The access point still exists. Leave this blank if router-model recovery is not part of the puzzle."
-      },
-      "users": {
-        "put": "Accounts on the access point's own router. Use them for an admin-panel step, not for the machine behind it."
-      },
-      "ports": {
-        "put": "Services exposed by the access point's router itself."
-      },
-      "children": {
-        "put": "The machines the player reaches after joining the Wi-Fi."
-      },
-      "destroyOnComplete": {
-        "put": "Turn this on for a temporary access point that should disappear when the job is done."
-      },
-      "username": {
-        "example": "admin"
-      },
-      "emailAddress": {
-        "example": "admin@docknet.internal"
-      },
-      "external": {
-        "example": "80"
-      },
-      "service": {
-        "example": "http"
-      },
-      "version": {
-        "example": "nginx 8.4.71"
-      }
-    },
-    "sockets": {
-      "in": {
-        "in": "Whatever should happen before the access point exists."
-      },
-      "out": {
-        "out": "The briefing, objective, or next setup step that assumes the access point is live."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Create Wi-Fi</b> under <b>World building</b> in the palette.",
-      "Name the network and set the passphrase the player has to recover.",
-      "Leave BSSID and Channel blank unless your clue needs a fixed value.",
-      "Add router ports or accounts only if the access point itself should be a target.",
-      "Add machines under <b class=\"ui\">Devices behind the access point</b> when joining Wi-Fi should unlock more systems."
-    ],
-    "mistakes": [
-      [
-        "No passphrase trail.",
-        "The player can see the access point and has no fair way to join it. Hide the passphrase, the model, or the handshake route somewhere in the quest."
-      ],
-      [
-        "Putting the prize on the router by accident.",
-        "Router accounts and ports are for the access point itself. Put the company server under Devices behind the access point."
-      ],
-      [
-        "Treating the Bettercap name display as failure.",
-        "If targeting by BSSID shows no name, keep going: the current game build still captures and cracks the handshake."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the access point is never created"
-      ]
-    ]
-  },
-  "world.firewall": {
-    "oneliner": "Allows or blocks a port.",
-    "what": "Adds a firewall rule to a machine, so a port is open or closed to whoever you name.",
-    "when": [
-      "Use it to shut a door the player has to find another way through, or to open one at the right moment in the story.",
-      "Point it at the quest's own network, or at one machine you name."
-    ],
-    "game": "The player's scans show the port as blocked or reachable, depending on the rule.",
-    "fields": {
-      "port": {
-        "example": "22"
-      },
-      "allowed": {
-        "put": "Turn this on to let traffic through. Off blocks the port."
-      },
-      "locked": {
-        "watch": "A locked rule with no way around it stops the quest. Leave the player another route."
-      }
-    },
-    "mistakes": [
-      [
-        "The rule blocks the only way in.",
-        "The player cannot finish. Either leave a route open, or make working around the block the puzzle."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the rule is never applied"
-      ]
-    ]
-  },
-  "world.port": {
-    "oneliner": "Opens, closes, adds or removes a port.",
-    "what": "Changes one port on one machine: opens it, closes it, adds a new service, or takes one away.",
-    "when": [
-      "Use it when the story should change what a machine exposes. A service comes up after the player flips a switch, or a port closes when they are spotted.",
-      "Pick the action first. The other fields mean different things depending on it."
-    ],
-    "game": "The next scan the player runs shows the port in its new state.",
-    "fields": {
-      "action": {
-        "put": "What to do to the port."
-      },
-      "port.external": {
-        "example": "22"
-      },
-      "port.internal": {
-        "example": "22"
-      },
-      "port.service": {
-        "example": "ssh"
-      }
-    },
-    "mistakes": [
-      [
-        "The service name does not match the port number.",
-        "A scan reporting ssh on port 80 tells the player nobody was paying attention. Keep the two consistent."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the port never changes"
-      ]
-    ]
-  },
-  "world.domain": {
-    "oneliner": "Points a hostname at an address.",
-    "what": "Registers a hostname in the game's world and points it at the address you choose.",
-    "when": [
-      "Use it to give the player a name to find instead of a bare address. A company they look up should resolve to something.",
-      "Add the weaknesses on the host behind the name, and the game's scanners report them when the player looks."
-    ],
-    "game": "The player looks the name up and gets the address you gave it.",
-    "fields": {
-      "domain": {
-        "example": "vault.corp-internal.net",
-        "empty": "There is no name to resolve, so the node does nothing."
-      },
-      "vulnerabilities": {
-        "put": "The weaknesses on the host behind this name. A scanner reports the ones you list."
-      },
-      "type": {
-        "put": "The kind of weakness. Each one says what the player can do with it."
-      },
-      "version": {
-        "example": "WordPress 5.8"
-      }
-    },
-    "mistakes": [
-      [
-        "The name resolves to an address that does not exist.",
-        "The player finds the hostname and reaches nothing. Point it at a machine your quest actually creates."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the name is never registered"
-      ]
-    ]
-  },
-  "world.database": {
-    "oneliner": "Data for the player to dig out.",
-    "what": "Creates a database in the game's world, with a login and whatever tables you put in it.",
-    "when": [
-      "Use it when the player should dig something out of a system rather than read it in a file.",
-      "Give the player a way to find the password. A login nobody can discover is a dead end, not a puzzle."
-    ],
-    "game": "The player connects with a database client and queries the tables you built.",
-    "fields": {
-      "host": {
-        "example": "{{data.targetIp}}"
-      },
-      "user": {
-        "put": "The login the player uses.",
-        "example": "admin"
-      },
-      "password": {
-        "watch": "The default is a placeholder. Leave it in place and the player can guess their way in without playing."
-      },
-      "tables": {
-        "empty": "The database exists and holds nothing, so there is nothing to find."
-      }
-    },
-    "mistakes": [
-      [
-        "No route to the password.",
-        "The player finds the database and cannot open it. Hide the password somewhere they can reach."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the database is never created"
-      ]
-    ]
-  },
-  "world.files": {
-    "oneliner": "Drops files on a machine.",
-    "what": "Creates files and folders on a machine — the player's own, or one you name.",
-    "when": [
-      "Use it for the clues the player has to find: a config with a password in it, a log with the right timestamp, a note somebody should not have written down.",
-      "Pick whose filesystem you are writing to. The player's own machine is written when the story reaches this node."
-    ],
-    "game": "The files appear in the filesystem, and the player finds them with the usual commands.",
-    "fields": {
-      "target": {
-        "watch": "Both fields below stay visible whichever you pick, and <b class=\"ui\">Device IP</b> is only read for a remote device."
-      },
-      "ip": {
-        "put": "The remote machine to write to. Only used when <b class=\"ui\">Where</b> says a device.",
-        "example": "{{data.targetIp}}"
-      },
-      "parentPath": {
-        "example": "~/docs",
-        "watch": "Folders named etc, home, logs or lib are merged into the machine's real ones rather than created fresh."
-      },
-      "files": {
-        "empty": "Nothing is written."
-      },
-      "name": {
-        "example": "config"
-      },
-      "extension": {
-        "example": "conf"
-      },
-      "data": {
-        "example": "DB_PASS=hunter2"
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Place files</b> under <b>World building</b> in the palette.",
-      "Pick whose machine you are writing to.",
-      "Set the parent folder, then add one row per file.",
-      "Put the clue in <b class=\"ui\">Contents</b>, written the way the file would really read.",
-      "Mark anything the player should stumble on by accident as hidden."
-    ],
-    "mistakes": [
-      [
-        "The clue is written like a note from the author.",
-        "A config file that says \"the password is hunter2, good luck\" breaks the fiction. Write it the way the real file would look."
-      ],
-      [
-        "Files placed on the player's machine by mistake.",
-        "Check <b class=\"ui\">Where</b>. Writing to the player's own filesystem is very visible to them."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so no files are written"
-      ]
-    ]
-  },
-  "world.packData": {
-    "oneliner": "Fills in a data shape from an addon.",
-    "noFields": "This node has no fields of its own. Pick an installed addon pack and one of its data shapes, and the editor shows that pack's own fields for you to fill in. With no addon installed there is nothing here to configure.",
-    "what": "Hands a filled-in data shape to a community addon.",
-    "when": [
-      "Use it when an addon your quest depends on asks for data. Pick the pack, pick the shape, fill in what it wants.",
-      "You need the addon installed to see its fields. Nothing appears here until it is."
-    ],
-    "game": "The addon receives the values you entered when the story reaches this node.",
-    "mistakes": [
-      [
-        "The addon is not installed.",
-        "The player has your quest and not the addon it hands data to. Ship them together, or say so up front."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the addon never receives the data"
-      ]
-    ]
-  },
-  "pack.node": {
-    "oneliner": "A story node from an addon.",
-    "noFields": "This node has no fields of its own. Pick an installed addon and one of its nodes, and the editor shows whatever that node asks for. With no addon installed there is nothing here to configure.",
-    "what": "Runs a node supplied by a community addon instead of one built into the editor.",
-    "when": [
-      "Use it when an addon adds something the editor does not have. Addon nodes appear under <b>Editor Mods</b> in the palette.",
-      "You need the addon installed. Without it the node has nothing to run, and the player misses whatever it was meant to do."
-    ],
-    "game": "Whatever the addon's node does, at the point the story reaches it.",
-    "mistakes": [
-      [
-        "The story depends on an addon the player does not have.",
-        "The node does nothing and the quest stalls. Check what your quest needs before you ship it."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the addon node never runs"
-      ]
-    ]
-  },
-  "world.toolResponse": {
-    "oneliner": "Scripts what a tool reports.",
-    "what": "Overrides what one of the game's tools prints, so a scan or a lookup answers with what your story needs.",
-    "when": [
-      "Use it when the player runs a real command and the answer has to be one you wrote: the scan that reveals the target, the lookup that names its owner.",
-      "Key it to what the player types. A response that answers every input hands them the target on their first random try."
-    ],
-    "game": "The player runs the command and reads your response instead of the game's own.",
-    "fields": {
-      "input": {
-        "example": "{{data.targetIp}}",
-        "empty": "There is nothing to match, so the response never fires."
-      },
-      "dataText": {
-        "example": "PORT: 22  STATE: open  SERVICE: ssh",
-        "empty": "The command answers with nothing, which reads to the player as a dead host."
-      }
-    },
-    "mistakes": [
-      [
-        "The response answers anything.",
-        "Key it to a specific input, or the player's first careless scan gives them the answer."
-      ],
-      [
-        "The response is left running.",
-        "Leave <b class=\"ui\">Remove when the quest ends</b> on, or the command keeps answering with your text in every later quest."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the response is never registered"
-      ]
-    ]
-  },
-  "comms.dialogue": {
-    "oneliner": "A conversation with the player.",
-    "noFields": "The inspector for this node is a conversation editor rather than a list of fields. Pick the kind of conversation, then write its lines in the editor that opens beside it.",
-    "what": "A conversation between the player and a character: a phone call, a Kisscord chat, an e-mail or a WeeChat session.",
-    "when": [
-      "Use it for anything a character says to the player. Pick the form the story wants: a call for urgency, mail for a paper trail.",
-      "For phone calls, choose when <b class=\"ui\">Out fires</b>: when the call hangs up, or right after it starts.",
-      "The second output is there for conversations that can go badly. Wire it if the player can answer wrongly."
-    ],
-    "game": "The conversation appears in the game's own phone, chat or mail, in the form you chose.",
-    "sockets": {
-      "in": {
-        "in": "Whatever should run immediately before the conversation."
-      },
-      "out": {
-        "out": "Whatever happens after the conversation. For phone calls, the Out-fires setting controls the exact timing."
-      },
-      "failure": {
-        "out": "The path that runs when the conversation goes down its wrong branch."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Dialogue</b> under <b>Communication</b> in the palette.",
-      "Drag it onto the canvas where the conversation belongs.",
-      "Pick the kind: phone call, Kisscord, e-mail or WeeChat.",
-      "For phone calls, set <b class=\"ui\">Out fires</b> before wiring the next beat.",
-      "Write the lines in the conversation editor.",
-      "Wire what should happen afterwards, and the wrong branch if there is one."
-    ],
-    "mistakes": [
-      [
-        "The wrong branch is left unwired.",
-        "A player who answers badly reaches a dead end. Wire it, or take the choice away."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the conversation never starts"
-      ]
-    ]
-  },
-  "reply.input": {
-    "oneliner": "Asks the player to type an answer.",
-    "what": "Adds a command to the player's terminal that waits for them to type an answer, then sends the story down the matching path.",
-    "when": [
-      "Use it for a passphrase, a code, or any moment where the player has to know something rather than do something.",
-      "Both outcomes need somewhere to go. The player can try again after a miss, so the wrong path is not a dead end unless you make it one."
-    ],
-    "game": "The player types the command, sees your prompt, and types their answer. The terminal prints your success or failure line.",
-    "fields": {
-      "commandName": {
-        "example": "decrypt"
-      },
-      "commandDescription": {
-        "example": "Decrypt the intercepted payload"
-      },
-      "prompt": {
-        "example": "Passphrase >"
-      },
-      "mask": {
-        "put": "Turn this on to hide what the player types behind asterisks."
-      },
-      "matchMode": {
-        "put": "How the answer is checked.",
-        "watch": "A pattern match is the hardest of the three for a player to guess at. Use it only when several answers should count."
-      },
-      "expected": {
-        "empty": "Nothing the player types can be correct, so the story never leaves the wrong path.",
-        "watch": "The player has to be able to find this somewhere. An answer with no clue behind it is a guess, not a puzzle."
-      },
-      "caseSensitive": {
-        "watch": "Left on, a player who types the right word with the wrong capitals fails. Turn it off unless case is part of the puzzle."
-      },
-      "successMessage": {
-        "example": "Decrypted."
-      }
-    },
-    "sockets": {
-      "in": {
-        "in": "Whatever should run immediately before the player is asked."
-      },
-      "success": {
-        "out": "The path that runs when the answer matches."
-      },
-      "failure": {
-        "out": "The path that runs on a miss. The player can try again, so this is not usually the end."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Manual input</b> under <b>Custom terminal</b> in the palette.",
-      "Name the command and give it a help line the player will recognise.",
-      "Write the prompt, then the answer you expect.",
-      "Turn <b class=\"ui\">Case sensitive</b> off unless capitalisation matters.",
-      "Wire both <b class=\"ui\">Correct</b> and <b class=\"ui\">Wrong</b> to somewhere."
-    ],
-    "mistakes": [
-      [
-        "The answer is nowhere to be found.",
-        "The player types guesses forever. Put the passphrase somewhere they can reach it."
-      ],
-      [
-        "One outcome left unwired.",
-        "A correct answer that goes nowhere reads as a broken quest. Wire both."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the command is never registered"
-      ]
-    ]
-  },
-  "fx.completeQuest": {
-    "oneliner": "Finishes the current quest.",
-    "what": "Marks this quest complete. Rewards can pay out, and <b class=\"ui\">On quest complete</b> runs next.",
-    "when": [
-      "Use it as the final node of a successful story path.",
-      "Put closing mail, payments and important clues before it, unless they belong under <b class=\"ui\">On quest complete</b>.",
-      "It has no output because the current story path ends here."
-    ],
-    "game": "The quest leaves the active list as completed. Quest rewards and complete-hook work can run.",
-    "sockets": {
-      "in": {
-        "in": "Whatever proves the player has reached the ending."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Complete quest</b> under <b>Effects</b>.",
-      "Place it at the end of the success path.",
-      "Wire the final story beat into its input.",
-      "Put optional epilogue work under <b class=\"ui\">On quest complete</b>."
-    ],
-    "mistakes": [
-      [
-        "It comes too early.",
-        "The quest finishes before the player earns it. Move it after the final objective or choice."
-      ],
-      [
-        "Cleanup is wired before the ending by accident.",
-        "The player may lose evidence before seeing it. Keep cleanup under <b class=\"ui\">On quest complete</b> when possible."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the quest never finishes here"
-      ]
-    ]
-  },
-  "fx.retireQuest": {
-    "oneliner": "Removes the current quest without completion.",
-    "what": "Takes this quest out of the player's active list without marking it complete.",
-    "when": [
-      "Use it for fail states, cancelled jobs, or stories that should vanish without rewards.",
-      "Do not use it for a normal success ending. Use <b class=\"ui\">Complete quest</b> for that.",
-      "It has no output because the current story path ends here."
-    ],
-    "game": "The quest disappears from the active list. It does not count as completed.",
-    "sockets": {
-      "in": {
-        "in": "The point where the quest should be removed."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Retire quest</b> under <b>Effects</b>.",
-      "Place it at the end of the path that cancels the job.",
-      "Wire the fail or cancellation beat into its input."
-    ],
-    "mistakes": [
-      [
-        "It is used for success.",
-        "The player may miss rewards and complete-only follow-up. Use <b class=\"ui\">Complete quest</b> instead."
-      ],
-      [
-        "It runs before the player reads the reason.",
-        "The quest vanishes with no explanation. Send the closing message first."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so the quest is never retired"
-      ]
-    ]
-  },
-  "fx.unclaimQuest": {
-    "oneliner": "Removes a claimed quest.",
-    "what": "Unclaims a quest by name. Blank removes the quest this node belongs to.",
-    "when": [
-      "Use it to pull back a side job, reset a chapter handoff, or remove this quest without completion.",
-      "If you are ending a successful path, use <b class=\"ui\">Complete quest</b> instead.",
-      "It has no output because the chosen quest is removed here."
-    ],
-    "game": "The named quest leaves the player's active list without counting as completed.",
-    "fields": {
-      "questName": {
-        "put": "Copy the internal name from the quest strip or the other mod notes. Blank targets this quest.",
-        "example": "side-contract",
-        "empty": "The current quest is removed.",
-        "watch": "A spelling mismatch removes nothing, so the unwanted quest stays active."
-      }
-    },
-    "sockets": {
-      "in": {
-        "in": "The point where the chosen quest should be removed."
-      }
-    },
-    "steps": [
-      "Find <b class=\"ui\">Unclaim quest</b> under <b>Effects</b>.",
-      "Type the quest identifier, or leave <b class=\"ui\">Quest</b> blank for this quest.",
-      "Wire the cancellation beat into its input."
-    ],
-    "mistakes": [
-      [
-        "The wrong quest name is typed.",
-        "Nothing is removed. Copy the identifier from the quest strip or the other mod's notes."
-      ],
-      [
-        "It replaces a success ending.",
-        "The quest disappears without completion. Use <b class=\"ui\">Complete quest</b> for success."
-      ]
-    ],
-    "messages": [
-      [
-        "Unreachable",
-        "msg-unreachable",
-        "nothing leads to this node, so no quest is unclaimed"
-      ]
-    ]
+  "mistakes": [
+   [
+    "Expecting a beat to run.",
+    "It is planning only and is stripped from the mod. Build the real beat with the nodes it describes."
+   ]
+  ]
+ },
+ "layout.group": {
+  "oneliner": "A named box that moves its nodes.",
+  "what": "A named box around part of your canvas. Drag it and everything inside moves with it.",
+  "when": [
+   "Use it to keep a long quest readable: one frame per act, per location, or per character.",
+   "It changes nothing about how the quest runs. Its name and comment still travel with the export."
+  ],
+  "game": "The frame itself never runs. Its Name and Comment do ship: the export writes each group as a comment near the top of the mod, so somebody reading that file without this editor can still follow how you laid the quest out. Sticky notes ship nothing at all.",
+  "fields": {
+   "comment": {
+    "put": "Worth writing as though a stranger will read it, because they might. This text is the part of the frame that survives into the exported mod.",
+    "watch": "A comment containing the two characters that close a block comment cannot break the export. The compiler escapes it for you."
+   }
   }
+ },
+ "world.network": {
+  "oneliner": "Builds the machines the player breaks into.",
+  "what": "Creates a network in the game's world: a router at the root, and every machine behind it, with their ports, users and weaknesses.",
+  "when": [
+   "Use it for any quest where the player has to break into something. The machines exist because your quest put them there.",
+   "Build the shape of the network in the <b class=\"ui\">Devices</b> editor: the router first, then the machines the player has to reach behind it.",
+   "Leave the player a way in. A network with every port closed and no weakness to exploit is a wall, not a puzzle."
+  ],
+  "game": "The network appears in the game's world. The player can scan it, find what is open, and connect.",
+  "fields": {
+   "device": {
+    "put": "The router at the root, and every machine behind it. The editor beside this field is where you add them.",
+    "watch": "The player needs a route in. If the router exposes nothing and has no weakness, nothing behind it can be reached."
+   },
+   "destroyOnComplete": {
+    "put": "Turn this on to take the network back out of the world when the quest completes."
+   }
+  },
+  "steps": [
+   "Find <b class=\"ui\">Create network</b> under <b>World building</b> in the palette.",
+   "Drag it onto the canvas early, before anything that depends on the machines existing.",
+   "Open <b class=\"ui\">Devices</b> and build the network: the router, then what sits behind it.",
+   "Give the player a way in — an open port, or a weakness a scanner will report.",
+   "Point later nodes at the machines with the address you stored in quest data."
+  ],
+  "mistakes": [
+   [
+    "No route in.",
+    "The player can see the network and cannot touch it. Open one port, or leave one weakness to find."
+   ],
+   [
+    "The network is created after the node that uses it.",
+    "Wire it first. A node that targets a machine which does not exist yet finds nothing."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the network is never created"
+   ]
+  ]
+ },
+ "world.wifi": {
+  "oneliner": "Creates a wireless target the player can crack and join.",
+  "what": "Adds a Wi-Fi access point to the game's world, with a passphrase, signal strength, optional BSSID and optional devices behind it.",
+  "when": [
+   "Use it when the player should work through Bettercap and hashcat before reaching a network.",
+   "Give the access point a clue trail. The player needs to learn which network to attack and how to recover the passphrase.",
+   "Put machines behind the access point when joining the Wi-Fi should open the rest of the job."
+  ],
+  "game": "The network appears in the Wi-Fi list and Bettercap scan output. The player can capture a handshake, crack the passphrase, join it, and then reach whatever you placed behind the access point.",
+  "fields": {
+   "ssid": {
+    "example": "DOCKNET-5G",
+    "empty": "The access point has no visible name, so the player cannot recognise the right target."
+   },
+   "password": {
+    "example": "forklift-1948",
+    "watch": "If the player must type or crack this value later, make sure they can earn it first."
+   },
+   "signal": {
+    "put": "How strong and quick to join the access point should feel."
+   },
+   "bssid": {
+    "example": "02:24:00:00:17:48",
+    "emptySafe": "The game picks one for you. Fill it only when a clue or test needs a fixed value.",
+    "watch": "Current game builds may show no network name after Bettercap targets this value, but the attack still works."
+   },
+   "channel": {
+    "example": "44",
+    "emptySafe": "The game chooses a channel that fits the network name."
+   },
+   "wps": {
+    "put": "Turn it on for targets that should look old, consumer-grade, or poorly locked down."
+   },
+   "model": {
+    "example": "TP-Link Archer C6",
+    "emptySafe": "The access point still exists. Leave this blank if router-model recovery is not part of the puzzle."
+   },
+   "users": {
+    "put": "Accounts on the access point's own router. Use them for an admin-panel step, not for the machine behind it."
+   },
+   "ports": {
+    "put": "Services exposed by the access point's router itself."
+   },
+   "children": {
+    "put": "The machines the player reaches after joining the Wi-Fi."
+   },
+   "destroyOnComplete": {
+    "put": "Turn this on for a temporary access point that should disappear when the job is done."
+   },
+   "username": {
+    "example": "admin"
+   },
+   "emailAddress": {
+    "example": "admin@docknet.internal"
+   },
+   "external": {
+    "example": "80"
+   },
+   "service": {
+    "example": "http"
+   },
+   "version": {
+    "example": "nginx 8.4.71"
+   }
+  },
+  "sockets": {
+   "in": {
+    "in": "Whatever should happen before the access point exists."
+   },
+   "out": {
+    "out": "The briefing, objective, or next setup step that assumes the access point is live."
+   }
+  },
+  "steps": [
+   "Find <b class=\"ui\">Create Wi-Fi</b> under <b>World building</b> in the palette.",
+   "Name the network and set the passphrase the player has to recover.",
+   "Leave BSSID and Channel blank unless your clue needs a fixed value.",
+   "Add router ports or accounts only if the access point itself should be a target.",
+   "Add machines under <b class=\"ui\">Devices behind the access point</b> when joining Wi-Fi should unlock more systems."
+  ],
+  "mistakes": [
+   [
+    "No passphrase trail.",
+    "The player can see the access point and has no fair way to join it. Hide the passphrase, the model, or the handshake route somewhere in the quest."
+   ],
+   [
+    "Putting the prize on the router by accident.",
+    "Router accounts and ports are for the access point itself. Put the company server under Devices behind the access point."
+   ],
+   [
+    "Treating the Bettercap name display as failure.",
+    "If targeting by BSSID shows no name, keep going: the current game build still captures and cracks the handshake."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the access point is never created"
+   ]
+  ]
+ },
+ "world.firewall": {
+  "oneliner": "Allows or blocks a port.",
+  "what": "Adds a firewall rule to a machine, so a port is open or closed to whoever you name.",
+  "when": [
+   "Use it to shut a door the player has to find another way through, or to open one at the right moment in the story.",
+   "Point it at the quest's own network, or at one machine you name."
+  ],
+  "game": "The player's scans show the port as blocked or reachable, depending on the rule.",
+  "fields": {
+   "port": {
+    "example": "22"
+   },
+   "allowed": {
+    "put": "Turn this on to let traffic through. Off blocks the port."
+   },
+   "locked": {
+    "watch": "A locked rule with no way around it stops the quest. Leave the player another route."
+   }
+  },
+  "mistakes": [
+   [
+    "The rule blocks the only way in.",
+    "The player cannot finish. Either leave a route open, or make working around the block the puzzle."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the rule is never applied"
+   ]
+  ]
+ },
+ "world.port": {
+  "oneliner": "Opens, closes, adds or removes a port.",
+  "what": "Changes one port on one machine: opens it, closes it, adds a new service, or takes one away.",
+  "when": [
+   "Use it when the story should change what a machine exposes. A service comes up after the player flips a switch, or a port closes when they are spotted.",
+   "Pick the action first. The other fields mean different things depending on it."
+  ],
+  "game": "The next scan the player runs shows the port in its new state.",
+  "fields": {
+   "action": {
+    "put": "What to do to the port."
+   },
+   "port.external": {
+    "example": "22"
+   },
+   "port.internal": {
+    "example": "22"
+   },
+   "port.service": {
+    "example": "ssh"
+   }
+  },
+  "mistakes": [
+   [
+    "The service name does not match the port number.",
+    "A scan reporting ssh on port 80 tells the player nobody was paying attention. Keep the two consistent."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the port never changes"
+   ]
+  ]
+ },
+ "world.domain": {
+  "oneliner": "Points a hostname at an address.",
+  "what": "Registers a hostname in the game's world and points it at the address you choose.",
+  "when": [
+   "Use it to give the player a name to find instead of a bare address. A company they look up should resolve to something.",
+   "Add the weaknesses on the host behind the name, and the game's scanners report them when the player looks."
+  ],
+  "game": "The player looks the name up and gets the address you gave it.",
+  "fields": {
+   "domain": {
+    "example": "vault.corp-internal.net",
+    "empty": "There is no name to resolve, so the node does nothing."
+   },
+   "vulnerabilities": {
+    "put": "The weaknesses on the host behind this name. A scanner reports the ones you list."
+   },
+   "type": {
+    "put": "The kind of weakness. Each one says what the player can do with it."
+   },
+   "version": {
+    "example": "WordPress 5.8"
+   }
+  },
+  "mistakes": [
+   [
+    "The name resolves to an address that does not exist.",
+    "The player finds the hostname and reaches nothing. Point it at a machine your quest actually creates."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the name is never registered"
+   ]
+  ]
+ },
+ "world.database": {
+  "oneliner": "Data for the player to dig out.",
+  "what": "Creates a database in the game's world, with a login and whatever tables you put in it.",
+  "when": [
+   "Use it when the player should dig something out of a system rather than read it in a file.",
+   "Give the player a way to find the password. A login nobody can discover is a dead end, not a puzzle."
+  ],
+  "game": "The player connects with a database client and queries the tables you built.",
+  "fields": {
+   "host": {
+    "example": "{{data.targetIp}}"
+   },
+   "user": {
+    "put": "The login the player uses.",
+    "example": "admin"
+   },
+   "password": {
+    "watch": "The default is a placeholder. Leave it in place and the player can guess their way in without playing."
+   },
+   "tables": {
+    "empty": "The database exists and holds nothing, so there is nothing to find."
+   }
+  },
+  "mistakes": [
+   [
+    "No route to the password.",
+    "The player finds the database and cannot open it. Hide the password somewhere they can reach."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the database is never created"
+   ]
+  ]
+ },
+ "world.files": {
+  "oneliner": "Drops files on a machine.",
+  "what": "Creates files and folders on a machine — the player's own, or one you name.",
+  "when": [
+   "Use it for the clues the player has to find: a config with a password in it, a log with the right timestamp, a note somebody should not have written down.",
+   "Pick whose filesystem you are writing to. The player's own machine is written when the story reaches this node."
+  ],
+  "game": "The files appear in the filesystem, and the player finds them with the usual commands.",
+  "fields": {
+   "target": {
+    "watch": "Both fields below stay visible whichever you pick, and <b class=\"ui\">Device IP</b> is only read for a remote device."
+   },
+   "ip": {
+    "put": "The remote machine to write to. Only used when <b class=\"ui\">Where</b> says a device.",
+    "example": "{{data.targetIp}}"
+   },
+   "parentPath": {
+    "example": "~/docs",
+    "watch": "Folders named etc, home, logs or lib are merged into the machine's real ones rather than created fresh."
+   },
+   "files": {
+    "empty": "Nothing is written."
+   },
+   "name": {
+    "example": "config"
+   },
+   "extension": {
+    "example": "conf"
+   },
+   "data": {
+    "example": "DB_PASS=hunter2"
+   }
+  },
+  "steps": [
+   "Find <b class=\"ui\">Place files</b> under <b>World building</b> in the palette.",
+   "Pick whose machine you are writing to.",
+   "Set the parent folder, then add one row per file.",
+   "Put the clue in <b class=\"ui\">Contents</b>, written the way the file would really read.",
+   "Mark anything the player should stumble on by accident as hidden."
+  ],
+  "mistakes": [
+   [
+    "The clue is written like a note from the author.",
+    "A config file that says \"the password is hunter2, good luck\" breaks the fiction. Write it the way the real file would look."
+   ],
+   [
+    "Files placed on the player's machine by mistake.",
+    "Check <b class=\"ui\">Where</b>. Writing to the player's own filesystem is very visible to them."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so no files are written"
+   ]
+  ]
+ },
+ "world.packData": {
+  "oneliner": "Fills in a data shape from an addon.",
+  "noFields": "This node has no fields of its own. Pick an installed addon pack and one of its data shapes, and the editor shows that pack's own fields for you to fill in. With no addon installed there is nothing here to configure.",
+  "what": "Hands a filled-in data shape to a community addon.",
+  "when": [
+   "Use it when an addon your quest depends on asks for data. Pick the pack, pick the shape, fill in what it wants.",
+   "You need the addon installed to see its fields. Nothing appears here until it is."
+  ],
+  "game": "The addon receives the values you entered when the story reaches this node.",
+  "mistakes": [
+   [
+    "The addon is not installed.",
+    "The player has your quest and not the addon it hands data to. Ship them together, or say so up front."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the addon never receives the data"
+   ]
+  ]
+ },
+ "pack.node": {
+  "oneliner": "A story node from an addon.",
+  "noFields": "This node has no fields of its own. Pick an installed addon and one of its nodes, and the editor shows whatever that node asks for. With no addon installed there is nothing here to configure.",
+  "what": "Runs a node supplied by a community addon instead of one built into the editor.",
+  "when": [
+   "Use it when an addon adds something the editor does not have. Addon nodes appear under <b>Editor Mods</b> in the palette.",
+   "You need the addon installed. Without it the node has nothing to run, and the player misses whatever it was meant to do."
+  ],
+  "game": "Whatever the addon's node does, at the point the story reaches it.",
+  "mistakes": [
+   [
+    "The story depends on an addon the player does not have.",
+    "The node does nothing and the quest stalls. Check what your quest needs before you ship it."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the addon node never runs"
+   ]
+  ]
+ },
+ "world.toolResponse": {
+  "oneliner": "Scripts what a tool reports.",
+  "what": "Overrides what one of the game's tools prints, so a scan or a lookup answers with what your story needs.",
+  "when": [
+   "Use it when the player runs a real command and the answer has to be one you wrote: the scan that reveals the target, the lookup that names its owner.",
+   "Key it to what the player types. A response that answers every input hands them the target on their first random try."
+  ],
+  "game": "The player runs the command and reads your response instead of the game's own.",
+  "fields": {
+   "input": {
+    "example": "{{data.targetIp}}",
+    "empty": "There is nothing to match, so the response never fires."
+   },
+   "dataText": {
+    "example": "PORT: 22  STATE: open  SERVICE: ssh",
+    "empty": "The command answers with nothing, which reads to the player as a dead host."
+   }
+  },
+  "mistakes": [
+   [
+    "The response answers anything.",
+    "Key it to a specific input, or the player's first careless scan gives them the answer."
+   ],
+   [
+    "The response is left running.",
+    "Leave <b class=\"ui\">Remove when the quest ends</b> on, or the command keeps answering with your text in every later quest."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the response is never registered"
+   ]
+  ]
+ },
+ "comms.dialogue": {
+  "oneliner": "A conversation with the player.",
+  "noFields": "The inspector for this node is a conversation editor rather than a list of fields. Pick the kind of conversation, then write its lines in the editor that opens beside it.",
+  "what": "A conversation between the player and a character: a phone call, a Kisscord chat, an e-mail or a WeeChat session.",
+  "when": [
+   "Use it for anything a character says to the player. Pick the form the story wants: a call for urgency, mail for a paper trail.",
+   "For phone calls, choose when <b class=\"ui\">Out fires</b>: when the call hangs up, or right after it starts.",
+   "The second output is there for conversations that can go badly. Wire it if the player can answer wrongly."
+  ],
+  "game": "The conversation appears in the game's own phone, chat or mail, in the form you chose.",
+  "sockets": {
+   "in": {
+    "in": "Whatever should run immediately before the conversation."
+   },
+   "out": {
+    "out": "Whatever happens after the conversation. For phone calls, the Out-fires setting controls the exact timing."
+   },
+   "failure": {
+    "out": "The path that runs when the conversation goes down its wrong branch."
+   }
+  },
+  "steps": [
+   "Find <b class=\"ui\">Dialogue</b> under <b>Communication</b> in the palette.",
+   "Drag it onto the canvas where the conversation belongs.",
+   "Pick the kind: phone call, Kisscord, e-mail or WeeChat.",
+   "For phone calls, set <b class=\"ui\">Out fires</b> before wiring the next beat.",
+   "Write the lines in the conversation editor.",
+   "Wire what should happen afterwards, and the wrong branch if there is one."
+  ],
+  "mistakes": [
+   [
+    "The wrong branch is left unwired.",
+    "A player who answers badly reaches a dead end. Wire it, or take the choice away."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the conversation never starts"
+   ]
+  ]
+ },
+ "reply.input": {
+  "oneliner": "Asks the player to type an answer.",
+  "what": "Adds a command to the player's terminal that waits for them to type an answer, then sends the story down the matching path.",
+  "when": [
+   "Use it for a passphrase, a code, or any moment where the player has to know something rather than do something.",
+   "Both outcomes need somewhere to go. The player can try again after a miss, so the wrong path is not a dead end unless you make it one."
+  ],
+  "game": "The player types the command, sees your prompt, and types their answer. The terminal prints your success or failure line.",
+  "fields": {
+   "commandName": {
+    "example": "decrypt"
+   },
+   "commandDescription": {
+    "example": "Decrypt the intercepted payload"
+   },
+   "prompt": {
+    "example": "Passphrase >"
+   },
+   "mask": {
+    "put": "Turn this on to hide what the player types behind asterisks."
+   },
+   "matchMode": {
+    "put": "How the answer is checked.",
+    "watch": "A pattern match is the hardest of the three for a player to guess at. Use it only when several answers should count."
+   },
+   "expected": {
+    "empty": "Nothing the player types can be correct, so the story never leaves the wrong path.",
+    "watch": "The player has to be able to find this somewhere. An answer with no clue behind it is a guess, not a puzzle."
+   },
+   "caseSensitive": {
+    "watch": "Left on, a player who types the right word with the wrong capitals fails. Turn it off unless case is part of the puzzle."
+   },
+   "successMessage": {
+    "example": "Decrypted."
+   }
+  },
+  "sockets": {
+   "in": {
+    "in": "Whatever should run immediately before the player is asked."
+   },
+   "success": {
+    "out": "The path that runs when the answer matches."
+   },
+   "failure": {
+    "out": "The path that runs on a miss. The player can try again, so this is not usually the end."
+   }
+  },
+  "steps": [
+   "Find <b class=\"ui\">Manual input</b> under <b>Custom terminal</b> in the palette.",
+   "Name the command and give it a help line the player will recognise.",
+   "Write the prompt, then the answer you expect.",
+   "Turn <b class=\"ui\">Case sensitive</b> off unless capitalisation matters.",
+   "Wire both <b class=\"ui\">Correct</b> and <b class=\"ui\">Wrong</b> to somewhere."
+  ],
+  "mistakes": [
+   [
+    "The answer is nowhere to be found.",
+    "The player types guesses forever. Put the passphrase somewhere they can reach it."
+   ],
+   [
+    "One outcome left unwired.",
+    "A correct answer that goes nowhere reads as a broken quest. Wire both."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the command is never registered"
+   ]
+  ]
+ },
+ "fx.completeQuest": {
+  "oneliner": "Finishes the current quest.",
+  "what": "Marks this quest complete. Rewards can pay out, and <b class=\"ui\">On quest complete</b> runs next.",
+  "when": [
+   "Use it as the final node of a successful story path.",
+   "Put closing mail, payments and important clues before it, unless they belong under <b class=\"ui\">On quest complete</b>.",
+   "It has no output because the current story path ends here."
+  ],
+  "game": "The quest leaves the active list as completed. Quest rewards and complete-hook work can run.",
+  "sockets": {
+   "in": {
+    "in": "Whatever proves the player has reached the ending."
+   }
+  },
+  "steps": [
+   "Find <b class=\"ui\">Complete quest</b> under <b>Effects</b>.",
+   "Place it at the end of the success path.",
+   "Wire the final story beat into its input.",
+   "Put optional epilogue work under <b class=\"ui\">On quest complete</b>."
+  ],
+  "mistakes": [
+   [
+    "It comes too early.",
+    "The quest finishes before the player earns it. Move it after the final objective or choice."
+   ],
+   [
+    "Cleanup is wired before the ending by accident.",
+    "The player may lose evidence before seeing it. Keep cleanup under <b class=\"ui\">On quest complete</b> when possible."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the quest never finishes here"
+   ]
+  ]
+ },
+ "fx.retireQuest": {
+  "oneliner": "Removes the current quest without completion.",
+  "what": "Takes this quest out of the player's active list without marking it complete.",
+  "when": [
+   "Use it for fail states, cancelled jobs, or stories that should vanish without rewards.",
+   "Do not use it for a normal success ending. Use <b class=\"ui\">Complete quest</b> for that.",
+   "It has no output because the current story path ends here."
+  ],
+  "game": "The quest disappears from the active list. It does not count as completed.",
+  "sockets": {
+   "in": {
+    "in": "The point where the quest should be removed."
+   }
+  },
+  "steps": [
+   "Find <b class=\"ui\">Retire quest</b> under <b>Effects</b>.",
+   "Place it at the end of the path that cancels the job.",
+   "Wire the fail or cancellation beat into its input."
+  ],
+  "mistakes": [
+   [
+    "It is used for success.",
+    "The player may miss rewards and complete-only follow-up. Use <b class=\"ui\">Complete quest</b> instead."
+   ],
+   [
+    "It runs before the player reads the reason.",
+    "The quest vanishes with no explanation. Send the closing message first."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so the quest is never retired"
+   ]
+  ]
+ },
+ "fx.unclaimQuest": {
+  "oneliner": "Removes a claimed quest.",
+  "what": "Unclaims a quest by name. Blank removes the quest this node belongs to.",
+  "when": [
+   "Use it to pull back a side job, reset a chapter handoff, or remove this quest without completion.",
+   "If you are ending a successful path, use <b class=\"ui\">Complete quest</b> instead.",
+   "It has no output because the chosen quest is removed here."
+  ],
+  "game": "The named quest leaves the player's active list without counting as completed.",
+  "fields": {
+   "questName": {
+    "put": "Copy the internal name from the quest strip or the other mod notes. Blank targets this quest.",
+    "example": "side-contract",
+    "empty": "The current quest is removed.",
+    "watch": "A spelling mismatch removes nothing, so the unwanted quest stays active."
+   }
+  },
+  "sockets": {
+   "in": {
+    "in": "The point where the chosen quest should be removed."
+   }
+  },
+  "steps": [
+   "Find <b class=\"ui\">Unclaim quest</b> under <b>Effects</b>.",
+   "Type the quest identifier, or leave <b class=\"ui\">Quest</b> blank for this quest.",
+   "Wire the cancellation beat into its input."
+  ],
+  "mistakes": [
+   [
+    "The wrong quest name is typed.",
+    "Nothing is removed. Copy the identifier from the quest strip or the other mod's notes."
+   ],
+   [
+    "It replaces a success ending.",
+    "The quest disappears without completion. Use <b class=\"ui\">Complete quest</b> for success."
+   ]
+  ],
+  "messages": [
+   [
+    "Unreachable",
+    "msg-unreachable",
+    "nothing leads to this node, so no quest is unclaimed"
+   ]
+  ]
+ },
+ "flow.timer": {
+  "oneliner": "Fires the next node at a later in-game time — a delay, a clock time N in-game days from now, or a fixed in-game date.",
+  "what": "Wait X amount of time until the next node fires. Great for when you want the story to hold for a moment. Unlike a Wait, the time keeps passing while the player is away — a timer set two in-game days out lands two in-game days later even if the player saves and quits.",
+  "when": [
+   "For things that happen on the world's own schedule: an article hits the wire, a report gets triaged, a deadline lands — while the player is doing something else.",
+   "For world events that all land on one in-game date: set several timers to the same date and they fire together.",
+   "Unlike a Wait, the time keeps passing while the player is away. A timer set two in-game days out lands two in-game days later even if the player saves and quits — which is what lets a campaign happen in the world's own time."
+  ],
+  "game": "The story pauses at the timer (the wires after it do not run yet). When the in-game clock reaches the due time, the timer's “Out” wire runs, as if the story jumped back to this point. If the quest finishes or is abandoned first, the timer is cancelled.",
+  "fields": {
+   "days": {
+    "example": "1",
+    "empty": "Counts as zero. In “After a delay” mode, all three fields blank means nothing waits — the timer fires the moment the story reaches it."
+   },
+   "hours": {
+    "example": "2",
+    "empty": "Counts as zero. The units are added up, so 25 hours is a legal value."
+   },
+   "minutes": {
+    "example": "30",
+    "empty": "Counts as zero. These are in-game minutes: at the default game speed one in-game minute passes every real second, so 30 minutes is half a real minute."
+   },
+   "offsetDays": {
+    "example": "3",
+    "empty": "0 means today. Counted from when the story reaches the timer, so “in 3 days at 12:00” lands three in-game days after the player gets there — read the day off the in-game clock."
+   },
+   "hour": {
+    "example": "12",
+    "empty": "0 is legal — it is 00:00, the middle of the in-game night. The time the in-game clock will show, not the wall clock."
+   },
+   "minute": {
+    "example": "0",
+    "empty": "0 is legal — on the hour. In-game seconds are real-world milliseconds, so there is no second field."
+   },
+   "dateYear": {
+    "example": "2026",
+    "empty": "Read it off the in-game clock, not your own calendar. With no full date set, the timer fires the moment the story reaches it."
+   },
+   "dateMonth": {
+    "example": "9",
+    "empty": "1–12, as the in-game clock shows it. January is 1."
+   },
+   "dateDay": {
+    "example": "20",
+    "empty": "1–31, as the in-game clock shows it."
+   }
+  },
+  "mistakes": [
+   [
+    "Treating the time as real minutes.",
+    "The clock is the game's, not the wall clock's. One in-game minute is one real second at default speed, and a full in-game day is about 24 real minutes of play."
+   ],
+   [
+    "Expecting the timer to fire after the quest is over.",
+    "A timer belongs to its quest. Complete or abandon the quest before the due time and the timer is cancelled — nothing arrives afterwards."
+   ],
+   [
+    "Setting an in-game date from your own calendar.",
+    "The in-game clock runs at 60× your wall clock and starts where the save started. Read the year, month, day and time off the in-game clock itself, then work backwards from there."
+   ]
+  ],
+  "messages": [
+   [
+    "Nothing scheduled",
+    "msg-nothing-scheduled",
+    "no time or full date is set, so the timer fires the moment the story reaches it"
+   ],
+   [
+    "The timer has nothing to do",
+    "msg-timer-nothing-to-do",
+    "the “Out” socket is unwired, so the story stops at the timer when it fires"
+   ]
+  ]
+ }
 }

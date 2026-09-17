@@ -299,17 +299,17 @@ var __QE = (function () {
 
 function __qeRegisterProject(sdk, PROJECT) {
 
-    /* ── scheduled beats (SDK 0.24 Time/Scheduler) ───────────────────────
-       A Schedule beat arms a job on the in-game clock when the story
-       reaches the node; when the clock hits the due time the job fires
-       and the beat's "Out" wire runs.
+    /* ── scheduled timers (SDK 0.24 Time/Scheduler) ──────────────────────
+       A Timer arms a job on the in-game clock when the story reaches the
+       node; when the clock hits the due time the job fires and the node's
+       "Out" wire runs (r172, renamed r173).
 
        The kind registry is SHARED across every installed pack (SDK docs):
-       two mods both using "beat" would silently answer each other's
+       two mods both using "timer" would silently answer each other's
        jobs, so the mod id goes into the kind. The handler must exist on
        every load, before anything schedules - hence here, at the top of
        mod load, before any quest starts. */
-    var BEAT_KIND = "qe/" + String((PROJECT && PROJECT.mod && (PROJECT.mod.id || PROJECT.mod.name)) || "editor-mod") + "/beat";
+    var BEAT_KIND = "qe/" + String((PROJECT && PROJECT.mod && (PROJECT.mod.id || PROJECT.mod.name)) || "editor-mod") + "/timer";
     /* questId -> fire(nodeId). Rebound by each quest's OnStart /
        OnObjectivesStart to whichever instance the engine actually runs. */
     var liveBeats = {};
@@ -329,14 +329,14 @@ function __qeRegisterProject(sdk, PROJECT) {
                     sdk.Scheduler.schedule(BEAT_KIND, { questId: p.questId, nodeId: p.nodeId, attempts: (p.attempts || 0) + 1 }, { ms: 10 });
                     return;
                 }
-                __QE.log("schedule beat missed: quest " + p.questId + " is not active in this session");
+                __QE.log("timer missed: quest " + p.questId + " is not active in this session");
                 return;
             }
             fire(p.nodeId);
         });
-        __QE.log("schedule-beat handler registered (kind " + BEAT_KIND + ")");
+        __QE.log("timer handler registered (kind " + BEAT_KIND + ")");
     } else {
-        __QE.log("no Scheduler API in this game build - schedule beats will not fire");
+        __QE.log("no Scheduler API in this game build - timers will not fire");
     }
 
     /* ── one quest ─────────────────────────────────────────────────────── */
@@ -547,8 +547,8 @@ function __qeRegisterProject(sdk, PROJECT) {
            nothing), drained in OnComplete/OnAbandon. */
         var questCleanup = [];
 
-        /* Job ids armed by flow.schedule nodes, cancelled when the quest
-           ends: a beat for a finished quest must not fire. */
+        /* Job ids armed by flow.timer nodes, cancelled when the quest
+           ends: a timer for a finished quest must not fire. */
         var beatJobs = [];
 
         /* Has the quest already been torn down once?
@@ -1086,40 +1086,90 @@ function __qeRegisterProject(sdk, PROJECT) {
             });
         }
 
-        /* ── scheduled beats ───────────────────────────────────────────
+        /* ── scheduled timers ──────────────────────────────────────────
            Arming is synchronous inside the flow's call stack (the engine
            only grants this mod permissions there). Firing happens inside
            the Scheduler callback - a call the engine made, so the mod
            still holds its permissions: r166 T-02 proved mail, toast and
            objective completion all work from inside one. */
-        function armBeat(nodeId, delay) {
-            if (!sdk.Scheduler || !sdk.Scheduler.schedule) {
-                __QE.log("schedule node " + nodeId + ": no Scheduler API - the beat will not fire");
+        /* The in-game timestamp a date-mode Timer is due at (r173).
+           Returns null when an "at" date is incomplete (the analysis
+           already warns; the flow fails open). "daytime" resolves against
+           Time.date() at arm time - the local-time Date constructor makes
+           the hour/minute the player's clock time with no offset maths. */
+        function computeTimerFireAt(d) {
+            var h = Math.max(0, Math.min(23, Math.round(Number(d.hour) || 0)));
+            var mi = Math.max(0, Math.min(59, Math.round(Number(d.minute) || 0)));
+            if (d.mode === "daytime") {
+                var days = Math.max(0, Math.round(Number(d.offsetDays) || 0));
+                var n = sdk.Time.date();
+                return new Date(n.getFullYear(), n.getMonth(), n.getDate() + days, h, mi).getTime();
+            }
+            var y = Math.round(Number(d.dateYear) || 0);
+            var m = Math.round(Number(d.dateMonth) || 0);
+            var day = Math.round(Number(d.dateDay) || 0);
+            if (!(y > 0 && m > 0 && day > 0)) return null;
+            /* "The clock shows h:mi": interpret the chosen wall time in the
+               player machine's zone (the one the in-game clock displays).
+               If S-04 proves the clock shows UTC, drop the tz correction. */
+            var tz = new Date().getTimezoneOffset() * 60000;
+            return Date.UTC(y, m - 1, day, h, mi) - tz;
+        }
+
+        function armBeat(nodeId, d) {
+            if (!sdk.Scheduler) {
+                __QE.log("timer node " + nodeId + ": no Scheduler API - the timer will not fire");
                 return;
             }
             /* Idempotent: the opening flow re-runs on a save reload, and a
-               re-run must not double-arm the same beat. */
+               re-run must not double-arm the same timer. */
             var pending = (sdk.Scheduler.list ? sdk.Scheduler.list(BEAT_KIND) : []) || [];
             for (var i = 0; i < pending.length; i++) {
                 var pp = pending[i].payload;
                 if (pp && pp.questId === qd.id && pp.nodeId === nodeId) {
-                    __QE.log("schedule node " + nodeId + " already armed - not double-arming");
+                    __QE.log("timer node " + nodeId + " already armed - not double-arming");
                     return;
                 }
             }
-            var id = sdk.Scheduler.schedule(BEAT_KIND, { questId: qd.id, nodeId: nodeId, attempts: 0 }, delay);
+            var payload = { questId: qd.id, nodeId: nodeId, attempts: 0 };
+            var id;
+            if ((d.mode || "after") === "after") {
+                if (!sdk.Scheduler.schedule) {
+                    __QE.log("timer node " + nodeId + ": no schedule API - the timer will not fire");
+                    return;
+                }
+                id = sdk.Scheduler.schedule(BEAT_KIND, payload, {
+                    days: Number(d.days) || 0,
+                    hours: Number(d.hours) || 0,
+                    minutes: Number(d.minutes) || 0,
+                });
+                __QE.log("timer node " + nodeId + " armed for " + (Number(d.days) || 0) + "d " + (Number(d.hours) || 0) + "h " + (Number(d.minutes) || 0) + "m (job " + id + ")");
+            } else {
+                if (!sdk.Scheduler.scheduleAt) {
+                    __QE.log("timer node " + nodeId + ": no scheduleAt API in this game build - the timer will not fire");
+                    return;
+                }
+                var fireAt = computeTimerFireAt(d);
+                if (fireAt === null) {
+                    __QE.log("timer node " + nodeId + ": no full date set - the timer will not fire");
+                    return;
+                }
+                id = sdk.Scheduler.scheduleAt(BEAT_KIND, payload, fireAt);
+                /* ISO string next to the raw value: S-04 compares both with
+                   the on-screen clock to settle the display timezone. */
+                __QE.log("timer node " + nodeId + " armed for in-game " + new Date(fireAt).toISOString() + " (fireAt " + fireAt + ", job " + id + ")");
+            }
             beatJobs.push(id);
-            __QE.log("schedule node " + nodeId + " armed for " + delay.days + "d " + delay.hours + "h " + delay.minutes + "m (job " + id + ")");
         }
 
         function fireBeat(nodeId) {
             var node = byId[nodeId];
             if (!node) {
-                __QE.log("schedule beat: node " + nodeId + " no longer exists - nothing to fire");
+                __QE.log("timer: node " + nodeId + " no longer exists - nothing to fire");
                 return;
             }
-            __QE.log("schedule beat " + nodeId + " fired");
-            /* The beat is a new entry point into the graph: a fresh
+            __QE.log("timer " + nodeId + " fired");
+            /* The timer is a new entry point into the graph: a fresh
                payload, quest data still resolving through dataScope(). */
             flowOuts(nodeId).forEach(function (e) {
                 runFlow(e.target, { payload: {}, vars: {} }, 0);
@@ -1138,7 +1188,7 @@ function __qeRegisterProject(sdk, PROJECT) {
             beatJobs.forEach(function (id) {
                 __QE.safe(function () { if (sdk.Scheduler && sdk.Scheduler.cancel) sdk.Scheduler.cancel(id); });
             });
-            __QE.log("cancelled " + beatJobs.length + " pending schedule beat(s)");
+            __QE.log("cancelled " + beatJobs.length + " pending timer(s)");
             beatJobs.length = 0;
         }
 
@@ -1720,18 +1770,33 @@ function __qeRegisterProject(sdk, PROJECT) {
                 }
                 case "flow.delay":
                     return __QE.sleep(Math.max(0, Number(d.seconds || 0)) * 1000).then(next);
-                case "flow.schedule": {
-                    var schedDays = Number(d.days) || 0;
-                    var schedHours = Number(d.hours) || 0;
-                    var schedMinutes = Number(d.minutes) || 0;
-                    if (schedDays <= 0 && schedHours <= 0 && schedMinutes <= 0) {
-                        /* Fail-open like the rest of the codebase: a beat with
-                           no time set fires immediately instead of stranding
-                           the story (analysis already warns about it). */
-                        __QE.log("schedule node " + nodeId + ": nothing scheduled - the beat fires immediately");
-                        return next();
+                case "flow.timer": {
+                    var timerMode = d.mode || "after";
+                    if (timerMode === "after") {
+                        var schedTotal = (Number(d.days) || 0) + (Number(d.hours) || 0) + (Number(d.minutes) || 0);
+                        if (schedTotal <= 0) {
+                            /* Fail-open like the rest of the codebase: a
+                               timer with no time set fires immediately
+                               instead of stranding the story (analysis
+                               already warns about it). */
+                            __QE.log("timer node " + nodeId + ": nothing scheduled - the timer fires immediately");
+                            return next();
+                        }
+                    } else {
+                        /* Date modes (r173): fail open when no full date is
+                           set, or when the due time has already passed by
+                           the time the story arrives. */
+                        var dueAt = computeTimerFireAt(d);
+                        if (dueAt === null) {
+                            __QE.log("timer node " + nodeId + ": no full date set - the timer fires immediately");
+                            return next();
+                        }
+                        if (sdk.Time && sdk.Time.now && dueAt <= sdk.Time.now()) {
+                            __QE.log("timer node " + nodeId + ": due time already passed - the timer fires immediately");
+                            return next();
+                        }
                     }
-                    armBeat(nodeId, { days: schedDays, hours: schedHours, minutes: schedMinutes });
+                    armBeat(nodeId, d);
                     /* The flow ends here: the story continues down "Out"
                        when the in-game clock reaches the due time (r172). */
                     return Promise.resolve();

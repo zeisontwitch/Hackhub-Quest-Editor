@@ -162,7 +162,7 @@ Load *Node Reference*, click the node, screenshot. Same three steps every time.
 | `node-fx-handbook-inspector.png` | Open handbook | `fx.handbook` |
 | `node-flow-branch-inspector.png` | Branch | `flow.branch` |
 | `node-flow-delay-inspector.png` | Wait | `flow.delay` |
-| `node-flow-schedule-inspector.png` | Schedule beat | `flow.schedule` |
+| `node-flow-timer-inspector.png` | Timer | `flow.timer` |
 | `node-flow-reroute-inspector.png` | Reroute | `flow.reroute` |
 | `node-flow-random-inspector.png` | Random pick | `flow.random` |
 | `node-flow-sequence-inspector.png` | Sequence | `flow.sequence` |

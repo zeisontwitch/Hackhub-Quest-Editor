@@ -138,29 +138,43 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
             }
         }
 
-        // A scheduled beat (r172): no time set means it fires the moment the
-        // story reaches it, and an unwired "Out" means the beat does nothing.
-        if (node.type === "flow.schedule") {
-            const scheduled = (Number(node.data.days) || 0) + (Number(node.data.hours) || 0) + (Number(node.data.minutes) || 0);
-            if (scheduled <= 0) {
+        // A Timer (r172, renamed r173): no time set means it fires the
+        // moment the story reaches it, and an unwired "Out" means the timer
+        // does nothing when it fires.
+        if (node.type === "flow.timer") {
+            const mode = node.data.mode ?? "after";
+            let nothingSet = false;
+            let noTimeDetail = "";
+            let noTimeNext = "";
+            if (mode === "after") {
+                const scheduled = (Number(node.data.days) || 0) + (Number(node.data.hours) || 0) + (Number(node.data.minutes) || 0);
+                nothingSet = scheduled <= 0;
+                noTimeDetail = "No days, hours or minutes are set, so the timer fires the moment the story reaches it — nothing waits.";
+                noTimeNext = "Set a time in the node's Days / Hours / Minutes fields, or remove the node if the story should carry on.";
+            } else if (mode === "at") {
+                nothingSet = !(Number(node.data.dateYear) > 0 && Number(node.data.dateMonth) > 0 && Number(node.data.dateDay) > 0);
+                noTimeDetail = "No full date is set, so the timer fires the moment the story reaches it — nothing waits.";
+                noTimeNext = "Set a full in-game date (Year, Month and Day — read them off the in-game clock), or remove the node if the story should carry on.";
+            }
+            /* "daytime" needs no check: 0 days means today, and 00:00 is a
+               legal time — only the in-game "now" can decide whether that
+               time has already passed, and the runtime fails open. */
+            if (nothingSet) {
                 issues.push({
                     nodeId: node.id,
                     label: "Nothing scheduled",
-                    detail:
-                        "No days, hours or minutes are set, so the beat fires the moment the story reaches it — nothing waits.",
-                    nextStep:
-                        "Set a time in the node's Days / Hours / Minutes fields, or remove the node if the story should carry on.",
+                    detail: noTimeDetail,
+                    nextStep: noTimeNext,
                     severity: "warn",
                 });
             }
             if (wiredOut === 0) {
                 issues.push({
                     nodeId: node.id,
-                    label: "The beat has nothing to do",
-                    detail:
-                        "When the in-game time comes, the story has nowhere to go from this beat — it stops at the beat.",
+                    label: "The timer has nothing to do",
+                    detail: "When the time comes, the timer has nowhere to go — the story stops there.",
                     nextStep:
-                        "Wire the beat's “Out” socket to the node that should run when the time comes, or leave it unwired if the story is meant to end there.",
+                        "Wire the Out socket to the node that should run when the time comes, or leave it unwired if the story is meant to end there.",
                     severity: "warn",
                 });
             }

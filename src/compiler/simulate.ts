@@ -270,21 +270,32 @@ function recordingSdk(entries: TraceEntry[]) {
             Scheduler: {
                 register: (kind: string, handler: (p: unknown, job: unknown) => void) => {
                     beatHandlers[kind] = handler;
-                    log("schedule", `Beat handler registered (${kind})`);
+                    log("schedule", `Timer handler registered (${kind})`);
                 },
                 schedule: (kind: string, payload?: Record<string, unknown>, _delay?: unknown) => {
                     const id = nextId("job");
                     beatJobs.push({ id, kind, payload: payload ?? {} });
                     log(
                         "schedule",
-                        `Beat scheduled for quest ${String(payload?.questId ?? "?")} (node ${String(payload?.nodeId ?? "?")})`,
+                        `Timer scheduled for quest ${String(payload?.questId ?? "?")} (node ${String(payload?.nodeId ?? "?")})`,
+                    );
+                    return id;
+                },
+                /* Absolute in-game timestamp (r173): the dry run collapses
+                   the clock, so the timestamp is recorded but not honoured. */
+                scheduleAt: (kind: string, payload?: Record<string, unknown>, _fireAt?: number) => {
+                    const id = nextId("job");
+                    beatJobs.push({ id, kind, payload: payload ?? {} });
+                    log(
+                        "schedule",
+                        `Timer scheduled at in-game ${new Date(_fireAt ?? 0).toISOString()} for quest ${String(payload?.questId ?? "?")} (node ${String(payload?.nodeId ?? "?")})`,
                     );
                     return id;
                 },
                 cancel: (id: string) => {
                     const i = beatJobs.findIndex((j) => j.id === id);
                     if (i >= 0) beatJobs.splice(i, 1);
-                    log("schedule", `Beat ${id} cancelled`);
+                    log("schedule", `Timer ${id} cancelled`);
                 },
                 cancelKind: (kind: string) => {
                     for (let i = beatJobs.length - 1; i >= 0; i--) if (beatJobs[i].kind === kind) beatJobs.splice(i, 1);
@@ -317,7 +328,7 @@ function recordingSdk(entries: TraceEntry[]) {
             for (const job of mine) {
                 const handler = beatHandlers[job.kind];
                 if (!handler) continue;
-                log("schedule", `Beat fired (simulated): quest ${questId}, node ${String(job.payload.nodeId ?? "?")}`);
+                    log("schedule", `Timer fired (simulated): quest ${questId}, node ${String(job.payload.nodeId ?? "?")}`);
                 handler(job.payload, { id: job.id, fireAt: 0, kind: job.kind, payload: job.payload, createdAt: 0 });
                 beatJobs.splice(beatJobs.indexOf(job), 1);
             }

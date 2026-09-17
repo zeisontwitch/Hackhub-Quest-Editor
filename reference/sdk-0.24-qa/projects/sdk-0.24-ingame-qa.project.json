@@ -587,9 +587,9 @@
     },
     {
       "id": "qe-siv3sx5g",
-      "name": "QESdk024BeatQa",
-      "title": "Schedule beat QA (S-01/S-02/S-03)",
-      "description": "Auto-starts. Beat A (2 in-game minutes) must fire mail + toast. Beat B (2 in-game hours) must fire on reload survival, and must be cancelled if the quest is completed or abandoned first.",
+      "name": "QESdk024TimerQa",
+      "title": "Timer QA (S-01/S-02/S-03)",
+      "description": "Auto-starts. Timer A (2 in-game minutes) must fire mail + toast. Timer B (2 in-game hours) must fire on reload survival, and must be cancelled if the quest is completed or abandoned first.",
       "group": "sandbox",
       "rewards": {
         "money": 0,
@@ -623,7 +623,7 @@
               "y": 0
             },
             "data": {
-              "label": "beat quest started",
+              "label": "timer quest started",
               "includeData": false,
               "includePayload": false,
               "toast": true
@@ -631,7 +631,7 @@
           },
           {
             "id": "qe-tmrf7pia",
-            "type": "flow.schedule",
+            "type": "flow.timer",
             "position": {
               "x": 520,
               "y": 0
@@ -662,8 +662,8 @@
               "mail": {
                 "from": "qe24-beats@test.net",
                 "to": "player@gomail.com",
-                "subject": "Schedule beat A arrived (S-01 green)",
-                "content": "<p>The 2 in-game minute beat fired. S-01 (fire) is green if you read this within a few seconds of loading the save.</p>",
+                "subject": "Timer A arrived (S-01 green)",
+                "content": "<p>The 2 in-game minute timer fired. S-01 (fire) is green if you read this within a few seconds of loading the save.</p>",
                 "replyable": false
               },
               "weechat": {
@@ -683,13 +683,13 @@
               "y": 0
             },
             "data": {
-              "message": "Schedule beat A fired",
+              "message": "Timer A fired",
               "variant": "toast"
             }
           },
           {
             "id": "qe-9b919r74",
-            "type": "flow.schedule",
+            "type": "flow.timer",
             "position": {
               "x": 1300,
               "y": 0
@@ -708,7 +708,7 @@
               "y": 0
             },
             "data": {
-              "message": "Schedule beat B fired (do NOT see this if the quest ended first)",
+              "message": "Timer B fired (do NOT see this if the quest ended first)",
               "variant": "toast"
             }
           }

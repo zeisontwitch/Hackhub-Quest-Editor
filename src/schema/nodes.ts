@@ -549,15 +549,33 @@ export const DelayNodeDataSchema = z.object({
 });
 
 /**
- * A story beat scheduled on the in-game clock (r172). The units are the
- * SDK's designer units — they are summed, so "25 hours" is a legal value.
- * All three zero means "nothing scheduled", which the analysis warns about
- * and the runtime treats as "fire immediately".
+ * The Timer (r172, renamed r173): a scheduled job on the in-game clock.
+ * Three modes, picked by `mode`:
+ * - `after`: a relative delay in the SDK's designer units — they are summed,
+ *   so "25 hours" is a legal value. All three zero means "nothing scheduled":
+ *   the analysis warns, the runtime fires immediately.
+ * - `daytime`: N in-game days from now, at a set clock time — the day is
+ *   resolved against `Time.date()` at arm time (r173).
+ * - `at`: a fixed in-game date and clock time (r173).
+ * `hour`/`minute` are shared by `daytime` and `at`: they always mean "the
+ * in-game clock shows HH:MM". In-game seconds are real-world milliseconds,
+ * so no second field (r173 check-in).
  */
-export const ScheduleNodeDataSchema = z.object({
+export const TimerNodeDataSchema = z.object({
+    mode: z.enum(["after", "daytime", "at"]).default("after"),
+    /* mode "after": relative delay, units summed */
     days: z.number().default(0),
     hours: z.number().default(0),
     minutes: z.number().default(0),
+    /* mode "daytime": days from now (0 = today) */
+    offsetDays: z.number().default(0),
+    /* modes "daytime" and "at": the time the in-game clock will show */
+    hour: z.number().default(0),
+    minute: z.number().default(0),
+    /* mode "at": the fixed in-game date */
+    dateYear: z.number().default(0),
+    dateMonth: z.number().default(0),
+    dateDay: z.number().default(0),
 });
 
 export const RandomPickNodeDataSchema = z.object({
@@ -686,7 +704,7 @@ export const NodeSchema = z.discriminatedUnion("type", [
     node("fx.handbook", HandbookNodeDataSchema),
     node("flow.branch", BranchNodeDataSchema),
     node("flow.delay", DelayNodeDataSchema),
-    node("flow.schedule", ScheduleNodeDataSchema),
+    node("flow.timer", TimerNodeDataSchema),
     node("flow.random", RandomPickNodeDataSchema),
     node("flow.sequence", SequenceNodeDataSchema),
     node("flow.debug", DebugNodeDataSchema),

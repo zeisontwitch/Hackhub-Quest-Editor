@@ -206,7 +206,7 @@ export const EXAMPLES: Partial<Record<NodeType, Record<string, unknown>>> = {
         conditions: [{ id: "c1", join: "and", field: "containerId", op: "equals", value: "MSKU-4471" }],
     },
     "flow.delay": { seconds: 2.5 },
-    "flow.schedule": { days: 1, hours: 2, minutes: 30 },
+    "flow.timer": { mode: "daytime", offsetDays: 3, hour: 12, minute: 0 },
     "flow.random": {
         options: [
             { id: "o1", label: "MSKU-4471" },

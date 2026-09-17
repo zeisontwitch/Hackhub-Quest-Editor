@@ -1,13 +1,13 @@
 {
   "generatedBy": "scripts/extract-manual-inventory.mjs",
-  "editorBuild": "2026-09-17.r172",
+  "editorBuild": "2026-09-17.r173",
   "sdkVersion": "0.24.0",
   "counts": {
     "nodeTypes": 39,
     "obtainableNodeTypes": 39,
     "categories": 10,
-    "editableFields": 136,
-    "editableFieldsExcludingLists": 129,
+    "editableFields": 143,
+    "editableFieldsExcludingLists": 136,
     "sockets": 74,
     "events": 99,
     "eventGroups": 10
@@ -2660,9 +2660,9 @@
       }
     },
     {
-      "type": "flow.schedule",
-      "slug": "flow-schedule",
-      "label": "Schedule beat",
+      "type": "flow.timer",
+      "slug": "flow-timer",
+      "label": "Timer",
       "blurb": "Do something at a later in-game time",
       "icon": "hourglass",
       "category": "flow",
@@ -2692,7 +2692,29 @@
           "label": null,
           "hint": null,
           "tone": "info",
-          "text": "Arms a beat on the in-game clock: the story stops here, and continues down “Out” when the game time you set has passed. Unlike a Wait, the time keeps passing while the player is away — a beat set two in-game days out lands two in-game days later even if the player saves and quits."
+          "text": "Wait X amount of time until the next node fires. Great for when you want the story to hold for a moment. Unlike a Wait, the time keeps passing while the player is away — a timer set two in-game days out lands two in-game days later even if the player saves and quits."
+        },
+        {
+          "depth": 0,
+          "path": "mode",
+          "kind": "select",
+          "key": "mode",
+          "label": "When it fires",
+          "hint": "A delay from when the story arrives, a clock time N in-game days from now, or a fixed in-game date & time.",
+          "options": [
+            {
+              "value": "after",
+              "label": "After a delay"
+            },
+            {
+              "value": "daytime",
+              "label": "In N days at a set time"
+            },
+            {
+              "value": "at",
+              "label": "On a specific in-game date & time"
+            }
+          ]
         },
         {
           "depth": 0,
@@ -2702,7 +2724,11 @@
           "label": "Days",
           "hint": "In-game days to wait first. 0 is fine — the units are added up.",
           "min": 0,
-          "step": 1
+          "step": 1,
+          "showWhen": {
+            "key": "mode",
+            "equals": "after"
+          }
         },
         {
           "depth": 0,
@@ -2712,7 +2738,11 @@
           "label": "Hours",
           "hint": "In-game hours, on top of the days. 25 hours is a legal value.",
           "min": 0,
-          "step": 1
+          "step": 1,
+          "showWhen": {
+            "key": "mode",
+            "equals": "after"
+          }
         },
         {
           "depth": 0,
@@ -2722,14 +2752,120 @@
           "label": "Minutes",
           "hint": "In-game minutes, on top of the days and hours. At the default game speed one in-game minute passes every real second.",
           "min": 0,
-          "step": 1
+          "step": 1,
+          "showWhen": {
+            "key": "mode",
+            "equals": "after"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "offsetDays",
+          "kind": "number",
+          "key": "offsetDays",
+          "label": "Days from now",
+          "hint": "In-game days from now — 0 means today. Counted from when the story reaches this node.",
+          "min": 0,
+          "step": 1,
+          "showWhen": {
+            "key": "mode",
+            "equals": "daytime"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "hour",
+          "kind": "number",
+          "key": "hour",
+          "label": "Hour",
+          "hint": "The hour the in-game clock will show, 0–23. This is the player's clock, not the wall clock.",
+          "min": 0,
+          "max": 23,
+          "step": 1,
+          "showWhen": {
+            "key": "mode",
+            "equals": [
+              "daytime",
+              "at"
+            ]
+          }
+        },
+        {
+          "depth": 0,
+          "path": "minute",
+          "kind": "number",
+          "key": "minute",
+          "label": "Minute",
+          "hint": "The minute the in-game clock will show, 0–59.",
+          "min": 0,
+          "max": 59,
+          "step": 1,
+          "showWhen": {
+            "key": "mode",
+            "equals": [
+              "daytime",
+              "at"
+            ]
+          }
+        },
+        {
+          "depth": 0,
+          "path": "dateYear",
+          "kind": "number",
+          "key": "dateYear",
+          "label": "Year",
+          "hint": "The in-game year, e.g. 2026. Read it off the in-game clock, not your own calendar.",
+          "min": 1970,
+          "max": 9999,
+          "step": 1,
+          "showWhen": {
+            "key": "mode",
+            "equals": "at"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "dateMonth",
+          "kind": "number",
+          "key": "dateMonth",
+          "label": "Month",
+          "hint": "The in-game month, 1–12, as the in-game clock shows it — January is 1.",
+          "min": 1,
+          "max": 12,
+          "step": 1,
+          "showWhen": {
+            "key": "mode",
+            "equals": "at"
+          }
+        },
+        {
+          "depth": 0,
+          "path": "dateDay",
+          "kind": "number",
+          "key": "dateDay",
+          "label": "Day",
+          "hint": "The in-game day of month, 1–31, as the in-game clock shows it.",
+          "min": 1,
+          "max": 31,
+          "step": 1,
+          "showWhen": {
+            "key": "mode",
+            "equals": "at"
+          }
         }
       ],
-      "editableFieldCount": 3,
+      "editableFieldCount": 10,
       "defaults": {
+        "mode": "after",
         "days": 0,
         "hours": 0,
-        "minutes": 0
+        "minutes": 0,
+        "offsetDays": 0,
+        "hour": 0,
+        "minute": 0,
+        "dateYear": 0,
+        "dateMonth": 0,
+        "dateDay": 0
       }
     },
     {

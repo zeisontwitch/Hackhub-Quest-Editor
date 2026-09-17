@@ -14,6 +14,7 @@ import { placementFor, type NetworkData, type SeedFilesData } from "@/compiler/s
 import { TARGET_IP_TOKEN } from "@/schema/common";
 import type { NodeDoc } from "@/schema/nodes";
 import type { QuestDoc } from "@/schema/project";
+import { daysInMonth, isRealDate, monthName } from "@/schema/timer";
 
 export interface FieldWarning {
     /** Dot-path into the node's data, e.g. "ip" or "choices.0.label". */
@@ -144,6 +145,26 @@ export function fieldWarnings(quest: QuestDoc | undefined, node: NodeDoc): Field
                     nextStep: "Add a user account to the device in your “Create network” node.",
                 });
             }
+        }
+    }
+
+    // A Timer pinned to a date the calendar never has — 31 June, 30 February —
+    // can never arrive; the runtime fails open, so the warning belongs here,
+    // while the author is looking at the field. An incomplete date stays quiet:
+    // the preview sentence already says what will happen.
+    if (node.type === "flow.timer" && String(d.mode ?? "after") === "at") {
+        const y = Math.round(Number(d.dateYear) || 0);
+        const m = Math.round(Number(d.dateMonth) || 0);
+        const day = Math.round(Number(d.dateDay) || 0);
+        const month = monthName(m);
+        if (y > 0 && month && day >= 1 && !isRealDate(y, m, day)) {
+            const last = daysInMonth(y, m);
+            out.push({
+                path: "dateDay",
+                severity: "warn",
+                detail: `“${day} ${month}” never arrives — ${month} has ${last} day${last === 1 ? "" : "s"}.`,
+                nextStep: `Pick a day from 1 to ${last}, or switch the Month to one that has the day you want.`,
+            });
         }
     }
 

@@ -33,6 +33,7 @@ In-game console lines are the ones to quote in a report: `timer node … armed f
 
 | Export | Editor build | Result |
 |---|---|---|
+| 1.0.4 | 2026-09-18.r176 | **Regenerated for the r176 Timer.** The exported runtime carries the relative-unit arm maths (days/weeks/months/years, short months clamped) and the arm log names the rule; the delay-mode quests behave exactly as before. |
 | 1.0.3 | 2026-09-17.r175 | **Regenerated, awaiting a pass.** First build to carry `QESdk024TimerQa`; fixes the r166-era README claim that the export held one quest. |
 | 1.0.2 | 2026-09-16.r166 | Tested on HackHub 1.3.0 / Steam build 25341308 — results below. |
 

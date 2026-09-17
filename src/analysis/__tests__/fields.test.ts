@@ -146,4 +146,38 @@ describe("fieldWarnings", () => {
         const quest = questWith(files, networkWith(device()));
         expect(fieldWarnings(quest, files)).toEqual([]);
     });
+
+    it("flags an exact-date Timer set to a day the month does not have", () => {
+        const timer = makeNode("flow.timer", { x: 0, y: 0 }, {
+            mode: "at",
+            dateYear: 2026,
+            dateMonth: 6,
+            dateDay: 31,
+            hour: 4,
+            minute: 20,
+        });
+        const warning = fieldWarnings(questWith(timer), timer).find((w) => w.path === "dateDay");
+        expect(warning).toBeDefined();
+        expect(warning!.detail).toMatch(/“31 June” never arrives/);
+        expect(warning!.nextStep).toMatch(/1 to 30/);
+    });
+
+    it("accepts 29 February in a leap year and flags it in a common one", () => {
+        const leap = makeNode("flow.timer", { x: 0, y: 0 }, { mode: "at", dateYear: 2028, dateMonth: 2, dateDay: 29 });
+        expect(fieldWarnings(questWith(leap), leap)).toEqual([]);
+        const common = makeNode("flow.timer", { x: 0, y: 0 }, { mode: "at", dateYear: 2027, dateMonth: 2, dateDay: 29 });
+        expect(fieldWarnings(questWith(common), common).some((w) => w.path === "dateDay")).toBe(true);
+    });
+
+    it("stays quiet while an exact-date Timer is still half-filled in", () => {
+        const timer = makeNode("flow.timer", { x: 0, y: 0 }, { mode: "at", dateYear: 2026, dateMonth: 0, dateDay: 0 });
+        expect(fieldWarnings(questWith(timer), timer)).toEqual([]);
+    });
+
+    it("does not read the calendar in Wait or coming-day mode", () => {
+        const wait = makeNode("flow.timer", { x: 0, y: 0 }, { mode: "after", days: 0, hours: 0, minutes: 0 });
+        expect(fieldWarnings(questWith(wait), wait).some((w) => w.path === "dateDay")).toBe(false);
+        const coming = makeNode("flow.timer", { x: 0, y: 0 }, { mode: "daytime", offsetAmount: 3, offsetUnit: "days" });
+        expect(fieldWarnings(questWith(coming), coming).some((w) => w.path === "dateDay")).toBe(false);
+    });
 });

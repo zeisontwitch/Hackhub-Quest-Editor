@@ -170,7 +170,7 @@ describe("analyseGraph", () => {
 
     it("accepts a daytime timer that only has a clock time (r173)", () => {
         const claim = node("entry.start");
-        const timer = node("flow.timer", { mode: "daytime", offsetDays: 3, hour: 12, minute: 0 });
+        const timer = node("flow.timer", { mode: "daytime", offsetAmount: 3, offsetUnit: "days", hour: 12, minute: 0 });
         const after = node("fx.notify");
 
         const analysis = analyseGraph(

@@ -164,3 +164,60 @@ export function timerSentence(data: Record<string, unknown>): string {
     if (!parts.length) return "Fires as soon as the story reaches this node — nothing is set to wait.";
     return `Fires ${joined(parts)} after the story reaches this node.`;
 }
+
+/** "Mon 21 Sep" — the canvas card's short form of the game's own date line. */
+export function shortDateText(year: unknown, month: unknown, day: unknown): string | null {
+    if (!isRealDate(year, month, day)) return null;
+    const y = Math.round(Number(year));
+    const m = Math.round(Number(month));
+    const d = Math.round(Number(day));
+    const weekday = WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()].slice(0, 3);
+    return `${weekday} ${d} ${MONTHS[m - 1].slice(0, 3)}`;
+}
+
+/** The unit, checked against the vocabulary, with the runtime's "days" fallback. */
+function unitKey(unit: unknown): TimerUnit {
+    return (TIMER_UNITS as readonly string[]).includes(String(unit)) ? (unit as TimerUnit) : "days";
+}
+
+/** "d" / "w" / "mo" / "y" — the unit as the canvas card writes it. */
+export function unitShort(unit: unknown): string {
+    return { days: "d", weeks: "w", months: "mo", years: "y" }[unitKey(unit)];
+}
+
+/** How many days that month has in that year — February honours leap years. */
+export function daysInMonth(year: unknown, month: unknown): number {
+    const y = Math.round(Number(year) || 0);
+    const m = Math.round(Number(month) || 0);
+    if (!(y > 0 && m >= 1 && m <= 12)) return 0;
+    return new Date(Date.UTC(y, m, 0)).getUTCDate();
+}
+
+/** The month's own name as the inspector lists it ("June"), or null. */
+export function monthName(month: unknown): string | null {
+    const m = Math.round(Number(month) || 0);
+    return m >= 1 && m <= 12 ? MONTHS[m - 1] : null;
+}
+
+/**
+ * The Wait row read back in the words a human would say it: 25 hours becomes
+ * "1 day, 1 hour" without changing what is stored — the value stays legal, it
+ * just stops being meaningless to read. Null when nothing is set; the preview
+ * sentence already says the timer fires straight away.
+ */
+export function durationSentence(days: unknown, hours: unknown, minutes: unknown): string | null {
+    const total = Math.max(
+        0,
+        Math.round((Number(days) || 0) * 1440 + (Number(hours) || 0) * 60 + (Number(minutes) || 0)),
+    );
+    if (total === 0) return null;
+    const parts: [number, readonly [string, string]][] = [
+        [Math.floor(total / 1440), DURATION_WORDS.days],
+        [Math.floor((total % 1440) / 60), DURATION_WORDS.hours],
+        [total % 60, DURATION_WORDS.minutes],
+    ];
+    return parts
+        .filter(([n]) => n > 0)
+        .map(([n, words]) => speak(n, words))
+        .join(", ");
+}

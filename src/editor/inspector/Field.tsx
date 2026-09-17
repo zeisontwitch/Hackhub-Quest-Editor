@@ -26,7 +26,9 @@ import { listTokenSuggestions } from "./tokenSuggestions";
 import { generateField, type GenContext } from "@/lib/generate";
 import type { FieldGenerate } from "@/schema/registry";
 import {
+    ClockInput,
     FieldShell,
+    HintBadge,
     NumberInput,
     SelectInput,
     TextArea,
@@ -124,7 +126,9 @@ export function Field({
         );
     }
 
-    const path = basePath ? `${basePath}.${def.key}` : def.key;
+    // Rows and the clock are layout: they have no key of their own, and read
+    // and write their children's paths instead.
+    const path = "key" in def ? (basePath ? `${basePath}.${def.key}` : def.key) : "";
     // Only match warnings on exactly this field — a nested or sibling field's
     // problem belongs to its own control, not here.
     const fieldWarning = warnings.find((w) => w.path === path);
@@ -255,6 +259,7 @@ export function Field({
                         min={def.min}
                         max={def.max}
                         step={def.step}
+                        suffix={def.suffix}
                     />
                 </FieldShell>
             );
@@ -327,8 +332,9 @@ export function Field({
                     <SelectInput
                         ariaLabel={def.label}
                         value={asString(raw)}
-                        onChange={write}
+                        onChange={(next) => write(def.numeric ? Number(next) : next)}
                         options={def.options}
+                        display={def.display}
                     />
                 </FieldShell>
             );
@@ -357,6 +363,63 @@ export function Field({
                                     onGenerate={() => runGenerate(def.generate!)}
                                 />
                             ) : undefined
+                        }
+                    />
+                </FieldShell>
+            );
+        }
+
+        case "row": {
+            /* Several fields on one line. Children keep their own shell, label,
+               hint and warning — a row is layout, not a control. The readback,
+               when the row has one, spells the values out in words. */
+            const readback = def.readback?.(node.data as Record<string, unknown>) ?? null;
+            return (
+                <div>
+                    {def.label && (
+                        <div className="flex items-center gap-1 px-3 pt-1.5">
+                            <span className="field-label mb-0">{def.label}</span>
+                            {def.hint && <HintBadge label={def.label} hint={def.hint} />}
+                        </div>
+                    )}
+                    <div className="grid auto-cols-fr grid-flow-col [&>*]:min-w-0">
+                        {def.fields.map((child, i) => (
+                            <Field
+                                key={"key" in child ? child.key : `${i}-${child.kind}`}
+                                def={child}
+                                nodeId={nodeId}
+                                basePath={basePath}
+                            />
+                        ))}
+                    </div>
+                    {readback && (
+                        <p className="mt-0.5 px-3 text-[11px] leading-snug text-ink-3">
+                            <span className="mr-1 text-ink-4">=</span>
+                            {readback}
+                        </p>
+                    )}
+                </div>
+            );
+        }
+
+        case "clock": {
+            /* One control over two number fields. The caption is the clock's
+               own; the fields keep their labels, so the manual and a screen
+               reader still see "Hour" and "Minute". */
+            const hourPath = basePath ? `${basePath}.${def.hour.key}` : def.hour.key;
+            const minutePath = basePath ? `${basePath}.${def.minute.key}` : def.minute.key;
+            const innerWarning =
+                warnings.find((w) => w.path === hourPath) ?? warnings.find((w) => w.path === minutePath);
+            return (
+                <FieldShell label={def.label} hint={def.hint} warning={innerWarning}>
+                    <ClockInput
+                        hour={asNumber(getPath(node.data, hourPath))}
+                        minute={asNumber(getPath(node.data, minutePath))}
+                        onChange={(next) =>
+                            updateNodeData(nodeId, {
+                                ...(next.hour === undefined ? {} : { [hourPath]: next.hour }),
+                                ...(next.minute === undefined ? {} : { [minutePath]: next.minute }),
+                            })
                         }
                     />
                 </FieldShell>

@@ -53,7 +53,7 @@ import {
     type NodeType,
 } from "./nodes";
 import { TARGET_IP_TOKEN, VULNERABILITY_BLURBS, VULNERABILITY_TYPES } from "./common";
-import { MONTH_OPTIONS, timerSentence } from "./timer";
+import { durationSentence, MONTH_OPTIONS, timerSentence } from "./timer";
 
 /* ── Inspector field descriptors ─────────────────────────────────────────── */
 
@@ -87,6 +87,8 @@ export type NumberFieldDef = {
     min?: number;
     max?: number;
     step?: number;
+    /** A small unit word printed after the box, e.g. "days" (r176). */
+    suffix?: string;
     showWhen?: FieldShowWhen;
 };
 
@@ -171,6 +173,11 @@ export type FieldDef =
           label?: string;
           hint?: string;
           fields: FieldDef[];
+          /**
+           * A readback line under the row, in the words a human would say it
+           * (r176: 25 hours reads "1 day, 1 hour"). Null hides the line.
+           */
+          readback?: (data: Record<string, unknown>) => string | null;
           showWhen?: FieldShowWhen;
       }
     | {
@@ -1180,10 +1187,13 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                 kind: "row",
                 label: "Wait",
                 showWhen: { key: "mode", equals: "after" },
+                /* The stored value stays exactly as typed; the readback only
+                   says it in words ("25 hours" -> "1 day, 1 hour"). */
+                readback: (data) => durationSentence(data.days, data.hours, data.minutes),
                 fields: [
-                    { kind: "number", key: "days", hint: "In-game days to wait first. 0 is fine — the units are added up.", label: "Days", min: 0, step: 1 },
-                    { kind: "number", key: "hours", hint: "In-game hours, on top of the days. 25 hours is a legal value.", label: "Hours", min: 0, step: 1 },
-                    { kind: "number", key: "minutes", hint: "In-game minutes, on top of the days and hours. At the default game speed one in-game minute passes every real second.", label: "Minutes", min: 0, step: 1 },
+                    { kind: "number", key: "days", hint: "In-game days to wait first. 0 is fine — the units are added up.", label: "Days", min: 0, step: 1, suffix: "days" },
+                    { kind: "number", key: "hours", hint: "In-game hours, on top of the days. 25 hours is a legal value.", label: "Hours", min: 0, step: 1, suffix: "hours" },
+                    { kind: "number", key: "minutes", hint: "In-game minutes, on top of the days and hours. At the default game speed one in-game minute passes every real second.", label: "Minutes", min: 0, step: 1, suffix: "minutes" },
                 ],
             },
             {

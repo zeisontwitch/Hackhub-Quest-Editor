@@ -809,3 +809,132 @@ html[data-font="roboto-mono"] {
 .codeview .token.selector, .codeview .token.atrule, .codeview .token.function {
     color: #b9a6f0;
 }
+
+/* ── The Timer's digital clock (r176) ────────────────────────────────────
+   Styled after the game's own clock panel: a dark inset screen, zero-padded
+   digits in the bundled mono face, a dim colon. The flourishes are one CSS
+   animation each — the colon breathes only while the control has focus, and a
+   digit flips once when it changes (the span is keyed by the value, so a
+   change remounts it and restarts the animation). Nothing ticks and nothing
+   runs per frame while the panel sits still, and both animations are dropped
+   under `prefers-reduced-motion`. */
+.qe-clock {
+    --qe-clock-glow: color-mix(in srgb, var(--color-accent) 32%, transparent);
+}
+
+.qe-clock-panel {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px 10px 4px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-lg);
+    background:
+        radial-gradient(120% 140% at 50% 0%, rgb(255 255 255 / 0.045), transparent 60%),
+        color-mix(in srgb, var(--color-void) 92%, black);
+    box-shadow:
+        inset 0 1px 0 rgb(0 0 0 / 0.85),
+        inset 0 0 22px rgb(0 0 0 / 0.55);
+}
+
+.qe-clock-col {
+    display: flex;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    min-width: 0;
+}
+
+.qe-clock-step {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--color-ink-4);
+    font-size: 8px;
+    line-height: 12px;
+    cursor: pointer;
+    transition: color 0.12s ease;
+}
+
+.qe-clock-step:hover {
+    color: var(--color-accent);
+}
+
+.qe-clock-slot {
+    border-radius: var(--radius-sm);
+    color: var(--color-accent);
+    font-family: var(--font-mono);
+    font-size: 27px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em;
+    line-height: 1.1;
+    text-shadow: 0 0 14px var(--qe-clock-glow);
+}
+
+.qe-clock-slot:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+.qe-clock-colon {
+    align-self: center;
+    color: var(--color-ink-4);
+    font-family: var(--font-mono);
+    font-size: 22px;
+}
+
+.qe-clock:focus-within .qe-clock-colon {
+    animation: qe-clock-breath 1.8s ease-in-out infinite;
+}
+
+.qe-clock-caption {
+    display: flex;
+    gap: 2px;
+    padding: 3px 10px 0;
+}
+
+.qe-clock-caption > span {
+    flex: 1 1 0;
+    color: var(--color-ink-4);
+    font-size: 10px;
+    text-align: center;
+}
+
+.qe-clock-caption > .qe-clock-gap {
+    flex: 0 0 8px;
+}
+
+.qe-clock-note {
+    margin: 0;
+    padding: 0 10px;
+    color: var(--color-ink-4);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    text-align: center;
+}
+
+@keyframes qe-clock-breath {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.25; }
+}
+
+@keyframes qe-clock-flip {
+    from { transform: translateY(-40%) scaleY(0.75); opacity: 0.3; }
+    60% { transform: translateY(4%) scaleY(1.02); opacity: 1; }
+    to { transform: none; }
+}
+
+.qe-clock-num {
+    display: block;
+    animation: qe-clock-flip 150ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .qe-clock:focus-within .qe-clock-colon,
+    .qe-clock-num {
+        animation: none;
+    }
+}

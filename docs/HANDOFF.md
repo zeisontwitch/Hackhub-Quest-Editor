@@ -1,3 +1,63 @@
+# Handoff — r176
+
+r176 is the Timer's UI/UX round: the node now looks and reads like the game's
+own clock, and "in N days" became a real relative rule — in **N days / weeks /
+months / years** from now, at a clock time. The approved plan is
+[`plans/r176-timer-calendar-ux.md`](plans/r176-timer-calendar-ux.md).
+
+- **The clock.** New `clock` field kind: a dark inset panel with zero-padded
+  24-hour digits in the bundled Roboto Mono, ▲▼ steppers and ↑/↓ keys that wrap
+  *locally* (23↔00, 59↔00) so a keypress never silently changes the day the
+  timer lands on. The flourish is CSS-only — the colon breathes while the
+  control has focus, a digit flips once when it changes (the span is keyed by
+  the value), nothing runs per frame — and both animations are dropped under
+  `prefers-reduced-motion`. It reads and writes the same two number fields, so
+  the manual, the labels and the voice entries are unchanged.
+- **Rows and the segmented picker.** New `row` layout kind (fields inline,
+  children keep their own label, hint and warning) and `select.display =
+  "segmented"` for the mode picker (Wait / A coming day / An exact date). The
+  Wait row shows unit captions and a normalising readback ("25 hours" → "1 day,
+  1 hour") without changing what is stored. The exact-date month is now a
+  `select` of names (`numeric` stores `Number(choice)`), and the day field
+  warns when the calendar has no such day ("31 June never arrives — June has
+  30 days").
+- **Relative units.** `offsetDays` split into `offsetAmount` + `offsetUnit`
+  (`days` / `weeks` / `months` / `years`), migrated silently in
+  `schema/migrate.ts`; `computeTimerFireAt` resolves the rule at arm time
+  against `Time.date()` and clamps short months (31 Jan + 1 month = 28 Feb, 29
+  in a leap year; 29 Feb + 1 year = 28 Feb). The arm log now prints the rule
+  before the ISO timestamp, so a tester can compare it with the inspector.
+- **Words in one place.** `src/schema/timer.ts` holds the calendar vocabulary
+  (`clockText`, `dateText`, `isRealDate`, `durationSentence`, `timerSentence`),
+  shared by the inspector preview (new `NodeTypeDef.preview` hook, rendered by
+  `InspectorPanel`), the canvas card and the field warnings.
+- **Manual + export.** Rows and the clock are transparent to the manual
+  extractor and to every walker (`schema.test.ts`, `manual.coverage.test.ts`,
+  `extract-manual-inventory.mjs`, `build-node-pages.mjs`), so children are
+  documented exactly as if stacked; the voice entry was renamed to
+  `offsetAmount` / `offsetUnit`. Export regenerated at mod **1.0.4**, build
+  r176.
+- **Open: S-04.** The `at` mode's timezone correction still stands until Zeis
+  runs `qe24 clock` in game (raw harness 1.0.7). New rows **S-09–S-12** cover
+  the relative rule, the short-month clamp, the `NEXT EVENT` readout and the
+  silent `after` migration.
+
+Gates: `npm run typecheck` 0 errors; `npm test` **1,620 passed / 82 files**
+(was 1,594 / 81 — +10 timer calendar, +5 schedule-beat calendar, +4 migration,
++4 field warnings, +3 card summaries); `npm run build` succeeds; `npm run
+gen:manual` and `npm run gen:qa-export` regenerated their artifacts; the
+manual's pages and search index are stamped `2026-09-18.r176`. Nothing visual
+is claimed by tests — the clock's look is Zeis's check.
+
+Stamp: `2026-09-18.r176`.
+
+Supporting notes:
+
+- [`plans/r176-timer-calendar-ux.md`](plans/r176-timer-calendar-ux.md)
+- [`plans/r175-qa-export-and-leftovers.md`](plans/r175-qa-export-and-leftovers.md)
+
+---
+
 # Handoff — r175
 
 r175 is the clean-up round that unblocks Zeis's in-game testing of the

@@ -86,6 +86,9 @@ function NodeInspector({ nodeId }: { nodeId: string }) {
     const category = categoryOf(node.type);
     const SimEditor = NODE_SIM_EDITORS[node.type];
 
+    // What this node will do with its current settings, in one sentence (r176).
+    const preview = def.preview?.(node.data as Record<string, unknown>) ?? null;
+
     // Node-level "why is this flagged" issues, condensed here so an author sees
     // them next to the fields, not only as a badge on the card. Each carries
     // its next step: what is wrong, and which nodes to put where to fix it.
@@ -155,6 +158,13 @@ function NodeInspector({ nodeId }: { nodeId: string }) {
             )}
 
             {SimEditor && <SimEditor node={node} />}
+
+            {preview && (
+                <p className="mx-3 mt-2 flex items-start gap-1.5 rounded-md border border-accent/25 bg-accent-soft px-2 py-1.5 text-[11.5px] leading-snug text-ink-2">
+                    <Icon name="info" size={13} className="mt-px shrink-0 text-accent" />
+                    <span>{preview}</span>
+                </p>
+            )}
 
             <div className="pt-1">
                 {def.fields.map((field, i) => (

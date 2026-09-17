@@ -1632,9 +1632,13 @@
     "example": "30",
     "empty": "Counts as zero. These are in-game minutes: at the default game speed one in-game minute passes every real second, so 30 minutes is half a real minute."
    },
-   "offsetDays": {
-    "example": "3",
-    "empty": "0 means today. Counted from when the story reaches the timer, so “in 3 days at 12:00” lands three in-game days after the player gets there — read the day off the in-game clock."
+   "offsetAmount": {
+    "example": "2",
+    "empty": "0 means today — the next time the clock reads the time below. Counted from when the story reaches the timer, so “in 2 weeks at 04:20” lands two in-game weeks after the player gets there; read the day off the in-game clock."
+   },
+   "offsetUnit": {
+    "example": "weeks",
+    "limits": "Days, weeks, months or years. Months and years keep the day number, using the target month's last day when it is shorter — 31 January plus one month lands on 28 February."
    },
    "hour": {
     "example": "12",

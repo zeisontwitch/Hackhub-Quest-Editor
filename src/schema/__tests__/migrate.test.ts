@@ -154,3 +154,55 @@ describe("projects made before the Timer rename (r173)", () => {
         expect(migrateProject(clean)).toEqual(clean);
     });
 });
+
+/**
+ * The relative Timer (r176) replaced `offsetDays` with an amount plus a unit.
+ * The old single field was honest only while every offset was in days; a draft
+ * — or an exported file — saved before the rename still names it, and must
+ * keep meaning exactly what it meant.
+ */
+function r176ProjectJson() {
+    const base = JSON.parse(JSON.stringify(createProject())) as Record<string, unknown>;
+    const quest = (base.quests as Record<string, unknown>[])[0];
+    quest.graph = {
+        nodes: [
+            {
+                id: "t1",
+                type: "flow.timer",
+                position: { x: 0, y: 0 },
+                data: { mode: "daytime", offsetDays: 3, hour: 12, minute: 0 },
+            },
+        ],
+        edges: [],
+    };
+    return base;
+}
+
+describe("projects made before the Timer's relative units (r176)", () => {
+    it("splits the old offset into an amount and a unit of days", () => {
+        const migrated = migrateProject(r176ProjectJson()) as {
+            quests: { graph: { nodes: { data: Record<string, unknown> }[] } }[];
+        };
+        const data = migrated.quests[0].graph.nodes[0].data;
+        expect(data).toMatchObject({ mode: "daytime", offsetAmount: 3, offsetUnit: "days", hour: 12, minute: 0 });
+        expect("offsetDays" in data).toBe(false);
+    });
+
+    it("validates afterwards, so an old draft is not thrown away", () => {
+        const result = ProjectSchema.safeParse(migrateProject(r176ProjectJson()));
+        expect(result.success, JSON.stringify(result.success ? null : result.error.issues)).toBe(true);
+    });
+
+    it("opens as a file instead of being called “not a quest project”", () => {
+        const parsed = parseProjectFile(JSON.stringify(r176ProjectJson()));
+        expect(parsed.ok).toBe(true);
+        if (!parsed.ok) return;
+        const data = parsed.project.quests[0].graph.nodes[0].data as Record<string, unknown>;
+        expect(data).toMatchObject({ offsetAmount: 3, offsetUnit: "days" });
+    });
+
+    it("leaves a project that never used offsetDays untouched", () => {
+        const clean = JSON.parse(serializeProject(createProject()));
+        expect(migrateProject(clean)).toEqual(clean);
+    });
+});

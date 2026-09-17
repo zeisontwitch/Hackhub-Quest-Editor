@@ -109,10 +109,16 @@ describe("registry ↔ node union", () => {
 });
 
 describe("field explanations", () => {
-    /** Every field an author can see, flattened out of sections and lists. */
+    /**
+     * Every field an author can see, flattened out of sections, lists, rows
+     * and the clock. Rows and the clock are layout: their children are the
+     * fields, and they keep their own labels, hints and warnings.
+     */
     function allFields(fields: FieldDef[]): FieldDef[] {
         return fields.flatMap((field) => {
             if (field.kind === "section") return allFields(field.fields);
+            if (field.kind === "row") return allFields(field.fields);
+            if (field.kind === "clock") return [field.hour, field.minute];
             if (field.kind === "list") return [field, ...allFields(field.fields)];
             return [field];
         });
@@ -160,6 +166,8 @@ describe("field explanations", () => {
             const walk = (fields: FieldDef[], prefix: string) => {
                 for (const f of fields) {
                     if (f.kind === "section") { walk(f.fields, prefix); continue; }
+                    if (f.kind === "row") { walk(f.fields, prefix); continue; }
+                    if (f.kind === "clock") { walk([f.hour, f.minute], prefix); continue; }
                     if ("text" in f && f.text && JARGON.test(f.text)) offenders.push(`${prefix}${"key" in f ? f.key : f.kind}: ${f.text}`);
                     const hint = "hint" in f ? f.hint : undefined;
                     if (hint && JARGON.test(hint)) offenders.push(`${prefix}${"key" in f ? f.key : f.kind}: ${hint}`);
@@ -404,6 +412,8 @@ describe("choice-or-custom fields", () => {
                     if (f.kind === "selectOrCustom") found.push({ type, field: f, rootKeys, rowKeys });
                     if (f.kind === "list") walk(f.fields, keys(f.fields));
                     if (f.kind === "section") walk(f.fields, f.path ? keys(f.fields) : rowKeys);
+                    if (f.kind === "row") walk(f.fields, rowKeys);
+                    if (f.kind === "clock") walk([f.hour, f.minute], rowKeys);
                 }
             };
             walk(def.fields, null);

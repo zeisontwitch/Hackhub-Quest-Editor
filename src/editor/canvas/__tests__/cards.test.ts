@@ -50,6 +50,32 @@ describe("trigger card", () => {
     });
 });
 
+describe("timer card", () => {
+    const card = (data: Record<string, unknown>) =>
+        summarize({ id: "tm", type: "flow.timer", position: { x: 0, y: 0 }, data } as NodeDoc);
+
+    it("says the wait in the game's own units", () => {
+        expect(card({ mode: "after", days: 2, hours: 4, minutes: 30 })).toEqual(["2d 4h 30m"]);
+        expect(card({ mode: "after", days: 0, hours: 0, minutes: 0 })).toEqual(["no time set"]);
+    });
+
+    it("says a relative rule as a rule, not as a date the editor cannot know", () => {
+        expect(card({ mode: "daytime", offsetAmount: 2, offsetUnit: "weeks", hour: 4, minute: 20 })).toEqual([
+            "in 2w at 04:20",
+        ]);
+        expect(card({ mode: "daytime", offsetAmount: 0, offsetUnit: "days", hour: 4, minute: 20 })).toEqual([
+            "today at 04:20",
+        ]);
+    });
+
+    it("spells the exact date the way the game's own calendar does", () => {
+        expect(card({ mode: "at", dateYear: 2026, dateMonth: 9, dateDay: 21, hour: 4, minute: 20 })).toEqual([
+            "Mon 21 Sep, 04:20",
+        ]);
+        expect(card({ mode: "at", dateYear: 2026, dateMonth: 9, dateDay: 0 })).toEqual(["no date set"]);
+    });
+});
+
 describe("tag memory", () => {
     beforeEach(() => localStorage.clear());
 

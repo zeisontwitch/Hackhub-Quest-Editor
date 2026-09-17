@@ -49,6 +49,10 @@ export function nodeSlug(type) {
 /** Flatten a field tree, keeping the nesting so list rows stay distinguishable. */
 function walkFields(fields, depth = 0, parentPath = "") {
     return fields.flatMap((field) => {
+        /* Layout, not documentation units (r176): a row and the clock are
+           documented through their children, exactly as if stacked. */
+        if (field.kind === "row") return walkFields(field.fields, depth, parentPath);
+        if (field.kind === "clock") return walkFields([field.hour, field.minute], depth, parentPath);
         const key = field.key ?? null;
         const fieldPath = parentPath ? `${parentPath}.${key ?? field.kind}` : String(key ?? field.kind);
         const entry = {
@@ -90,6 +94,8 @@ function walkFields(fields, depth = 0, parentPath = "") {
 function editableFields(fields) {
     return fields.flatMap((f) => {
         if (f.kind === "section") return editableFields(f.fields);
+        if (f.kind === "row") return editableFields(f.fields);
+        if (f.kind === "clock") return editableFields([f.hour, f.minute]);
         if (f.kind === "list") return [f, ...editableFields(f.fields)];
         if (f.kind === "note") return [];
         return [f];

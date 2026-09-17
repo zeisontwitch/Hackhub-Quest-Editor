@@ -8,6 +8,7 @@
 import type { DialogueKind, NodeDoc } from "@/schema/nodes";
 import type { QuestDoc } from "@/schema/project";
 import { humanEventName } from "@/schema/events";
+import { clockText, shortDateText, unitShort } from "@/schema/timer";
 import { DEVICE_TYPE_LABELS } from "@/schema/common";
 import { describePackNodeAction } from "@/toolpacks/palette";
 
@@ -250,14 +251,17 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
         case "flow.timer": {
             const mode = d.mode ?? "after";
             if (mode === "daytime") {
-                return [`${Math.round(Number(d.offsetDays ?? 0))}d at ${String(Math.round(Number(d.hour ?? 0))).padStart(2, "0")}:${String(Math.round(Number(d.minute ?? 0))).padStart(2, "0")}`];
+                // "In 3 weeks, at 04:20": the editor never resolves a relative
+                // Timer — the mod does, in the game, at arm time (r176) — so
+                // the card says the rule rather than a date it cannot know.
+                const amount = Math.max(0, Math.round(Number(d.offsetAmount ?? 0)));
+                const when = amount === 0 ? "today" : `in ${amount}${unitShort(d.offsetUnit)}`;
+                return [`${when} at ${clockText(d.hour, d.minute)}`];
             }
             if (mode === "at") {
-                const y = Number(d.dateYear ?? 0);
-                const m = Number(d.dateMonth ?? 0);
-                const day = Number(d.dateDay ?? 0);
-                if (!(y > 0 && m > 0 && day > 0)) return ["no date set"];
-                return [`${y}-${String(m).padStart(2, "0")}-${String(day).padStart(2, "0")} ${String(Math.round(Number(d.hour ?? 0))).padStart(2, "0")}:${String(Math.round(Number(d.minute ?? 0))).padStart(2, "0")}`];
+                const date = shortDateText(d.dateYear, d.dateMonth, d.dateDay);
+                if (!date) return ["no date set"];
+                return [`${date}, ${clockText(d.hour, d.minute)}`];
             }
             const parts = [
                 Number(d.days ?? 0) ? `${Math.round(Number(d.days))}d` : "",

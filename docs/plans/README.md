@@ -9,6 +9,7 @@ Not current documentation. For how the editor works today, see
 
 | Round | Investigation | What it established |
 |---|---|---|
+| r176 | Timer inspector: the digital clock, rows, and relative units | The Timer resolves “in N days / weeks / months / years, at HH:MM” inside the game at arm time; the editor says the rule, warns about impossible dates and clamps short months. Rows and the clock are layout kinds, transparent to the manual extractor and to every walker. |
 | r175 | Refreshed QA export + the r174 leftovers | The installable QA export is regenerated at build r175 (mod 1.0.3, both quests) and guarded byte-for-byte against the compiler; the manual's conditional-field sentence names the value it waits for (G16); the stale freeze hints are gone; and `qe24 clock` in raw harness 1.0.7 settles the Timer `at` timezone question (S-04) without a date edit. |
 | r171 | Inspector polish + phone proxies | Field warning tooltips need an opaque surface; the inspector handle should face the canvas; pinned SDK/docs have phone dialogs and phone apps but no declared phone-proxy call API yet. |
 | r170 | Ask player prompt node | `UI.prompt` becomes a small Effects node: one-line question, optional masked input/default/example text, optional save-to-data, Submitted/Correct/Wrong/Cancelled routing, and handbook coverage. |

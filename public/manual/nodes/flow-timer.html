@@ -11,7 +11,7 @@
 
 <nav class="toc" aria-label="Handbook contents">
   <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
-  <p class="build">Handbook · build 2026-09-17.r175</p>
+  <p class="build">Handbook · build 2026-09-18.r176</p>
   <div class="search">
     <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
     <div class="results" role="listbox" aria-label="Search results"></div>
@@ -67,7 +67,7 @@
 <h2>Fields</h2>
 
 <h3 id="node-flow-timer-field-mode">When it fires</h3>
-<blockquote class="blurb">A delay from when the story arrives, a clock time N in-game days from now, or a fixed in-game date &amp; time.</blockquote>
+<blockquote class="blurb">A stretch to wait, a clock time counted from now, or a fixed moment in the story's own calendar.</blockquote>
 <dl class="facts-list">
   <dt class="dt-mute">Default</dt><dd><code>"after"</code></dd>
   <dt>Limits</dt><dd>One of the 3 listed below.</dd>
@@ -75,9 +75,9 @@
 <table>
   <thead><tr><th>Choice</th><th>What it is stored as</th></tr></thead>
   <tbody>
-    <tr><td class="name">After a delay</td><td><code>after</code></td></tr>
-    <tr><td class="name">In N days at a set time</td><td><code>daytime</code></td></tr>
-    <tr><td class="name">On a specific in-game date &amp; time</td><td><code>at</code></td></tr>
+    <tr><td class="name">Wait</td><td><code>after</code></td></tr>
+    <tr><td class="name">A coming day</td><td><code>daytime</code></td></tr>
+    <tr><td class="name">An exact date</td><td><code>at</code></td></tr>
   </tbody>
 </table>
 
@@ -87,7 +87,6 @@
   <dt>Example</dt><dd><code>1</code></dd>
   <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
   <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
-  <dt class="dt-mute">When it appears</dt><dd>Shown while <b class="ui">When it fires</b> is <b class="ui">After a delay</b> — the option it starts on. The other options hide it.</dd>
   <dt class="dt-danger">If you leave it empty</dt><dd>Counts as zero. In “After a delay” mode, all three fields blank means nothing waits — the timer fires the moment the story reaches it.</dd>
 </dl>
 
@@ -97,7 +96,6 @@
   <dt>Example</dt><dd><code>2</code></dd>
   <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
   <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
-  <dt class="dt-mute">When it appears</dt><dd>Shown while <b class="ui">When it fires</b> is <b class="ui">After a delay</b> — the option it starts on. The other options hide it.</dd>
   <dt class="dt-danger">If you leave it empty</dt><dd>Counts as zero. The units are added up, so 25 hours is a legal value.</dd>
 </dl>
 
@@ -107,18 +105,78 @@
   <dt>Example</dt><dd><code>30</code></dd>
   <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
   <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
-  <dt class="dt-mute">When it appears</dt><dd>Shown while <b class="ui">When it fires</b> is <b class="ui">After a delay</b> — the option it starts on. The other options hide it.</dd>
   <dt class="dt-danger">If you leave it empty</dt><dd>Counts as zero. These are in-game minutes: at the default game speed one in-game minute passes every real second, so 30 minutes is half a real minute.</dd>
 </dl>
 
-<h3 id="node-flow-timer-field-offsetDays">Days from now</h3>
-<blockquote class="blurb">In-game days from now — 0 means today. Counted from when the story reaches this node.</blockquote>
+<h3 id="node-flow-timer-field-offsetAmount">How many</h3>
+<blockquote class="blurb">How many of the unit beside it. 0 means today, so “0 days, at 09:00” fires the next time the clock reads 09:00.</blockquote>
 <dl class="facts-list">
-  <dt>Example</dt><dd><code>3</code></dd>
+  <dt>Example</dt><dd><code>2</code></dd>
   <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
   <dt>Limits</dt><dd>0 or more. Whole numbers, in steps of 1.</dd>
-  <dt class="dt-mute">When it appears</dt><dd>Shown only when <b class="ui">When it fires</b> is <b class="ui">In N days at a set time</b>. Until then the field is hidden.</dd>
-  <dt class="dt-danger">If you leave it empty</dt><dd>0 means today. Counted from when the story reaches the timer, so “in 3 days at 12:00” lands three in-game days after the player gets there — read the day off the in-game clock.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>0 means today — the next time the clock reads the time below. Counted from when the story reaches the timer, so “in 2 weeks at 04:20” lands two in-game weeks after the player gets there; read the day off the in-game clock.</dd>
+</dl>
+
+<h3 id="node-flow-timer-field-offsetUnit">Time unit</h3>
+<blockquote class="blurb">What the number counts in. Months and years keep the day number, using the target month's last day when it is shorter.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>weeks</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>"days"</code></dd>
+  <dt>Limits</dt><dd>Days, weeks, months or years. Months and years keep the day number, using the target month's last day when it is shorter — 31 January plus one month lands on 28 February.</dd>
+</dl>
+<table>
+  <thead><tr><th>Choice</th><th>What it is stored as</th></tr></thead>
+  <tbody>
+    <tr><td class="name">Days</td><td><code>days</code></td></tr>
+    <tr><td class="name">Weeks</td><td><code>weeks</code></td></tr>
+    <tr><td class="name">Months</td><td><code>months</code></td></tr>
+    <tr><td class="name">Years</td><td><code>years</code></td></tr>
+  </tbody>
+</table>
+
+<h3 id="node-flow-timer-field-dateDay">Day</h3>
+<blockquote class="blurb">The in-game day of the month, as the in-game clock shows it. The field warns when that day does not exist.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>20</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
+  <dt>Limits</dt><dd>1 to 31. Whole numbers, in steps of 1.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>1–31, as the in-game clock shows it.</dd>
+</dl>
+
+<h3 id="node-flow-timer-field-dateMonth">Month</h3>
+<blockquote class="blurb">The in-game month, by name, as the in-game clock shows it.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>9</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
+  <dt>Limits</dt><dd>One of the 13 listed below.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>1–12, as the in-game clock shows it. January is 1.</dd>
+</dl>
+<table>
+  <thead><tr><th>Choice</th><th>What it is stored as</th></tr></thead>
+  <tbody>
+    <tr><td class="name">Not set yet</td><td><code>0</code></td></tr>
+    <tr><td class="name">January</td><td><code>1</code></td></tr>
+    <tr><td class="name">February</td><td><code>2</code></td></tr>
+    <tr><td class="name">March</td><td><code>3</code></td></tr>
+    <tr><td class="name">April</td><td><code>4</code></td></tr>
+    <tr><td class="name">May</td><td><code>5</code></td></tr>
+    <tr><td class="name">June</td><td><code>6</code></td></tr>
+    <tr><td class="name">July</td><td><code>7</code></td></tr>
+    <tr><td class="name">August</td><td><code>8</code></td></tr>
+    <tr><td class="name">September</td><td><code>9</code></td></tr>
+    <tr><td class="name">October</td><td><code>10</code></td></tr>
+    <tr><td class="name">November</td><td><code>11</code></td></tr>
+    <tr><td class="name">December</td><td><code>12</code></td></tr>
+  </tbody>
+</table>
+
+<h3 id="node-flow-timer-field-dateYear">Year</h3>
+<blockquote class="blurb">The in-game year, e.g. 2026. Read it off the in-game clock, not your own calendar.</blockquote>
+<dl class="facts-list">
+  <dt>Example</dt><dd><code>2026</code></dd>
+  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
+  <dt>Limits</dt><dd>1970 to 9999. Whole numbers, in steps of 1.</dd>
+  <dt class="dt-danger">If you leave it empty</dt><dd>Read it off the in-game clock, not your own calendar. With no full date set, the timer fires the moment the story reaches it.</dd>
 </dl>
 
 <h3 id="node-flow-timer-field-hour">Hour</h3>
@@ -127,7 +185,6 @@
   <dt>Example</dt><dd><code>12</code></dd>
   <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
   <dt>Limits</dt><dd>0 to 23. Whole numbers, in steps of 1.</dd>
-  <dt class="dt-mute">When it appears</dt><dd>Shown only when <b class="ui">When it fires</b> is <b class="ui">In N days at a set time or On a specific in-game date &amp; time</b>. Until then the field is hidden.</dd>
   <dt class="dt-danger">If you leave it empty</dt><dd>0 is legal — it is 00:00, the middle of the in-game night. The time the in-game clock will show, not the wall clock.</dd>
 </dl>
 
@@ -137,38 +194,7 @@
   <dt>Example</dt><dd><code>0</code></dd>
   <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
   <dt>Limits</dt><dd>0 to 59. Whole numbers, in steps of 1.</dd>
-  <dt class="dt-mute">When it appears</dt><dd>Shown only when <b class="ui">When it fires</b> is <b class="ui">In N days at a set time or On a specific in-game date &amp; time</b>. Until then the field is hidden.</dd>
   <dt class="dt-danger">If you leave it empty</dt><dd>0 is legal — on the hour. In-game seconds are real-world milliseconds, so there is no second field.</dd>
-</dl>
-
-<h3 id="node-flow-timer-field-dateYear">Year</h3>
-<blockquote class="blurb">The in-game year, e.g. 2026. Read it off the in-game clock, not your own calendar.</blockquote>
-<dl class="facts-list">
-  <dt>Example</dt><dd><code>2026</code></dd>
-  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
-  <dt>Limits</dt><dd>1970 to 9999. Whole numbers, in steps of 1.</dd>
-  <dt class="dt-mute">When it appears</dt><dd>Shown only when <b class="ui">When it fires</b> is <b class="ui">On a specific in-game date &amp; time</b>. Until then the field is hidden.</dd>
-  <dt class="dt-danger">If you leave it empty</dt><dd>Read it off the in-game clock, not your own calendar. With no full date set, the timer fires the moment the story reaches it.</dd>
-</dl>
-
-<h3 id="node-flow-timer-field-dateMonth">Month</h3>
-<blockquote class="blurb">The in-game month, 1–12, as the in-game clock shows it — January is 1.</blockquote>
-<dl class="facts-list">
-  <dt>Example</dt><dd><code>9</code></dd>
-  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
-  <dt>Limits</dt><dd>1 to 12. Whole numbers, in steps of 1.</dd>
-  <dt class="dt-mute">When it appears</dt><dd>Shown only when <b class="ui">When it fires</b> is <b class="ui">On a specific in-game date &amp; time</b>. Until then the field is hidden.</dd>
-  <dt class="dt-danger">If you leave it empty</dt><dd>1–12, as the in-game clock shows it. January is 1.</dd>
-</dl>
-
-<h3 id="node-flow-timer-field-dateDay">Day</h3>
-<blockquote class="blurb">The in-game day of month, 1–31, as the in-game clock shows it.</blockquote>
-<dl class="facts-list">
-  <dt>Example</dt><dd><code>20</code></dd>
-  <dt class="dt-mute">Default</dt><dd><code>0</code></dd>
-  <dt>Limits</dt><dd>1 to 31. Whole numbers, in steps of 1.</dd>
-  <dt class="dt-mute">When it appears</dt><dd>Shown only when <b class="ui">When it fires</b> is <b class="ui">On a specific in-game date &amp; time</b>. Until then the field is hidden.</dd>
-  <dt class="dt-danger">If you leave it empty</dt><dd>1–31, as the in-game clock shows it.</dd>
 </dl>
 
 
@@ -238,7 +264,7 @@ the connection takes, mismatch them and it will not.</p>
 <a class="totop" href="#node-flow-timer-page">↑ back to top</a>
 
 <footer class="colophon">
-  HackHub Quest Editor handbook · documents editor build 2026-09-17.r175 ·
+  HackHub Quest Editor handbook · documents editor build 2026-09-18.r176 ·
   field labels, hints, defaults and limits on this page are taken from the
   editor's own node definitions.
 </footer>

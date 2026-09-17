@@ -1092,8 +1092,8 @@ function __qeRegisterProject(sdk, PROJECT) {
            the Scheduler callback - a call the engine made, so the mod
            still holds its permissions: r166 T-02 proved mail, toast and
            objective completion all work from inside one. */
-        /* The in-game timestamp a date-mode Timer is due at (r173).
-           Returns null when an "at" date is incomplete (the analysis
+        /* The in-game timestamp a Timer is due at (r173; relative units
+           r176). Returns null when an "at" date is incomplete (the analysis
            already warns; the flow fails open). "daytime" resolves against
            Time.date() at arm time - the local-time Date constructor makes
            the hour/minute the player's clock time with no offset maths. */
@@ -1101,9 +1101,27 @@ function __qeRegisterProject(sdk, PROJECT) {
             var h = Math.max(0, Math.min(23, Math.round(Number(d.hour) || 0)));
             var mi = Math.max(0, Math.min(59, Math.round(Number(d.minute) || 0)));
             if (d.mode === "daytime") {
-                var days = Math.max(0, Math.round(Number(d.offsetDays) || 0));
+                /* "In 2 weeks, at 04:20": resolved here, at arm time, against
+                   the player's own clock. Days and weeks roll the date
+                   forward; months and years keep the day number and clamp to
+                   the target month's last day (31 Jan + 1 month = 28 Feb,
+                   never 2 or 3 March), which is what the editor's preview
+                   promises. */
+                var amount = Math.max(0, Math.round(Number(d.offsetAmount) || 0));
+                var unit = d.offsetUnit || "days";
                 var n = sdk.Time.date();
-                return new Date(n.getFullYear(), n.getMonth(), n.getDate() + days, h, mi).getTime();
+                var y2 = n.getFullYear();
+                var m2 = n.getMonth();
+                var d2 = n.getDate();
+                if (unit === "weeks") d2 += amount * 7;
+                else if (unit === "years") y2 += amount;
+                else if (unit === "months") m2 += amount;
+                else d2 += amount;
+                if (unit === "months" || unit === "years") {
+                    var lastDay = new Date(y2, m2 + 1, 0).getDate();
+                    if (d2 > lastDay) d2 = lastDay;
+                }
+                return new Date(y2, m2, d2, h, mi).getTime();
             }
             var y = Math.round(Number(d.dateYear) || 0);
             var m = Math.round(Number(d.dateMonth) || 0);
@@ -1162,7 +1180,12 @@ function __qeRegisterProject(sdk, PROJECT) {
                    the on-screen clock to settle the display timezone. The
                    raw harness's "qe24 clock" does the same for the current
                    time, so the answer needs no calendar date to be typed. */
-                __QE.log("timer node " + nodeId + " armed for in-game " + new Date(fireAt).toISOString() + " (fireAt " + fireAt + ", job " + id + ")");
+                /* The rule in words first, so a tester can compare the log
+                   with what the inspector said the Timer would do. */
+                var rule = (d.mode || "") === "daytime"
+                    ? "in " + (Number(d.offsetAmount) || 0) + " " + (d.offsetUnit || "days")
+                    : "on " + Math.round(Number(d.dateYear) || 0) + "-" + Math.round(Number(d.dateMonth) || 0) + "-" + Math.round(Number(d.dateDay) || 0);
+                __QE.log("timer node " + nodeId + " armed " + rule + " for in-game " + new Date(fireAt).toISOString() + " (fireAt " + fireAt + ", job " + id + ")");
             }
             beatJobs.push(id);
         }

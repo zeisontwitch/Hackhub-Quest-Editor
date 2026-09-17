@@ -7,7 +7,7 @@ This folder is a deliberately small, manual in-game harness for the r166 SDK 0.2
 - `mod/manifest.json` — package metadata for the raw in-game harness.
 - `mod/dist/mod.js` — hand-authored HackHub content mod that uses SDK 0.24-only surfaces directly, including phone-call `onEnd` completion probes and the `qe24 clock` timezone probe (S-04, harness 1.0.7).
 - `projects/sdk-0.24-ingame-qa.project.json` — editor-importable project that exercises the editor's native `world.wifi` node path plus catalogue events; it was generated before r167 exposed Create Wi-Fi in the palette. It also carries `QESdk024TimerQa`, the Timer rows S-01–S-03.
-- `editor-export/` — ready-to-install export generated from that project with editor build `2026-09-17.r175` (mod `1.0.3`; quests `QESdk024EditorQa` and `QESdk024TimerQa`). Regenerate with `npm run gen:qa-export`; the guard test `src/compiler/__tests__/sdk024QaExport.test.ts` fails on a single byte of drift.
+- `editor-export/` — ready-to-install export generated from that project with editor build `2026-09-18.r176` (mod `1.0.4`; quests `QESdk024EditorQa` and `QESdk024TimerQa`). Regenerate with `npm run gen:qa-export`; the guard test `src/compiler/__tests__/sdk024QaExport.test.ts` fails on a single byte of drift.
 
 
 ## Current raw-mod status from in-game QA
@@ -18,11 +18,13 @@ New after that run: raw harness version 1.0.6 adds two untested phone-call `onEn
 
 New again for the r175 pass: raw harness version **1.0.7** adds `qe24 clock`, which prints the current in-game time as raw `Time.now`, as UTC, as the machine-local rendering and as `Time.date()`. Comparing those lines with the clock on screen settles **S-04** (does the `at` mode's timezone correction match what the display shows?) without editing a calendar date.
 
+New for the r176 pass: the Timer's *coming day* mode is now a real relative rule — in **[N] days / weeks / months / years** from now, at a clock time — resolved inside the mod at arm time, with short months clamped (31 Jan + 1 month = 28/29 Feb). The editor's clock panel and rows are editor-only. Rows **S-09–S-12** (one month on, short-month clamp, what `NEXT EVENT` shows, and a pre-r176 `after` project still behaving identically) are defined in [`../plans/r176-timer-calendar-ux.md`](../../docs/plans/r176-timer-calendar-ux.md).
+
 One raw Wi-Fi gameplay wart remains documented: Bettercap can set the AP by BSSID and capture/crack the handshake, but `set wifi.ap 02:24:00:00:24:01` logs `SSID: undefined` instead of `QE24-RAW-5G`. Treat that as a runtime UX issue to account for before exposing native Wi-Fi broadly.
 
 Editor-export follow-up: `http://qe24-website.test/` and `/echo` loaded, but neither `http-request` nor `http-response` objective checked off. With editor export 1.0.2 on a fresh save, the setup mail appeared, debug toasts appeared, reload kept only one `QE24-LAB-5G`, and Wi-Fi objectives still completed after reload with the expected BSSID. DNS-only collaborator lookup was tested with `nslookup <printed-subdomain>.qe24-collab.test`; it returned `No results found` and produced no new collaborator history entry, so treat DNS-only collaborator support as unsupported/fenced in this build. Browser HTTP collaborator remains green.
 
-The refreshed `editor-export/` (mod 1.0.3, editor build r175) carries both quests; the Timer rows S-01–S-03 are described in the export README's appended notes, maintained in `editor-export.notes.md`.
+The refreshed `editor-export/` (mod 1.0.4, editor build r176) carries both quests; the Timer rows S-01–S-03 are described in the export README's appended notes, maintained in `editor-export.notes.md`.
 
 ## Plain-English quick start
 
@@ -153,7 +155,7 @@ Record the curl subcase as `Blocked` if `curl` is missing. H-04 and H-06 can sti
 
 ## Editor-export test route
 
-Test this separately from the raw harness on a clean save when possible. Install `editor-export/` (mod 1.0.3, editor build r175, both quests) and check:
+Test this separately from the raw harness on a clean save when possible. Install `editor-export/` (mod 1.0.4, editor build r176, both quests) and check:
 
 1. Start/load: a mail/toast for `QESdk024EditorQa` appears and there is no startup error.
 2. Browser HTTP: open `http://qe24-website.test/`, then `http://qe24-website.test/echo`. "Tick" means the active quest/objective tracker line gets a checkmark or moves to completed; you may also see a debug toast like `Editor QA ticked: http-response`. Current evidence: both pages load but neither HTTP objective ticks, so static website hosting works while editor HTTP events stay fenced.
@@ -192,4 +194,4 @@ Raw harness fixed values:
 - The harness uses `SaveStorage` to remember generated network IPs per save. It does not use shared/global storage for per-save state.
 - HTTP interception can make browser/curl requests appear hung. Run `qe24 intercept forward` or `qe24 intercept off` immediately after the intercepted request is recorded. If left on, the engine may show blank/dark pages until its held-request timeout forwards traffic.
 - `qe24 reset` is scoped to the IPs the harness stored in the current save, but use a throwaway save anyway.
-- Results should be recorded in `docs/plans/r166-sdk-0.24-ingame-qa.md`; the Timer rows are defined in `docs/plans/r173-timer-rename-and-calendar.md` (S-01–S-08); only lift editor fences after those rows are green in-game.
+- Results should be recorded in `docs/plans/r166-sdk-0.24-ingame-qa.md`; the Timer rows are defined in `docs/plans/r173-timer-rename-and-calendar.md` (S-01–S-08) and `docs/plans/r176-timer-calendar-ux.md` (S-09–S-12); only lift editor fences after those rows are green in-game.

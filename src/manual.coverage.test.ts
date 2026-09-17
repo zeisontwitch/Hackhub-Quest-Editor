@@ -54,6 +54,10 @@ const EXCLUDED = PALETTE_HIDDEN_TYPES;
 function editableKeys(fields: FieldDef[]): string[] {
     return fields.flatMap((f) => {
         if (f.kind === "section") return editableKeys(f.fields);
+        /* A row and the clock are inspector layout (r176): the manual
+           documents their children exactly as if they were stacked. */
+        if (f.kind === "row") return editableKeys(f.fields);
+        if (f.kind === "clock") return [f.hour.key, f.minute.key];
         if (f.kind === "list") return [f.key, ...editableKeys(f.fields)];
         if (f.kind === "note") return [];
         return [f.key];
@@ -112,7 +116,12 @@ describe("manual coverage — G2: field entries", () => {
             const html = read(nodePage(type));
             for (const key of editableKeys(NODE_TYPES_REGISTRY[type].fields)) {
                 const anchor = `node-${type.replace(/\./g, "-").toLowerCase()}-field-${key}`;
-                if (!html.includes(`id="${anchor}"`)) {
+                /* The anchor must sit on the field's own heading — an <h3> for
+                   a top-level field, an <h4> inside a list. Somewhere else in
+                   the page (a link, a summary) does not document the field, and
+                   a row or clock whose children were dropped would still leave
+                   their names in the wording. */
+                if (!html.includes(`<h3 id="${anchor}"`) && !html.includes(`<h4 id="${anchor}"`)) {
                     gaps.push(`${type}.${key} → #${anchor}`);
                 }
             }

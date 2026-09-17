@@ -156,9 +156,10 @@ export function analyseGraph(nodes: NodeDoc[], edges: EdgeDoc[]): GraphAnalysis 
                 noTimeDetail = "No full date is set, so the timer fires the moment the story reaches it — nothing waits.";
                 noTimeNext = "Set a full in-game date (Year, Month and Day — read them off the in-game clock), or remove the node if the story should carry on.";
             }
-            /* "daytime" needs no check: 0 days means today, and 00:00 is a
-               legal time — only the in-game "now" can decide whether that
-               time has already passed, and the runtime fails open. */
+            /* "daytime" — the relative rule (r176) — needs no check: any
+               amount is legal (0 is "today at HH:MM"), and only the in-game
+               "now" can decide whether that time has already passed. The
+               runtime fails open. */
             if (nothingSet) {
                 issues.push({
                     nodeId: node.id,

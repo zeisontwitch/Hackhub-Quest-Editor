@@ -10,6 +10,7 @@ import * as Switch from "@radix-ui/react-switch";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/Icon";
+import { clampHour, clampMinute, pad2 } from "@/schema/timer";
 
 /**
  * A labelled control with its explanation behind an ⓘ.
@@ -210,6 +211,7 @@ export function NumberInput({
     step,
     id,
     ariaLabel,
+    suffix,
 }: {
     value: number;
     onChange: (value: number) => void;
@@ -218,8 +220,10 @@ export function NumberInput({
     step?: number;
     id?: string;
     ariaLabel?: string;
+    /** A unit word printed after the box — "days", "hours" (r176). */
+    suffix?: string;
 }) {
-    return (
+    const input = (
         <input
             id={id}
             aria-label={ariaLabel}
@@ -234,6 +238,17 @@ export function NumberInput({
             }}
             className="field-input font-mono text-[12px]"
         />
+    );
+    if (!suffix) return input;
+    /* The unit sits after the box rather than inside it: the row's cells are
+       narrow, and "minutes" would clip against the spinner arrows inside. */
+    return (
+        <div className="flex items-center gap-1.5">
+            <div className="min-w-0 flex-1">{input}</div>
+            <span aria-hidden="true" className="shrink-0 text-[10.5px] tracking-wide text-ink-4">
+                {suffix}
+            </span>
+        </div>
     );
 }
 
@@ -277,13 +292,51 @@ export function SelectInput({
     options,
     id,
     ariaLabel,
+    display,
 }: {
     value: string;
     onChange: (value: string) => void;
     options: readonly { value: string; label: string; hint?: string; disabled?: boolean }[];
     id?: string;
     ariaLabel?: string;
+    /** "segmented" draws the choices as a small button group instead (r176). */
+    display?: "segmented";
 }) {
+    /* Two or three short choices are faster to hit than a dropdown, and the
+       chosen one is visible without opening anything. A `title` still carries
+       whatever the option itself explains. */
+    if (display === "segmented") {
+        return (
+            <div
+                role="group"
+                aria-label={ariaLabel}
+                className="flex gap-1 rounded-md border border-line bg-surface-2 p-0.5"
+            >
+                {options.map((o) => {
+                    const active = o.value === value;
+                    return (
+                        <button
+                            key={o.value}
+                            type="button"
+                            aria-pressed={active}
+                            disabled={o.disabled}
+                            title={o.hint}
+                            onClick={() => onChange(o.value)}
+                            className={cn(
+                                "min-w-0 flex-1 truncate rounded-[5px] px-2 py-1 text-[11.5px] font-medium transition-colors",
+                                "disabled:pointer-events-none disabled:opacity-40",
+                                active
+                                    ? "bg-accent text-void"
+                                    : "text-ink-3 hover:bg-surface-3 hover:text-ink",
+                            )}
+                        >
+                            {o.label}
+                        </button>
+                    );
+                })}
+            </div>
+        );
+    }
     return (
         <div className="relative">
             <select
@@ -368,5 +421,97 @@ export function SectionHeader({ children, action }: { children: ReactNode; actio
 export function EmptyHint({ children }: { children: ReactNode }) {
     return (
         <p className="px-3 py-4 text-center text-[11.5px] leading-relaxed text-ink-4">{children}</p>
+    );
+}
+
+/**
+ * The hour and minute as the game's own digital clock (r176).
+ *
+ * Two `spinbutton`s: click the ▲/▼ steppers or press ↑/↓. Both wrap *locally*
+ * (23↔00, 59↔00) so a keypress can never silently change the day the timer
+ * lands on. The flourishes are CSS only — the colon breathes while the control
+ * has focus, and a digit flips once when its value changes (the span is keyed
+ * by the value, so a change remounts it and restarts the one-shot animation).
+ * Nothing here runs per frame, and both animations honour
+ * `prefers-reduced-motion` (see src/index.css).
+ */
+export function ClockInput({
+    hour,
+    minute,
+    onChange,
+}: {
+    hour: number;
+    minute: number;
+    onChange: (next: { hour?: number; minute?: number }) => void;
+}) {
+    const h = clampHour(hour);
+    const m = clampMinute(minute);
+    const bump = (part: "hour" | "minute", delta: number) => {
+        if (part === "hour") onChange({ hour: (((h + delta) % 24) + 24) % 24 });
+        else onChange({ minute: (((m + delta) % 60) + 60) % 60 });
+    };
+
+    const column = (part: "hour" | "minute", value: number, max: number) => (
+        <div className="qe-clock-col">
+            <button
+                type="button"
+                tabIndex={-1}
+                className="qe-clock-step"
+                aria-label={`Later ${part}`}
+                onClick={() => bump(part, 1)}
+            >
+                ▲
+            </button>
+            <div
+                role="spinbutton"
+                tabIndex={0}
+                aria-label={part === "hour" ? "Hour" : "Minute"}
+                aria-valuemin={0}
+                aria-valuemax={max}
+                aria-valuenow={value}
+                aria-valuetext={pad2(value)}
+                onKeyDown={(e) => {
+                    if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        bump(part, 1);
+                    } else if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        bump(part, -1);
+                    }
+                }}
+                className="qe-clock-slot"
+            >
+                <span key={value} className="qe-clock-num" aria-hidden="true">
+                    {pad2(value)}
+                </span>
+            </div>
+            <button
+                type="button"
+                tabIndex={-1}
+                className="qe-clock-step"
+                aria-label={`Earlier ${part}`}
+                onClick={() => bump(part, -1)}
+            >
+                ▼
+            </button>
+        </div>
+    );
+
+    return (
+        <div className="qe-clock">
+            <div className="qe-clock-panel" role="group" aria-label="In-game clock time">
+                {column("hour", h, 23)}
+                <span className="qe-clock-colon" aria-hidden="true">
+                    :
+                </span>
+                {column("minute", m, 59)}
+            </div>
+            <div className="qe-clock-caption" aria-hidden="true">
+                <span>h</span>
+                <span className="qe-clock-gap" />
+                <span>m</span>
+            </div>
+            <p className="qe-clock-note">in-game clock time</p>
+        </div>
     );
 }

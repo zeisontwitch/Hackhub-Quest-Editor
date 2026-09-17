@@ -52,14 +52,13 @@ Editor build stamped for this pass: `2026-09-17.r173`.
 - Registry: `label` → **"Timer"**; `blurb` (palette one-liner) → keep
   "Do something at a later in-game time" unless Zeis wants different (open
   question 5). Icon stays the hourglass.
-- **Internal type id — decision needed (open question 1).** Options:
-  - **(a) Keep `flow.schedule`** (recommendation: no — see b)
-  - **(b) Rename to `flow.timer`** — the id is visible in the palette tag and
-    the manual; matching the display name is cleaner. Now is the *only* cheap
-    window: r172 was never played in game, so no user content depends on the
-    old id. Mechanical touches: registry key, `ScheduleNodeDataSchema` usage
-    sites, reference template, QA project JSON, tests, manual page filename
-    (`nodes/flow-schedule.html` → `nodes/flow-timer.html`), shot-list row.
+- **Internal type id — confirmed: rename to `flow.timer`** (check-in
+  answer 1). The id is visible in the palette tag and the manual; matching
+  the display name is cleaner. Now is the only cheap window: r172 was never
+  played in game, so no user content depends on the old id. Mechanical
+  touches: registry key, `ScheduleNodeDataSchema` usage sites, reference
+  template, QA project JSON, tests, manual page filename
+  (`nodes/flow-schedule.html` → `nodes/flow-timer.html`), shot-list row.
 - **Field note text** (Zeis' sentence verbatim, then the existing second
   sentence with "beat" → "timer"):
 
@@ -84,31 +83,51 @@ Editor build stamped for this pass: `2026-09-17.r173`.
 
 - New test: the registry label is exactly `"Timer"` (guards the rename).
 
-## D2 — calendar option: "At a specific in-game date & time"
+## D2 — calendar options: "In N days at a set time" and "At a specific in-game date & time"
 
-The inspector already supports conditional fields (`showWhen: { key, equals }`
-— the Pay node's `amountMode` uses it), so no inspector work is needed.
+The inspector already supports conditional fields (`showWhen: { key, equals }`,
+`equals` also accepts an array — the Pay node's `amountMode` uses it), so no
+inspector work is needed.
+
+Zeis' most-likely-use-case point (r173 check-in): the calendar must support
+**"in 3 days at exactly 12:00"**. That needs *today's* in-game date, which
+only exists at arm time — and the runtime has it via `Time.date()`. So the
+node gets a **"When it fires"** select with **three** options:
+
+- `after` — "After a delay": *Days / Hours / Minutes* from when the story
+  reaches the node (the r172 behavior, default).
+- `daytime` — "In N days at a set time": *Days from now* (0 = today) +
+  *Hour* + *Minute* (the shared time fields). Runtime:
+  ```js
+  var n = sdk.Time.date();
+  var fireAt = new Date(n.getFullYear(), n.getMonth(), n.getDate() + days, hour, minute).getTime();
+  ```
+  The local-time constructor makes "12:00" mean *the player's clock shows
+  12:00* — no timezone arithmetic at all.
+- `at` — "On a specific in-game date & time": *Year / Month / Day* + the
+  shared *Hour* / *Minute*, for world-anchored events (several quests or
+  articles landing on the same in-game date). Runtime (per the draft below).
+
+*Hour* / *Minute* therefore carry `showWhen: { key: "mode", equals: ["daytime", "at"] }`.
 
 - **Schema** (`ScheduleNodeDataSchema`): adds
-  - `mode`: `"after" | "at"`, default `"after"`
-  - `year` (number, 1970–9999), `month` (1–12), `day` (1–31), `hour` (0–23),
-    `minute` (0–59) — default `0`
-- **Inspector fields:**
-  - new select **"When it fires"** — `after`: "After a while (from when the
-    story reaches this)" (default) / `at`: "At a specific in-game date & time"
-  - `Days / Hours / Minutes` gain `showWhen: { key: "mode", equals: "after" }`
-  - the five date fields gain `showWhen: { key: "mode", equals: "at" }`, with
-    hints that make the timezone contract explicit: "This is the time the
-    in-game clock will show (the player's clock, not the wall clock)."
+  - `mode`: `"after" | "daytime" | "at"`, default `"after"`
+  - `offsetDays` (number, min 0, default 0 — *Days from now*)
+  - `hour` (0–23), `minute` (0–59) — shared by `daytime` and `at`
+  - `dateYear` (1970–9999), `dateMonth` (1–12), `dateDay` (1–31)
 - **Analysis (`graph.ts`):**
   - mode `after`: the two r172 warnings, reworded per D1.
-  - mode `at` with an incomplete date (any of year/month/day/hour/minute at
+  - mode `daytime`: no warning — 0 days = today, 00:00 is a legal time; an
+    already-past time-of-day today fails open at runtime (see below).
+  - mode `at` with an incomplete date (`dateYear`/`dateMonth`/`dateDay` at
     0) → reuses the **"Nothing scheduled"** label with an `at`-mode detail
     ("No full date is set, so the timer fires the moment the story reaches
     it — nothing waits."), so the message index gains no third entry.
   - the unwired-`Out` warning is mode-independent (unchanged shape).
-- **Runtime (`runtimeSource.ts`), mode `at`:**
-  - at arm time (when the story reaches the node):
+- **Runtime (`runtimeSource.ts`):**
+  - mode `after`: the r172 relative arm, unchanged.
+  - mode `daytime`: the `Time.date()` + local-constructor formula above.
+  - mode `at`:
     ```js
     var tz = new Date().getTimezoneOffset() * 60000;      /* player machine's offset */
     var fireAt = Date.UTC(y, m - 1, d, h, mi) - tz;       /* "the clock shows h:mi" */
@@ -117,10 +136,12 @@ The inspector already supports conditional fields (`showWhen: { key, equals }`
     assuming the game shows the player machine's local zone. If S-04 shows
     the game displays UTC, this becomes `Date.UTC(y, m - 1, d, h, mi)` — a
     one-line change, which is why the probe matters before this ships.
-  - `fireAt <= sdk.Time.now()` (the date is already past when the story
-    arrives) → **fail open: fire immediately** + a console line, same policy
-    as "no time set". If S-06 shows the SDK already fires past jobs at once,
-    keep the explicit branch anyway (it logs either way).
+    (`daytime` is unaffected by that outcome: its local constructor follows
+    whatever zone the clock shows.)
+  - **Fail open (all date modes):** `fireAt <= sdk.Time.now()` (the date is
+    already past when the story arrives) → **fire immediately** + a console
+    line, same policy as "no time set". If S-06 shows the SDK already fires
+    past jobs at once, keep the explicit branch anyway (it logs either way).
   - otherwise `sdk.Scheduler.scheduleAt(BEAT_KIND, payload, fireAt)`.
   - arm log prints `fireAt` + its ISO string (the S-04 comparison data).
   - Re-arm, idempotency, cancellation on complete/abandon: unchanged — the
@@ -128,26 +149,28 @@ The inspector already supports conditional fields (`showWhen: { key, equals }`
     same `liveBeats` handler.
 - **Dry run (`simulate.ts`):** the Scheduler stub gains `scheduleAt`
   (records the job, collapses the clock like everything else); the `Time`
-  stub already has `now()`/`date()`. A dry run shows the `at`-mode timer
-  firing through the real handler exactly like the relative one.
+  stub already has `now()`/`date()`. A dry run shows every mode firing
+  through the real handler exactly like the relative one.
 - **QA (`reference/sdk-0.24-qa` + the r166 checklist):** the existing
   QESdk024BeatQa keeps its relative beats (S-01…S-03 unchanged). New rows:
   - **S-04 timezone probe:** load the QA mod, open the console; the arm log
     prints the computed fire time — compare it with the in-game clock.
-  - **S-05 calendar fire:** in the editor, set beat B (2 h) to mode `at` with
-    a date a few in-game minutes ahead (read from the in-game clock),
-    re-export, load → it must fire when the clock shows that time, across a
-    save/reload.
-  - **S-06 past date:** set beat B to a date already in the past → the story
+  - **S-05 "daytime" fire:** in the editor, set beat B to mode `daytime` —
+    0 days from now, a few in-game minutes ahead (read from the in-game
+    clock) → it must fire when the clock shows that time, across a
+    save/reload (S-07, the `scheduleAt`-survives-reload check, folds in).
+  - **S-06 past time:** set beat B to a time already past today → the story
     continues immediately with a console line.
-  - **S-07** (folded into S-05): confirm the `scheduleAt` job survives the
-    reload (it is due after the reload, unlike S-02's relative job).
-- **Manual:** page regenerated (title "Timer", both modes documented,
-  `at`-mode field examples), `checking.html` entries reworded, shot-list
-  row kept (screenshot still owed to Zeis with the QA pass). Inventory
-  figures move: **136 → 142 editable fields** (mode + 5 date fields), node
-  types stay 39; the front-page chips and every hand-written stamp are
-  updated as usual.
+  - **S-08** (optional, longer watch): `daytime` with a multi-day offset
+    (in-game days pass at 24 real minutes each) to confirm multi-day maths.
+- **Manual:** page regenerated (title "Timer", all three modes documented,
+  `daytime` first as the recommended form, field examples per mode),
+  `checking.html` entries reworded, shot-list row kept (screenshot still owed
+  to Zeis with the QA pass). Inventory figures move: **136 → 143 editable
+  fields** (mode + offsetDays + hour + minute + dateYear + dateMonth +
+  dateDay; gen:manual output is authoritative and the front-page chip is
+  updated to match), node types stay 39; every hand-written stamp is updated
+  as usual.
 
 ## Files
 
@@ -163,14 +186,16 @@ The inspector already supports conditional fields (`showWhen: { key, equals }`
 - `reference/sdk-0.24-qa/projects/…ingame-qa.project.json` — no data change
   (both beats keep mode `after`); calendar QA is S-05/S-06 as a manual edit
 - `docs/manual/node-voice.json`, `public/manual/checking.html`,
-  `docs/plans/r164-manual-screenshots.md` (filename row if open question 1
-  picks b), `public/manual/index.html` + `nodes.html` (label, count)
+  `docs/plans/r164-manual-screenshots.md` (filename row → flow-timer),
+  `public/manual/index.html` + `nodes.html` (label, count)
 - `README.md`, `docs/HANDOFF.md`, `docs/archive/rounds-130-150.md`
-- Tests: `scheduleBeat.test.ts` (at-mode arm incl. a stubbed timezone
-  offset, past-date fail-open, re-arm through `scheduleAt`, drop branch),
+- Tests: `scheduleBeat.test.ts` (`daytime` arm with a fixed stubbed
+  `Time.date()` — deterministic local-constructor assertion, `at`-mode arm
+  incl. a stubbed timezone offset, past-time fail-open in both date modes,
+  re-arm through `scheduleAt`, drop branch, type id `flow.timer`),
   `graph.test.ts` (new labels/details, `at`-mode no-date warning),
-  `sdk024QaScaffold.test.ts` (log strings), `schema.test.ts` (defaults
-  valid, field count), manual coverage gates
+  `sdk024QaScaffold.test.ts` (log strings, type id), `schema.test.ts`
+  (defaults valid, field count), manual coverage gates
 - `compile.ts` — stamp → `2026-09-17.r173`
 
 ## Gates & falsification
@@ -183,13 +208,20 @@ The inspector already supports conditional fields (`showWhen: { key, equals }`
 - jsdom caveat unchanged: nothing visual is claimed; the console logs are
   the evidence for S-04…S-07.
 
-## Open questions for Zeis
+## Check-in answers (r173, 2026-09-17)
 
-1. **Type id:** rename `flow.schedule` → `flow.timer` (my recommendation —
-   now is the only cheap moment) or keep `flow.schedule`?
-2. **Calendar granularity:** date + hour + minute, no seconds — OK?
-3. **Past date:** fire immediately (fail open, like no time set) — OK?
-4. **Info text:** your sentence verbatim + the existing second sentence with
-   "beat" → "timer" — as quoted under D1?
-5. **Palette blurb:** keep "Do something at a later in-game time", or would
-   "Wait until later in-game time" serve the Timer name better?
+All five open questions are answered:
+
+1. **Type id:** rename to `flow.timer` — **confirmed** (option b).
+2. **Granularity:** date + hour + minute, no seconds — **confirmed** (in-game
+   seconds are real-world milliseconds; irrelevant in 99.9% of cases).
+3. **Past date:** fail open, fire immediately — **confirmed**.
+4. **Info text:** as quoted under D1 — **confirmed**.
+5. **Palette blurb:** keep "Do something at a later in-game time" —
+   **confirmed**.
+
+New from the same check-in: the calendar must support **"in 3 days at
+exactly 12:00"** — added as the `daytime` mode (third select option) in D2.
+
+Remaining green-light: with the three-mode design as above, implementation
+starts in the next round.

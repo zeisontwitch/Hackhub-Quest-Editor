@@ -311,6 +311,124 @@ function printClockProbe(tools) {
     tools.println("Tip: run qe24 clock twice, a minute apart, if the first read is ambiguous.");
 }
 
+/* ── starting a QA quest on demand (r181) ─────────────────────────────────
+ * Every QA quest used to auto-start, so by r180 a load produced five quests'
+ * worth of mail, toasts and journal lines at once and the tester could neither
+ * read the journal nor count a toast (Zeis, 2026-09-18: "a bit of a mess").
+ * Nothing auto-starts any more: the SDK's Quest.claim/unclaim exist exactly for
+ * this ("programmatically claim/start a quest", and "clear an entry a previous
+ * build of the mod left behind"), so one command starts one row and one command
+ * clears the leftovers. The harness's own probe quests stay under `qe24 claim`. */
+var QA_QUESTS = [
+    {
+        alias: "timer",
+        name: "QESdk024TimerQa",
+        title: "Timer QA (S-01/S-02/S-03)",
+        what: "Timer A fires after 2 in-game minutes; Timer B after 2 in-game hours, which is also S-02 (reload survives) and S-03 (cancel on complete or abandon).",
+    },
+    {
+        alias: "cal",
+        name: "QESdk024TimerCalQa",
+        title: "Timer QA (calendar: S-05/S-06/S-07/S-13)",
+        what: "fires an exact date already past and a coming day already past today, then holds the 1 month 2 weeks 2 days at 18:23 row - read that one with qe24 timers.",
+    },
+    {
+        alias: "wait",
+        name: "QESdk024WaitMonthQa",
+        title: "Timer QA (Wait in months: S-14, S-09)",
+        what: "waits 1 in-game minute (the schedule path), then holds Wait 1 month (the scheduleAt path) - read it with qe24 timers.",
+    },
+    {
+        alias: "probe",
+        name: "QE24SurfaceProbe",
+        title: "QE24 SDK surface probe",
+        what: "this harness's own objective reminders (Wi-Fi, HTTP, collaborators, the clock). Same as qe24 claim surface.",
+    },
+    {
+        alias: "twotter",
+        name: "QE24TwotterProbe",
+        title: "QE24 Twotter probe",
+        what: "the r179 Twotter probe's objectives. The qe24 twotter commands themselves work whether or not it is claimed.",
+    },
+    {
+        alias: "surface",
+        name: "QESdk024EditorQa",
+        title: "QE SDK 0.24 editor QA",
+        what: "the r166 editor surface (Wi-Fi, static website, HTTP/browser events). Closed - only re-run if something Wi-Fi-shaped changed.",
+    },
+];
+
+function padRight(text, width) {
+    var out = String(text);
+    while (out.length < width) out += " ";
+    return out;
+}
+
+function printRunList(tools) {
+    tools.println("QE24 quest launcher - nothing auto-starts, so this is how a row begins.");
+    tools.println("");
+    tools.println("  qe24 run <alias>    claim that one quest and run it");
+    tools.println("  qe24 run clear      unclaim all of them (use this once on a save that still");
+    tools.println("                      carries quests claimed by an older build)");
+    tools.println("");
+    for (var i = 0; i < QA_QUESTS.length; i++) {
+        var q = QA_QUESTS[i];
+        tools.println("  " + padRight(q.alias, 8) + " " + q.what);
+        tools.println("           journal title: " + q.title);
+    }
+    tools.println("");
+    tools.println("Only the quest you claim appears, so the journal stays readable and the popups");
+    tools.println("stay countable. The harness's other probe quests are still under qe24 claim.");
+}
+
+function runQaQuest(tools, alias) {
+    var api = sdk.Quest;
+    if (!api || typeof api.claim !== "function") {
+        tools.printError("Quest.claim is unavailable in this build - claim the quest from the journal instead.");
+        return;
+    }
+    if (!alias) {
+        printRunList(tools);
+        return;
+    }
+    if (alias === "clear") {
+        var cleared = [];
+        for (var i = 0; i < QA_QUESTS.length; i++) {
+            /* Function-scoped copy: `var name` inside a callback would be the
+               same binding for every iteration under ES5. */
+            var name = QA_QUESTS[i].name;
+            var ok = (function (id) {
+                return safe("Quest.unclaim", function () { api.unclaim(id); return true; }, false);
+            })(name);
+            cleared.push(name + (ok ? " ok" : " failed"));
+        }
+        tools.println("Unclaimed: " + cleared.join(", "));
+        tools.println("Anything an older build left claimed is out of the journal now. Then: qe24 run");
+        return;
+    }
+    var entry = null;
+    for (var j = 0; j < QA_QUESTS.length; j++) {
+        if (QA_QUESTS[j].alias === alias || QA_QUESTS[j].name === alias) entry = QA_QUESTS[j];
+    }
+    if (!entry) {
+        tools.printError("Unknown quest: " + alias + " (run qe24 run to list them)");
+        return;
+    }
+    var claimed = safe("Quest.claim", function () { api.claim(entry.name); return true; }, false);
+    if (!claimed) {
+        tools.printError("Quest.claim threw for " + entry.name + " - claim it from the journal instead.");
+        return;
+    }
+    tools.println("Claimed " + entry.name + " - look for \"" + entry.title + "\" in the journal.");
+    tools.println("If it is not there, this build may refuse cross-mod claims: claim that title yourself.");
+    tools.println("Started: " + entry.what);
+    if (alias === "cal" || alias === "wait" || alias === "timer") {
+        tools.println("");
+        tools.println("Give it a second, then run:  qe24 timers");
+        tools.println("That prints every pending job with the moment it will fire - you do not wait for it.");
+    }
+}
+
 /* ── pending timers (r180) ────────────────────────────────────────────────
  * Every Timer row asks the same question: what moment did the mod hand to the
  * engine? Scheduler.list() answers it for EVERY kind on the save - including
@@ -458,6 +576,7 @@ function printTwotterGuide(tools) {
     tools.println("");
     tools.println("While you are here: does this build have curl? Try:  curl http://qe24-http.test/");
     tools.println("Row meanings and what each result decides: reference/sdk-0.24-qa/STATUS.md");
+    tools.println("The objectives are optional: qe24 run twotter claims the probe quest if you want them.");
 }
 
 function printTwotterStatus(tools) {
@@ -577,19 +696,29 @@ function printGuide(tools) {
     ensureSession();
     tools.println("QE24 is a QA harness, not a puzzle quest.");
     tools.println("");
-    tools.println("Every check but ONE is closed: the Twotter probe (r179) is open, and it decides");
-    tools.println("whether Twotter can return to the editor. Run: qe24 twotter");
-    tools.println("Results, and the one question it answered (S-04, the clock zone): reference/sdk-0.24-qa/STATUS.md");
+    tools.println("NOTHING auto-starts any more. Loading a save produces no QE24 mail, toast or");
+    tools.println("journal line at all - start the one quest you are testing:");
     tools.println("");
-    tools.println("This mod stays as a TOOL, not a checklist: seed/status/history/clock/reset still work, and the next round that needs an in-game probe adds new commands.");
+    printRunList(tools);
+    tools.println("");
+    tools.println("Twotter: answered (r180) - the crash shape is safe and accounts can be removed again.");
+    tools.println("Timer rows: checklist in reference/sdk-0.24-qa/TIMER-ROWS.md, results in STATUS.md.");
+    tools.println("Most rows are read from qe24 timers instead of waited for.");
     tools.println("");
     tools.println("Safety: if a browser/curl request seems stuck after an intercept test, open another terminal and run qe24 intercept off.");
 }
 
 function printNextSteps(tools) {
-    tools.println("One open probe: qe24 twotter (r179) - the Twotter crash fix and the repair calls.");
-    tools.println("Everything else in this harness is closed; do not re-run it.");
-    tools.println("Results and rows: reference/sdk-0.24-qa/STATUS.md");
+    tools.println("Nothing starts by itself. Pick one:");
+    tools.println("");
+    tools.println("  qe24 run                 list the quests this harness can start");
+    tools.println("  qe24 run timer           the delay rows (S-01/S-02/S-03)");
+    tools.println("  qe24 run cal             the calendar rows (S-05/S-06/S-07/S-13)");
+    tools.println("  qe24 run wait            Wait in months (S-09/S-14)");
+    tools.println("  qe24 run clear           clear quests an older build left claimed");
+    tools.println("");
+    tools.println("Then read what it armed instead of waiting for it:  qe24 timers");
+    tools.println("Rows, steps and results: reference/sdk-0.24-qa/TIMER-ROWS.md and STATUS.md");
 }
 
 function printInterceptGuide(tools) {
@@ -637,7 +766,8 @@ class QE24SurfaceProbe extends sdk.Quest {
         this.Title = "QE24 SDK surface probe";
         this.Description = "Developer QA harness. Run qe24 guide first; objectives are test reminders, not a puzzle path.";
         this.Group = "sandbox";
-        this.AutoStart = true;
+        /* Claimed on demand: `qe24 run probe` (or `qe24 claim surface`). */
+        this.AutoStart = false;
         this.AutoComplete = false;
         this.HasCompleteButton = false;
         this.Abandonable = true;
@@ -909,7 +1039,8 @@ class QE24TwotterProbe extends sdk.Quest {
         this.Title = "QE24 Twotter probe";
         this.Description = "Developer QA harness. Run qe24 twotter for the steps; the objectives are reminders, not a puzzle path.";
         this.Group = "sandbox";
-        this.AutoStart = true;
+        /* Claimed on demand: `qe24 run twotter`. The probe's commands work either way. */
+        this.AutoStart = false;
         this.AutoComplete = false;
         this.HasCompleteButton = false;
         this.Abandonable = true;
@@ -988,7 +1119,7 @@ class QE24Command extends sdk.Command {
         this.Description = "SDK 0.24 QA harness commands";
         this.Autocomplete = [
             { label: "qe24", type: "STRING" },
-            { label: "guide|next|status|history|clock|timers|twotter|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
+            { label: "guide|next|run|status|history|clock|timers|twotter|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
         ];
     }
     async Run(tools) {
@@ -1027,7 +1158,7 @@ class QE24Command extends sdk.Command {
             tools.println("Connected Wi-Fi is QE24 target: " + (connectedMatchesTarget ? "yes" : "no"));
             if (targetWifi && currentWifi && !connectedMatchesTarget) tools.println("Note: if the game UI says QE24 is connected, paste this mismatch before we unhide Wi-Fi.");
             tools.println("Tip: run qe24 next if the 6/6 surface objective quest is already done, qe24 intercept for proxy-test steps, or qe24 history for HTTP/collab evidence.");
-            tools.println("Commands: qe24 guide · qe24 next · qe24 status · qe24 history · qe24 clock · qe24 timers · qe24 twotter [seed|bad|update|post|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
+            tools.println("Commands: qe24 guide · qe24 next · qe24 run [timer|cal|wait|probe|twotter|surface|clear] · qe24 status · qe24 history · qe24 clock · qe24 timers · qe24 twotter [seed|bad|update|post|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
             return;
         }
         if (sub === "history") {
@@ -1040,6 +1171,10 @@ class QE24Command extends sdk.Command {
         }
         if (sub === "timers") {
             printTimers(tools);
+            return;
+        }
+        if (sub === "run") {
+            runQaQuest(tools, args[1]);
             return;
         }
         if (sub === "twotter") {

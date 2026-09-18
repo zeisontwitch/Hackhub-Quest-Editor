@@ -1,3 +1,50 @@
+# Handoff — r181
+
+Plan: [`plans/r181-quiet-qa.md`](plans/r181-quiet-qa.md). The short version:
+Zeis ran the Timer rows, said *"a bit of a mess"*, and he was right about both
+halves — the checklist was unusable, and his paste had already answered most of
+the rows.
+
+## The mess was ours: nothing auto-starts any more
+
+By r180 the export and the harness auto-started **five** QA quests at load —
+four with toasting debug nodes — on top of quests an earlier build had left
+claimed on his save. The journal could not be read; a toast could not be
+counted; two rows were skipped explicitly because of it.
+
+- **Every QA quest is claimed on demand** (export 1.0.9, harness 1.0.11):
+  `qe24 run` lists them, `qe24 run cal` claims exactly one, `qe24 run clear`
+  unclaims everything (that is also how an existing save clears leftovers).
+  Built on the declared `Quest.claim` / `Quest.unclaim`.
+- **No QA debug node toasts** any more; the journal line stays.
+- **Two guards**: a test asserts no QA quest has `autoStart` and no QA debug
+  node has `toast`, and another asserts every project quest is reachable from
+  the launcher.
+
+## Ten of the fifteen Timer rows are closed by his paste
+
+| Closed | Evidence |
+| --- | --- |
+| S-01, S-02 | Timer A/B fired; after reload exactly one Timer B job, same id and `fireAt` — no double-arm. |
+| S-05, S-06 | The calendar quest's third row armed, and a Timer suspends its chain: the two instant rows before it must have fired. |
+| S-07 | Same five jobs, same ids, same raw timestamps, before and after save/quit/reload. |
+| S-08, S-13 | The mixed row resolved to **Tue 3 Nov 18:23** = 18 Sep + 1 month + 2 weeks + 2 days, clock pinned. |
+| S-09, S-14 | `Wait 1 month` resolved to **18 Oct 19:27** — one month on, same day number, same clock time, via `scheduleAt`. |
+
+Bonus: the 3 Nov job was armed in CEST and fires after the local DST switch in
+CET, and the local rendering still reads 18:23 — the promised wall-clock time
+survives a DST boundary, which matters because the in-game clock shows local
+time (S-04).
+
+**Still open: S-03, S-10, S-11, S-12, S-15** — none needs waiting (S-12/S-15 are
+opening a file in the editor). Steps in
+[`reference/sdk-0.24-qa/TIMER-ROWS.md`](reference/sdk-0.24-qa/TIMER-ROWS.md).
+
+Gates: typecheck 0 errors; `npm test` **1,656 passed / 82 files** (+7); build
+OK; manual + QA export regenerated. Falsified 5/5 (see the plan).
+
+---
+
 # Handoff — r180
 
 Two jobs, both from the return of the r179 probe. Plan:

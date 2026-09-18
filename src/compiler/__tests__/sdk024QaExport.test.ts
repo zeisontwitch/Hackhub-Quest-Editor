@@ -90,6 +90,29 @@ describe("SDK 0.24 QA export", () => {
         }
     });
 
+    it("cannot become a notification storm again", () => {
+        /* Zeis, after running the Timer rows: "a bit of a mess" - five quests
+           auto-started at load, four of them with toasting debug nodes, so the
+           journal could not be read and a toast could not be counted. Both
+           properties live in this file, so both are asserted here. */
+        const doc = JSON.parse(readFileSync(PROJECT_FILE, "utf8")) as {
+            quests: { name: string; autoStart: boolean; graph: { nodes: { id: string; type: string; data: Record<string, unknown> }[] } }[];
+        };
+        const autoStarted = doc.quests.filter((q) => q.autoStart).map((q) => q.name);
+        expect(autoStarted, "these QA quests start by themselves again").toEqual([]);
+        const toasting = doc.quests.flatMap((q) =>
+            q.graph.nodes
+                .filter((n) => n.type === "flow.debug" && n.data.toast === true)
+                .map((n) => `${q.name}/${n.id}`),
+        );
+        expect(toasting, "these QA nodes pop a toast at load again").toEqual([]);
+        /* Every quest is reachable from the launcher, or it is unreachable. */
+        const launcher = readFileSync(join(QA_DIR, "mod", "dist", "mod.js"), "utf8");
+        for (const quest of doc.quests) {
+            expect(launcher, `${quest.name} is not in the qe24 run launcher`).toContain(`name: "${quest.name}"`);
+        }
+    });
+
     it("keeps the legacy fixtures the migration rows tell a tester to open", () => {
         /* S-12 and S-15 ask a person to open an old draft in the editor and
            check the boxes show the same numbers. Those drafts are files in the

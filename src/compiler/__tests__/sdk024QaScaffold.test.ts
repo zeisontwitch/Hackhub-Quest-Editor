@@ -120,10 +120,20 @@ function harnessSdk(options: { jobs?: StubJob[]; now?: number } = {}) {
     const completed: string[] = [];
     const mails: string[] = [];
     const registered: Harness = { quests: [], command: class {} as never };
+    const claimed: string[] = [];
+    const unclaimed: string[] = [];
     const now = () => options.now ?? 1_760_000_000_000;
 
     class Quest {
         Name = "";
+        /* `Quest.claim` / `Quest.unclaim` are what `qe24 run` drives; the stub
+           records the calls so the harness's launcher can be asserted. */
+        static claim = (name: string) => {
+            claimed.push(name);
+        };
+        static unclaim = (name: string) => {
+            unclaimed.push(name);
+        };
         Events = { on: (name: string, fn: (payload: unknown) => void) => hooks.push({ name, fn }) };
         completeObjective(name: string) {
             completed.push(name);
@@ -138,6 +148,8 @@ function harnessSdk(options: { jobs?: StubJob[]; now?: number } = {}) {
         __hooks: hooks,
         __completed: completed,
         __mails: mails,
+        __claimed: claimed,
+        __unclaimed: unclaimed,
         /* `...twotter` brings `Twotter` and the raw maps the assertions read. */
         ...twotter,
         Quest,
@@ -237,7 +249,7 @@ describe("r179 raw harness — the Twotter probe", () => {
         ) as { version: string };
         const code = readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/dist/mod.js"), "utf8");
         /* r180 added `qe24 timers`; the Twotter probe is still in the same harness. */
-        expect(manifest.version).toBe("1.0.10");
+        expect(manifest.version).toBe("1.0.11");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
     });
@@ -452,7 +464,9 @@ describe("r166 SDK 0.24 in-game QA scaffold", () => {
 
         const beatQuest = parsed.project.quests.find((quest) => quest.name === "QESdk024TimerQa");
         expect(beatQuest).toBeDefined();
-        expect(beatQuest?.autoStart).toBe(true);
+        /* Claimed on demand since r181: an auto-starting QA quest is a load-time
+           notification storm once there are several of them (that was r180). */
+        expect(beatQuest?.autoStart).toBe(false);
         const beats = (beatQuest?.graph.nodes ?? []).filter((node) => node.type === "flow.timer");
         expect(beats.map((node) => node.data.minutes).concat(beats.map((node) => node.data.hours))).toEqual([2, 0, 0, 2]);
 
@@ -531,5 +545,83 @@ describe("r180 raw harness — the pending-timer reader", () => {
         tools.getArgs = () => ["timers"];
         runCommand(tools);
         expect(tools.text()).toContain("Scheduler.list unavailable in this build");
+    });
+});
+
+describe("r181 raw harness — starting a quest on demand", () => {
+    it("lists what can be started, so nobody has to guess a journal title", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["run"];
+        runCommand(tools);
+        const text = tools.text();
+        expect(text).toContain("nothing auto-starts");
+        for (const alias of ["timer", "cal", "wait", "probe", "twotter", "surface"]) {
+            expect(text, `${alias} is missing from the launcher`).toContain(alias);
+        }
+        /* The journal title is the fallback when a build refuses to claim
+           across mods, so it has to be printed. */
+        expect(text).toContain("Timer QA (calendar: S-05/S-06/S-07/S-13)");
+        expect(sdk.__claimed).toEqual([]);
+    });
+
+    it("claims exactly one quest, and tells the tester what to read next", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["run", "cal"];
+        runCommand(tools);
+        expect(sdk.__claimed).toEqual(["QESdk024TimerCalQa"]);
+        const text = tools.text();
+        expect(text).toContain('look for "Timer QA (calendar: S-05/S-06/S-07/S-13)"');
+        /* The whole point of the round: the rows are read, not waited for. */
+        expect(text).toContain("qe24 timers");
+        expect(text).toContain("you do not wait for it");
+    });
+
+    it("clears the quests an older build left claimed", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["run", "clear"];
+        runCommand(tools);
+        /* Every quest the launcher knows, including the two probe quests. */
+        expect(sdk.__unclaimed).toEqual([
+            "QESdk024TimerQa",
+            "QESdk024TimerCalQa",
+            "QESdk024WaitMonthQa",
+            "QE24SurfaceProbe",
+            "QE24TwotterProbe",
+            "QESdk024EditorQa",
+        ]);
+        expect(tools.text()).toContain("Unclaimed:");
+    });
+
+    it("names the bad alias instead of claiming something else", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["run", "cals"];
+        runCommand(tools);
+        expect(sdk.__claimed).toEqual([]);
+        expect(tools.text()).toContain("Unknown quest: cals");
+    });
+
+    it("degrades honestly when the build has no Quest.claim", () => {
+        const sdk = harnessSdk();
+        (sdk.Quest as unknown as { claim?: unknown }).claim = undefined;
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["run", "cal"];
+        runCommand(tools);
+        expect(tools.text()).toContain("Quest.claim is unavailable in this build");
+    });
+
+    it("has no quest that starts itself — the r180 noise was five of them at once", () => {
+        const code = readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/dist/mod.js"), "utf8");
+        expect(code).not.toContain("AutoStart = true");
+        /* And the launcher is the sanctioned way in. */
+        expect(code).toContain("qe24 run <alias>");
     });
 });

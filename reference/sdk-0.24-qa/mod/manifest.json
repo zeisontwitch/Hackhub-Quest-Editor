@@ -1,9 +1,9 @@
 {
   "id": "qe-sdk-024-qa",
   "name": "QE SDK 0.24 QA Harness",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "author": "HackHub Quest Editor",
-  "description": "Developer QA harness for HackHub 1.3.0 / Content SDK 0.24.0 fences: quest completion, phone onEnd completion, Wi-Fi, HTTP/curl, collaborators, interception, Scheduler and pending-timer readback.",
+  "description": "Developer QA harness for HackHub 1.3.0 / Content SDK 0.24.0 fences: quest completion, phone onEnd completion, Wi-Fi, HTTP/curl, collaborators, interception, Scheduler, pending-timer readback and on-demand quest launching.",
   "apiVersion": 1,
   "permissions": ["network", "events", "mail", "shell", "ui"],
   "tags": ["qa", "sdk-0.24", "developer"]

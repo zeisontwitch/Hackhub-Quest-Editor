@@ -4,9 +4,9 @@
   "mod": {
     "id": "qe-sdk-024-editor-qa",
     "name": "QE SDK 0.24 Editor QA Scaffold",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "author": "HackHub Quest Editor",
-    "description": "Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, and the Timer node delay and calendar modes. Keeps those checks isolated from author-facing feature exposure.",
+    "description": "Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, and the Timer node delay and calendar modes. Nothing auto-starts — claim one quest at a time with the harness command `qe24 run` — so a tester sees one row's noise, not five.",
     "tags": [
       "qa",
       "sdk-0.24",
@@ -32,7 +32,7 @@
         "lastName": "Bot",
         "email": "qa@qe24.test"
       },
-      "autoStart": true,
+      "autoStart": false,
       "autoComplete": false,
       "questsToComplete": [],
       "abandonable": true,
@@ -192,7 +192,7 @@
             "data": {
               "label": "QE24 editor scaffold started; native Wi-Fi node emitted with bssid/channel/wps.",
               "labelAuto": false,
-              "toast": true,
+              "toast": false,
               "includeData": true,
               "includePayload": true
             }
@@ -216,7 +216,7 @@
             "data": {
               "label": "QE24 editor scaffold OnObjectivesStart/listeners registered or re-registered after load.",
               "labelAuto": false,
-              "toast": true,
+              "toast": false,
               "includeData": true,
               "includePayload": true
             }
@@ -403,7 +403,7 @@
             "data": {
               "label": "Editor QA ticked: http-response",
               "labelAuto": false,
-              "toast": true,
+              "toast": false,
               "includeData": true,
               "includePayload": true
             }
@@ -418,7 +418,7 @@
             "data": {
               "label": "Editor QA ticked: http-request",
               "labelAuto": false,
-              "toast": true,
+              "toast": false,
               "includeData": true,
               "includePayload": true
             }
@@ -433,7 +433,7 @@
             "data": {
               "label": "Editor QA ticked: http-intercepted",
               "labelAuto": false,
-              "toast": true,
+              "toast": false,
               "includeData": true,
               "includePayload": true
             }
@@ -448,7 +448,7 @@
             "data": {
               "label": "Editor QA ticked: wifi-connect",
               "labelAuto": false,
-              "toast": true,
+              "toast": false,
               "includeData": true,
               "includePayload": true
             }
@@ -463,7 +463,7 @@
             "data": {
               "label": "Editor QA ticked: wifi-disconnect",
               "labelAuto": false,
-              "toast": true,
+              "toast": false,
               "includeData": true,
               "includePayload": true
             }
@@ -596,7 +596,7 @@
         "xp": 0
       },
       "employer": {},
-      "autoStart": true,
+      "autoStart": false,
       "autoComplete": false,
       "questsToComplete": [],
       "abandonable": true,
@@ -626,7 +626,7 @@
               "label": "timer quest started",
               "includeData": false,
               "includePayload": false,
-              "toast": true
+              "toast": false
             }
           },
           {
@@ -777,7 +777,7 @@
         "xp": 0
       },
       "employer": {},
-      "autoStart": true,
+      "autoStart": false,
       "autoComplete": false,
       "abandonable": true,
       "hasCompleteButton": false,
@@ -806,7 +806,7 @@
             "data": {
               "label": "Timer calendar QA armed - S-06 next (an exact date already past)",
               "labelAuto": false,
-              "toast": true,
+              "toast": false,
               "includeData": false,
               "includePayload": false
             }
@@ -881,7 +881,7 @@
             "data": {
               "label": "S-06 done. S-05 next: a coming day, 0 days at 00:00 (already past today)",
               "labelAuto": false,
-              "toast": true,
+              "toast": false,
               "includeData": false,
               "includePayload": false
             }
@@ -956,7 +956,7 @@
             "data": {
               "label": "S-13 next: 1 month 2 weeks 2 days at 18:23 - read 'qe24 timers'",
               "labelAuto": false,
-              "toast": true,
+              "toast": false,
               "includeData": false,
               "includePayload": false
             }
@@ -1109,7 +1109,7 @@
         "xp": 0
       },
       "employer": {},
-      "autoStart": true,
+      "autoStart": false,
       "autoComplete": false,
       "abandonable": true,
       "hasCompleteButton": false,
@@ -1138,7 +1138,7 @@
             "data": {
               "label": "Timer Wait QA armed - a 1 minute Wait first (S-01 path)",
               "labelAuto": false,
-              "toast": true,
+              "toast": false,
               "includeData": false,
               "includePayload": false
             }
@@ -1213,7 +1213,7 @@
             "data": {
               "label": "Now arming Wait 1 month (scheduleAt) - read 'qe24 timers'",
               "labelAuto": false,
-              "toast": true,
+              "toast": false,
               "includeData": false,
               "includePayload": false
             }

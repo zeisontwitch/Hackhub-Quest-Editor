@@ -1,72 +1,75 @@
 # Timer rows — how to run them
 
-This is the checklist for the Timer QA rows (**S-01 … S-15**). It lives here
-because this is the folder you install from; the one-page ledger of what is
-already settled is [`STATUS.md`](STATUS.md).
+The checklist for the Timer QA rows (**S-01 … S-15**). It lives here because
+this is the folder you install from; the ledger of what is settled is
+[`STATUS.md`](STATUS.md).
 
-**One install covers every row below.** You need:
+## Read this first: nine of the fifteen rows are already answered
 
-| What | Where |
+Your 2026-09-18 run closed them. Do not re-run them — see
+[`STATUS.md`](STATUS.md) for the evidence:
+
+| Closed | Why |
 | --- | --- |
-| The editor's QA quests (auto-start) | `editor-export/` — mod **1.0.8**, editor build r180 |
-| The terminal harness (for `qe24 timers` / `qe24 clock`) | `mod/` — harness **1.0.10** |
-| Two old drafts for the migration rows | `projects/fixture-*.project.json` |
+| **S-01** fire, **S-02** reload | Timer A/B fired; after the reload the same job ids came back with the same `fireAt` and nothing double-armed. |
+| **S-05**, **S-06** | The calendar quest's third row *armed at all* — a Timer suspends its chain, so the two instant rows before it must have fired. |
+| **S-07** reload survival | Same five jobs, same ids, same raw timestamps before and after save/quit/reload. |
+| **S-08**, **S-13** | The mixed row resolved to **Tue 3 Nov, 18:23** — 18 Sep + 1 month + 2 weeks + 2 days, clock pinned. |
+| **S-09**, **S-14** | `Wait 1 month` resolved to **18 Oct, 19:27** — one month on, same day number, same clock time. |
 
-Install both on a **throwaway save**. `QESdk024TimerQa`,
-`QESdk024TimerCalQa` and `QESdk024WaitMonthQa` all start by themselves.
+**Still open: S-03, S-10, S-11, S-12, S-15.** None of them needs waiting.
 
-## The one command that saves you waiting
+## What changed since that run: nothing starts by itself
+
+You were right that it was a mess — five QA quests auto-started at load, four
+with toasts, on top of quests an earlier build had left claimed. That is fixed:
+
+- **No QA quest auto-starts any more.** Loading a save produces no QE24 mail,
+  toast or journal line.
+- **One command starts one row** (harness **1.0.11**):
+
+```
+qe24 run              list the quests you can start
+qe24 run cal          the calendar rows (S-05/S-06/S-07/S-13)
+qe24 run wait         Wait in months (S-09/S-14)
+qe24 run timer        the delay rows (S-01/S-02/S-03)
+qe24 run clear        clear quests an older build left claimed - run this once
+```
+
+Run `qe24 run clear` **once** on your save to get rid of the leftovers from the
+old rounds, then claim one row at a time. The command prints the journal title
+to look for; if the build ever refuses a cross-mod claim, claim that title
+yourself — one quest, so the journal stays readable.
+
+## The rows that are left
+
+| Row | Do this | Green looks like |
+| --- | --- | --- |
+| **S-03** cancel | `qe24 run timer`. Timer B is 2 in-game hours out. Claim the quest, then **complete or abandon it** from the journal, then wait ~2 real minutes. | Timer B never fires, and the log says `cancelled 1 pending timer(s)`. |
+| **S-10** short-month clamp | Only if today's in-game date is the **29th, 30th or 31st** — otherwise skip it (the clamp is unit-tested). `qe24 run wait`, then `qe24 timers`. | The month job's day is the last day of the next month, not a roll into the one after. |
+| **S-11** clock panel | `qe24 run wait`, then `qe24 timers` to confirm the month job is pending. Open the game's **clock panel** (the one with `NEXT EVENT`). | **Just tell us what you see.** Does the pending job appear in `NEXT EVENT` at all, and in what units? Either answer is useful — nothing to pass or fail. |
+| **S-12** pre-r176 draft | In the **editor**: Open project → `reference/sdk-0.24-qa/projects/fixture-pre-r176-after.project.json`. Look at the Timer node. | **When it fires** reads **Wait** and the hours box shows **2**. Nothing empty or zeroed. |
+| **S-15** r176-era draft | Same, with `fixture-r176-coming-day.project.json`. | The **Weeks** box shows **2** and the clock shows **18:23**. |
+
+That is the whole list. S-12 and S-15 are just opening a file — no game needed.
+
+## `qe24 timers` and what "armed" means
+
+**Armed** = the story reached the Timer node and the game is now holding a job
+for it. You never wait for it: `qe24 timers` prints the exact moment it will
+fire, in the same local rendering as the on-screen clock, plus the payload that
+says which quest and node armed it.
 
 ```
 qe24 timers
 ```
 
-It prints **every pending Scheduler job on the save, from any mod** — including
-the editor export's — with the exact moment each one will fire, in the same
-local rendering as the on-screen clock, plus how long that is in in-game units
-and in real seconds. A Timer that says "1 month" is checked in seconds, not in
-a month. If it prints *No pending jobs*, the journal you are looking at lists
-them, not the game — that was the gap this command closes.
+Look for `payload: questId=qe-cal2 nodeId=qe-cal2-t2` (the month row) or
+`nodeId=qe-cal1-t3` (the mixed row). If it prints *No pending jobs*, the row has
+not armed — run `qe24 run` first and give it a second.
 
-`qe24 clock` still prints `Time.now` in both renderings, which is how you
-convert a `qe24 timers` line if your machine is not on UTC.
+## If something looks wrong
 
-## Run order
-
-Everything is quick except the two rows that are *supposed* to be far away —
-those are read, not waited for. Do them in this order and it is one sitting.
-
-| Row | Do this | Green looks like | If it is red |
-| --- | --- | --- | --- |
-| **S-01** fire | Install `editor-export/`, load the save. A debug toast announces `timer quest started`. | Within ~2 seconds (2 in-game minutes): mail **“Timer A arrived (S-01 green)”** and a `Timer A fired` toast. | Paste the log lines from load to the 2-minute mark. |
-| **S-02** reload | As soon as Timer A lands, save, quit to the main menu, load again. Wait ~2 real minutes (Timer B is 2 in-game hours). | `Timer B fired` toast **exactly once**. | A second toast, or none: paste the log — the arm line names the job id. |
-| **S-03** cancel | Fresh save (or the same one, before Timer B is due). Abandon or complete `QESdk024TimerQa` from the quest log, then wait 2 real minutes. | Timer B **never** fires, and the log says `cancelled 1 pending timer(s)`. | Paste the log from the cancel onwards. |
-| **S-04** zone | *Settled 2026-09-18 — no need to run it again.* | — | — |
-| **S-05** a coming day | Nothing to do: `QESdk024TimerCalQa` runs it on load. | Mail **“S-05 green: 'a coming day, 0 days at 00:00' fired immediately”** within seconds. | Paste the log; the arm line names the rule and the moment it resolved to. |
-| **S-06** past time | Nothing to do: the same quest runs it first. | Mail **“S-06 green: an exact date in the past fired immediately”** within seconds. | Same as S-05. |
-| **S-07** reload survival | Right after load: `qe24 timers`, note the job whose payload says `nodeId=qe-cal1-t3`. Save, quit to the main menu, reload, run `qe24 timers` again. | The same job is still listed, at the same moment, and the log says `already armed - not double-arming` rather than arming a second one. | Paste both `qe24 timers` outputs. |
-| **S-08** multi-day | Same job as S-07 (it is `1 month 2 weeks 2 days` out). | The `qe24 timers` line names a day that is 1 month 2 weeks 2 days after today's in-game date, at 18:23 in-game. | Paste the line plus `qe24 clock`. |
-| **S-09** one month on | `QESdk024WaitMonthQa` runs on load: first a 1-minute Wait, then a `Wait 1 month`. After the first mail arrives, run `qe24 timers`. | The remaining job's day number is the same as today's (or the last day of a shorter month), at the same clock time. | Paste the line. |
-| **S-10** short-month clamp | Run the same row **when the in-game date is the 29th, 30th or 31st**. Otherwise skip it — the clamp is unit-tested (`src/schema/__tests__/timerCalendar.test.ts`). | `qe24 timers` shows the target day as the last day of the next month, not a roll into the month after (31 Jan → 28/29 Feb). | Paste the line and today's in-game date. |
-| **S-11** `NEXT EVENT` panel | Arm anything with a Timer (the `QESdk024WaitMonthQa` job is ideal). Open the in-game clock panel. | Record **whether the mod's job appears in `NEXT EVENT` at all**, and in what units (`2d 4h`-style?). Either answer is fine — this is a fact-finding row, not a pass/fail. | n/a. |
-| **S-12** pre-r176 draft | Open `projects/fixture-pre-r176-after.project.json` in the editor (Open project), look at the Timer node, then export and install it if you want the fire too. | **When it fires** reads **Wait** and the hours box shows **2**; nothing is empty or zeroed; it fires about 2 in-game hours later. | Screenshot the node. |
-| **S-13** mixed calendar | Same job as S-07/S-08 (`1 month 2 weeks 2 days at 18:23`). | `qe24 timers` shows the day the node's own preview sentence names, at 18:23. | Paste the line and what the editor's preview sentence said. |
-| **S-14** Wait in months | Same quest as S-09. | The month job is present and resolves through `scheduleAt` (log line says `armed after 1mo -> in-game …`), not through a 30-day duration. | Paste the log line. |
-| **S-15** r176-era draft | Open `projects/fixture-r176-coming-day.project.json` in the editor. | The **Weeks** box shows **2** and the clock shows **18:23** — the r176 amount+unit pair landed in the right box. Re-exporting gives identical behaviour. | Screenshot the node. |
-
-Nothing here needs the real clock: every Timer resolves against the **in-game**
-clock, which is what the rows are checking.
-
-## Why so few of these actually wait
-
-`qe24 timers` reads the moment the engine was handed, which is the whole
-question for the calendar rows — "does 31 January plus one month land in
-February?". Only S-01/S-02/S-03 and the two instant rows are watched firing,
-because those are the ones where *if* it fires is the question. The rest are
-answered the moment they arm.
-
-## What to paste back
-
-The `qe24 timers` output, the log lines it names, and — for anything that did
-not behave — the in-game clock reading at the time. That is enough to tell
-"wrong moment" from "never armed" from "fired twice".
+Paste the `qe24 timers` output and the log lines it names. That is enough to
+tell "wrong moment" from "never armed" from "fired twice" — no waiting, no
+guessing.

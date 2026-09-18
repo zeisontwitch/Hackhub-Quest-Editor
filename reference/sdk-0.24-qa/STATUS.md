@@ -30,18 +30,26 @@ in-game clock, so it is a note rather than a fence.
 from `Time.date()` minus the author's amount and unit. Backdated series ship on
 the API path; the editor's fence against the declarative `Tweets` field stays.
 
-## Open: P-01b (r185) — which way does a profile sort?
+## Settled: P-01b (r185) — a profile shows the newest tweet first
 
-One look, one letter sequence. P-01a's control tweet was the newest *and* the
-first posted, so "newest first" and "in the order we posted them" read
-identically. `qe24 twotter order` (harness **1.0.13**) posts A (two months back,
-first), B (no time, second) and C (one month back, third); the profile's
-top-to-bottom order then distinguishes all three arrangements. It decides the
-order the runtime posts a series in and what the editor's preview must mirror.
+**Answer: the profile sorts by time, newest at the top, whatever order we posted
+in.** Game 1.3.0, build 25388883, harness 1.0.13, throwaway save, Zeis's report
+2026-09-18. `qe24 twotter order` posted A (two months back, first), B (no time →
+stamped "now", second) and C (one month back, third); the profile read
+**B, C, A** top to bottom.
 
-Steps and the reporting table: [`P-01-BACKDATE.md`](P-01-BACKDATE.md), row
-**P-01b**. Nothing in the editor changed for it; the installable export is not
-involved.
+Decisions that follow: the runtime posts a series **oldest → newest** anyway
+(deterministic; the engine sorts the display), the editor's preview mirrors the
+game (newest at the top, with a line saying so) while the author's list stays
+chronological, and **ties keep posting order** — P-01a's three equal-moment
+tweets appeared in the order they were posted.
+
+**One discrepancy, on the record:** the Journalist's Sister transcript reads as
+*oldest at the top* ("a year ago" … "all the way down to 8 days ago", hook as the
+second-to-last tweet). That is prose about hardcoded questline content in an
+earlier build; the probe measured the API path on the build we ship against, and
+the declarative `Tweets` path is fenced off, so a mod never depends on the other
+behaviour. Details and the reasoning: [`P-01-BACKDATE.md`](P-01-BACKDATE.md).
 
 ## Settled: the Twotter probe (r179 → answered 2026-09-18)
 

@@ -1,11 +1,11 @@
-# P-01 — backdated tweets (answered) and which way a profile sorts (open)
+# P-01 — tweet times and profile order (both answered)
 
-Two rows, one setup. **P-01a decided whether the r185 Twotter build can carry
-backdated tweets at all; it came back green on 2026-09-18.** P-01b is a single
-look that settles the order a series is posted in, and it is all that is left.
+Two rows, one setup, both green on 2026-09-18. **P-01a** decided that the r185
+Twotter build can carry backdated tweets; **P-01b** settled which way a profile
+reads. The results are below; the checklist stays for the record.
 
-**Which mod.** The **raw harness** — [`mod/`](mod/) in this folder, **version
-1.0.13**. *Not* the editor export: `editor-export/` is the installable QA
+**Which mod.** The **raw harness** — [`mod/`](mod/) in this folder, version
+**1.0.13**. *Not* the editor export: `editor-export/` is the installable QA
 project, a different mod, and it has no `qe24` commands. Nothing in the editor
 changed for either row; the commands are harness-only.
 
@@ -14,9 +14,7 @@ changed for either row; the commands are harness-only.
 Common setup, once per run:
 
 1. Copy `mod/` over the harness you installed for T-01…T-07 and restart the
-   game. The mod list should read **QE SDK 0.24 QA Harness 1.0.13**. (If it still
-   reads an older number the copy did not take, and the commands below would
-   answer `Unknown twotter verb`.)
+   game. The mod list should read **QE SDK 0.24 QA Harness 1.0.13**.
 2. Load the save and make sure the probe account exists:
 
    ```
@@ -27,10 +25,11 @@ Common setup, once per run:
 
 ---
 
-## P-01a — do backdated tweets keep the time we send? ✅ **answered: yes**
+## P-01a — do backdated tweets keep the time we send? ✅ **yes**
 
-**Result (2026-09-18, game 1.3.0, build 25388883, harness 1.0.12).** The command
-posts four tweets to `qe24_probe`: one moment, three spellings, plus a control.
+**Result (2026-09-18, game 1.3.0, build 25388883, harness 1.0.12).**
+`qe24 twotter backdate` posted four tweets to `qe24_probe`: one moment, three
+spellings, plus a control.
 
 | Tweet | Sent with | Read back as |
 | --- | --- | --- |
@@ -53,58 +52,51 @@ The detail page's absolute line said **"8:09 PM · Aug 18, 2026"** for that
 profile shows and those were right; the editor computes stamps from the in-game
 clock, so this is a note, not a fence.
 
-*No action needed — this row is done. Repeat it only if a later game build
-changes the Twotter API.*
-
 ---
 
-## P-01b — which way does a profile sort? ⬜ **open**
+## P-01b — which way does a profile sort? ✅ **newest at the top**
 
-The P-01a run left one ambiguity: its control tweet was the newest **and** the
-first posted, so "newest first" and "in the order we posted them" looked
-identical. Three tweets whose time order and posting order disagree tell them
-apart — and the answer decides the order a backdated series is posted in, and
-what the editor's preview must mirror.
+**Result (2026-09-18, same save and build).** `qe24 twotter order` posted three
+tweets whose posting order and time order disagree — A (two months back, posted
+first), B (no time, so the engine stamped it "now", posted second), C (one month
+back, posted third). The profile read, top to bottom:
 
-1. In the terminal, with the probe account seeded (common setup above):
+| Position | Tweet | Age shown |
+| --- | --- | --- |
+| 1 (top) | `P-01b B` | a few seconds ago |
+| 2 | `P-01b C` | a month ago |
+| 3 (bottom) | `P-01b A` | 2 months ago |
 
-   ```
-   qe24 twotter order
-   ```
+**So a profile sorts by time, newest first, regardless of the order we posted
+them in.** Consequences, and they are small because the engine does the sorting:
 
-   It posts three tweets to `qe24_probe`:
+- The runtime posts a series **oldest → newest** anyway (deterministic, matches
+  the author's list order); the posting order does not change what the player
+  sees.
+- The editor's **preview must mirror the game**: newest at the top. The author's
+  row list stays chronological — the order things happened, which is how a
+  history is written — and the preview says in one line that the profile shows it
+  the other way up.
+- **Ties keep posting order.** P-01a's three tweets all carried the same moment
+  and appeared in the order they were posted, so two tweets at the identical age
+  read in the order the node lists them.
 
-   | Tweet | Sent with | Posted |
-   | --- | --- | --- |
-   | `P-01b A` | two months back | **first** |
-   | `P-01b B` | no time (reads "just now") | **second** |
-   | `P-01b C` | one month back | **third** |
+### One discrepancy, recorded rather than smoothed over
 
-2. Open **Twotter**, search **`qe24_probe`**, open the profile, and read the
-   three tweets **top to bottom**.
+The Journalist's Sister transcript describes @alinamack's profile as *"10 tweets
+ranging from 'a year ago' to '9 months ago' all the way down to '8 days ago'"*,
+with the story's hook as the **second to last** tweet — that reads as **oldest at
+the top**, the opposite of what the probe measured.
 
-**Report back the three letters, in that order.** They are the whole answer:
+Most likely explanations, in order: that transcription is prose about the
+**hardcoded** questline in an earlier build (Twotter was rebuilt for 1.0, and
+the transcription predates 1.3.0), and hardcoded content may order differently
+from API posts. The probe is a direct measurement of the build we ship against
+and of the exact call our runtime makes, so **it wins** — and since the declarative
+`Tweets` path is fenced off, a mod never depends on the other behaviour. If a
+future report shows a mod's series reading oldest-first, this note is where to
+start.
 
-| What you see | What it means |
-| --- | --- |
-| `A, B, C` | the profile shows them **in the order we posted them** — the author's row order is the reading order |
-| `A, C, B` | **oldest first** |
-| `B, C, A` | **newest first** |
-
-3. Take the account back out:
-
-   ```
-   qe24 twotter cleanup
-   ```
-
-**What each answer changes.** The runtime posts a series oldest → newest (that
-is how the Journalist's Sister profile reads). If the profile shows posted order,
-the author's own row order is what the player sees, and the editor's preview
-mirrors it exactly. If the profile sorts by time, the series still posts the same
-way — but the preview must show the game's order instead of the author's, or it
-lies about what the player will see, and the author gets a line in the inspector
-naming the way it will appear.
-
-If the profile shows something other than those three arrangements (a jumble, or
-only some of the tweets), say so and paste the screen — that is a finding worth
-having, not a failed run.
+*Neither row needs re-running unless a later game build changes the Twotter API.
+The commands stay in the harness: `qe24 twotter backdate`, `qe24 twotter order`,
+then `qe24 twotter cleanup`.*

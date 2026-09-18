@@ -1,11 +1,10 @@
 # r185 (plan, for review): Twotter comes back
 
-**Nothing in this document is built yet.** Revision 2, written after your three
-answers of 2026-09-18 — they changed one shape (the node now posts a *series*,
-not a single tweet) and settled the rest. One question is still open and it is
-technical rather than a matter of taste: whether the platform's post API honours
-a timestamp we hand it (section 5). That one has a probe, `P-01`, and it runs
-before stage 1 is finished.
+**Nothing in this document is built yet.** Revision 3, written after your three
+answers of 2026-09-18 (they changed one shape: the node now posts a *series*, not
+a single tweet) and after both probes came back. **Nothing is open any more:**
+P-01a proved the platform keeps a timestamp we send, and P-01b proved a profile
+shows the newest tweet first. Sections 2, 3.2, 5, 7, 8 and 9 carry the results.
 
 ## 0. Your answers, folded in
 
@@ -44,10 +43,15 @@ incompletely.
 You pointed me at the questline, so here is what it actually does — this is now
 the design target for the series:
 
-- **@alinamack** (Part 1): searching the handle shows **10 tweets**, reading
-  *"a year ago"* at the top down to *"9 months ago"* *"all the way down to
-  '8 days ago'"*, each one about travelling; the second-to-last is the story's
-  hook ("Something very strange happened today… the Grand Hotel"). The player
+- **@alinamack** (Part 1): searching the handle shows **10 tweets**, *"a year
+  ago"* through *"9 months ago"* *"all the way down to '8 days ago'"*, each one
+  about travelling; the second-to-last is the story's hook ("Something very
+  strange happened today… the Grand Hotel"). **Note on that wording:** as
+  transcribed it reads oldest-at-top. P-01b measured the current build's API
+  path and it sorts **newest first** — the transcription is prose about
+  hardcoded content in an earlier build, and since the declarative path is
+  fenced off, our series follow the probe. The discrepancy is on the record in
+  [`P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md). The player
   gets the whole history in one visit, at the moment the story wants them to.
 - **@andrea_siebert** (later parts): *"One of her tweets from 2 hours ago shows
   she's about to board a plane"* — and it carries a **photo** (a boarding pass),
@@ -122,13 +126,13 @@ their tweets deleted (section 5). What changed is that its body is a **list**:
 | · **Show in the main timeline** | Per row, not per node: a year of history should not flood the feed, but this afternoon's announcement can. |
 | **Post** | `showInTimeline`-style per-row toggle above; nothing else to set. |
 
-Rows are ordered **oldest → newest**, and the runtime posts them in that order —
-the author writes a history the way it happened. What the *player* sees first is
-the game's business: P-01a's screenshot put the newest tweet at the top, but its
-control was also posted first, so that reading cannot yet tell "newest first"
-from "in the order we posted". **P-01b settles it, and the answer only moves the
-whimsy** — if the profile sorts by time, the preview in section 7 has to show the
-game's order (with a line saying so) instead of the author's row order.
+Rows are ordered **oldest → newest** — the author writes a history the way it
+happened — and the runtime posts them in that order (deterministic; it does not
+change the display). **The player sees the newest first**: P-01b measured it
+(`B, C, A` top to bottom), so the profile sorts by time and ignores posting
+order, and **ties keep posting order** (P-01a's three equal-moment tweets
+appeared in the order they were posted). The editor's preview follows the game
+(section 7) while the list stays chronological.
 
 Runtime rules, which are where the old version was worst:
 
@@ -182,7 +186,7 @@ than a word ban, because the lessons are specific:
 5. **No objectives or triggers on `AccountCreated`.** The event picker says so
    in plain words.
 
-## 5. The time question — answered (P-01a), with one look left (P-01b)
+## 5. The time question — both probes answered
 
 `TwotterTweet` has `sendedAt?: string` (d.ts 1943) and no `postedAgo` — the age
 string the old editor wrote is a *quest-definition* field, which is the path we
@@ -198,12 +202,14 @@ send none. **The runtime sends ISO with milliseconds**, computed from
 `Time.date()`. The lived-in profile is possible on the API path; the fence
 against the declarative `Tweets` field stays.
 
-**P-01b is the last look**: the same run's control was both newest and posted
-first, so "newest first" and "in the order we posted" are indistinguishable from
-it. `qe24 twotter order` (harness 1.0.13) posts three tweets whose time order and
-posting order disagree; the profile's top-to-bottom order settles it. It decides
-the order the runtime posts a series in, and — more importantly for the editor —
-whether the preview may show the author's row order or must show the game's.
+**P-01b: newest first.** `qe24 twotter order` (harness 1.0.13) posted three
+tweets whose time order and posting order disagreed (A two months back posted
+first, B untimed posted second, C a month back posted third); the profile read
+**B, C, A** top to bottom on 2026-09-18. So the display sorts by time and
+ignores posting order, and the editor's preview mirrors that. One discrepancy
+kept on the record: the Journalist's Sister transcription reads as
+oldest-at-top, which is prose about hardcoded content in an earlier build — the
+probe measured the build and the call we ship against.
 
 Both probes shipped as harness-only patches (no editor change, no risk to the
 project), and the checklist is
@@ -253,8 +259,10 @@ S-12/S-15.
 - **The node shows the same profile read-only** over its tweet timeline, with
   the accounts as they are: avatar, `@handle`, then each row rendered as a tweet
   — content, picture, counts — with the age chip the author chose ("1 month
-  ago"). A "Edit this account" link jumps to the panel. Timeline rows are
-  draggable to reorder: the list *is* the profile.
+  ago"). **The preview shows the game's order (newest first)** with one line
+  saying so, while the list below it stays chronological: what the author writes
+  and what the player sees are both visible, and the difference is explained
+  rather than surprising. A "Edit this account" link jumps to the panel.
 - **One CSS-only flourish**: a brief "posting" shimmer on the tweet that is set
   to arrive with the story — no per-frame work, and it drops under
   `prefers-reduced-motion`, exactly like the clock's breathing colon.
@@ -266,10 +274,10 @@ Twotter probe's, which is where the tester already looks:
 
 | Row | Check |
 | --- | --- |
-| ~~**P-01a**~~ | **Green 2026-09-18** — backdated tweets keep their time; all three spellings read "a month ago", the control read "a few seconds ago". Section 5. Steps (for the record): [`P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md). |
-| **P-01b** | `qe24 twotter order` (harness 1.0.13, runs **before** the whimsy): which way a profile sorts — posted order, oldest first, or newest first. Decides the preview's order. |
+| ~~**P-01a**~~ | **Green 2026-09-18** — backdated tweets keep their time; all three spellings read "a month ago", the control read "a few seconds ago". Section 5. Results: [`P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md). |
+| ~~**P-01b**~~ | **Green 2026-09-18** — a profile sorts by time, **newest first** (`B, C, A`). The preview mirrors it. |
 | T-08 | An authored account appears in search with the authored bio, avatar, banner and follower counts. |
-| T-09 | A **series** reads as lived-in: the ages are the ones authored, the order is the one P-01b establishes, the picture is on the right tweet, and the log has **no** moment.js line (the old blemish). |
+| T-09 | A **series** reads as lived-in: the ages are the ones authored, the order is the game's (**newest at the top**, ties in list order), the picture is on the right tweet, and the log has **no** moment.js line (the old blemish). |
 | T-10 | Save, quit, reload mid-story: no duplicate account, no duplicate tweets, and an edited bio arrives. |
 | T-11 | Complete and abandon: our accounts and posts are gone, the handles leave search, and search still works. |
 | T-12 | Two quests share one account: finishing the first leaves it alone while the second is live; finishing the second removes it. *(your rule, verified)* |
@@ -285,11 +293,10 @@ save is carrying the r31 shape.
 
 ## 9. Scope, stages, and what could slip
 
-- **P-01a (harness only):** the backdate command — **shipped and answered
-  green**; the result table is in
-  [`P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md).
-- **P-01b (harness only):** the ordering command — **shipped**, one command and
-  three letters back is all it needs. It does not block stage 1.
+- **P-01a and P-01b (harness only):** both **shipped and answered green**; the
+  result tables are in
+  [`P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md). Nothing is
+  waiting on them.
 - **Stage 1 (functional):** accounts panel + schema + migration, the node and its
   list, runtime create/post/cleanup, the fences and their tests, the QA export
   and rows.

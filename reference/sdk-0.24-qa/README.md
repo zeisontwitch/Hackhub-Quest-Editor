@@ -7,12 +7,12 @@ mod's job when it is the nearest — and S-10 (short-month clamp) is shelved
 deliberately, unit-tested either way. [`TIMER-ROWS.md`](TIMER-ROWS.md) keeps the
 steps for the record.
 
-**[P-01a](P-01-BACKDATE.md) is green** (2026-09-18): the platform keeps a
-`sendedAt` we send — all three spellings read "a month ago", so backdated series
-ship on the API path. **Open now: P-01b**, the last look — which way does a
-profile sort? One harness command (`qe24 twotter order`, harness **1.0.13**),
-one read of the profile of `qe24_probe`, three letters back. The one-page ledger
-is [`STATUS.md`](STATUS.md).
+**[P-01a and P-01b](P-01-BACKDATE.md) are both green** (2026-09-18): the
+platform keeps a `sendedAt` we send — all three spellings read "a month ago" —
+and a profile sorts by time with the **newest at the top**. Backdated series
+ship on the API path, and the editor's preview mirrors the game's order. Here
+too, **nothing is left to run**; the one-page ledger is
+[`STATUS.md`](STATUS.md).
 
 **Playing the rows:** nothing auto-starts. After the 2026-09-18 run turned into a
 notification storm (five quests starting at load, four of them toasting), every
@@ -33,7 +33,7 @@ theirs back in r180, which is this file's neighbour.
 
 | Path | What it is | State |
 | --- | --- | --- |
-| [`P-01-BACKDATE.md`](P-01-BACKDATE.md) | **P-01a answered green** (backdated tweets keep their time — table of results above), **P-01b open** (which way does a profile sort?). Which mod to install, the exact commands, which account to look up, what to report back. Harness **1.0.13**. | **P-01b — run this** |
+| [`P-01-BACKDATE.md`](P-01-BACKDATE.md) | **P-01a and P-01b both answered green** (backdated tweets keep their time; a profile shows the newest first), with the result tables and Zeis's one-liners. Which mod, the exact commands, which account — kept for the record. Harness **1.0.13**. | Answered |
 | [`TIMER-ROWS.md`](TIMER-ROWS.md) | The Timer rows' checklist — every row answered or shelved; kept for the record. | Reference |
 | [`STATUS.md`](STATUS.md) | What is verified, blocked, and not run. | Read this first |
 | [`QE24-TestResults - 3.md`](QE24-TestResults%20-%203.md) | Zeis's 2026-09-16 in-game transcript of the r166 run. | Evidence |

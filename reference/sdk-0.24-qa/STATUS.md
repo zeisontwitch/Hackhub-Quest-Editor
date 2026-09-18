@@ -1,10 +1,39 @@
 # QE24 QA status (2026-09-18)
 
-One page, so nobody re-runs a finished check. **Everything below is closed or
-deliberately shelved.** One row (S-10, the short-month clamp) is shelved by the
-author's decision rather than passed, and is marked as such. A future round that
-needs an in-game check adds a *new* row here and a new harness version — never a
-re-run of the ones below.
+One page, so nobody re-runs a finished check. **The Twotter editor rows
+(T-08…T-15) are open** — they are the only thing on this page still waiting on a
+tester. Everything below them is closed or deliberately shelved. One row (S-10,
+the short-month clamp) is shelved by the author's decision rather than passed,
+and is marked as such. A future round that needs an in-game check adds a *new*
+row here and a new harness version — never a re-run of the ones below.
+
+## Open: the Twotter editor rows (T-08…T-15) — r185, editor export 1.0.14
+
+The rows below test the **editor's own Twotter node** in the game, so they run in
+the *editor export*; the raw harness is only there for the three commands. Both
+mods, on one throwaway save:
+
+| Mod | Where | Version |
+| --- | --- | --- |
+| Editor export (the thing under test) | `reference/sdk-0.24-qa/editor-export/` | 1.0.14 |
+| Raw harness (commands only) | `reference/sdk-0.24-qa/mod/` | 1.0.14 |
+
+The account is **`qe24_editor`** — one mod-level account, 412 followers / 96
+following, the blue check, a blue 48×48 avatar and a near-black 240×64 banner,
+bio *"Made by the editor's Twotter node (r185)…"*. Nothing auto-starts; claim a
+quest with `qe24 run tw1` / `qe24 run tw2`, and shed everything older builds left
+claimed with `qe24 run clear`.
+
+| Row | Do this | Report |
+| --- | --- | --- |
+| **T-08** the account | `qe24 run tw1`, open Twotter, search `qe24_editor`, open the profile. | The bio line, the avatar and the banner (as authored, or the game's default), followers 412 / following 96, and whether the check is blue. |
+| **T-09** a lived-in series | Same profile: the five tweets of the series. | The five ages in the order they appear (authored newest-first should read: a few seconds / 12 days / ~6 weeks / ~3 months / a year — paste the *exact* wording), which tweet carries the **red square** picture, whether the counters match what the editor showed, and whether the log has any **moment.js** line (it must not). |
+| **T-10** save, quit, reload | Journal → save, quit, reload. Then `qe24 twotter audit`, then the profile again. | Duplicates or not: the audit's `n of 4 handles present` line, and whether the profile shows five tweets (not ten) with the same ids. Edit the bio in the editor's Twotter panel before reloading if you want the edited-bio half. |
+| **T-11** complete removes it | Press **Complete** on "Twotter QA (T-08/T-09/T-10/T-11/T-13)". | `qe24 twotter audit` afterwards — @qe24_editor must read *"not on this save"*; Twotter search must not find it; search for anything else must still work. |
+| **T-12** two quests, one account | `qe24 run tw2` as well (same account), then complete **one** quest, `qe24 twotter audit`, complete the **other**, audit again. | After the first completion the account must still be there — with both quests' tweets; after the second it must be gone. The order you complete them in must not matter. |
+| **T-13** When-event triggers | With tw1 live: open the profile, then open one of its posts. | In the journal, `profile-seen` and `post-seen` must tick; `post-event` must **stay unchecked**. If `post-event` ticks, say so — it changes what the manual may promise about `Twotter.Post`. |
+| **T-14** the r30 draft | Open [`projects/fixture-r30-twotter.project.json`](projects/fixture-r30-twotter.project.json) in the editor (no game needed). | Four tweets, none deleted: ages 2 days / 1 month **flagged as migrated** / arrival / 1 month **flagged**; and ONE `legacy_smith` account in the accounts panel, though the old draft declared it twice. |
+| **T-15** uninstall *(last priority)* | Remove/disable the **editor export** mod, reload, search Twotter. | The `qe24_editor` handle must leave search. The harness's own handles staying behind is expected (different mod). |
 
 ## Settled: P-01a (r185) — backdated tweets keep the time we send
 

@@ -351,6 +351,18 @@ var QA_QUESTS = [
         what: "the r179 Twotter probe's objectives. The qe24 twotter commands themselves work whether or not it is claimed.",
     },
     {
+        alias: "tw1",
+        name: "QESdk024TwotterQa",
+        title: "Twotter QA (T-08/T-09/T-10/T-11/T-13)",
+        what: "the editor's Twotter node in the field: a five-tweet series on @qe24_editor, four backdated and one arriving now. Read the profile with Twotter's search, then save/reload, then Complete it.",
+    },
+    {
+        alias: "tw2",
+        name: "QESdk024TwotterShareQa",
+        title: "Twotter QA (T-12: two quests, one account)",
+        what: "the second quest on the SAME account, for the shared-account rule: finish one and the account stays while the other lives; finish both and it goes. Check with 'qe24 twotter audit'.",
+    },
+    {
         alias: "surface",
         name: "QESdk024EditorQa",
         title: "QE SDK 0.24 editor QA",
@@ -577,10 +589,46 @@ function printTwotterGuide(tools) {
     tools.println("     three spellings plus a control. Open the profile: which ones read a month ago?");
     tools.println(" 10. qe24 twotter order -> P-01b (r185): is a profile newest first, oldest first, or in");
     tools.println("     the order we posted? Three tweets, one look, report the letters.");
+    tools.println(" 11. qe24 twotter audit  -> which of this round's handles are on the save, and whether any");
+    tools.println("                             carries the r31 poison shape (a bio that is undefined)");
     tools.println("");
     tools.println("While you are here: does this build have curl? Try:  curl http://qe24-http.test/");
     tools.println("Row meanings and what each result decides: reference/sdk-0.24-qa/STATUS.md");
     tools.println("The objectives are optional: qe24 run twotter claims the probe quest if you want them.");
+}
+
+/* r185 audit: which of this round's handles are on the save, and whether any
+ * of them carries the shape that crashed Twotter search in r31 (a bio that is
+ * present and undefined). SDK 0.24 has no "list every account" call, so this
+ * audits the set this QA round creates: the harness's own three plus the editor
+ * export's account. */
+var TWOTTER_AUDIT_HANDLES = ["qe24_probe", "qe24_badrecord", "qe24_declared", "qe24_editor"];
+
+function twotterAudit(tools) {
+    var api = twotterApi();
+    if (!api || !api.getUserByUsername) { tools.printError("Twotter API unavailable in this build"); return; }
+    tools.println("QE24 Twotter audit - the handles this QA round creates:");
+    var present = 0;
+    var poisoned = 0;
+    for (var i = 0; i < TWOTTER_AUDIT_HANDLES.length; i++) {
+        var handle = TWOTTER_AUDIT_HANDLES[i];
+        var rec = safe("Twotter.getUserByUsername", function () { return api.getUserByUsername(handle); }, null);
+        if (!rec) { tools.println("  @" + handle + ": not on this save"); continue; }
+        present++;
+        var bad = rec.bio === undefined || rec.bio === null;
+        if (bad) poisoned++;
+        tools.println("  @" + rec.username + " (id " + rec.id + "): " + (bad
+            ? "BIO IS " + String(rec.bio).toUpperCase() + " - THE r31 POISON SHAPE"
+            : "bio is a string (" + String(rec.bio).length + " chars)") +
+            "; verified " + (rec.verified ? "yes" : "no") +
+            "; followers " + rec.followers + "; following " + rec.following +
+            "; joined " + rec.joinedAt);
+    }
+    tools.println(present + " of " + TWOTTER_AUDIT_HANDLES.length + " handles present; " +
+        poisoned + " carrying the r31 poison shape.");
+    tools.println("A hand-crafted account with an empty avatar/banner is normal for this harness;");
+    tools.println("what matters is the bio line: 0 poisoned means search cannot hit the r31 crash here.");
+    tools.println("T-11/T-12/T-15 expect the editor's @qe24_editor to LEAVE this list once its quests finish.");
 }
 
 function printTwotterStatus(tools) {
@@ -1312,7 +1360,7 @@ class QE24Command extends sdk.Command {
             tools.println("Connected Wi-Fi is QE24 target: " + (connectedMatchesTarget ? "yes" : "no"));
             if (targetWifi && currentWifi && !connectedMatchesTarget) tools.println("Note: if the game UI says QE24 is connected, paste this mismatch before we unhide Wi-Fi.");
             tools.println("Tip: run qe24 next if the 6/6 surface objective quest is already done, qe24 intercept for proxy-test steps, or qe24 history for HTTP/collab evidence.");
-            tools.println("Commands: qe24 guide · qe24 next · qe24 run [timer|cal|wait|probe|twotter|surface|clear] · qe24 status · qe24 history · qe24 clock · qe24 timers · qe24 twotter [seed|bad|update|post|backdate|order|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
+            tools.println("Commands: qe24 guide · qe24 next · qe24 run [timer|cal|wait|probe|twotter|tw1|tw2|surface|clear] · qe24 status · qe24 history · qe24 clock · qe24 timers · qe24 twotter [seed|bad|update|post|backdate|order|audit|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
             return;
         }
         if (sub === "history") {
@@ -1341,6 +1389,7 @@ class QE24Command extends sdk.Command {
             if (verb === "post") { twotterPost(tools); return; }
             if (verb === "backdate") { twotterBackdate(tools); return; }
             if (verb === "order") { twotterOrder(tools); return; }
+            if (verb === "audit") { twotterAudit(tools); return; }
             if (verb === "cleanup") { twotterCleanup(tools); return; }
             tools.printError("Unknown twotter verb: " + verb + " (try: qe24 twotter)");
             return;

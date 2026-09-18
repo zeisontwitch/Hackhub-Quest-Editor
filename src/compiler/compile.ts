@@ -174,6 +174,15 @@ function tokenPermissions(project: ProjectDocument): string[] {
     return perms;
 }
 
+/* `comms.tweet` (Twotter) is deliberately absent from the map below, and this
+   note is here so nobody "fixes" that later: SDK 0.24's `ModPermission` union
+   is `filesystem | network | events | mail | bank | shell | ui` — it has no
+   token for the social APIs at all. The API path was probed in game with no
+   Twotter-specific declaration (the QA harness declares only
+   network/events/mail/shell/ui and its `createUser`/`addUser`/`postTweet` calls
+   work — rows T-01…T-07, 2026-09-18, build 25388883), so there is nothing to
+   add. The same goes for a text token: no Twotter token exists to spot. */
+
 /** Declarative permission map — one entry per node type (AR3, AR17, A3). */
 const PERMISSIONS_BY_NODE_TYPE: Record<string, string[]> = {
     "world.network": ["network"],

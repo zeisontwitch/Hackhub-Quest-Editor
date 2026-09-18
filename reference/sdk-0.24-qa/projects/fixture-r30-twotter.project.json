@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "kind": "hackhub-quest-editor/project",
+  "mod": {
+    "id": "qe-legacy-twotter-fixture",
+    "name": "QE legacy Twotter fixture — r30 draft with tweets (T-14)",
+    "version": "1.0.0",
+    "author": "HackHub Quest Editor",
+    "description": "Tiny fixture draft for the Twotter migration row (T-14).",
+    "tags": [
+      "qa"
+    ],
+    "dependencies": [],
+    "minSdkVersion": "0.24.0",
+    "apiVersion": 1
+  },
+  "quests": [
+    {
+      "id": "qe-legacy-tw",
+      "name": "QELegacyTwotterFixture",
+      "title": "r30 draft with tweets (T-14)",
+      "description": "Saved in r30, when tweets were one node each and accounts hung off the quest. Open it in the editor: nothing may be missing, and the four tweets should read 2 days earlier, 1 month earlier (flagged), arrival, and 1 month earlier (flagged).",
+      "group": "sandbox",
+      "rewards": {
+        "money": 0,
+        "xp": 0
+      },
+      "employer": {},
+      "autoStart": true,
+      "autoComplete": false,
+      "abandonable": true,
+      "hasCompleteButton": false,
+      "hideObjectivesWhenDone": false,
+      "closingObjectiveText": "",
+      "questsToComplete": [],
+      "dialog": [],
+      "twotterAccounts": [
+        {
+          "id": "acc-legacy",
+          "username": "legacy_smith",
+          "displayName": "Legacy Smith",
+          "bio": "Wrote this before the r31 exile.",
+          "followers": 120,
+          "following": 44,
+          "verified": true
+        }
+      ],
+      "graph": {
+        "nodes": [
+          {
+            "id": "n-start",
+            "type": "entry.start",
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "data": {}
+          },
+          {
+            "id": "n-tweet-1",
+            "type": "comms.tweet",
+            "position": {
+              "x": 240,
+              "y": 0
+            },
+            "data": {
+              "accountId": "acc-legacy",
+              "content": "Two days ago the manifest was sealed. This one keeps its age.",
+              "timeMode": "relative",
+              "postedAgo": "2 days",
+              "likes": 9,
+              "comments": 1,
+              "shares": 0,
+              "views": 120,
+              "showInTimeline": true
+            }
+          },
+          {
+            "id": "n-tweet-2",
+            "type": "comms.tweet",
+            "position": {
+              "x": 480,
+              "y": 0
+            },
+            "data": {
+              "accountId": "acc-legacy",
+              "content": "This one pinned a calendar date, which no age can reproduce.",
+              "timeMode": "absolute",
+              "postedAgo": "2024-05-01",
+              "likes": 3
+            }
+          },
+          {
+            "id": "n-tweet-3",
+            "type": "comms.tweet",
+            "position": {
+              "x": 720,
+              "y": 0
+            },
+            "data": {
+              "accountId": "acc-legacy",
+              "content": "Posted live when the story reached the node.",
+              "timeMode": "now",
+              "postLive": true,
+              "likes": 1
+            }
+          },
+          {
+            "id": "n-tweet-4",
+            "type": "comms.tweet",
+            "position": {
+              "x": 960,
+              "y": 0
+            },
+            "data": {
+              "accountId": "acc-legacy",
+              "content": "The old default: no time fields, so it sat on the profile from load time.",
+              "postLive": false
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n-start",
+            "sourceHandle": "out",
+            "target": "n-tweet-1",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "e2",
+            "source": "n-tweet-1",
+            "sourceHandle": "out",
+            "target": "n-tweet-2",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "e3",
+            "source": "n-tweet-2",
+            "sourceHandle": "out",
+            "target": "n-tweet-3",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "e4",
+            "source": "n-tweet-3",
+            "sourceHandle": "out",
+            "target": "n-tweet-4",
+            "targetHandle": "in",
+            "kind": "flow"
+          }
+        ]
+      }
+    },
+    {
+      "id": "qe-legacy-tw2",
+      "name": "QELegacyTwotterShareFixture",
+      "title": "r30 draft, second act on the same character (T-14)",
+      "description": "The same handle declared by a second quest under a different id — the old shape made that necessary. After migrating, the mod must hold ONE account for the handle and this quest's node must point at it.",
+      "group": "sandbox",
+      "rewards": {
+        "money": 0,
+        "xp": 0
+      },
+      "employer": {},
+      "autoStart": false,
+      "autoComplete": false,
+      "abandonable": true,
+      "hasCompleteButton": false,
+      "hideObjectivesWhenDone": false,
+      "closingObjectiveText": "",
+      "questsToComplete": [],
+      "dialog": [],
+      "twotterAccounts": [
+        {
+          "id": "acc-legacy-2",
+          "username": "legacy_smith",
+          "displayName": "Legacy Smith",
+          "bio": "Same person, second act.",
+          "followers": 121,
+          "following": 44,
+          "verified": true
+        }
+      ],
+      "graph": {
+        "nodes": [
+          {
+            "id": "n2-start",
+            "type": "entry.start",
+            "position": {
+              "x": 0,
+              "y": 200
+            },
+            "data": {}
+          },
+          {
+            "id": "n2-tweet",
+            "type": "comms.tweet",
+            "position": {
+              "x": 240,
+              "y": 200
+            },
+            "data": {
+              "accountId": "acc-legacy-2",
+              "content": "Second act, same character — must land on the one migrated account.",
+              "timeMode": "relative",
+              "postedAgo": "3 hours",
+              "likes": 2
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "e2-1",
+            "source": "n2-start",
+            "sourceHandle": "out",
+            "target": "n2-tweet",
+            "targetHandle": "in",
+            "kind": "flow"
+          }
+        ]
+      }
+    }
+  ]
+}

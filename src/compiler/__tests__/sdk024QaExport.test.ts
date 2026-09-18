@@ -114,6 +114,102 @@ describe("SDK 0.24 QA export", () => {
         }
     });
 
+    it("keeps the fixtures the Twotter rows (T-08…T-13) tell a tester to open", () => {
+        /* T-08…T-13 read the editor's own Twotter node in the game, so the QA
+           project has to keep: a mod-level account with a face and counts, one
+           series of five backdated tweets (including the picture), a second
+           quest on the SAME account (T-12), and the two event triggers the
+           tracker rows read. Any of these going quiet turns a row into a hunt
+           for a bug that is really a missing fixture. */
+        const parsed = parseProjectFile(readFileSync(PROJECT_FILE, "utf8"));
+        expect(parsed.ok, parsed.ok ? "" : parsed.error).toBe(true);
+        if (!parsed.ok) return;
+        const project = parsed.project;
+
+        const account = project.twotterAccounts.find((a) => a.handle === "qe24_editor");
+        expect(account, "the T-08 account is gone").toBeDefined();
+        expect(account?.followers).toBe(412);
+        expect(account?.following).toBe(96);
+        expect(typeof account?.bio, "a bio must be a string, never undefined").toBe("string");
+        expect(account?.bio?.length ?? 0).toBeGreaterThan(10);
+        expect(account?.avatar, "T-08 asks about the authored avatar").toMatch(/^data:image\/png;base64,/);
+        expect(account?.banner, "T-08 asks about the authored banner").toMatch(/^data:image\/png;base64,/);
+
+        const tw1 = project.quests.find((q) => q.name === "QESdk024TwotterQa");
+        const tw2 = project.quests.find((q) => q.name === "QESdk024TwotterShareQa");
+        expect(tw1, "the T-08…T-13 quest is gone").toBeDefined();
+        expect(tw2, "the T-12 shared-account quest is gone").toBeDefined();
+
+        const tweetNodes = (q: typeof tw1) => q?.graph.nodes.filter((n) => n.type === "comms.tweet") ?? [];
+        const series = tweetNodes(tw1)[0]?.data as { accountId?: string; tweets?: Record<string, unknown>[] } | undefined;
+        const shared = tweetNodes(tw2)[0]?.data as { accountId?: string } | undefined;
+        expect(series?.accountId, "the series lost its account").toBe(account?.id);
+        expect(shared?.accountId, "T-12 needs both quests on ONE account").toBe(account?.id);
+
+        const rows = series?.tweets ?? [];
+        expect(rows).toHaveLength(5);
+        const earlier = rows.filter((r) => r.timeMode === "earlier");
+        expect(earlier.map((r) => `${r.agoAmount}${r.agoUnit}`)).toEqual(["1years", "3months", "6weeks", "12days"]);
+        expect(rows.filter((r) => r.timeMode === "arrival"), "one row must post as the player watches").toHaveLength(1);
+        expect(rows.filter((r) => typeof r.image === "string" && String(r.image).startsWith("data:image")).length, "the picture row").toBe(1);
+        expect(rows.some((r) => r.showInTimeline === true), "one row must reach the main timeline").toBe(true);
+
+        /* The triggers: ProfileSeen identifies the account by handle, PostSeen
+           by the id the runtime creates the record with. */
+        const trigger = (q: typeof tw1, event: string) =>
+            q?.graph.nodes.find((n) => n.type === "trigger.event" && (n.data as { event?: string }).event === event);
+        const conditions = (q: typeof tw1, event: string) =>
+            ((trigger(q, event)?.data as { conditions?: { field?: string; value?: unknown }[] } | undefined)?.conditions ?? []);
+        expect(conditions(tw1, "Twotter.ProfileSeen")).toEqual([
+            expect.objectContaining({ field: "username", value: "qe24_editor" }),
+        ]);
+        expect(conditions(tw1, "Twotter.PostSeen")).toEqual([
+            expect.objectContaining({ field: "userId", value: account?.id }),
+        ]);
+        expect(trigger(tw1, "Twotter.Post"), "the negative T-13 trigger is gone").toBeDefined();
+        for (const event of ["Twotter.ProfileSeen", "Twotter.PostSeen", "Twotter.Post"]) {
+            const wired = tw1?.graph.edges.some((e) => e.source === trigger(tw1, event)?.id && e.kind === "condition");
+            expect(wired, `${event} is not wired to an objective`).toBe(true);
+        }
+    });
+
+    it("keeps the r30 Twotter fixture the migration row (T-14) opens", () => {
+        /* T-14 asks a person to open an old draft and check nothing was lost.
+           The fixture is the r30 shape: quest-level accounts, one node per
+           tweet, four different time spellings. If the fixture or the migration
+           moves, the row must fail here first. */
+        const parsed = parseProjectFile(
+            readFileSync(join(QA_DIR, "projects", "fixture-r30-twotter.project.json"), "utf8"),
+        );
+        expect(parsed.ok, parsed.ok ? "" : parsed.error).toBe(true);
+        if (!parsed.ok) return;
+        const project = parsed.project;
+
+        /* Two quests declared the same handle under different ids; one account
+           must come out, and both quests' nodes must point at it. */
+        expect(project.twotterAccounts.map((a) => a.handle)).toEqual(["legacy_smith"]);
+        const lifted = project.twotterAccounts[0];
+        expect(typeof lifted.bio).toBe("string");
+        const accountsUsed = project.quests.flatMap((q) =>
+            q.graph.nodes.filter((n) => n.type === "comms.tweet").map((n) => (n.data as { accountId: string }).accountId),
+        );
+        expect(new Set(accountsUsed)).toEqual(new Set([lifted.id]));
+
+        const nodes = project.quests[0]!.graph.nodes.filter((n) => n.type === "comms.tweet");
+        expect(nodes, "the r31 exile must not delete these nodes").toHaveLength(4);
+        const rows = nodes.map((n) => (n.data as { tweets: Record<string, unknown>[] }).tweets[0]!);
+        expect(rows.map((r) => [r.timeMode, r.agoAmount, r.agoUnit])).toEqual([
+            ["earlier", 2, "days"],
+            ["earlier", 1, "months"],
+            ["arrival", 2, "days"],
+            ["earlier", 1, "months"],
+        ]);
+        expect(nodes[1]!.data).toMatchObject({ migratedDate: true });
+        expect(nodes[3]!.data).toMatchObject({ migratedDate: true });
+        expect(nodes[0]!.data).not.toMatchObject({ migratedDate: true });
+        expect(nodes[0]!.data).toMatchObject({ tweets: [expect.objectContaining({ content: expect.stringContaining("manifest was sealed") })] });
+    });
+
     it("keeps the legacy fixtures the migration rows tell a tester to open", () => {
         /* S-12 and S-15 ask a person to open an old draft in the editor and
            check the boxes show the same numbers. Those drafts are files in the

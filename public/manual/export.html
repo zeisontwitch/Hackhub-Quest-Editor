@@ -79,7 +79,7 @@ packed. Its own words for the job:</p>
   shipped what you built, and what you built may not be what you meant.</dd>
 </dl>
 
-<h3 id="permissions">The six permissions</h3>
+<h3 id="permissions">The seven permissions</h3>
 <p>A permission is a promise about what your mod touches. You do not pick them
 anywhere: the editor works out which ones your nodes need and asks for exactly
 those. Delete the node and the permission goes with it.</p>
@@ -90,6 +90,7 @@ those. Delete the node and the permission goes with it.</p>
     <tr><td class="name">filesystem</td><td>Place files</td><td>Write files onto the player's own machine.</td></tr>
     <tr><td class="name">shell</td><td>Run terminal command · Tool response · Manual input</td><td>Run commands, answer for the game's tools, and add a command of your own.</td></tr>
     <tr><td class="name">events</td><td>When event · Claim another quest</td><td>Watch for what the player does, and start another quest.</td></tr>
+    <tr><td class="name">mail</td><td>Dialogue, with Mail as the kind · a <code>{{player.email}}</code> token</td><td>Send messages to the player's mail app, and read their address.</td></tr>
     <tr><td class="name">bank</td><td>Pay the player · Charge the player</td><td>Move money in and out of the player's account.</td></tr>
     <tr><td class="name">ui</td><td>Notify</td><td>Put a message on the player's screen.</td></tr>
   </tbody>

@@ -1727,7 +1727,7 @@
             "equals": "true"
           },
           "tone": "warn",
-          "text": "This node came from an older draft that pinned an exact calendar date. A fixed date cannot be turned into an age without reading today's clock, which the editor never does before export — so the tweet is set to “1 month earlier”. Change the amount and unit below to the age you meant."
+          "text": "This node came from an older draft whose tweet time could not be carried over exactly — either it pinned a calendar date, or that was the draft's default. A fixed date cannot be turned into an age without reading today's clock, which the editor never does before export, so the node now says “1 month earlier”. Set the amount and unit below to the age you meant."
         },
         {
           "depth": 0,

@@ -1,6 +1,6 @@
 # QE SDK 0.24 Editor QA Scaffold
 
-Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, and the Timer node delay and calendar modes. Nothing auto-starts — claim one quest at a time with the harness command `qe24 run` — so a tester sees one row's noise, not five.
+Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, the Timer node delay and calendar modes, and the Twotter node (accounts, backdated series, cleanup). Nothing auto-starts — claim one quest at a time with the harness command `qe24 run` — so a tester sees one row's noise, not five.
 
 ## Install (no coding needed)
 
@@ -18,7 +18,7 @@ npm run build
 
 ## What the editor compiled for you
 
-- Quests: QESdk024EditorQa, QESdk024TimerQa, QESdk024TimerCalQa, QESdk024WaitMonthQa
+- Quests: QESdk024EditorQa, QESdk024TimerQa, QESdk024TimerCalQa, QESdk024WaitMonthQa, QESdk024TwotterQa, QESdk024TwotterShareQa
 - Websites: qe24-website.test
 - Permissions requested: network, mail, events, ui
 
@@ -28,8 +28,11 @@ npm run build
 - Timer QA (S-01/S-02/S-03): nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.
 - Timer QA (calendar: S-05/S-06/S-07/S-13): nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.
 - Timer QA (Wait in months: S-14, S-09): nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.
+- Twotter QA (T-08/T-09/T-10/T-11/T-13): nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.
+- Twotter QA (T-12: two quests, one account): nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.
 - QESdk024EditorQa: “Create Wi-Fi” exports as a native access point in HackHub 1.3.0+. Current QA found one game display wart: Bettercap may show no network name after targeting the AP by BSSID, but scanning, joining and cracking still worked.
 - qe24-website.test: 1 unlisted page (/hidden/result). Nothing links to it and the in-game search will not show it, so the player reaches it only by typing the address or by running dirhunter on the host — which is exactly what makes a good hiding place for a clue. If you meant this to be findable normally, turn on “Listed in search” for the page.
+- Twotter QA (T-08/T-09/T-10/T-11/T-13): the Twotter node has a tweet with a picture. The posting API does not declare pictures, so it may not appear on the profile — the in-game check (T-09) is what settles it. If it does not show, use the picture in a dialogue or a file instead.
 <!--
 Hand-maintained. `npm run gen:qa-export` appends this file to the compiled
 README.md, and the guard test (`src/compiler/__tests__/sdk024QaExport.test.ts`)

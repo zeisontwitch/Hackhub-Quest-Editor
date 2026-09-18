@@ -4,9 +4,9 @@
   "mod": {
     "id": "qe-sdk-024-editor-qa",
     "name": "QE SDK 0.24 Editor QA Scaffold",
-    "version": "1.0.13",
+    "version": "1.0.14",
     "author": "HackHub Quest Editor",
-    "description": "Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, and the Timer node delay and calendar modes. Nothing auto-starts — claim one quest at a time with the harness command `qe24 run` — so a tester sees one row's noise, not five.",
+    "description": "Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, the Timer node delay and calendar modes, and the Twotter node (accounts, backdated series, cleanup). Nothing auto-starts — claim one quest at a time with the harness command `qe24 run` — so a tester sees one row's noise, not five.",
     "tags": [
       "qa",
       "sdk-0.24",
@@ -1330,6 +1330,401 @@
           }
         ]
       }
+    },
+    {
+      "id": "qe-tw1",
+      "name": "QESdk024TwotterQa",
+      "title": "Twotter QA (T-08/T-09/T-10/T-11/T-13)",
+      "description": "Claim it with 'qe24 run tw1'. The moment it starts, the editor's Twotter node posts a series from @qe24_editor: five tweets, four backdated (a year, three months, a picture six weeks back, twelve days) and one that posts as you watch. Open Twotter and search qe24_editor: T-08 is the face and the counts, T-09 is the order and the ages. Then save and reload (T-10), and finally press the Complete button in the journal (T-11): the account and its posts must disappear from search.",
+      "group": "sandbox",
+      "rewards": {
+        "money": 0,
+        "xp": 0
+      },
+      "employer": {},
+      "autoStart": false,
+      "autoComplete": false,
+      "abandonable": true,
+      "hasCompleteButton": true,
+      "hideObjectivesWhenDone": false,
+      "closingObjectiveText": "Twotter QA recorded — the series was on @qe24_editor.",
+      "questsToComplete": [],
+      "dialog": [],
+      "graph": {
+        "nodes": [
+          {
+            "id": "qe-tw1-start",
+            "type": "entry.start",
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "data": {}
+          },
+          {
+            "id": "qe-tw1-note",
+            "type": "flow.debug",
+            "position": {
+              "x": 240,
+              "y": 0
+            },
+            "data": {
+              "label": "Twotter QA started: @qe24_editor now carries the series. Open Twotter and search for it.",
+              "labelAuto": false,
+              "toast": false,
+              "includeData": false,
+              "includePayload": false
+            }
+          },
+          {
+            "id": "qe-tw1-post",
+            "type": "comms.tweet",
+            "position": {
+              "x": 480,
+              "y": 0
+            },
+            "data": {
+              "accountId": "qe-tw-account",
+              "tweets": [
+                {
+                  "id": "qe-tw1-row1",
+                  "content": "A year ago today this account was the only thing that worked. T-09 wants this row reading 'a year ago'.",
+                  "timeMode": "earlier",
+                  "agoAmount": 1,
+                  "agoUnit": "years",
+                  "likes": 96,
+                  "comments": 7,
+                  "shares": 4,
+                  "views": 3120,
+                  "showInTimeline": true
+                },
+                {
+                  "id": "qe-tw1-row2",
+                  "content": "Three months back: the manifest was sealed at 02:40 and nobody had signed for it.",
+                  "timeMode": "earlier",
+                  "agoAmount": 3,
+                  "agoUnit": "months",
+                  "likes": 41,
+                  "comments": 3,
+                  "shares": 1,
+                  "views": 1180,
+                  "showInTimeline": false
+                },
+                {
+                  "id": "qe-tw1-row3",
+                  "content": "The picture is the clue (six weeks back). If it is on the wrong tweet, T-09 fails.",
+                  "timeMode": "earlier",
+                  "agoAmount": 6,
+                  "agoUnit": "weeks",
+                  "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAT0lEQVR42u3PQQkAAAgEsEtz/QMZxgi+hcEKLNO+FgEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQGBywK5G4EPzFmrLgAAAABJRU5ErkJggg==",
+                  "likes": 64,
+                  "comments": 2,
+                  "shares": 3,
+                  "views": 2040,
+                  "showInTimeline": false
+                },
+                {
+                  "id": "qe-tw1-row4",
+                  "content": "Twelve days ago somebody asked the right question. We should not have ignored it.",
+                  "timeMode": "earlier",
+                  "agoAmount": 12,
+                  "agoUnit": "days",
+                  "likes": 18,
+                  "comments": 0,
+                  "shares": 0,
+                  "views": 430,
+                  "showInTimeline": false
+                },
+                {
+                  "id": "qe-tw1-row5",
+                  "content": "This one posts the moment the quest runs, so it should read 'a few seconds ago'.",
+                  "timeMode": "arrival",
+                  "likes": 2,
+                  "comments": 0,
+                  "shares": 0,
+                  "views": 14,
+                  "showInTimeline": false
+                }
+              ]
+            }
+          },
+          {
+            "id": "qe-tw1-seen-trigger",
+            "type": "trigger.event",
+            "position": {
+              "x": 760,
+              "y": 200
+            },
+            "data": {
+              "event": "Twotter.ProfileSeen",
+              "conditions": [
+                {
+                  "id": "qe-tw1-c-handle",
+                  "join": "and",
+                  "field": "username",
+                  "op": "equals",
+                  "value": "qe24_editor"
+                }
+              ]
+            }
+          },
+          {
+            "id": "qe-tw1-obj-profile",
+            "type": "objective",
+            "position": {
+              "x": 1060,
+              "y": 200
+            },
+            "data": {
+              "name": "profile-seen",
+              "description": "Open Twotter, search qe24_editor and open the profile. This row ticks here when Twotter.ProfileSeen reaches the quest.",
+              "hint": "T-08: on that screen, the bio, avatar, banner, followers (412) and following (96) must be the ones authored in the editor. Report anything missing or wrong.",
+              "info": "r185 Twotter QA. Row meanings: reference/sdk-0.24-qa/STATUS.md.",
+              "terminalCommand": "",
+              "hidden": false
+            }
+          },
+          {
+            "id": "qe-tw1-postseen-trigger",
+            "type": "trigger.event",
+            "position": {
+              "x": 760,
+              "y": 380
+            },
+            "data": {
+              "event": "Twotter.PostSeen",
+              "conditions": [
+                {
+                  "id": "qe-tw1-c-user",
+                  "join": "and",
+                  "field": "userId",
+                  "op": "equals",
+                  "value": "qe-tw-account"
+                }
+              ]
+            }
+          },
+          {
+            "id": "qe-tw1-obj-post",
+            "type": "objective",
+            "position": {
+              "x": 1060,
+              "y": 380
+            },
+            "data": {
+              "name": "post-seen",
+              "description": "Open one of the series' posts. Ticks when Twotter.PostSeen fires for our account — T-13's yes.",
+              "hint": "The post can be the newest one (posted as you arrived). Report whether this row ticked.",
+              "info": "r185 Twotter QA. Row meanings: reference/sdk-0.24-qa/STATUS.md.",
+              "terminalCommand": "",
+              "hidden": false
+            }
+          },
+          {
+            "id": "qe-tw1-post-trigger",
+            "type": "trigger.event",
+            "position": {
+              "x": 760,
+              "y": 560
+            },
+            "data": {
+              "event": "Twotter.Post",
+              "conditions": []
+            }
+          },
+          {
+            "id": "qe-tw1-obj-post-event",
+            "type": "objective",
+            "position": {
+              "x": 1060,
+              "y": 560
+            },
+            "data": {
+              "name": "post-event",
+              "description": "Expected to STAY unchecked: the plan says Twotter.Post does not fire for a player opening a post.",
+              "hint": "If this row ever ticks, say so — it changes what the manual is allowed to promise about When-event triggers.",
+              "info": "r185 Twotter QA. Row meanings: reference/sdk-0.24-qa/STATUS.md.",
+              "terminalCommand": "",
+              "hidden": false
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "qe-tw1-e1",
+            "source": "qe-tw1-start",
+            "sourceHandle": "out",
+            "target": "qe-tw1-note",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "qe-tw1-e2",
+            "source": "qe-tw1-note",
+            "sourceHandle": "out",
+            "target": "qe-tw1-post",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "qe-tw1-e3",
+            "source": "qe-tw1-seen-trigger",
+            "sourceHandle": "when",
+            "target": "qe-tw1-obj-profile",
+            "targetHandle": "trigger",
+            "kind": "condition"
+          },
+          {
+            "id": "qe-tw1-e4",
+            "source": "qe-tw1-postseen-trigger",
+            "sourceHandle": "when",
+            "target": "qe-tw1-obj-post",
+            "targetHandle": "trigger",
+            "kind": "condition"
+          },
+          {
+            "id": "qe-tw1-e5",
+            "source": "qe-tw1-post-trigger",
+            "sourceHandle": "when",
+            "target": "qe-tw1-obj-post-event",
+            "targetHandle": "trigger",
+            "kind": "condition"
+          }
+        ]
+      }
+    },
+    {
+      "id": "qe-tw2",
+      "name": "QESdk024TwotterShareQa",
+      "title": "Twotter QA (T-12: two quests, one account)",
+      "description": "T-12, the rule Zeis approved. This quest posts from the SAME account as 'Twotter QA (T-08...)': @qe24_editor. Claim both with 'qe24 run tw1' and 'qe24 run tw2', then watch what each completion does. Finishing the first quest while the other is still live must leave the account standing; finishing the second must remove it, whichever order you complete them in. Read the state after each step with 'qe24 twotter audit'.",
+      "group": "sandbox",
+      "rewards": {
+        "money": 0,
+        "xp": 0
+      },
+      "employer": {},
+      "autoStart": false,
+      "autoComplete": false,
+      "abandonable": true,
+      "hasCompleteButton": true,
+      "hideObjectivesWhenDone": false,
+      "closingObjectiveText": "Shared-account QA recorded.",
+      "questsToComplete": [],
+      "dialog": [],
+      "graph": {
+        "nodes": [
+          {
+            "id": "qe-tw2-start",
+            "type": "entry.start",
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "data": {}
+          },
+          {
+            "id": "qe-tw2-note",
+            "type": "flow.debug",
+            "position": {
+              "x": 240,
+              "y": 0
+            },
+            "data": {
+              "label": "Second quest posting from @qe24_editor (T-12's shared account).",
+              "labelAuto": false,
+              "toast": false,
+              "includeData": false,
+              "includePayload": false
+            }
+          },
+          {
+            "id": "qe-tw2-post",
+            "type": "comms.tweet",
+            "position": {
+              "x": 480,
+              "y": 0
+            },
+            "data": {
+              "accountId": "qe-tw-account",
+              "tweets": [
+                {
+                  "id": "qe-tw2-row1",
+                  "content": "Posted by the second quest that shares this account - T-12 wants it on the same profile.",
+                  "timeMode": "arrival",
+                  "likes": 3,
+                  "comments": 0,
+                  "shares": 0,
+                  "views": 9,
+                  "showInTimeline": false
+                }
+              ]
+            }
+          },
+          {
+            "id": "qe-tw2-seen-trigger",
+            "type": "trigger.event",
+            "position": {
+              "x": 760,
+              "y": 200
+            },
+            "data": {
+              "event": "Twotter.ProfileSeen",
+              "conditions": [
+                {
+                  "id": "qe-tw2-c-handle",
+                  "join": "and",
+                  "field": "username",
+                  "op": "equals",
+                  "value": "qe24_editor"
+                }
+              ]
+            }
+          },
+          {
+            "id": "qe-tw2-obj-profile",
+            "type": "objective",
+            "position": {
+              "x": 1060,
+              "y": 200
+            },
+            "data": {
+              "name": "shared-profile-seen",
+              "description": "Open @qe24_editor's profile after this quest has posted: both quests' tweets must be on the one profile.",
+              "hint": "'qe24 twotter audit' lists @qe24_editor and whether its bio is still a string. Report what it says after each completion.",
+              "info": "r185 Twotter QA. Row meanings: reference/sdk-0.24-qa/STATUS.md.",
+              "terminalCommand": "",
+              "hidden": false
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "qe-tw2-e1",
+            "source": "qe-tw2-start",
+            "sourceHandle": "out",
+            "target": "qe-tw2-note",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "qe-tw2-e2",
+            "source": "qe-tw2-note",
+            "sourceHandle": "out",
+            "target": "qe-tw2-post",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "qe-tw2-e3",
+            "source": "qe-tw2-seen-trigger",
+            "sourceHandle": "when",
+            "target": "qe-tw2-obj-profile",
+            "targetHandle": "trigger",
+            "kind": "condition"
+          }
+        ]
+      }
     }
   ],
   "websites": [
@@ -1392,5 +1787,19 @@
         "zoom": 0.85
       }
     }
-  }
+  },
+  "twotterAccounts": [
+    {
+      "id": "qe-tw-account",
+      "handle": "qe24_editor",
+      "displayName": "QE24 Editor Account",
+      "bio": "Made by the editor's Twotter node (r185). If this line is readable in search, createUser kept our bio.",
+      "avatar": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAAOklEQVR42u3OQQ0AAAgEoCtjMuNbwhbOBxsBSPW8EiEhISEhISEhISEhISEhISEhISEhISEhISGhOwsQ7wvEcqrbYwAAAABJRU5ErkJggg==",
+      "banner": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAABACAIAAACr/W2wAAAAlUlEQVR42u3SMQ0AAAgEsXfAiAf8C2TGAmlSBZdL9cAbkQBDg6HB0GBoDA2GBkODocHQGBoMDYYGQ4OhMTQYGgwNhgZDY2gwNBgaDA2GxtBgaDA0GBoMjaHB0GBoMDQYGkODocHQYGgMDYYGQ4OhwdAYGgwNhgZDg6ExNBgaDA2GBkNjaDA0GBoMDYbG0GBoMDQYGq4FaVvBD4rH2GsAAAAASUVORK5CYII=",
+      "verified": true,
+      "followers": 412,
+      "following": 96,
+      "removeWhenQuestEnds": true
+    }
+  ]
 }

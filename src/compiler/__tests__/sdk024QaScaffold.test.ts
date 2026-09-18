@@ -248,12 +248,69 @@ describe("r179 raw harness — the Twotter probe", () => {
             readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/manifest.json"), "utf8"),
         ) as { version: string };
         const code = readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/dist/mod.js"), "utf8");
-        /* r180 added `qe24 timers`; r185 added `qe24 twotter backdate` (P-01a)
-           and `qe24 twotter order` (P-01b); the Twotter probe is still in the
-           same harness. */
-        expect(manifest.version).toBe("1.0.13");
+        /* r180 added `qe24 timers`; r185 added `qe24 twotter backdate` (P-01a),
+           `qe24 twotter order` (P-01b) and `qe24 twotter audit` (the T-11/T-12
+           checks); the Twotter probe is still in the same harness. */
+        expect(manifest.version).toBe("1.0.14");
         expect(code).toContain('sub === "twotter"');
+        expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
+    });
+
+    it("audits the round's handles, and calls a present-and-undefined bio by name", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        /* The declared quests put their account on the save at load; this test
+           is about the audit's reading, so start from exactly two records we
+           control: one authored (a bio that is a string) and one carrying the
+           r31 shape (a bio present and undefined — which is what crashed search
+           and which a plain print would show as an empty line). */
+        sdk.users.clear();
+        sdk.users.set("id-good", {
+            id: "id-good",
+            username: "qe24_editor",
+            bio: "authored",
+            avatar: "",
+            banner: "",
+            joinedAt: "2026-09-18T00:00:00.000Z",
+            followers: 412,
+            following: 96,
+            verified: true,
+        });
+        sdk.users.set("id-bad", {
+            id: "id-bad",
+            username: "qe24_badrecord",
+            bio: undefined,
+            avatar: "",
+            banner: "",
+            joinedAt: "2026-09-18T00:00:00.000Z",
+            followers: 0,
+            following: 0,
+            verified: false,
+        });
+
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["twotter", "audit"];
+        runCommand(tools);
+        const text = tools.text();
+
+        expect(text).toContain("bio is a string (8 chars)");
+        expect(text).toContain("BIO IS UNDEFINED - THE r31 POISON SHAPE");
+        expect(text).toContain("@qe24_probe: not on this save");
+        expect(text).toContain("@qe24_declared: not on this save");
+        expect(text).toContain("2 of 4 handles present; 1 carrying the r31 poison shape.");
+    });
+
+    it("degrades honestly when the audit has no Twotter API", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        /* A build from before the API existed: the audit must say so, not throw
+           halfway through a save file the tester cannot inspect. */
+        (sdk as { Twotter?: unknown }).Twotter = undefined;
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["twotter", "audit"];
+        runCommand(tools);
+        expect(tools.text()).toContain("Twotter API unavailable in this build");
     });
 
     it("registers a probe quest that declares an account and a tweet through the quest, not the API", () => {
@@ -644,7 +701,7 @@ describe("r181 raw harness — starting a quest on demand", () => {
         runCommand(tools);
         const text = tools.text();
         expect(text).toContain("nothing auto-starts");
-        for (const alias of ["timer", "cal", "wait", "probe", "twotter", "surface"]) {
+        for (const alias of ["timer", "cal", "wait", "probe", "twotter", "tw1", "tw2", "surface"]) {
             expect(text, `${alias} is missing from the launcher`).toContain(alias);
         }
         /* The journal title is the fallback when a build refuses to claim
@@ -680,6 +737,8 @@ describe("r181 raw harness — starting a quest on demand", () => {
             "QESdk024WaitMonthQa",
             "QE24SurfaceProbe",
             "QE24TwotterProbe",
+            "QESdk024TwotterQa",
+            "QESdk024TwotterShareQa",
             "QESdk024EditorQa",
         ]);
         expect(tools.text()).toContain("Unclaimed:");

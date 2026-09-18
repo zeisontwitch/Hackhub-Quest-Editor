@@ -160,6 +160,23 @@ raise:
 - `AccountLogin` / `AccountLogout` are about **the player's** account, not an
   NPC's.
 
+### 3.4 What the node asks the player for: nothing
+
+The Twotter node adds **no permission** to the export, and that is a decision
+with evidence, not an oversight. SDK 0.24's `ModPermission` union is
+`filesystem | network | events | mail | bank | shell | ui` — there is no token
+for the social APIs, so there is nothing to declare for `createUser`,
+`postTweet`, `updateUser` or `removeUser`. The in-game probe is the proof: the
+QA harness declares only network/events/mail/shell/ui and its Twotter calls ran
+(build 25388883, 2026-09-18). The compiler says so in a comment beside
+`PERMISSIONS_BY_NODE_TYPE`, where the next person to look for a missing entry
+will find it.
+
+(While checking this, one manual error was fixed: `export.html` and
+`concepts.html` both promised *six* permissions and omitted **mail**, which the
+editor has emitted since the dialogue node's Mail kind existed. Both pages now
+list seven.)
+
 ## 4. The fences — what stops r31 happening again
 
 The removal's guard was "the compiled mod must not contain the words `Twotter`
@@ -276,20 +293,35 @@ Twotter probe's, which is where the tester already looks:
 | --- | --- |
 | ~~**P-01a**~~ | **Green 2026-09-18** — backdated tweets keep their time; all three spellings read "a month ago", the control read "a few seconds ago". Section 5. Results: [`P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md). |
 | ~~**P-01b**~~ | **Green 2026-09-18** — a profile sorts by time, **newest first** (`B, C, A`). The preview mirrors it. |
-| T-08 | An authored account appears in search with the authored bio, avatar, banner and follower counts. |
-| T-09 | A **series** reads as lived-in: the ages are the ones authored, the order is the game's (**newest at the top**, ties in list order), the picture is on the right tweet, and the log has **no** moment.js line (the old blemish). |
-| T-10 | Save, quit, reload mid-story: no duplicate account, no duplicate tweets, and an edited bio arrives. |
-| T-11 | Complete and abandon: our accounts and posts are gone, the handles leave search, and search still works. |
-| T-12 | Two quests share one account: finishing the first leaves it alone while the second is live; finishing the second removes it. *(your rule, verified)* |
-| T-13 | A **When event** trigger on `Twotter.PostSeen` fires when the player opens our account's post; `Twotter.Post` is recorded as firing or not (expected: not). |
-| T-14 | A pre-r31 draft opens with its tweets intact (the migration fixture). |
-| T-15 | *(last priority)* Uninstall the mod: the handles leave search. |
+| **T-08** | An authored account appears in search with the authored bio, avatar, banner and follower counts. |
+| **T-09** | A **series** reads as lived-in: the ages are the ones authored, the order is the game's (**newest at the top**, ties in list order), the picture is on the right tweet, and the log has **no** moment.js line (the old blemish). |
+| **T-10** | Save, quit, reload mid-story: no duplicate account, no duplicate tweets, and an edited bio arrives. |
+| **T-11** | Complete and abandon: our accounts and posts are gone, the handles leave search, and search still works. |
+| **T-12** | Two quests share one account: finishing the first leaves it alone while the second is live; finishing the second removes it. *(your rule, verified)* |
+| **T-13** | A **When event** trigger on `Twotter.PostSeen` fires when the player opens our account's post; `Twotter.Post` is recorded as firing or not (expected: not). |
+| **T-14** | A pre-r31 draft opens with its tweets intact (the migration fixture). |
+| **T-15** | *(last priority)* Uninstall the mod: the handles leave search. |
 
-Plus one new harness command — **`qe24 twotter audit`** — that lists every
-account on the save and flags the poison shape (a `bio` that is absent or
-`undefined`) on any of them, ours or not. The probe could only test the one
-record we planted; an audit can tell a player or a developer instantly whether a
-save is carrying the r31 shape.
+**These rows are runnable now** — the fixtures, the quests and the command all
+exist, and every step is written out in
+[`STATUS.md`](../../reference/sdk-0.24-qa/STATUS.md) *Open: the Twotter editor
+rows*: which mod (editor export **1.0.14**, beside raw harness **1.0.14**), the
+account (`qe24_editor`), the commands (`qe24 run tw1`, `qe24 run tw2`,
+`qe24 twotter audit`, `qe24 run clear`) and what to report per row. The QA
+project carries the pair of quests that share the account (T-12), the five-tweet
+backdated series (T-09), the two event triggers (T-13) and the authored
+avatar/banner (T-08); T-14's draft is
+`projects/fixture-r30-twotter.project.json`. The export test guards all of it,
+so a fixture cannot quietly rot out from under a row.
+
+Plus one new harness command — **`qe24 twotter audit`** — built in the same
+round: it lists this round's handles, says which are on the save, and flags the
+poison shape (a `bio` that is present and `undefined`) on any of them. The
+harness cannot enumerate a save (SDK 0.24 has no "list every account" call), so
+it audits the handles this QA round creates: the harness's own three plus the
+export's `qe24_editor`. The probe could only test the one record we planted; the
+audit is what a tester reads after a completion to say whether the account
+really left, and it is what the T-10/T-11/T-12 rows report.
 
 ## 9. Scope, stages, and what could slip
 
@@ -299,7 +331,7 @@ save is carrying the r31 shape.
   waiting on them.
 - **Stage 1 (functional):** accounts panel + schema + migration, the node and its
   list, runtime create/post/cleanup, the fences and their tests, the QA export
-  and rows.
+  and rows — **all built**; the rows are the part a tester still has to run.
 - **Stage 2 (the whimsy):** the click-to-edit mock profile, the node's timeline
   preview, the card summary, the shimmer.
 
@@ -311,4 +343,5 @@ avatar/banner sizes, how it spells an age the engine computed itself, and
 whether the timeline flood is pleasant. jsdom cannot see any of it — those are
 T-08/T-09's "paste what you see" lines, handed to you.
 
-Stamp: `EDITOR_BUILD r185`, QA export **1.0.13**, harness mod **1.0.12** (P-01).
+Stamp: `EDITOR_BUILD r185`, QA export **1.0.14**, harness mod **1.0.14** (1.0.13 was P-01's, and Zeis ran it — the audits and the two
+quests are a new version rather than a quiet edit of his build).

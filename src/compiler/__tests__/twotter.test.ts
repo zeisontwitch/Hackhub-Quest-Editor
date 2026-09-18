@@ -126,7 +126,15 @@ function twotterSdk(calls: string[], opts: { now?: number; seed?: StubUser[]; ap
         },
     };
 
-    const sdk: Record<string, unknown> = {
+    /* Typed, not a bare `Record<string, unknown>`: the assertions read the
+       recorded maps back, and an index signature would make every one of them
+       `unknown` (which is what typecheck said). The index signature is kept on
+       top so `sdk.Twotter` can still be deleted for the no-API case. */
+    const sdk: Record<string, unknown> & {
+        __users: Map<string, StubUser>;
+        __tweets: Map<string, Record<string, unknown>>;
+        __registered: { quests: unknown[]; mods: unknown[] };
+    } = {
         Quest,
         Website: class {},
         Command: class {},

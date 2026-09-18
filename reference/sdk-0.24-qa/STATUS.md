@@ -1,47 +1,44 @@
-# QE24 QA status — one probe open (2026-09-18)
+# QE24 QA status (2026-09-18)
 
-One page, so nobody re-runs a finished check. **One probe is open — the Twotter
-test below (r179); everything else in this folder is closed.** A future round
-that needs an in-game check adds a *new* row here and a new harness version —
-never a re-run of the ones below.
+One page, so nobody re-runs a finished check. **The Twotter probe is answered;
+the Timer rows are the only thing left to run**, and they now have their own
+step-by-step checklist: [`TIMER-ROWS.md`](TIMER-ROWS.md). A future round that
+needs an in-game check adds a *new* row here and a new harness version — never a
+re-run of the ones below.
 
-## OPEN — the Twotter probe (r179)
+## Settled: the Twotter probe (r179 → answered 2026-09-18)
 
-**This is the only thing in this folder that still needs running.** It decides
-whether Twotter can come back to the editor: r31 removed the feature because a
-quest-declared account was saved with `bio: undefined`, Twotter's search called
-`.toLowerCase()` on it, and the crash was permanent (BUG 3 in
-[`docs/05-bug-report-for-hotbunny.md`](../../docs/05-bug-report-for-hotbunny.md)).
-1.3.0 says that is fixed and that affected saves are repaired on load.
+**Answer: Twotter can come back — on the API path.** Game 1.3.0, Steam build
+**25388883**, throwaway save, harness 1.0.9, results in
+[`QE24-TestResults - Twotter.md`](QE24-TestResults%20-%20Twotter.md).
 
-Harness **1.0.9**, command `qe24 twotter` (throwaway save):
+The crash that forced the r31 removal is gone, and the two things the old report
+said were impossible now work:
 
-| Row | Steps | Green means |
-| --- | --- | --- |
-| T-01 | `qe24 twotter seed`, then search Twotter for `qe24_probe` | The profile opens with its bio and search does not crash — the API path works. |
-| T-02 | `qe24 twotter bad`, then search for `qe24_badrecord` | Search survives the **exact r31 record shape** — `bio` present but `undefined`, like the broken save, not merely missing. A crash here means the fix is incomplete: close the game **without saving** and report it, that is the whole T-02 answer. |
-| T-03 | `qe24 twotter status` → save, quit to the main menu, reload → `status` again | The bad record's bio is no longer `undefined` → "affected saves are repaired on load" is true. |
-| T-04 | `qe24 twotter update` | Both `updateUser` calls return `true` → a mod can repair a record it did not create. The old report said no mod could. |
-| T-05 | `qe24 twotter post`, then open the profile | The tweet is on the profile, and the `post-seen` objective ticks when you open it from the timeline. |
-| T-06 | `qe24 twotter cleanup` | All three `removeUser` calls return `true` and the handles disappear from search — accounts are removable, which is what makes shipping them safe. |
-| T-07 | Open the profile of `qe24_declared` | The bio declared in the *quest definition* shows → the write path is fixed, not just search. Ticks `declared-profile-seen`. |
+| Row | Result |
+| --- | --- |
+| T-01 seed → search `qe24_probe` | **Pass.** `createUser` + `addUser` produced a real account — the engine filled name, surname, avatar, banner, followers, following and password. Search found it and the profile showed its bio. |
+| T-02 search `qe24_badrecord` | **Pass — the one that mattered.** A record planted with `bio: undefined` (the exact r31 shape) was listed in search with no crash and no freeze. The read path is guarded. |
+| T-03 save → reload → `status` | **Red, and it does not matter.** The bad record's bio was *still* `undefined` after the reload, so 1.3.0's "affected saves are repaired on load" did **not** manifest for a record written this way. Now that T-02 is green the read path is safe regardless — but nothing may rely on a repair of existing saves. |
+| T-04 `qe24 twotter update` | **Not run.** The repair call is still unverified; it is no longer load-bearing, because we will not be writing records that need repairing. |
+| T-05 `qe24 twotter post` → profile | **Pass.** The tweet appeared on the profile immediately and the post objective ticked — `Twotter.PostSeen` fires. |
+| T-06 `qe24 twotter cleanup` | **Pass.** `removeUser` returned `true` for all three accounts, including the **quest-declared** one, and the handles disappeared from search. The old report's "no mod can repair this" is answered. |
+| T-07 profile of `qe24_declared` | **Pass at the record level.** The quest-*declared* account carries the bio from the quest definition (`"Declared by the quest definition, not by the API."`) — the write path the old bug broke is fixed. The profile screen itself was not reported on. |
 
-What the results decide:
+**One finding for the re-implementation round:** `Twotter.AccountCreated` did
+**not** fire for an account added through the API — the probe's `api-account-seen`
+objective stayed open while `PostSeen` ticked normally. Do not build objectives
+on `AccountCreated`; use `PostSeen`/`ProfileSeen`.
 
-- **All green** → re-implement Twotter in the editor (account + tweet authoring, a post node), and the r31 fence comes down.
-- **T-02 red** → it stays removed, and the crash lines go into
-  [`docs/03-questions-for-the-developers.md`](../../docs/03-questions-for-the-developers.md)
-  for SteelWaffe.
-- **T-02 green but T-07 red** → search is guarded but the engine still writes
-  bio-less records. Still shippable, using `createUser`/`updateUser`/`removeUser`
-  (we would control the record) and avoiding the declarative path — a design
-  constraint for that round, not a blocker.
-- **T-06 red** → do not ship accounts at all: without `removeUser`, a player's
-  save keeps them forever.
+**Decision:** re-implement Twotter in the editor, authoring accounts and posts
+through `createUser`/`addUser`/`postTweet`, never relying on the declarative
+`TwotterAccounts` path to write a complete record, and always shipping
+`removeUser` cleanup. See
+[`docs/plans/r179-twotter-probe.md`](../../docs/plans/r179-twotter-probe.md).
 
-While you are in the terminal, one two-second check for the 1.3.1 build: does
-`curl http://qe24-http.test/` exist now? If it does, the blocked curl rows below
-unblock.
+Re-check on a later build (one command each, both optional): `curl
+http://qe24-http.test/` for the blocked curl rows, and `qe24 twotter update` for
+T-04.
 
 ## Settled: the Timer's timezone question (S-04)
 
@@ -78,6 +75,7 @@ inside the test, so deleting the correction fails it wherever it runs.
 | Phone `onEnd` freeze probes (raw harness 1.0.6) | The phone rows of that table, plus [`QE24-TestResults - 3.md`](QE24-TestResults%20-%203.md) |
 | Editor Wi-Fi (`QE24-LAB-5G`) and static website hosting | Same table (editor rows); HTTP *authoring* stays fenced — see below |
 | S-04 clock zone | This file, above |
+| Twotter probe T-01…T-03, T-05…T-07 | This file, above — game 1.3.0, build 25388883, report 2026-09-18 |
 
 ## Blocked, or deliberately not supported
 
@@ -88,24 +86,31 @@ inside the test, so deleting the correction fails it wherever it runs.
 | Editor HTTP events on static websites | Static pages load, but their Browser traffic did not tick `Http.Request`/`Http.Response`; HTTP authoring stays fenced. Recorded in the r166 table. |
 | Bettercap `set wifi.ap <BSSID>` showing `SSID: undefined` | Game-side display wart, not a mod bug. Noted so nobody re-files it. |
 
-## Not run — no tester report in this repo
+## Not run — the Timer rows
 
-Written in plan docs, never recorded as run. **Not blockers**: the runtime paths
-are covered by unit tests (`src/compiler/__tests__/scheduleBeat.test.ts`). They
-are the only in-game checks left anywhere in the project, and they can all be
-done in one sitting if a future round touches the Timer:
+The only in-game checks left anywhere in the project. **They have their own
+checklist now** — [`TIMER-ROWS.md`](TIMER-ROWS.md) — with the exact steps, what
+green looks like and what to paste back, written after the first attempt to run
+them failed because the rows existed only as prose in plan docs.
 
-> **Zeis is running S-01 / S-03 / S-05 / S-15 now (2026-09-18).** Whatever he
-> reports lands here and moves those rows to *Verified* — ask him rather than
-> re-running them.
+They are **not blockers**: the runtime paths are covered by unit tests
+(`src/compiler/__tests__/scheduleBeat.test.ts`). Most can now be checked in
+seconds rather than waited out, because harness **1.0.10** adds
 
-- **S-01 fire / S-02 reload / S-03 cancel** — the delay-mode rows (r172).
-- **S-05 daytime fire / S-06 past time / S-07 `scheduleAt` reload / S-08 multi-day** — r173's calendar rows (needed a manual edit in the editor).
-- **S-09…S-12** — one month on, short-month clamp, what `NEXT EVENT` shows, a pre-r176 `after` project (r176).
-- **S-13…S-15** — a mixed `1 month 2 weeks 2 days` offset, Wait in months, an r176-era draft (r177).
+```
+qe24 timers
+```
 
-How to run them, if ever needed: install `editor-export/` (mod 1.0.7, build
-`2026-09-18.r179`) on a throwaway save; `QESdk024TimerQa` auto-starts. Row
-definitions: [`r173`](../../docs/plans/r173-timer-rename-and-calendar.md),
+which prints every pending Scheduler job on the save with the in-game moment it
+will fire — so a "1 month" row is read, not waited for.
+
+- **S-01 fire / S-02 reload / S-03 cancel** — the delay rows (r172), in `QESdk024TimerQa`.
+- **S-05 daytime / S-06 past time / S-07 reload survival / S-08 multi-day** — r173's calendar rows; the two instant ones fire by themselves in `QESdk024TimerCalQa`, the far-away ones are read with `qe24 timers`.
+- **S-09 one month on / S-10 short-month clamp / S-11 `NEXT EVENT` panel / S-12 pre-r176 draft** — r176's rows.
+- **S-13 mixed `1 month 2 weeks 2 days` / S-14 Wait in months / S-15 r176-era draft** — r177's rows.
+
+Install `editor-export/` (mod 1.0.8, build `2026-09-18.r180`) on a throwaway
+save; the three `QESdk024Timer*Qa` quests all auto-start. Row definitions:
+[`r173`](../../docs/plans/r173-timer-rename-and-calendar.md),
 [`r176`](../../docs/plans/r176-timer-calendar-ux.md),
 [`r177`](../../docs/plans/r177-every-unit.md).

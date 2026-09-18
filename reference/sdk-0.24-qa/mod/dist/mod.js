@@ -311,6 +311,94 @@ function printClockProbe(tools) {
     tools.println("Tip: run qe24 clock twice, a minute apart, if the first read is ambiguous.");
 }
 
+/* ── pending timers (r180) ────────────────────────────────────────────────
+ * Every Timer row asks the same question: what moment did the mod hand to the
+ * engine? Scheduler.list() answers it for EVERY kind on the save - including
+ * another pack's jobs - and ScheduledJobInfo carries fireAt, so this prints the
+ * resolved moment next to the in-game clock, in seconds, instead of asking a
+ * tester to wait out a month. The ISO string is UTC; the readable line is the
+ * local rendering, which is the one the on-screen clock matches (S-04). */
+/* A proper breakdown, not a rounded-down total: 26 days 3 hours 1 minute, with
+   the units that came out zero dropped from the front only. Ceilings per unit
+   would print nonsense ("3d 62h"), which is worse than useless in a QA tool. */
+function describeRemaining(ms) {
+    if (!sdk.Time || !sdk.Time.duration) return "";
+    var day = sdk.Time.duration({ days: 1 });
+    var hour = sdk.Time.duration({ hours: 1 });
+    var minute = sdk.Time.duration({ minutes: 1 });
+    if (!day || !hour || !minute) return "";
+    var left = Math.max(0, Math.floor(ms));
+    var days = Math.floor(left / day);
+    left -= days * day;
+    var hours = Math.floor(left / hour);
+    left -= hours * hour;
+    var mins = Math.floor(left / minute);
+    var bits = [];
+    if (days) bits.push(days + "d");
+    if (hours) bits.push(hours + "h");
+    if (mins) bits.push(mins + "m");
+    if (!bits.length) {
+        /* Under an in-game minute: say it in real seconds rather than "0m",
+           which reads like a broken reading instead of an imminent fire. */
+        var real = sdk.Time.toRealMs ? Math.round(sdk.Time.toRealMs(left) / 1000) : null;
+        bits.push(real != null ? real + "s real (under an in-game minute)" : "under an in-game minute");
+    }
+    return bits.join(" ");
+}
+
+function printTimers(tools) {
+    tools.println("QE24 pending timers (every Scheduler job on this save, any mod)");
+    if (!sdk.Scheduler || !sdk.Scheduler.list) {
+        tools.println("Scheduler.list unavailable in this build - timers cannot be read here.");
+        return;
+    }
+    var jobs = safe("Scheduler.list", function () { return sdk.Scheduler.list(); }, null);
+    if (!jobs) {
+        tools.println("Scheduler.list threw - paste that as the result.");
+        return;
+    }
+    if (!jobs.length) {
+        tools.println("No pending jobs. Arm a Timer in the editor export, then run this again");
+        tools.println("within a second or two - a Timer with time already past fires immediately.");
+        return;
+    }
+    var now = sdk.Time && sdk.Time.now ? safe("Time.now", function () { return sdk.Time.now(); }, null) : null;
+    if (now != null) {
+        tools.println("In-game now:         " + new Date(now).toString());
+        tools.println("  same moment in UTC: " + new Date(now).toISOString());
+    }
+    tools.println("Pending jobs: " + jobs.length);
+    for (var i = 0; i < jobs.length; i++) {
+        var job = jobs[i];
+        var fire = job && job.fireAt;
+        tools.println("");
+        tools.println("  [" + (i + 1) + "] kind: " + (job && job.kind ? job.kind : "?") + "   id: " + (job && job.id ? job.id : "?"));
+        if (job && job.payload) {
+            var who = [];
+            for (var k in job.payload) {
+                if (Object.prototype.hasOwnProperty.call(job.payload, k)) who.push(k + "=" + String(job.payload[k]));
+            }
+            tools.println("      payload: " + (who.length ? who.join(" ") : "(empty)"));
+        }
+        if (fire != null) {
+            var d = new Date(fire);
+            tools.println("      fires in-game: " + d.toString());
+            tools.println("      same in UTC:   " + d.toISOString() + "   (raw " + fire + ")");
+        }
+        var rem = sdk.Scheduler.remaining ? safe("Scheduler.remaining", function () { return sdk.Scheduler.remaining(job.id); }, null) : null;
+        if (rem != null && rem >= 0) {
+            var left = describeRemaining(rem);
+            tools.println("      in-game in:    " + (left ? left + "  " : "") +
+                "(in-game ms " + rem + ") - that is about " +
+                (sdk.Time && sdk.Time.toRealMs ? Math.round(sdk.Time.toRealMs(rem) / 1000) + " real seconds at this clock scale" : "? real seconds"));
+        }
+    }
+    tools.println("");
+    tools.println("Read the 'fires in-game' line against the on-screen clock: that is the moment the");
+    tools.println("game will fire. A Timer that promised a month or a year lands here, so you do not");
+    tools.println("have to wait for it - check the day and the clock time it resolved to.");
+}
+
 /* ── Twotter probe (r179) ─────────────────────────────────────────────────
  * r31 removed Twotter support because a quest-declared account was written to
  * the save with `bio: undefined`, Twotter's search called .toLowerCase() on it,
@@ -900,7 +988,7 @@ class QE24Command extends sdk.Command {
         this.Description = "SDK 0.24 QA harness commands";
         this.Autocomplete = [
             { label: "qe24", type: "STRING" },
-            { label: "guide|next|status|history|clock|twotter|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
+            { label: "guide|next|status|history|clock|timers|twotter|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
         ];
     }
     async Run(tools) {
@@ -939,7 +1027,7 @@ class QE24Command extends sdk.Command {
             tools.println("Connected Wi-Fi is QE24 target: " + (connectedMatchesTarget ? "yes" : "no"));
             if (targetWifi && currentWifi && !connectedMatchesTarget) tools.println("Note: if the game UI says QE24 is connected, paste this mismatch before we unhide Wi-Fi.");
             tools.println("Tip: run qe24 next if the 6/6 surface objective quest is already done, qe24 intercept for proxy-test steps, or qe24 history for HTTP/collab evidence.");
-            tools.println("Commands: qe24 guide · qe24 next · qe24 status · qe24 history · qe24 clock · qe24 twotter [seed|bad|update|post|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
+            tools.println("Commands: qe24 guide · qe24 next · qe24 status · qe24 history · qe24 clock · qe24 timers · qe24 twotter [seed|bad|update|post|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
             return;
         }
         if (sub === "history") {
@@ -948,6 +1036,10 @@ class QE24Command extends sdk.Command {
         }
         if (sub === "clock") {
             printClockProbe(tools);
+            return;
+        }
+        if (sub === "timers") {
+            printTimers(tools);
             return;
         }
         if (sub === "twotter") {

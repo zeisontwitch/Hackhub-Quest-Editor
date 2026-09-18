@@ -1,3 +1,58 @@
+# Handoff — r180
+
+Two jobs, both from the return of the r179 probe. Plan:
+[`plans/r180-twotter-verdict-and-timer-checklist.md`](plans/r180-twotter-verdict-and-timer-checklist.md).
+
+## 1. Twotter: green on the read path — the feature can come back
+
+Game 1.3.0, Steam build **25388883**, throwaway save. Transcript:
+`reference/sdk-0.24-qa/QE24-TestResults - Twotter.md`; row-by-row reading in
+`reference/sdk-0.24-qa/STATUS.md`.
+
+| Row | Result |
+| --- | --- |
+| T-01 `createUser`+`addUser` → search | **Pass** — the engine filled name, surname, avatar, banner, followers, following, password; search found it, bio shown. |
+| T-02 planted `bio: undefined` → search | **Pass — the reason the probe existed.** The exact r31 shape no longer crashes search. |
+| T-03 save → reload → `status` | **Red, harmless.** Bio *still* `undefined`: "repaired on load" did not happen. Safe only because T-02 is green. |
+| T-04 `updateUser` | Not run; no longer load-bearing. |
+| T-05 `postTweet` → profile | **Pass** — tweet visible, `PostSeen` fires. |
+| T-06 `removeUser` ×3 | **Pass** — including the quest-declared account; handles left search. "No mod can repair it" is answered. |
+| T-07 quest-declared account | **Pass at record level** — the declared bio is written; the write path is fixed. |
+
+**New finding:** `Twotter.AccountCreated` does **not** fire for an account added
+through `addUser`. No objective may hang on it.
+
+**Constraints the implementation round inherits:** author accounts through
+`createUser`/`addUser`, never trust the declarative `TwotterAccounts` path to
+fill a record, never rely on repair-on-load, always ship `removeUser` cleanup.
+That round gets a plan for review before it is built.
+
+## 2. The checklist Zeis could not find — now built, and the rows made runnable
+
+He was right, and it was our fault twice over: the rows existed only as prose in
+three round plans, and the export's `QESdk024TimerQa` covered only S-01…S-03, so
+there was nothing installable that would run S-05…S-15.
+
+- **[`reference/sdk-0.24-qa/TIMER-ROWS.md`](reference/sdk-0.24-qa/TIMER-ROWS.md)** — every row S-01…S-15 with steps, what green looks like, what to paste back, and honest notes for the rows that cannot be run on demand (the clamp needs a 29th–31st in-game date; `NEXT EVENT` is fact-finding).
+- **`qe24 timers`** (harness **1.0.10**) — prints every pending Scheduler job, from any mod, with `fireAt` rendered as the on-screen clock shows it, the payload naming the quest/node, a proper d/h/m breakdown and the real-seconds cost. A "1 month" row is now read in seconds instead of waited out (26 in-game days is ~10 real hours).
+- **Two new auto-start quests** — `QESdk024TimerCalQa` (an exact date already past, a coming day already past today, then a mixed `1 month 2 weeks 2 days at 18:23`) and `QESdk024WaitMonthQa` (a 1-minute Wait, then `Wait 1 month`, the `scheduleAt` path). Ordering is the trick: a Timer suspends its chain, so the instant rows go first and the far one is armed within seconds.
+- **Two legacy fixtures** — `projects/fixture-*.project.json` for S-12/S-15, guarded by a test that pins what the boxes must show.
+
+Gates: typecheck 0 errors; `npm test` **1,649 passed / 82 files** (+5); `npm run build`
+succeeds; `node --check` on the patched harness; manual and QA export regenerated
+(export mod **1.0.8**, build r180). Falsified **5/5**: the naive per-unit
+breakdown ("3d 62h"), dropping the payload line, renaming a quest the checklist
+names, the mixed row becoming a plain Wait, and the Wait-in-months row losing its
+months. One guard was caught too weak while falsifying — a string match another
+daytime node satisfied — and rewritten to parse the project and pin each node.
+
+## Open
+
+The Timer rows are the only in-game checks left. They are one sitting, and the
+checklist is written for someone who has never seen them.
+
+---
+
 # Handoff — r179
 
 r179 builds the test Zeis asked for: can **Twotter** come back? The answer is

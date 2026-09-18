@@ -73,9 +73,83 @@ describe("SDK 0.24 QA export", () => {
         ).toEqual([]);
     });
 
-    it("ships both QA quests in the installed mod", () => {
+    it("ships every QA quest the checklist tells a tester to run", () => {
         const mod = readFileSync(join(EXPORT_DIR, "dist", "mod.js"), "utf8");
-        expect(mod).toContain('"QESdk024EditorQa"');
-        expect(mod).toContain('"QESdk024TimerQa"');
+        /* One per checklist section: the r166 surface, the delay rows
+           (S-01…S-03), the calendar rows (S-05…S-07, S-13) and the Wait-in-
+           months rows (S-09, S-14). A quest renamed or dropped here leaves the
+           in-game checklist pointing at nothing, which is exactly how the
+           S-rows went missing once already (r180). */
+        for (const quest of [
+            "QESdk024EditorQa",
+            "QESdk024TimerQa",
+            "QESdk024TimerCalQa",
+            "QESdk024WaitMonthQa",
+        ]) {
+            expect(mod, `${quest} is not in the shipped export`).toContain(`"${quest}"`);
+        }
+    });
+
+    it("keeps the legacy fixtures the migration rows tell a tester to open", () => {
+        /* S-12 and S-15 ask a person to open an old draft in the editor and
+           check the boxes show the same numbers. Those drafts are files in the
+           project folder, so they are guarded here: a fixture that stopped
+           parsing (or stopped migrating the way the checklist says) would send
+           the tester looking for a bug in the editor instead of in the file. */
+        const fixtures: [string, Record<string, unknown>, string][] = [
+            /* pre-r176: the delay fields, mode implied. */
+            ["fixture-pre-r176-after.project.json", { mode: "after", hours: 2 }, "Wait 2 hours"],
+            /* r176 window: an amount plus a unit must land in the unit's box. */
+            [
+                "fixture-r176-coming-day.project.json",
+                { mode: "daytime", offsetWeeks: 2, hour: 18, minute: 23 },
+                "2 weeks at 18:23",
+            ],
+        ];
+        for (const [file, want, label] of fixtures) {
+            const parsed = parseProjectFile(
+                readFileSync(join(QA_DIR, "projects", file), "utf8"),
+            );
+            expect(parsed.ok, `${file} no longer parses: ${parsed.ok ? "" : parsed.error}`).toBe(true);
+            if (!parsed.ok) continue;
+            const node = parsed.project.quests[0].graph.nodes.find((n) => n.type === "flow.timer");
+            expect(node, `${file} has no Timer node`).toBeDefined();
+            const data = (node?.data ?? {}) as Record<string, unknown>;
+            for (const [key, value] of Object.entries(want)) {
+                expect(data[key], `${file}: ${key} (${label})`).toBe(value);
+            }
+        }
+    });
+
+    it("arms the calendar rows the way the checklist describes", () => {
+        /* Parsed, not string-matched: an earlier draft asserted the file merely
+           *contained* `"mode": "daytime"`, which stayed true after the mixed
+           row was turned into a plain Wait — the other daytime node satisfied
+           it. Pin each row's own node data instead. */
+        const doc = JSON.parse(readFileSync(PROJECT_FILE, "utf8")) as {
+            quests: { name: string; graph: { nodes: { id: string; type: string; data: Record<string, unknown> }[] } }[];
+        };
+        const timers = doc.quests
+            .filter((q) => q.name.startsWith("QESdk024"))
+            .flatMap((q) => q.graph.nodes.filter((n) => n.type === "flow.timer").map((n) => n.data));
+        const has = (want: Record<string, unknown>) =>
+            timers.some((d) => Object.entries(want).every(([k, v]) => d[k] === v));
+
+        /* S-06: an exact date already past — must fail open and fire at once. */
+        expect(has({ mode: "at", dateYear: 2020, dateMonth: 1, dateDay: 1 }), "no past-date row").toBe(true);
+        /* S-05: a coming day whose clock time is already past today. */
+        expect(has({ mode: "daytime", offsetDays: 0, hour: 0, minute: 0 }), "no 'already past today' row").toBe(true);
+        /* S-13: the mixed calendar offset, which can only resolve through
+           scheduleAt, at a pinned clock time. */
+        expect(
+            has({ mode: "daytime", offsetMonths: 1, offsetWeeks: 2, offsetDays: 2, hour: 18, minute: 23 }),
+            "no mixed 1 month 2 weeks 2 days row",
+        ).toBe(true);
+        /* S-14: Wait in months — no duration field for months, so also scheduleAt. */
+        expect(has({ mode: "after", months: 1 }), "no Wait-in-months row").toBe(true);
+        /* And the two runtime paths those rows depend on are in the export. */
+        const mod = readFileSync(join(EXPORT_DIR, "dist", "mod.js"), "utf8");
+        expect(mod).toContain("scheduleAt");
+        expect(mod).toContain("addOffset");
     });
 });

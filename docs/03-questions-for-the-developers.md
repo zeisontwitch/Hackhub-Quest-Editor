@@ -155,3 +155,47 @@ The raw harness's `Http.registerHost()` server did fire Browser-origin response/
 **Question.** Is it expected that the load/objective-start path can fire twice on first save creation? If not, we can provide a smaller reproduction after the bigger SDK 0.24 items above are handled.
 
 **Editor stance.** Watch only; not blocking.
+
+---
+
+## 8. `Twotter.AccountCreated` did not fire for an account added through the API
+
+**Observed.** Game 1.3.0, Steam build **25388883**, 2026-09-18. A mod called
+`Twotter.createUser(...)` and then `Twotter.addUser(user)`. Twotter's own search
+and profile screens showed the account immediately, and the same quest's
+**`Twotter.PostSeen`** listener fired normally when the profile was opened from
+the timeline — but the **`Twotter.AccountCreated`** listener, registered at quest
+start before the account existed, never fired. Transcript:
+`reference/sdk-0.24-qa/QE24-TestResults - Twotter.md`.
+
+**Question.** Is `Twotter.AccountCreated` only raised for accounts the *player*
+creates in the Twotter app (and for quest-declared accounts at save creation),
+rather than for anything that lands in the store? If so, which event should a
+content pack listen to when it needs to know "this account now exists"?
+
+**Editor stance.** No objective or trigger will be built on
+`Twotter.AccountCreated` until this is answered; `PostSeen` and `ProfileSeen` are
+the events QA actually observed firing. The finding is recorded in
+`reference/sdk-0.24-qa/STATUS.md` for the Twotter implementation round.
+
+---
+
+## 9. Twotter's "affected saves are repaired on load" did not repair our record
+
+**Observed.** The 1.3.0 changelog says a content pack could break Twotter
+permanently and that **affected saves are repaired on load**. Reproducing the
+broken shape deliberately — a stored `TwotterUser` whose `bio` property is
+present and `undefined`, exactly what the old quest-declared path wrote — search
+survived (good), but after saving, quitting to the main menu and reloading, the
+stored record's `bio` was **still `undefined`**. So the read path is guarded;
+the repair did not touch this record.
+
+**Question.** Is the load-time repair limited to records written by the
+pre-1.3.0 declarative path (rather than anything an API caller adds), or is it
+keyed to something else about the affected-save detection? We do not need a
+repair — we can create clean records — but the answer decides whether an old
+player save with a broken record is safe when a pack merely *reads* it.
+
+**Editor stance.** Nothing depends on repair-on-load: the implementation round
+writes every account through `createUser`/`addUser`, and the read path is
+verified safe against the broken shape.

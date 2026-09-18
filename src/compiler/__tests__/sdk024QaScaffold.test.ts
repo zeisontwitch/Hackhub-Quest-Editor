@@ -93,13 +93,34 @@ function twotterStub() {
     };
 }
 
-/** A stub SDK carrying just what loading and driving the harness needs. */
-function harnessSdk() {
+interface StubJob {
+    id: string;
+    kind: string;
+    fireAt: number;
+    payload?: Record<string, unknown>;
+}
+
+/** In-game ms per unit, as `Time.duration` reports them. */
+const GAME_MINUTE = 60_000;
+const GAME_HOUR = 60 * GAME_MINUTE;
+const GAME_DAY = 24 * GAME_HOUR;
+
+/**
+ * A stub SDK carrying just what loading and driving the harness needs.
+ *
+ * `options.jobs` backs `Scheduler.list`/`remaining` so `qe24 timers` can be
+ * driven without a game: the command exists to read another mod's pending jobs
+ * back, which is the only way a tester can see *what moment* a Timer resolved
+ * to without waiting out the month it asked for.
+ */
+function harnessSdk(options: { jobs?: StubJob[]; now?: number } = {}) {
     const twotter = twotterStub();
+    const jobs = options.jobs ?? [];
     const hooks: { name: string; fn: (payload: unknown) => void }[] = [];
     const completed: string[] = [];
     const mails: string[] = [];
     const registered: Harness = { quests: [], command: class {} as never };
+    const now = () => options.now ?? 1_760_000_000_000;
 
     class Quest {
         Name = "";
@@ -150,9 +171,24 @@ function harnessSdk() {
         RegisterModPackage: () => {},
         RegisterWebsite: () => {},
         SaveStorage: { get: () => undefined, set: () => {}, remove: () => {} },
-        Scheduler: {},
+        Scheduler: {
+            list: (kind?: string) => (kind ? jobs.filter((j) => j.kind === kind) : [...jobs]),
+            remaining: (id: string) => {
+                const job = jobs.find((j) => j.id === id);
+                return job ? Math.max(0, job.fireAt - now()) : null;
+            },
+        },
         Http: {},
-        Time: { now: () => 0 },
+        Time: {
+            now,
+            duration: (units: { minutes?: number; hours?: number; days?: number }) =>
+                (units.minutes ?? 0) * GAME_MINUTE +
+                (units.hours ?? 0) * GAME_HOUR +
+                (units.days ?? 0) * GAME_DAY,
+            /* 60 in-game ms per real ms: one in-game minute is a real second. */
+            scale: () => 60,
+            toRealMs: (gameMs: number) => gameMs / 60,
+        },
         Network: {},
         UI: { toast: () => {} },
         Events: { on: () => {} },
@@ -195,12 +231,13 @@ function toolsFor(sdk: ReturnType<typeof harnessSdk>) {
 }
 
 describe("r179 raw harness — the Twotter probe", () => {
-    it("ships in the harness, and the manifest version matches the probe's round", () => {
+    it("ships in the harness, and the manifest version matches the harness's round", () => {
         const manifest = JSON.parse(
             readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/manifest.json"), "utf8"),
         ) as { version: string };
         const code = readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/dist/mod.js"), "utf8");
-        expect(manifest.version).toBe("1.0.9");
+        /* r180 added `qe24 timers`; the Twotter probe is still in the same harness. */
+        expect(manifest.version).toBe("1.0.10");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
     });
@@ -429,5 +466,70 @@ describe("r166 SDK 0.24 in-game QA scaffold", () => {
            the "/timer" suffix ships as a source literal. */
         expect(mod).toContain('"/timer"');
         expect(mod).toContain("Timer A arrived (S-01 green)");
+    });
+});
+
+describe("r180 raw harness — the pending-timer reader", () => {
+    const NOW = 1_760_000_000_000;
+
+    it("prints what moment a job resolved to, and how far off it is", () => {
+        const fireAt = NOW + 26 * GAME_DAY + 3 * GAME_HOUR + GAME_MINUTE;
+        const sdk = harnessSdk({
+            now: NOW,
+            jobs: [
+                {
+                    id: "job-editor",
+                    kind: "qe/qe-sdk-024-editor-qa/timer",
+                    fireAt,
+                    payload: { questId: "qe-cal1", nodeId: "qe-cal1-t3", attempts: 0 },
+                },
+                { id: "job-harness", kind: "qe24/timer", fireAt: NOW + 90_000, payload: {} },
+            ],
+        });
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["timers"];
+        runCommand(tools);
+        const text = tools.text();
+        expect(text).toContain("Pending jobs: 2");
+        /* The editor export's job, identified by kind and by the node it came
+           from — that is how a tester tells the calendar row's job apart. */
+        expect(text).toContain("kind: qe/qe-sdk-024-editor-qa/timer");
+        expect(text).toContain("nodeId=qe-cal1-t3");
+        /* The resolved moment, in the local rendering the on-screen clock uses
+           and in UTC for comparison. */
+        expect(text).toContain(new Date(fireAt).toString());
+        expect(text).toContain(new Date(fireAt).toISOString());
+        /* The breakdown, in units a person reads (not "0d 0h 37461m"). */
+        expect(text).toContain("26d 3h 1m");
+        /* Under a minute it says so in real seconds: "0m" would read like a
+           broken reading rather than a job about to fire. */
+        expect(text).toContain("1m  (in-game ms 90000)");
+        /* And what it costs in real time at this scale: 26 in-game days is
+           ~10.4 real hours, which is exactly why nobody waits for it.
+           (26d 3h 1m = 2,257,260,000 in-game ms; at scale 60 that is
+           37,621,000 real ms.) */
+        expect(text).toContain("37621 real seconds");
+    });
+
+    it("says plainly that nothing is pending, and what to do about it", () => {
+        const sdk = harnessSdk({ now: NOW });
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["timers"];
+        runCommand(tools);
+        const text = tools.text();
+        expect(text).toContain("No pending jobs");
+        expect(text).toContain("Arm a Timer in the editor export");
+    });
+
+    it("degrades honestly on a build with no Scheduler.list", () => {
+        const sdk = harnessSdk({ now: NOW });
+        (sdk as { Scheduler: Record<string, unknown> }).Scheduler = {};
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["timers"];
+        runCommand(tools);
+        expect(tools.text()).toContain("Scheduler.list unavailable in this build");
     });
 });

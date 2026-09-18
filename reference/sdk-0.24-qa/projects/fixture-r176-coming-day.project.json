@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "kind": "hackhub-quest-editor/project",
+  "mod": {
+    "id": "qe-legacy-timer-fixture",
+    "name": "QE legacy Timer fixture — r176-era coming-day draft (S-15)",
+    "version": "1.0.0",
+    "author": "HackHub Quest Editor",
+    "description": "Tiny fixture draft for the Timer migration rows (S-12, S-15).",
+    "tags": [
+      "qa"
+    ],
+    "dependencies": [],
+    "minSdkVersion": "0.24.0",
+    "apiVersion": 1
+  },
+  "quests": [
+    {
+      "id": "qe-legacy-q",
+      "name": "QELegacyTimerFixture",
+      "title": "r176-era coming-day draft (S-15)",
+      "description": "Saved during r176, when the coming day was an amount plus a unit. The Weeks box should show 2, the clock 18:23, and nothing should look empty or zeroed.",
+      "group": "sandbox",
+      "rewards": {
+        "money": 0,
+        "xp": 0
+      },
+      "employer": {},
+      "autoStart": true,
+      "autoComplete": false,
+      "abandonable": true,
+      "hasCompleteButton": false,
+      "hideObjectivesWhenDone": false,
+      "closingObjectiveText": "",
+      "questsToComplete": [],
+      "dialog": [],
+      "graph": {
+        "nodes": [
+          {
+            "id": "n-start",
+            "type": "entry.start",
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "data": {}
+          },
+          {
+            "id": "n-timer",
+            "type": "flow.timer",
+            "position": {
+              "x": 260,
+              "y": 0
+            },
+            "data": {
+              "mode": "daytime",
+              "offsetAmount": 2,
+              "offsetUnit": "weeks",
+              "hour": 18,
+              "minute": 23,
+              "days": 0,
+              "hours": 0,
+              "minutes": 0
+            }
+          },
+          {
+            "id": "n-done",
+            "type": "fx.notify",
+            "position": {
+              "x": 520,
+              "y": 0
+            },
+            "data": {
+              "message": "r176-era coming-day draft (S-15): the Timer fired.",
+              "variant": "toast",
+              "tone": "info"
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "n-start",
+            "sourceHandle": "out",
+            "target": "n-timer",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "e2",
+            "source": "n-timer",
+            "sourceHandle": "out",
+            "target": "n-done",
+            "targetHandle": "in",
+            "kind": "flow"
+          }
+        ]
+      }
+    }
+  ],
+  "websites": []
+}

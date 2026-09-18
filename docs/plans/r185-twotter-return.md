@@ -1,9 +1,24 @@
 # r185 (plan, for review): Twotter comes back
 
-**Nothing in this document is built yet.** It is the design for your review, per
-the standing rule that plans come first.
+**Nothing in this document is built yet.** Revision 2, written after your three
+answers of 2026-09-18 — they changed one shape (the node now posts a *series*,
+not a single tweet) and settled the rest. One question is still open and it is
+technical rather than a matter of taste: whether the platform's post API honours
+a timestamp we hand it (section 5). That one has a probe, `P-01`, and it runs
+before stage 1 is finished.
 
-## Why it can come back — the evidence, not the hope
+## 0. Your answers, folded in
+
+| Your call | What changed in this plan |
+| --- | --- |
+| **Accounts at mod level** | As proposed — one list for the whole mod, next to Websites. Accounts are world-building, not a beat. |
+| **Removal: only what it created, and only when no other live quest declares it** | Now the rule in section 1, with the mechanics spelled out (creation is tracked per playthrough; adoption counts as *not ours*). |
+| **Tweets backdated by a timeframe** — a profile found with a month of history must read lived-in | The biggest change: the node posts a **list of tweets**, each with its own time (section 2). The old node could already do one backdated tweet (`postedAgo` / a fixed date) — the rework keeps that and makes a whole history practical. |
+| **"Post tweet" works, but "Twotter" is also good** | I am recommending **"Twotter"** — with the reasoning in section 2, and one difference from your reading that matters: the node does not *create* accounts (they live at mod level, your own call). It does get a door to create one without leaving the node. |
+| **Canvas card should look like the other node cards** | Dropped from the plan. The card stays a normal card; the whimsy moved to the account editor and the node's preview (section 6). |
+| **Mock Twotter profile with click-to-edit name / @handle / bio / pictures** | Adopted, in the place accounts actually live: the Twotter panel. The node shows the same profile read-only, over its tweet timeline, with a link across. |
+
+## 1. Why it can come back — the evidence, not the hope
 
 Three things changed since r31 removed the feature, and the probe (r179) tested
 exactly the one that mattered:
@@ -17,67 +32,117 @@ exactly the one that mattered:
 | "Affected saves are repaired on load" (1.3.0 changelog). | **Did not happen** — the bad bio survived the reload (T-03). Nothing may rely on it. |
 | Quest-declared accounts carry their bio. | Verified **at record level** (T-07); the profile screen itself was not reported on. |
 | `Twotter.AccountCreated` fires for an account we add. | **It does not** — the objective stayed open while `PostSeen` ticked (T-05). |
+| `postTweet` honours a `sendedAt` we set. | **Unknown** — never tested. This is `P-01`, section 5. |
 
 **The rule that follows from that table:** author accounts through
 `createUser`/`addUser`, never through the declarative `TwotterAccounts` field —
 that field is the crash path, and it is the one thing the engine still writes
 incompletely.
 
-## What the feature is
+## 2. The Journalist's Sister evidence: what "lived-in" looks like
 
-Three parts, in the order they matter to an author.
+You pointed me at the questline, so here is what it actually does — this is now
+the design target for the series:
 
-### 1. Twotter accounts — a mod-level section, not a quest field
+- **@alinamack** (Part 1): searching the handle shows **10 tweets**, reading
+  *"a year ago"* at the top down to *"9 months ago"* *"all the way down to
+  '8 days ago'"*, each one about travelling; the second-to-last is the story's
+  hook ("Something very strange happened today… the Grand Hotel"). The player
+  gets the whole history in one visit, at the moment the story wants them to.
+- **@andrea_siebert** (later parts): *"One of her tweets from 2 hours ago shows
+  she's about to board a plane"* — and it carries a **photo** (a boarding pass),
+  so backdating and pictures work together.
 
-Today a mod is: quests + websites. Accounts join that list, because an account
-is world-building (a character who exists in the fiction) rather than a beat of
-a story, and the same account is meant to be usable by several quests.
+Two things that follow. First, the ages are the fiction: the profile is a
+character's past, not an announcement feed. Second, the game renders those ages
+as relative strings ("a year ago", "2 hours ago") — and **that is the same code
+path that logged the moment.js deprecation warning** when the old editor handed
+it `postedAgo: "3h"`. Our job is to hand it a real timestamp instead of a word,
+which is exactly what section 5 probes.
+
+*For the record, this capability is not new:* the removed r30 node already had
+`timeMode: now | relative | absolute` with `postedAgo` / `postedAt`, so people's
+old drafts may well be full of backdated tweets. What the rework adds is the
+**series** — one node that lays down a whole history — and a time the game can
+render without warning.
+
+## 3. What the feature is
+
+### 3.1 Twotter accounts — a mod-level section (your call)
+
+Today a mod is quests + websites. Accounts join that list. The panel opens from
+the TopBar the way Websites does, and holds a card per account with the **mock
+profile** of section 6 on it.
 
 | Field | Notes |
 | --- | --- |
 | **Handle** | `@` is part of the control, not something to type. Validated like the game does it: letters, numbers, `_`, 3–15 characters. This is what search matches on, so it gets the strictest validation in the editor. |
 | **Display name** | One line; the game splits it into first/last for its own display. |
-| **Bio** | Multi-line, tokens allowed (`{{player}}` reads well in a bio). **Always written as a string** — see the fence below. |
+| **Bio** | Multi-line, tokens allowed (`{{player}}` reads well in a bio). **Always written as a string** — see the fence in section 5. |
 | **Avatar**, **Banner** | The image picker that already exists (the game shows both). |
 | **Verified** | Toggle — the blue check. Authors ask for it for official-looking accounts. |
 | **Followers / Following** | Numbers; `createUser` takes them, and a brand-new account with 0 followers reads as fake in a screenshot. |
-| **Remove this account when the quest ends** | Default **on**. Turn it off for a character who should outlive the quest — the trade-off is written on the field ("the account stays in the player's save; we will not clean it up"). |
+| **Remove this account when the quest ends** | Default **on**. Off for a character who should outlive the story — the trade-off is written on the field ("the account stays in the player's save; we will not clean it up"). |
 
 Deliberately **not** exposed: the account password (the engine generates one;
 nobody logs in as an NPC) and `isMine` (that flag means "this is the player" —
 authoring it would be a lie).
 
-### 2. Post tweet — one node, with the two things the old one got wrong
+**Lifecycle, per your rule:**
 
-The node keeps the id `comms.tweet`, so drafts written before r31 map onto it
-instead of being dropped (section 4).
+1. The account is created when the **first live quest that declares it** starts
+   (claim or reload — the same hook that re-registers everything else).
+2. Creating **adopts** an existing handle instead of duplicating it
+   (`getUserByUsername` → `updateUser` with the author's fields, so editing a bio
+   in the editor arrives on the next load). An adopted account is *not ours to
+   remove* — we note that at creation time and leave it alone afterwards.
+3. On complete/abandon we remove **only the accounts this quest created**, and
+   **only if no other live quest of this mod declares the same account**. "Live"
+   = not itself completed or abandoned. This is the one piece of state that has
+   to live above the per-quest closure, like the network ownership ledger
+   already does.
+4. When a mod is uninstalled the SDK's own advice is to clean up the accounts we
+   added (`OnModPackageUnloaded` — it exists in 0.24 and does not run our quest
+   hooks). We hook it and remove every account we created, including ones whose
+   removal toggle is off: the story is gone with the mod. Fail open, always.
+
+### 3.2 The node: **"Twotter"** — one tweet or a whole history
+
+The node keeps the id `comms.tweet`, so old drafts map onto it instead of having
+their tweets deleted (section 5). What changed is that its body is a **list**:
 
 | Field | Notes |
 | --- | --- |
-| **Account** | A picker over the mod's accounts — by handle, not by an opaque id. |
-| **Content** | Multi-line, tokens allowed. This is the tweet body. |
-| **Posted** | **When the story arrives** (default) or **Already on the profile**, with an amount + unit ("2 hours ago", "3 days ago"). The old `postedAgo` string was what produced the moment.js warning in the log; we compute a proper timestamp from the in-game clock instead, so the profile reads "2h" and the log stays clean. |
-| **Likes / Comments / Shares / Views** | What the profile shows. Sensible defaults, all four editable. |
-| **Show in the timeline** | Toggle (`showInTimeline`). |
+| **Account** | A picker over the mod's accounts, by handle. Plus a **“New account…”** row that creates one in the Twotter panel and selects it — so you never have to leave the node to get unstuck. |
+| **Tweets** | The list. One row is the simple case; ten rows is @alinamack. Each row: |
+| · **Content** | Multi-line, tokens allowed. |
+| · **When** | **When the story arrives** (default), or **Earlier** with an amount + unit (minutes → years, e.g. `1 month`, `8 days`, `2 hours`). A number and a dropdown — no free text, which is how the moment.js warning gets designed out rather than avoided. |
+| · **Picture** | Optional image — the boarding-pass case. |
+| · **Likes / Comments / Shares / Views** | Four numbers on one line, prefilled with believable defaults. |
+| · **Show in the main timeline** | Per row, not per node: a year of history should not flood the feed, but this afternoon's announcement can. |
+| **Post** | `showInTimeline`-style per-row toggle above; nothing else to set. |
 
-The clean-up rules on the runtime side, which is where the old version was
-worst:
+Rows are ordered **oldest → newest**, and the runtime posts them in that order.
+The official line reads top-to-bottom from "a year ago" down to "8 days ago", so
+oldest-first is how the game appears to lay a history out; posting in that order
+is right under either append or prepend.
+
+Runtime rules, which are where the old version was worst:
 
 - **Post once per playthrough, per node.** The flow re-runs on a save reload
   (r177's lesson), so the runtime records which nodes have posted and skips them
   the second time.
-- **Remove what we posted.** On quest complete or abandon, the tweet is removed
-  with `removeTweet` — the old build's own warnings admitted it "leaves posts
-  behind when the mod is removed". Now it does not.
+- **Remove what we posted.** On quest complete or abandon the tweets go back out
+  through `removeTweet`, joined to the cleanup list the quest already runs.
 - **Fail open.** A build without the Twotter API logs one line and the story
   carries on; no node ever blocks on it.
 
-### 3. Reacting to Twotter — nothing to build, one thing to say
+### 3.3 Reacting to Twotter — nothing to build, one thing to say
 
-The generic **When event** trigger already offers all six Twotter events (they
-are in the event catalogue), so an author can react to `PostSeen`,
-`ProfileSeen`, `AccountLogin` and friends today. What they cannot know from the
-editor is which of those our own accounts can actually raise:
+The generic **When event** trigger already offers all six Twotter events, so an
+author can react to `PostSeen`, `ProfileSeen`, `AccountLogin` and friends today.
+What they cannot know from the editor is which of those our own accounts can
+raise:
 
 - `PostSeen` / `ProfileSeen` — **verified working**.
 - `AccountCreated` — **does not fire for accounts we add** (probe finding). The
@@ -88,7 +153,7 @@ editor is which of those our own accounts can actually raise:
 - `AccountLogin` / `AccountLogout` are about **the player's** account, not an
   NPC's.
 
-## The fences — what stops r31 happening again
+## 4. The fences — what stops r31 happening again
 
 The removal's guard was "the compiled mod must not contain the words `Twotter`
 or `Tweets`". That has to change, and it must change into something *stronger*
@@ -103,16 +168,51 @@ than a word ban, because the lessons are specific:
    `undefined`. That single assertion is the r31 bug, inverted.
 3. **What we create, we remove.** A behavioural test runs the compiled mod
    against a stub SDK: quest starts → account exists; quest abandoned → account
-   gone, unless the author turned the removal off.
+   gone, unless the author turned the removal off *or* another live quest
+   declares it.
 4. **Idempotent across reloads.** Creating adopts an existing handle
    (`getUserByUsername`) instead of duplicating, and refreshes the
    author-controlled fields with `updateUser` — so editing the bio in the editor
    updates the account on the next load, which is the repair the old report
-   wished existed.
+   wished existed. Tweets carry deterministic ids
+   (`qe-<quest>-<node>-<row>`), so a reload cannot double-post them.
 5. **No objectives or triggers on `AccountCreated`.** The event picker says so
    in plain words.
 
-## Migration: old drafts get their tweets back
+## 5. The one unknown: does the platform honour the time we give a tweet?
+
+`TwotterTweet` has `sendedAt?: string` (d.ts 1943) and no `postedAgo` — the age
+string the old editor wrote is a *quest-definition* field, which is the path we
+have fenced. So backdating on the API path means posting a tweet whose
+`sendedAt` is a timestamp computed from the in-game clock
+(`sdk.Time.date()` minus "1 month"). **Whether the engine keeps it, or overwrites
+it with "now", is untested** — and if it overwrites, the whole lived-in idea
+fails on this path.
+
+So the probe ships first, as a harness-only patch (no editor change, no risk to
+the project), and it is one command and one look:
+
+- **`qe24 twotter backdate`** posts four tweets to the probe account
+  (`qe24_probe`): one with no `sendedAt` at all (the control), and three with the
+  same "one month ago" moment spelled three ways (ISO with milliseconds, ISO
+  without, `YYYY-MM-DD HH:mm:ss`). It prints the exact list it sent and what you
+  should see, so the report is one comparison rather than an investigation.
+- You open the profile and read it back: does the control say "just now"; does
+  any spelling read "a month ago"; which ones; in what order do they appear; and
+  does a **new moment.js warning** appear in the log (that is the tell for a
+  spelling the game has to guess at). `qe24 twotter cleanup` afterwards.
+- **If one spelling works:** stage 1 ships exactly as designed, and the QA rows
+  below cover the rest.
+- **If none works:** the honest fallback is a tweet that is always "just now",
+  with the author's age kept in the editor as a *preview* of what the profile
+  meant to say — and I come back to you with the one remaining option: the
+  declarative `Tweets` field, re-opened as a fenced exception for *tweets only*,
+  with its own probe first. I will not quietly swap the plan.
+
+Harness mod goes to **1.0.12** for the new command; the r185 editor export stays
+**1.0.13**.
+
+## 6. Migration: old drafts get their tweets back
 
 `src/schema/migrate.ts` currently *drops* every `comms.tweet` node, its wires and
 the quest's `twotterAccounts`. That was right when the feature was gone and is
@@ -122,46 +222,54 @@ silently deleted. So `dropTwotter` becomes `mapTwotter`:
 | Old | New |
 | --- | --- |
 | quest `twotterAccounts[]` | mod-level accounts, fields mapped 1:1 (`displayName` splits into the display-name field) |
-| `comms.tweet` node, `content`, `accountId` | the new node, account matched by the migrated account |
-| flat `likes` / `comments` / `shares` / `views` | the four count fields |
-| `postLive: true` | "When the story arrives"; `false` → "Already on the profile" |
-| `postedAgo: "2 hours"` | parsed into amount + unit where it parses cleanly; the node's default otherwise, with one note in the export report |
+| `comms.tweet` node | the same node id, one **row** in the Tweets list |
+| `content`, `image`, `likes` / `comments` / `shares` / `views` | that row's content, picture and counts |
+| `postLive: true` | **When the story arrives** |
+| `postLive: false` | a row that is already on the profile — the quest-declared behaviour it had |
+| `timeMode: "relative"` + `postedAgo: "2 days"` | **Earlier**, amount `2`, unit days |
+| `timeMode: "absolute"` + `postedAt` | **Earlier**, `1 month`, plus one line in the export report naming the node: a fixed real-world date cannot survive as an age without the editor reading today's clock, and the editor does not do that. The author picks the age they meant. |
+| `showInTimeline` | the row's toggle |
 
-Tests pin the mapping against a realistic pre-r31 project file, and the QA
-folder gets that file as a fixture so the row is one editor look — same method as
+Tests pin the mapping against a realistic pre-r31 project file, and the QA folder
+gets that file as a fixture so the row is one editor look — same method as
 S-12/S-15.
 
-## The whimsy (your ask)
+## 7. The whimsy — your correction folded in
 
-The Timer round's lesson was that a node's UI can *teach* the feature. Applied
-here, in the editor's own dark voice:
-
-- **A live tweet preview** in the inspector: the account's avatar, `Display Name
-  @handle · 2h`, the content with tokens shown as chips, and the interaction row
-  (likes · comments · shares · views) — so an author sees the tweet before
-  exporting it. It repaints as they type; the "· 2h" follows the **Posted**
-  choice.
-- **Account cards** in the Twotter section: avatar with a ring, handle, the blue
-  check when verified, follower counts — a small profile list rather than four
-  text boxes.
-- **The canvas card reads like a tweet**: `@handle` on the first line, the
-  content clipped under it, the bird icon the editor already ships for it.
-- **One CSS-only flourish** on the preview — a brief "posting" shimmer when the
-  node is set to post on arrival — no per-frame work, and it drops under
+- **The canvas card stays a normal card.** Same frame, same typography as its
+  neighbours; it shows the bird icon, the `@handle`, and either the single
+  tweet's first line or "N tweets" when it holds a history.
+- **The mock profile, click-to-edit** (your idea) lives in the **Twotter
+  panel**, because that is where an account is authored: banner across the top,
+  avatar with a ring, display name, `@handle`, bio, and the verified check —
+  click any of them and it becomes the field, type in place, press away. Pictures
+  open the picker they already had. It is a *preview* of the real thing (the
+  game's own profile is the truth), and it says so in one line.
+- **The node shows the same profile read-only** over its tweet timeline, with
+  the accounts as they are: avatar, `@handle`, then each row rendered as a tweet
+  — content, picture, counts — with the age chip the author chose ("1 month
+  ago"). A "Edit this account" link jumps to the panel. Timeline rows are
+  draggable to reorder: the list *is* the profile.
+- **One CSS-only flourish**: a brief "posting" shimmer on the tweet that is set
+  to arrive with the story — no per-frame work, and it drops under
   `prefers-reduced-motion`, exactly like the clock's breathing colon.
 
-## The QA round it will need (T-08 … T-13)
+## 8. The QA round it will need
 
-Rows for the *editor* path, in the QA folder next to the Twotter probe's:
+First the probe, then the editor rows. Rows are in the QA folder next to the
+Twotter probe's, which is where the tester already looks:
 
 | Row | Check |
 | --- | --- |
+| **P-01** | `qe24 twotter backdate` (harness 1.0.12, runs **before** the build ships): which `sendedAt` spelling the profile honours, and whether a moment.js warning appears. Answer decides section 5. |
 | T-08 | An authored account appears in search with the authored bio, avatar, banner and follower counts. |
-| T-09 | An authored tweet appears on the profile at the right moment, with its counts and a clean log (no moment.js deprecation line — the old blemish). |
-| T-10 | Save, quit, reload mid-story: no duplicate account, no duplicate tweet, and an edited bio arrives. |
+| T-09 | A **series** reads as lived-in: the ages are the ones authored, oldest at the top, the picture is on the right tweet, and the log has **no** moment.js line (the old blemish). |
+| T-10 | Save, quit, reload mid-story: no duplicate account, no duplicate tweets, and an edited bio arrives. |
 | T-11 | Complete and abandon: our accounts and posts are gone, the handles leave search, and search still works. |
-| T-12 | A **When event** trigger on `Twotter.PostSeen` fires when the player opens our account's post; `Twotter.Post` is recorded as firing or not (expected: not). |
-| T-13 | A pre-r31 draft opens with its tweets intact (the migration fixture). |
+| T-12 | Two quests share one account: finishing the first leaves it alone while the second is live; finishing the second removes it. *(your rule, verified)* |
+| T-13 | A **When event** trigger on `Twotter.PostSeen` fires when the player opens our account's post; `Twotter.Post` is recorded as firing or not (expected: not). |
+| T-14 | A pre-r31 draft opens with its tweets intact (the migration fixture). |
+| T-15 | *(last priority)* Uninstall the mod: the handles leave search. |
 
 Plus one new harness command — **`qe24 twotter audit`** — that lists every
 account on the save and flags the poison shape (a `bio` that is absent or
@@ -169,40 +277,21 @@ account on the save and flags the poison shape (a `bio` that is absent or
 record we planted; an audit can tell a player or a developer instantly whether a
 save is carrying the r31 shape.
 
-## Open questions I would like answered before building
+## 9. Scope, stages, and what could slip
 
-1. **Accounts at mod level, or per quest?** I am proposing mod level (one list,
-   usable by every quest, with a per-account "remove when the quest ends"
-   toggle). The alternative is the old shape — one list per quest — which reads
-   more like "this quest's cast" but duplicates a character the moment two
-   quests share them. *My recommendation: mod level.*
-2. **Should a completed quest remove an account a *later* quest still needs?**
-   My rule: it removes only what it created, and only when no other of our live
-   quests declares the same account. Anything simpler breaks multi-quest mods;
-   anything cleverer cannot be verified in this SDK.
-3. **The `Posted` time** ("already 2 hours ago") — worth having at all, or does
-   every tweet post at the moment the story arrives? I think the flavour is
-   half the joke of a social network, and the timestamps are what the profile
-   shows.
-4. **The node's name.** "Post tweet" is the old one; "Twotter post" reads better
-   in the palette next to "Post tweet"'s old home? *My recommendation: keep
-   **Post tweet** — it is what authors called it before, and the migration keeps
-   the wording honest.*
-
-## Scope, stages, and what could slip
-
-One round, built in two stages so you can see it working before it is pretty:
-
-- **Stage 1 (functional):** accounts section, node, runtime create/post/cleanup,
-  migration, fences, tests, QA export + rows.
-- **Stage 2 (the whimsy):** the preview card, account cards, canvas card,
-  the flourish.
+- **P-01 (harness only):** the backdate command, one run for you.
+- **Stage 1 (functional):** accounts panel + schema + migration, the node and its
+  list, runtime create/post/cleanup, the fences and their tests, the QA export
+  and rows.
+- **Stage 2 (the whimsy):** the click-to-edit mock profile, the node's timeline
+  preview, the card summary, the shimmer.
 
 If anything slips, stage 2 is what moves — the feature is complete without it.
-The manual is regenerated for both, and stage 2 adds the design notes.
+The manual is regenerated for both; stage 2 adds the design notes.
 
-**What cannot be tested here:** whether the game's profile really renders our
-authored avatar/banner sizes, and how it spells "2h" — jsdom cannot see either.
-Those become T-08/T-09's "paste what you see" lines.
+**What cannot be tested here:** whether the game's profile renders our authored
+avatar/banner sizes, how it spells an age the engine computed itself, and
+whether the timeline flood is pleasant. jsdom cannot see any of it — those are
+T-08/T-09's "paste what you see" lines, handed to you.
 
-Stamp: `EDITOR_BUILD r185`, QA export **1.0.13**.
+Stamp: `EDITOR_BUILD r185`, QA export **1.0.13**, harness mod **1.0.12** (P-01).

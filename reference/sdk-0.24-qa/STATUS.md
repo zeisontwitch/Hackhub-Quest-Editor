@@ -6,19 +6,42 @@ author's decision rather than passed, and is marked as such. A future round that
 needs an in-game check adds a *new* row here and a new harness version — never a
 re-run of the ones below.
 
-## Open: P-01 (r185) — do backdated tweets keep their time?
+## Settled: P-01a (r185) — backdated tweets keep the time we send
 
-Added 2026-09-18 with the r185 Twotter plan. It is the one row that runs
-**before** that build, because the answer decides whether a *series* of
-backdated tweets — a profile found carrying a month of history, the
-Journalist's Sister shape — is possible on the API path at all. The harness
-sends `TwotterTweet.sendedAt` in three spellings plus a control; the engine
-either keeps it or stamps "now" over it.
+**Answer: yes, in all three spellings.** Game 1.3.0, build 25388883, harness
+1.0.12, throwaway save, Zeis's screenshots 2026-09-18.
 
-Checklist and the five lines to report back:
-[`P-01-BACKDATE.md`](P-01-BACKDATE.md). Harness **1.0.12**
-(`qe24 twotter backdate`), account `qe24_probe`, then `qe24 twotter cleanup`.
-Nothing in the editor changed for it; the installable export is not involved.
+| Tweet | Sent with | Read back as |
+| --- | --- | --- |
+| `qe24-p01-control` | **no time at all** | **"a few seconds ago"** — the engine stamps its own time only when we send none |
+| `qe24-p01-iso-ms` | `2026-08-18T19:09:35.285Z` | **"a month ago"** |
+| `qe24-p01-iso` | `2026-08-18T19:09:35Z` | **"a month ago"** |
+| `qe24-p01-plain` | `2026-08-18 19:09:35` | **"a month ago"** |
+
+The same run showed the profile rendering a complete engine-made record
+(banner, avatar, "Joined September 2026", 33 following / 82 followers, the blue
+check) and the four counters exactly as authored — `0 reposts · 2 likes · 0
+replies`, `22 views` on the detail page. The detail page's absolute line read
+"8:09 PM · Aug 18, 2026" for the 19:09Z stamp, an hour behind the machine's
+local zone; relative ages are unaffected and the editor computes stamps from the
+in-game clock, so it is a note rather than a fence.
+
+**Decision:** the runtime sends `sendedAt` as ISO with milliseconds, computed
+from `Time.date()` minus the author's amount and unit. Backdated series ship on
+the API path; the editor's fence against the declarative `Tweets` field stays.
+
+## Open: P-01b (r185) — which way does a profile sort?
+
+One look, one letter sequence. P-01a's control tweet was the newest *and* the
+first posted, so "newest first" and "in the order we posted them" read
+identically. `qe24 twotter order` (harness **1.0.13**) posts A (two months back,
+first), B (no time, second) and C (one month back, third); the profile's
+top-to-bottom order then distinguishes all three arrangements. It decides the
+order the runtime posts a series in and what the editor's preview must mirror.
+
+Steps and the reporting table: [`P-01-BACKDATE.md`](P-01-BACKDATE.md), row
+**P-01b**. Nothing in the editor changed for it; the installable export is not
+involved.
 
 ## Settled: the Twotter probe (r179 → answered 2026-09-18)
 
@@ -265,10 +288,10 @@ They are **not blockers**: the runtime paths are covered by unit tests
 (`src/compiler/__tests__/scheduleBeat.test.ts`), and the harness's `qe24 timers`
 prints every pending Scheduler job with the in-game moment it will fire, so a
 "1 month" row is read rather than waited for. (That section was written when
-harness 1.0.11 was current; it is 1.0.12 now — see P-01 above.)
+harness 1.0.11 was current; it is 1.0.13 now — see P-01a/P-01b above.)
 
 Install `editor-export/` (mod 1.0.12, build `2026-09-18.r184`) and `mod/`
-(harness 1.0.12) on a throwaway save. **Nothing auto-starts**: `qe24 run` lists
+(harness 1.0.13) on a throwaway save. **Nothing auto-starts**: `qe24 run` lists
 the quests, `qe24 run <alias>` claims one, `qe24 run clear` removes quests an
 older build left behind. Row definitions:
 [`r173`](../../docs/plans/r173-timer-rename-and-calendar.md),

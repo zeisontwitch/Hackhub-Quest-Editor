@@ -1,94 +1,110 @@
-# P-01 — do backdated tweets keep their time?
+# P-01 — backdated tweets (answered) and which way a profile sorts (open)
 
-The one row that runs **before** the r185 Twotter build, because it decides
-whether a piece of that build is possible at all.
-
-**What it decides.** Twotter can be handed a tweet's time (`TwotterTweet.sendedAt`)
-but has no age field — the `"2 days"` string (`postedAgo`) only exists on the
-declarative quest field the editor fences. So a profile that reads lived-in —
-@alinamack's ten tweets, *"a year ago"* down to *"8 days ago"* — only works if
-the engine **keeps** the timestamp we send instead of stamping "now" over it.
-Nobody has ever tested that.
+Two rows, one setup. **P-01a decided whether the r185 Twotter build can carry
+backdated tweets at all; it came back green on 2026-09-18.** P-01b is a single
+look that settles the order a series is posted in, and it is all that is left.
 
 **Which mod.** The **raw harness** — [`mod/`](mod/) in this folder, **version
-1.0.12**. *Not* the editor export: `editor-export/` is the installable QA
+1.0.13**. *Not* the editor export: `editor-export/` is the installable QA
 project, a different mod, and it has no `qe24` commands. Nothing in the editor
-changed for this row; the command is harness-only.
+changed for either row; the commands are harness-only.
 
 **Save.** Your throwaway QA save, as always. Nothing here needs to survive.
 
-## Steps
+Common setup, once per run:
 
 1. Copy `mod/` over the harness you installed for T-01…T-07 and restart the
-   game. The mod list should read **QE SDK 0.24 QA Harness 1.0.12**. (If it
-   still reads 1.0.11, the copy did not take — the command below would answer
-   `Unknown twotter verb`.)
-2. Load the save and, in the terminal, make sure the probe account exists:
+   game. The mod list should read **QE SDK 0.24 QA Harness 1.0.13**. (If it still
+   reads an older number the copy did not take, and the commands below would
+   answer `Unknown twotter verb`.)
+2. Load the save and make sure the probe account exists:
 
    ```
    qe24 twotter seed
    ```
 
-   It prints the handle to search for: **`qe24_probe`**. (Running it when the
-   account is already there is harmless.)
-3. Run the row:
+   It prints the handle to search for: **`qe24_probe`**. Harmless to repeat.
 
-   ```
-   qe24 twotter backdate
-   ```
+---
 
-   It posts four tweets to `qe24_probe` and prints exactly what it sent —
-   one moment, three spellings, plus a control.
-4. Open **Twotter**, search **`qe24_probe`**, open the profile and read the four
-   tweets.
+## P-01a — do backdated tweets keep the time we send? ✅ **answered: yes**
 
-| Tweet (content starts with) | Sent with | Should read |
+**Result (2026-09-18, game 1.3.0, build 25388883, harness 1.0.12).** The command
+posts four tweets to `qe24_probe`: one moment, three spellings, plus a control.
+
+| Tweet | Sent with | Read back as |
 | --- | --- | --- |
-| `P-01 control: no time sent…` | no time at all | *just now* |
-| `P-01a: ISO with milliseconds…` | e.g. `2026-08-18T17:12:33.123Z` | *a month ago* |
-| `P-01b: ISO without milliseconds…` | e.g. `2026-08-18T17:12:33Z` | *a month ago* |
-| `P-01c: plain date and time…` | e.g. `2026-08-18 17:12:33` | *a month ago* |
+| `P-01 control` | **no time at all** | **"a few seconds ago"** — the engine stamps its own time only when we send none |
+| `P-01a` | `2026-08-18T19:09:35.285Z` (ISO, milliseconds) | **"a month ago"** |
+| `P-01b` | `2026-08-18T19:09:35Z` (ISO, no milliseconds) | **"a month ago"** |
+| `P-01c` | `2026-08-18 19:09:35` (plain date and time) | **"a month ago"** |
 
-(The command prints the real strings — the examples above are one month before
-the run, not fixed values.)
+All three spellings work, so the runtime sends **ISO with milliseconds**,
+computed from the in-game clock (`Time.date()` minus the author's amount and
+unit). Ages are the game's own words, which is why the old moment.js warning has
+nowhere to come from.
 
-5. Take the account back out:
+Two things the same run showed, both useful later: the profile rendered a
+complete engine-made record (banner, avatar, "Joined September 2026",
+`33 Following 82 Followers`, the blue check), and the four counters read exactly
+as authored — `0 reposts · 2 likes · 0 replies`, `22 views` on the detail page.
+The detail page's absolute line said **"8:09 PM · Aug 18, 2026"** for that
+19:09Z stamp, an hour behind the machine's own zone. Relative ages are what a
+profile shows and those were right; the editor computes stamps from the in-game
+clock, so this is a note, not a fence.
+
+*No action needed — this row is done. Repeat it only if a later game build
+changes the Twotter API.*
+
+---
+
+## P-01b — which way does a profile sort? ⬜ **open**
+
+The P-01a run left one ambiguity: its control tweet was the newest **and** the
+first posted, so "newest first" and "in the order we posted them" looked
+identical. Three tweets whose time order and posting order disagree tell them
+apart — and the answer decides the order a backdated series is posted in, and
+what the editor's preview must mirror.
+
+1. In the terminal, with the probe account seeded (common setup above):
+
+   ```
+   qe24 twotter order
+   ```
+
+   It posts three tweets to `qe24_probe`:
+
+   | Tweet | Sent with | Posted |
+   | --- | --- | --- |
+   | `P-01b A` | two months back | **first** |
+   | `P-01b B` | no time (reads "just now") | **second** |
+   | `P-01b C` | one month back | **third** |
+
+2. Open **Twotter**, search **`qe24_probe`**, open the profile, and read the
+   three tweets **top to bottom**.
+
+**Report back the three letters, in that order.** They are the whole answer:
+
+| What you see | What it means |
+| --- | --- |
+| `A, B, C` | the profile shows them **in the order we posted them** — the author's row order is the reading order |
+| `A, C, B` | **oldest first** |
+| `B, C, A` | **newest first** |
+
+3. Take the account back out:
 
    ```
    qe24 twotter cleanup
    ```
 
-## What to report back
+**What each answer changes.** The runtime posts a series oldest → newest (that
+is how the Journalist's Sister profile reads). If the profile shows posted order,
+the author's own row order is what the player sees, and the editor's preview
+mirrors it exactly. If the profile sorts by time, the series still posts the same
+way — but the preview must show the game's order instead of the author's, or it
+lies about what the player will see, and the author gets a line in the inspector
+naming the way it will appear.
 
-One message, five lines — or a screenshot of the profile, which answers the first
-four at once:
-
-- Which of **a**, **b**, **c** read **"a month ago"** (or whatever the game's
-  own words are), and what the others read instead (*just now*, a blank, an
-  invalid-date string).
-- Whether the **control** reads *just now*. If it does not, the engine is doing
-  something else with times entirely and I need the reading before touching
-  stage 1.
-- **The order** they appear in, top to bottom — control first, or control last?
-  That tells me how the profile sorts, which decides the order we post a series
-  in.
-- Whether the log gained a **moment.js deprecation warning** around the posts.
-  A spelling the game cannot parse is exactly what produced that line before.
-- If anything froze or crashed: say so. That is a finding, not a failed run.
-
-## Safety
-
-- If the profile freezes or the game crashes, close the game **without saving**
-  and tell me — the crash itself is the answer, and it means the API path cannot
-  carry backdated tweets.
-- `qe24 twotter cleanup` removes the account and its posts (T-06 proved it
-  works). Nothing should be left behind; if a handle survives, that is a
-  finding too.
-
-## What each answer does
-
-| Result | What happens next |
-| --- | --- |
-| One or more spellings read *a month ago* | The series ships on the API path as planned, using the spelling that works. Stage 1 starts. |
-| None do, control still *just now* | The engine stamps its own time. I come back with the one remaining option — the declarative `Tweets` field re-opened as a fenced exception for tweets only, with its own probe first — rather than quietly changing the plan. |
-| Control is not *just now* | Something else is going on with time in this build; I need the reading before stage 1. |
+If the profile shows something other than those three arrangements (a jumble, or
+only some of the tweets), say so and paste the screen — that is a finding worth
+having, not a failed run.

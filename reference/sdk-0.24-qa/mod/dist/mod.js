@@ -575,6 +575,8 @@ function printTwotterGuide(tools) {
     tools.println("  8. Open the profile of qe24_declared (declared by the probe quest, not the API).");
     tools.println("  9. qe24 twotter backdate -> P-01 (r185): four posts on qe24_probe, one moment in");
     tools.println("     three spellings plus a control. Open the profile: which ones read a month ago?");
+    tools.println(" 10. qe24 twotter order -> P-01b (r185): is a profile newest first, oldest first, or in");
+    tools.println("     the order we posted? Three tweets, one look, report the letters.");
     tools.println("");
     tools.println("While you are here: does this build have curl? Try:  curl http://qe24-http.test/");
     tools.println("Row meanings and what each result decides: reference/sdk-0.24-qa/STATUS.md");
@@ -599,7 +601,7 @@ function printTwotterStatus(tools) {
     tools.println(describeTwotterRecord(TWOTTER_DECLARED_ID));
     tools.println("Tweets: SDK 0.24 has no tweet reader, so check the profile screen for:");
     tools.println("  qe24_probe (API post) and qe24_declared (quest-declared tweet)");
-    tools.println("  P-01's four backdate rows also live on qe24_probe (qe24 twotter backdate).");
+    tools.println("  P-01's rows also live on qe24_probe: qe24 twotter backdate, qe24 twotter order.");
 }
 
 function twotterSeed(tools) {
@@ -749,11 +751,75 @@ function twotterBackdate(tools) {
     tools.println("Then: qe24 twotter cleanup");
 }
 
+
+/* P-01b (r185): which way does a profile sort?
+ * P-01a proved the engine keeps a `sendedAt` we send. That leaves the display
+ * order: the run's own control tweet was newest AND posted first, so "newest
+ * first" and "the order we posted them in" looked identical. Three posts whose
+ * time order and posting order disagree tell the two apart - and the answer
+ * decides the order a backdated series is posted in, and what the editor's
+ * preview must mirror.
+ * Row: reference/sdk-0.24-qa/P-01-BACKDATE.md */
+
+var TWOTTER_ORDER_IDS = ["qe24-p01b-a", "qe24-p01b-b", "qe24-p01b-c"];
+
+function twotterOrder(tools) {
+    var api = twotterApi();
+    if (!api || !api.postTweet) { tools.printError("Twotter.postTweet unavailable in this build"); return; }
+    if (api.getUserById && !api.getUserById(TWOTTER_GOOD_ID)) {
+        tools.printError("The probe account is not in this save. Run: qe24 twotter seed - then run this again.");
+        return;
+    }
+    var now = (sdk.Time && sdk.Time.date) ? sdk.Time.date()
+        : new Date((sdk.Time && sdk.Time.now) ? sdk.Time.now() : Date.now());
+    function monthsBack(n) {
+        var d = new Date(now.getTime());
+        d.setMonth(d.getMonth() - n);
+        return d.toISOString();
+    }
+    var two = monthsBack(2);
+    var one = monthsBack(1);
+
+    /* A is the oldest AND posted first; B carries no time at all (the engine
+       stamps it "now", which P-01a showed); C sits between them and is posted
+       last. Insertion order, oldest-first and newest-first are then three
+       different readings rather than one ambiguous one. */
+    api.postTweet({
+        id: "qe24-p01b-a", userId: TWOTTER_GOOD_ID,
+        content: "P-01b A: posted first, sent two months back.",
+        sendedAt: two,
+        interaction: { comments: 0, share: 0, likes: 1, views: 111 }, showInTimeline: false,
+    });
+    api.postTweet({
+        id: "qe24-p01b-b", userId: TWOTTER_GOOD_ID,
+        content: "P-01b B: posted second, no time sent (reads just now).",
+        interaction: { comments: 0, share: 0, likes: 2, views: 222 }, showInTimeline: false,
+    });
+    api.postTweet({
+        id: "qe24-p01b-c", userId: TWOTTER_GOOD_ID,
+        content: "P-01b C: posted third, sent one month back.",
+        sendedAt: one,
+        interaction: { comments: 0, share: 0, likes: 3, views: 333 }, showInTimeline: false,
+    });
+
+    tools.println("P-01b (r185) - which way does a profile sort?");
+    tools.println("Three tweets on qe24_probe. Posting order and time order disagree on purpose:");
+    tools.println("  A  sent " + two + " (two months back)   posted FIRST");
+    tools.println("  B  no time sent (reads 'just now')                posted SECOND");
+    tools.println("  C  sent " + one + " (one month back)     posted THIRD");
+    tools.println("Now: open Twotter, search  qe24_probe , open the profile and read the three");
+    tools.println("tweets top to bottom. Report just the letters:");
+    tools.println("  A, B, C  ->  the profile shows them in the order we posted them");
+    tools.println("  A, C, B  ->  oldest first");
+    tools.println("  B, C, A  ->  newest first");
+    tools.println("Then: qe24 twotter cleanup");
+}
+
 function twotterCleanup(tools) {
     var api = twotterApi();
     if (!api) { tools.printError("Twotter API unavailable in this build"); return; }
     if (api.removeTweet) {
-        var removable = [TWOTTER_TWEET_ID].concat(TWOTTER_BACKDATE_IDS);
+        var removable = [TWOTTER_TWEET_ID].concat(TWOTTER_BACKDATE_IDS, TWOTTER_ORDER_IDS);
         for (var t = 0; t < removable.length; t++) {
             /* Function-scoped copy, same reason as the ids below. */
             var gone = (function (id) {
@@ -788,7 +854,8 @@ function printGuide(tools) {
     printRunList(tools);
     tools.println("");
     tools.println("Twotter: answered (r180) - the crash shape is safe and accounts can be removed again.");
-    tools.println("  New row P-01 (r185): qe24 twotter backdate - do backdated tweets keep their time?");
+    tools.println("  New rows (r185): qe24 twotter backdate - do backdated tweets keep their time? (answered: yes)");
+    tools.println("  and qe24 twotter order - which way does a profile sort?");
     tools.println("Timer rows: checklist in reference/sdk-0.24-qa/TIMER-ROWS.md, results in STATUS.md.");
     tools.println("Most rows are read from qe24 timers instead of waited for.");
     tools.println("");
@@ -1245,7 +1312,7 @@ class QE24Command extends sdk.Command {
             tools.println("Connected Wi-Fi is QE24 target: " + (connectedMatchesTarget ? "yes" : "no"));
             if (targetWifi && currentWifi && !connectedMatchesTarget) tools.println("Note: if the game UI says QE24 is connected, paste this mismatch before we unhide Wi-Fi.");
             tools.println("Tip: run qe24 next if the 6/6 surface objective quest is already done, qe24 intercept for proxy-test steps, or qe24 history for HTTP/collab evidence.");
-            tools.println("Commands: qe24 guide · qe24 next · qe24 run [timer|cal|wait|probe|twotter|surface|clear] · qe24 status · qe24 history · qe24 clock · qe24 timers · qe24 twotter [seed|bad|update|post|backdate|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
+            tools.println("Commands: qe24 guide · qe24 next · qe24 run [timer|cal|wait|probe|twotter|surface|clear] · qe24 status · qe24 history · qe24 clock · qe24 timers · qe24 twotter [seed|bad|update|post|backdate|order|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
             return;
         }
         if (sub === "history") {
@@ -1273,6 +1340,7 @@ class QE24Command extends sdk.Command {
             if (verb === "update") { twotterUpdate(tools); return; }
             if (verb === "post") { twotterPost(tools); return; }
             if (verb === "backdate") { twotterBackdate(tools); return; }
+            if (verb === "order") { twotterOrder(tools); return; }
             if (verb === "cleanup") { twotterCleanup(tools); return; }
             tools.printError("Unknown twotter verb: " + verb + " (try: qe24 twotter)");
             return;

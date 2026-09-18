@@ -248,9 +248,10 @@ describe("r179 raw harness — the Twotter probe", () => {
             readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/manifest.json"), "utf8"),
         ) as { version: string };
         const code = readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/dist/mod.js"), "utf8");
-        /* r180 added `qe24 timers`, r185 added `qe24 twotter backdate` (P-01);
-           the Twotter probe is still in the same harness. */
-        expect(manifest.version).toBe("1.0.12");
+        /* r180 added `qe24 timers`; r185 added `qe24 twotter backdate` (P-01a)
+           and `qe24 twotter order` (P-01b); the Twotter probe is still in the
+           same harness. */
+        expect(manifest.version).toBe("1.0.13");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
     });
@@ -479,6 +480,42 @@ describe("r179 raw harness — the Twotter probe", () => {
         runCommand(tools);
         expect(tools.text()).toContain("qe24 twotter seed");
         expect(sdk.tweets.filter((t) => String(t.id).startsWith("qe24-p01-"))).toEqual([]);
+    });
+
+    it("posts P-01b's three tweets in an order that separates 'newest first' from 'the order we posted'", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["twotter", "seed"];
+        runCommand(tools);
+        tools.lines.length = 0;
+        tools.getArgs = () => ["twotter", "order"];
+        runCommand(tools);
+
+        const ours = sdk.tweets.filter((t) => String(t.id).startsWith("qe24-p01b-"));
+        /* Posted A (oldest), then B (engine-stamped "now"), then C (a month
+           back). If the three were posted in time order instead, "newest first"
+           and "posted order" would read identically — which is exactly the
+           ambiguity P-01a's own screenshot left behind. */
+        expect(ours.map((t) => t.id)).toEqual(["qe24-p01b-a", "qe24-p01b-b", "qe24-p01b-c"]);
+        expect(ours[0].sendedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+        expect(ours[2].sendedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+        expect(ours[1].sendedAt, "B must carry no time, so the engine stamps it").toBeUndefined();
+        /* A is two months back and C one: senders of the same moment would make
+           two of the three readings indistinguishable. */
+        const now = 1_760_000_000_000;
+        const aBack = new Date(ours[0].sendedAt as string).getTime();
+        const cBack = new Date(ours[2].sendedAt as string).getTime();
+        expect(aBack).toBeLessThan(cBack);
+        expect(cBack).toBeLessThan(now);
+        expect((cBack - aBack) / 86_400_000).toBeGreaterThan(25);
+
+        /* All three readings are named, so the tester reports a letter sequence
+           instead of describing a screen. */
+        expect(tools.text()).toContain("A, B, C");
+        expect(tools.text()).toContain("oldest first");
+        expect(tools.text()).toContain("newest first");
+        expect(tools.text()).toContain("qe24 twotter cleanup");
     });
 });
 

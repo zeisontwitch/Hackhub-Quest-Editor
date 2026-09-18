@@ -122,10 +122,13 @@ their tweets deleted (section 5). What changed is that its body is a **list**:
 | · **Show in the main timeline** | Per row, not per node: a year of history should not flood the feed, but this afternoon's announcement can. |
 | **Post** | `showInTimeline`-style per-row toggle above; nothing else to set. |
 
-Rows are ordered **oldest → newest**, and the runtime posts them in that order.
-The official line reads top-to-bottom from "a year ago" down to "8 days ago", so
-oldest-first is how the game appears to lay a history out; posting in that order
-is right under either append or prepend.
+Rows are ordered **oldest → newest**, and the runtime posts them in that order —
+the author writes a history the way it happened. What the *player* sees first is
+the game's business: P-01a's screenshot put the newest tweet at the top, but its
+control was also posted first, so that reading cannot yet tell "newest first"
+from "in the order we posted". **P-01b settles it, and the answer only moves the
+whimsy** — if the profile sorts by time, the preview in section 7 has to show the
+game's order (with a line saying so) instead of the author's row order.
 
 Runtime rules, which are where the old version was worst:
 
@@ -179,44 +182,40 @@ than a word ban, because the lessons are specific:
 5. **No objectives or triggers on `AccountCreated`.** The event picker says so
    in plain words.
 
-## 5. The one unknown: does the platform honour the time we give a tweet?
+## 5. The time question — answered (P-01a), with one look left (P-01b)
 
 `TwotterTweet` has `sendedAt?: string` (d.ts 1943) and no `postedAgo` — the age
 string the old editor wrote is a *quest-definition* field, which is the path we
 have fenced. So backdating on the API path means posting a tweet whose
 `sendedAt` is a timestamp computed from the in-game clock
-(`sdk.Time.date()` minus "1 month"). **Whether the engine keeps it, or overwrites
-it with "now", is untested** — and if it overwrites, the whole lived-in idea
-fails on this path.
+(`sdk.Time.date()` minus "1 month").
 
-So the probe ships first, as a harness-only patch (no editor change, no risk to
-the project), and it is one command and one look:
+**P-01a (2026-09-18, build 25388883): green.** All three spellings of
+`sendedAt` read back as **"a month ago"** — ISO with milliseconds, ISO without,
+and `YYYY-MM-DD HH:mm:ss` — while the control with no time at all read "a few
+seconds ago". So the engine keeps the time we send and stamps one only when we
+send none. **The runtime sends ISO with milliseconds**, computed from
+`Time.date()`. The lived-in profile is possible on the API path; the fence
+against the declarative `Tweets` field stays.
 
-- **`qe24 twotter backdate`** posts four tweets to the probe account
-  (`qe24_probe`): one with no `sendedAt` at all (the control), and three with the
-  same "one month ago" moment spelled three ways (ISO with milliseconds, ISO
-  without, `YYYY-MM-DD HH:mm:ss`). It prints the exact list it sent and what you
-  should see, so the report is one comparison rather than an investigation.
-- **The checklist is [`reference/sdk-0.24-qa/P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md)** —
-  which mod (the **raw harness `mod/`, 1.0.12**, *not* the editor export), which
-  account (`qe24_probe`), the steps, and the five lines to report back. In-game
-  the same instructions are one command away: `qe24 twotter guide` now carries
-  step 9.
-- You open the profile and read it back: does the control say "just now"; does
-  any spelling read "a month ago"; which ones; in what order do they appear; and
-  does a **new moment.js warning** appear in the log (that is the tell for a
-  spelling the game has to guess at). `qe24 twotter cleanup` afterwards.
-- **If one spelling works:** stage 1 ships exactly as designed, and the QA rows
-  below cover the rest.
-- **If none works:** the honest fallback is a tweet that is always "just now",
-  with the author's age kept in the editor as a *preview* of what the profile
-  meant to say — and I come back to you with the one remaining option: the
-  declarative `Tweets` field, re-opened as a fenced exception for *tweets only*,
-  with its own probe first. I will not quietly swap the plan.
+**P-01b is the last look**: the same run's control was both newest and posted
+first, so "newest first" and "in the order we posted" are indistinguishable from
+it. `qe24 twotter order` (harness 1.0.13) posts three tweets whose time order and
+posting order disagree; the profile's top-to-bottom order settles it. It decides
+the order the runtime posts a series in, and — more importantly for the editor —
+whether the preview may show the author's row order or must show the game's.
 
-Harness mod **1.0.12** now carries the command (shipped with this revision; two
-harness tests drive it, and one of them fails if the timestamp is ever dropped
-from the payload). The r185 editor export stays **1.0.13**.
+Both probes shipped as harness-only patches (no editor change, no risk to the
+project), and the checklist is
+[`reference/sdk-0.24-qa/P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md)
+— which mod (the **raw harness `mod/`, 1.0.13**, *not* the editor export), which
+account (`qe24_probe`), the exact commands, and what to report back. In-game the
+same instructions are two steps away: `qe24 twotter guide` carries steps 9 and
+10. Harness tests drive both commands, and both were falsified: drop the
+`sendedAt` from the P-01a payload, or post P-01b's three tweets in time order,
+and the matching test fails.
+
+The r185 editor export stays **1.0.13**.
 
 ## 6. Migration: old drafts get their tweets back
 
@@ -267,9 +266,10 @@ Twotter probe's, which is where the tester already looks:
 
 | Row | Check |
 | --- | --- |
-| **P-01** | `qe24 twotter backdate` (harness 1.0.12, runs **before** the build ships): which `sendedAt` spelling the profile honours, and whether a moment.js warning appears. Answer decides section 5. Steps: [`P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md). |
+| ~~**P-01a**~~ | **Green 2026-09-18** — backdated tweets keep their time; all three spellings read "a month ago", the control read "a few seconds ago". Section 5. Steps (for the record): [`P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md). |
+| **P-01b** | `qe24 twotter order` (harness 1.0.13, runs **before** the whimsy): which way a profile sorts — posted order, oldest first, or newest first. Decides the preview's order. |
 | T-08 | An authored account appears in search with the authored bio, avatar, banner and follower counts. |
-| T-09 | A **series** reads as lived-in: the ages are the ones authored, oldest at the top, the picture is on the right tweet, and the log has **no** moment.js line (the old blemish). |
+| T-09 | A **series** reads as lived-in: the ages are the ones authored, the order is the one P-01b establishes, the picture is on the right tweet, and the log has **no** moment.js line (the old blemish). |
 | T-10 | Save, quit, reload mid-story: no duplicate account, no duplicate tweets, and an edited bio arrives. |
 | T-11 | Complete and abandon: our accounts and posts are gone, the handles leave search, and search still works. |
 | T-12 | Two quests share one account: finishing the first leaves it alone while the second is live; finishing the second removes it. *(your rule, verified)* |
@@ -285,9 +285,11 @@ save is carrying the r31 shape.
 
 ## 9. Scope, stages, and what could slip
 
-- **P-01 (harness only):** the backdate command — **shipped**, checklist in
-  [`P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md); one run and
-  five lines back is all it needs.
+- **P-01a (harness only):** the backdate command — **shipped and answered
+  green**; the result table is in
+  [`P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md).
+- **P-01b (harness only):** the ordering command — **shipped**, one command and
+  three letters back is all it needs. It does not block stage 1.
 - **Stage 1 (functional):** accounts panel + schema + migration, the node and its
   list, runtime create/post/cleanup, the fences and their tests, the QA export
   and rows.

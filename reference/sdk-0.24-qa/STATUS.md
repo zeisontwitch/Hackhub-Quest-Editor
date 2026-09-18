@@ -1,10 +1,24 @@
 # QE24 QA status (2026-09-18)
 
-One page, so nobody re-runs a finished check. **Everything here is closed or
-deliberately shelved — there is nothing left to run.** One row (S-10, the
-short-month clamp) is shelved by the author's decision rather than passed, and is
-marked as such. A future round that needs an in-game check adds a *new* row here
-and a new harness version — never a re-run of the ones below.
+One page, so nobody re-runs a finished check. **Everything below is closed or
+deliberately shelved.** One row (S-10, the short-month clamp) is shelved by the
+author's decision rather than passed, and is marked as such. A future round that
+needs an in-game check adds a *new* row here and a new harness version — never a
+re-run of the ones below.
+
+## Open: P-01 (r185) — do backdated tweets keep their time?
+
+Added 2026-09-18 with the r185 Twotter plan. It is the one row that runs
+**before** that build, because the answer decides whether a *series* of
+backdated tweets — a profile found carrying a month of history, the
+Journalist's Sister shape — is possible on the API path at all. The harness
+sends `TwotterTweet.sendedAt` in three spellings plus a control; the engine
+either keeps it or stamps "now" over it.
+
+Checklist and the five lines to report back:
+[`P-01-BACKDATE.md`](P-01-BACKDATE.md). Harness **1.0.12**
+(`qe24 twotter backdate`), account `qe24_probe`, then `qe24 twotter cleanup`.
+Nothing in the editor changed for it; the installable export is not involved.
 
 ## Settled: the Twotter probe (r179 → answered 2026-09-18)
 
@@ -248,12 +262,13 @@ above). Not a pass — a decision. The logic is unit-tested, and the row returns
 only if a bug report asks for it.
 
 They are **not blockers**: the runtime paths are covered by unit tests
-(`src/compiler/__tests__/scheduleBeat.test.ts`), and harness **1.0.11**'s
-`qe24 timers` prints every pending Scheduler job with the in-game moment it will
-fire, so a "1 month" row is read rather than waited for.
+(`src/compiler/__tests__/scheduleBeat.test.ts`), and the harness's `qe24 timers`
+prints every pending Scheduler job with the in-game moment it will fire, so a
+"1 month" row is read rather than waited for. (That section was written when
+harness 1.0.11 was current; it is 1.0.12 now — see P-01 above.)
 
-Install `editor-export/` (mod 1.0.11, build `2026-09-18.r183`) and `mod/`
-(harness 1.0.11) on a throwaway save. **Nothing auto-starts**: `qe24 run` lists
+Install `editor-export/` (mod 1.0.12, build `2026-09-18.r184`) and `mod/`
+(harness 1.0.12) on a throwaway save. **Nothing auto-starts**: `qe24 run` lists
 the quests, `qe24 run <alias>` claims one, `qe24 run clear` removes quests an
 older build left behind. Row definitions:
 [`r173`](../../docs/plans/r173-timer-rename-and-calendar.md),

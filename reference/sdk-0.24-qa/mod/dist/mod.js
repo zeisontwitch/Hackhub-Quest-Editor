@@ -573,6 +573,8 @@ function printTwotterGuide(tools) {
     tools.println("  6. qe24 twotter post     -> a tweet from our account; check the profile screen");
     tools.println("  7. qe24 twotter cleanup  -> removeUser/removeTweet; the accounts must disappear");
     tools.println("  8. Open the profile of qe24_declared (declared by the probe quest, not the API).");
+    tools.println("  9. qe24 twotter backdate -> P-01 (r185): four posts on qe24_probe, one moment in");
+    tools.println("     three spellings plus a control. Open the profile: which ones read a month ago?");
     tools.println("");
     tools.println("While you are here: does this build have curl? Try:  curl http://qe24-http.test/");
     tools.println("Row meanings and what each result decides: reference/sdk-0.24-qa/STATUS.md");
@@ -597,6 +599,7 @@ function printTwotterStatus(tools) {
     tools.println(describeTwotterRecord(TWOTTER_DECLARED_ID));
     tools.println("Tweets: SDK 0.24 has no tweet reader, so check the profile screen for:");
     tools.println("  qe24_probe (API post) and qe24_declared (quest-declared tweet)");
+    tools.println("  P-01's four backdate rows also live on qe24_probe (qe24 twotter backdate).");
 }
 
 function twotterSeed(tools) {
@@ -670,11 +673,94 @@ function twotterPost(tools) {
     tools.println("The post-seen objective should tick if you open it from the timeline.");
 }
 
+
+/* P-01 (r185): does the platform keep a timestamp we hand a tweet?
+ * `TwotterTweet` declares `sendedAt?: string` and no `postedAgo` (that string
+ * belongs to the declarative quest field the editor fences), so backdating on
+ * the API path means sending our own date and trusting the engine to keep it.
+ * Whether it keeps it or stamps "now" over it decides whether a mod can leave a
+ * profile carrying a month of history - the Journalist's Sister shape
+ * (@alinamack: ten tweets, "a year ago" down to "8 days ago").
+ * Four posts: one moment, three spellings, and a control with no time at all.
+ * Row and reporting guide: reference/sdk-0.24-qa/P-01-BACKDATE.md */
+
+var TWOTTER_BACKDATE_IDS = [
+    "qe24-p01-control",
+    "qe24-p01-iso-ms",
+    "qe24-p01-iso",
+    "qe24-p01-plain",
+];
+
+function p01Pad(n) { return (n < 10 ? "0" : "") + n; }
+
+function p01PlainStamp(d) {
+    return d.getFullYear() + "-" + p01Pad(d.getMonth() + 1) + "-" + p01Pad(d.getDate()) +
+        " " + p01Pad(d.getHours()) + ":" + p01Pad(d.getMinutes()) + ":" + p01Pad(d.getSeconds());
+}
+
+function twotterBackdate(tools) {
+    var api = twotterApi();
+    if (!api || !api.postTweet) { tools.printError("Twotter.postTweet unavailable in this build"); return; }
+    if (api.getUserById && !api.getUserById(TWOTTER_GOOD_ID)) {
+        tools.printError("The probe account is not in this save. Run: qe24 twotter seed - then run this again.");
+        return;
+    }
+    var now = (sdk.Time && sdk.Time.date) ? sdk.Time.date()
+        : new Date((sdk.Time && sdk.Time.now) ? sdk.Time.now() : Date.now());
+    var then = new Date(now.getTime());
+    then.setMonth(then.getMonth() - 1);
+    var isoMs = then.toISOString();
+    var iso = isoMs.slice(0, 19) + "Z";
+    var plain = p01PlainStamp(then);
+
+    api.postTweet({
+        id: "qe24-p01-control", userId: TWOTTER_GOOD_ID,
+        content: "P-01 control: no time sent. Correct reading: just now.",
+        interaction: { comments: 0, share: 0, likes: 1, views: 11 }, showInTimeline: false,
+    });
+    api.postTweet({
+        id: "qe24-p01-iso-ms", userId: TWOTTER_GOOD_ID,
+        content: "P-01a: ISO with milliseconds. Correct reading: a month ago.",
+        sendedAt: isoMs,
+        interaction: { comments: 0, share: 0, likes: 2, views: 22 }, showInTimeline: false,
+    });
+    api.postTweet({
+        id: "qe24-p01-iso", userId: TWOTTER_GOOD_ID,
+        content: "P-01b: ISO without milliseconds. Correct reading: a month ago.",
+        sendedAt: iso,
+        interaction: { comments: 0, share: 0, likes: 3, views: 33 }, showInTimeline: false,
+    });
+    api.postTweet({
+        id: "qe24-p01-plain", userId: TWOTTER_GOOD_ID,
+        content: "P-01c: plain date and time. Correct reading: a month ago.",
+        sendedAt: plain,
+        interaction: { comments: 0, share: 0, likes: 4, views: 44 }, showInTimeline: false,
+    });
+
+    tools.println("P-01 (r185) - does Twotter keep a timestamp we hand a tweet?");
+    tools.println("Four tweets posted to qe24_probe (" + TWOTTER_GOOD_ID + "). One moment, three spellings, one control:");
+    tools.println("  qe24-p01-control  no time sent              should read: just now");
+    tools.println("  qe24-p01-iso-ms   " + isoMs + "  should read: a month ago");
+    tools.println("  qe24-p01-iso      " + iso + "       should read: a month ago");
+    tools.println("  qe24-p01-plain    " + plain + "       should read: a month ago");
+    tools.println("Now: open Twotter, search  qe24_probe , open the profile and read the four tweets.");
+    tools.println("Report: which ones say \"a month ago\", what the others say, whether the control reads");
+    tools.println("\"just now\", the order they appear in, and any new moment.js warning in the log.");
+    tools.println("Then: qe24 twotter cleanup");
+}
+
 function twotterCleanup(tools) {
     var api = twotterApi();
     if (!api) { tools.printError("Twotter API unavailable in this build"); return; }
     if (api.removeTweet) {
-        tools.println("removeTweet -> " + safe("Twotter.removeTweet", function () { api.removeTweet(TWOTTER_TWEET_ID); return "called"; }, "threw"));
+        var removable = [TWOTTER_TWEET_ID].concat(TWOTTER_BACKDATE_IDS);
+        for (var t = 0; t < removable.length; t++) {
+            /* Function-scoped copy, same reason as the ids below. */
+            var gone = (function (id) {
+                return safe("Twotter.removeTweet", function () { api.removeTweet(id); return "called"; }, "threw");
+            })(removable[t]);
+            tools.println("removeTweet(" + removable[t] + ") -> " + gone);
+        }
     }
     var ids = [["qe24_probe", TWOTTER_GOOD_ID], ["qe24_badrecord", TWOTTER_BAD_ID], ["qe24_declared", TWOTTER_DECLARED_ID]];
     for (var i = 0; i < ids.length; i++) {
@@ -702,6 +788,7 @@ function printGuide(tools) {
     printRunList(tools);
     tools.println("");
     tools.println("Twotter: answered (r180) - the crash shape is safe and accounts can be removed again.");
+    tools.println("  New row P-01 (r185): qe24 twotter backdate - do backdated tweets keep their time?");
     tools.println("Timer rows: checklist in reference/sdk-0.24-qa/TIMER-ROWS.md, results in STATUS.md.");
     tools.println("Most rows are read from qe24 timers instead of waited for.");
     tools.println("");
@@ -1158,7 +1245,7 @@ class QE24Command extends sdk.Command {
             tools.println("Connected Wi-Fi is QE24 target: " + (connectedMatchesTarget ? "yes" : "no"));
             if (targetWifi && currentWifi && !connectedMatchesTarget) tools.println("Note: if the game UI says QE24 is connected, paste this mismatch before we unhide Wi-Fi.");
             tools.println("Tip: run qe24 next if the 6/6 surface objective quest is already done, qe24 intercept for proxy-test steps, or qe24 history for HTTP/collab evidence.");
-            tools.println("Commands: qe24 guide · qe24 next · qe24 run [timer|cal|wait|probe|twotter|surface|clear] · qe24 status · qe24 history · qe24 clock · qe24 timers · qe24 twotter [seed|bad|update|post|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
+            tools.println("Commands: qe24 guide · qe24 next · qe24 run [timer|cal|wait|probe|twotter|surface|clear] · qe24 status · qe24 history · qe24 clock · qe24 timers · qe24 twotter [seed|bad|update|post|backdate|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
             return;
         }
         if (sub === "history") {
@@ -1185,6 +1272,7 @@ class QE24Command extends sdk.Command {
             if (verb === "bad") { twotterBad(tools); return; }
             if (verb === "update") { twotterUpdate(tools); return; }
             if (verb === "post") { twotterPost(tools); return; }
+            if (verb === "backdate") { twotterBackdate(tools); return; }
             if (verb === "cleanup") { twotterCleanup(tools); return; }
             tools.printError("Unknown twotter verb: " + verb + " (try: qe24 twotter)");
             return;

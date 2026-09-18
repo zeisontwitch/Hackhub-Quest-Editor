@@ -248,8 +248,9 @@ describe("r179 raw harness — the Twotter probe", () => {
             readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/manifest.json"), "utf8"),
         ) as { version: string };
         const code = readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/dist/mod.js"), "utf8");
-        /* r180 added `qe24 timers`; the Twotter probe is still in the same harness. */
-        expect(manifest.version).toBe("1.0.11");
+        /* r180 added `qe24 timers`, r185 added `qe24 twotter backdate` (P-01);
+           the Twotter probe is still in the same harness. */
+        expect(manifest.version).toBe("1.0.12");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
     });
@@ -429,6 +430,55 @@ describe("r179 raw harness — the Twotter probe", () => {
         const text = tools.text();
         expect(text).toContain("qe24_badrecord");
         expect(text).toContain("reference/sdk-0.24-qa/STATUS.md");
+    });
+
+    it("posts P-01's four spellings of one moment, so backdating is a stopwatch and not a guess", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["twotter", "seed"];
+        runCommand(tools);
+        tools.lines.length = 0;
+        tools.getArgs = () => ["twotter", "backdate"];
+        runCommand(tools);
+
+        const ours = sdk.tweets.filter((t) => String(t.id).startsWith("qe24-p01-"));
+        expect(ours.map((t) => t.id).sort()).toEqual([
+            "qe24-p01-control",
+            "qe24-p01-iso",
+            "qe24-p01-iso-ms",
+            "qe24-p01-plain",
+        ]);
+        const byId = new Map(ours.map((t) => [t.id as string, t]));
+        /* The control carries no `sendedAt` at all — that is what makes the other
+           three readable as "the engine kept our time" rather than "the engine
+           puts everything a month back". */
+        expect("sendedAt" in byId.get("qe24-p01-control")!).toBe(false);
+        const iso = byId.get("qe24-p01-iso-ms")!.sendedAt as string;
+        expect(iso).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+        expect(byId.get("qe24-p01-iso")!.sendedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+        expect(byId.get("qe24-p01-plain")!.sendedAt).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+        /* All three are the same moment: about a month back, and in the past. */
+        const now = 1_760_000_000_000;
+        const back = new Date(iso).getTime();
+        expect(back).toBeLessThan(now);
+        expect((now - back) / 86_400_000).toBeGreaterThan(25);
+        expect((now - back) / 86_400_000).toBeLessThan(35);
+        /* The tester's instructions are part of the row, not a separate document
+           they have to find: handle, what each should read, and the clean-up. */
+        expect(tools.text()).toContain("qe24_probe");
+        expect(tools.text()).toContain("a month ago");
+        expect(tools.text()).toContain("qe24 twotter cleanup");
+    });
+
+    it("sends the tester to seed first when the probe account is missing, and posts nothing", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["twotter", "backdate"];
+        runCommand(tools);
+        expect(tools.text()).toContain("qe24 twotter seed");
+        expect(sdk.tweets.filter((t) => String(t.id).startsWith("qe24-p01-"))).toEqual([]);
     });
 });
 

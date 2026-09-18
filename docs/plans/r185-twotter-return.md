@@ -197,6 +197,11 @@ the project), and it is one command and one look:
   same "one month ago" moment spelled three ways (ISO with milliseconds, ISO
   without, `YYYY-MM-DD HH:mm:ss`). It prints the exact list it sent and what you
   should see, so the report is one comparison rather than an investigation.
+- **The checklist is [`reference/sdk-0.24-qa/P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md)** —
+  which mod (the **raw harness `mod/`, 1.0.12**, *not* the editor export), which
+  account (`qe24_probe`), the steps, and the five lines to report back. In-game
+  the same instructions are one command away: `qe24 twotter guide` now carries
+  step 9.
 - You open the profile and read it back: does the control say "just now"; does
   any spelling read "a month ago"; which ones; in what order do they appear; and
   does a **new moment.js warning** appear in the log (that is the tell for a
@@ -209,8 +214,9 @@ the project), and it is one command and one look:
   declarative `Tweets` field, re-opened as a fenced exception for *tweets only*,
   with its own probe first. I will not quietly swap the plan.
 
-Harness mod goes to **1.0.12** for the new command; the r185 editor export stays
-**1.0.13**.
+Harness mod **1.0.12** now carries the command (shipped with this revision; two
+harness tests drive it, and one of them fails if the timestamp is ever dropped
+from the payload). The r185 editor export stays **1.0.13**.
 
 ## 6. Migration: old drafts get their tweets back
 
@@ -261,7 +267,7 @@ Twotter probe's, which is where the tester already looks:
 
 | Row | Check |
 | --- | --- |
-| **P-01** | `qe24 twotter backdate` (harness 1.0.12, runs **before** the build ships): which `sendedAt` spelling the profile honours, and whether a moment.js warning appears. Answer decides section 5. |
+| **P-01** | `qe24 twotter backdate` (harness 1.0.12, runs **before** the build ships): which `sendedAt` spelling the profile honours, and whether a moment.js warning appears. Answer decides section 5. Steps: [`P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md). |
 | T-08 | An authored account appears in search with the authored bio, avatar, banner and follower counts. |
 | T-09 | A **series** reads as lived-in: the ages are the ones authored, oldest at the top, the picture is on the right tweet, and the log has **no** moment.js line (the old blemish). |
 | T-10 | Save, quit, reload mid-story: no duplicate account, no duplicate tweets, and an edited bio arrives. |
@@ -279,7 +285,9 @@ save is carrying the r31 shape.
 
 ## 9. Scope, stages, and what could slip
 
-- **P-01 (harness only):** the backdate command, one run for you.
+- **P-01 (harness only):** the backdate command — **shipped**, checklist in
+  [`P-01-BACKDATE.md`](../../reference/sdk-0.24-qa/P-01-BACKDATE.md); one run and
+  five lines back is all it needs.
 - **Stage 1 (functional):** accounts panel + schema + migration, the node and its
   list, runtime create/post/cleanup, the fences and their tests, the QA export
   and rows.

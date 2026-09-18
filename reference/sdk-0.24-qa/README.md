@@ -1,11 +1,17 @@
-# SDK 0.24 QA harness — kept as tooling; five Timer rows are open
+# SDK 0.24 QA harness — kept as tooling, now carrying the P-01 backdate row
 
 **Everything this folder was built to verify is verified, or shelved by the
-author's decision.** The Timer rows (S-01…S-15) are closed: S-11's answer is in
-[`STATUS.md`](STATUS.md) — `NEXT EVENT` does show a mod's job when it is the
-nearest — and S-10 (short-month clamp) is shelved deliberately, unit-tested
-either way. [`TIMER-ROWS.md`](TIMER-ROWS.md) keeps the steps for the record.
-The one-page ledger is [`STATUS.md`](STATUS.md).
+author's decision — with one new row on top.** The Timer rows (S-01…S-15) are
+closed: S-11's answer is in [`STATUS.md`](STATUS.md) — `NEXT EVENT` does show a
+mod's job when it is the nearest — and S-10 (short-month clamp) is shelved
+deliberately, unit-tested either way. [`TIMER-ROWS.md`](TIMER-ROWS.md) keeps the
+steps for the record.
+
+**Open now: [P-01](P-01-BACKDATE.md)** — does the platform keep a timestamp we
+hand a tweet (`sendedAt`)? It runs **before** the r185 Twotter build and decides
+whether backdated tweets are possible on the API path at all. One harness
+command (`qe24 twotter backdate`), one look at the profile of `qe24_probe`, five
+lines back. The one-page ledger is [`STATUS.md`](STATUS.md).
 
 **Playing the rows:** nothing auto-starts. After the 2026-09-18 run turned into a
 notification storm (five quests starting at load, four of them toasting), every
@@ -26,16 +32,17 @@ theirs back in r180, which is this file's neighbour.
 
 | Path | What it is | State |
 | --- | --- | --- |
-| [`TIMER-ROWS.md`](TIMER-ROWS.md) | **The checklist for the open Timer rows** — exact steps, what green looks like, what to paste back. | Run these |
+| [`P-01-BACKDATE.md`](P-01-BACKDATE.md) | **The one open row** — which mod to install, the exact command, which account to look up, what to report back. Harness **1.0.12**. | **Run this** |
+| [`TIMER-ROWS.md`](TIMER-ROWS.md) | The Timer rows' checklist — every row answered or shelved; kept for the record. | Reference |
 | [`STATUS.md`](STATUS.md) | What is verified, blocked, and not run. | Read this first |
 | [`QE24-TestResults - 3.md`](QE24-TestResults%20-%203.md) | Zeis's 2026-09-16 in-game transcript of the r166 run. | Evidence |
 | [`QE24-TestResults - Twotter.md`](QE24-TestResults%20-%20Twotter.md) | Zeis's 2026-09-18 Twotter transcript (build 25388883) — the report that unblocks the feature. | Evidence |
 | [`QE24-TestResults - Timer-Rows.md`](QE24-TestResults%20-%20Timer-Rows.md) | Zeis's first Timer-row transcript, including the `qe24 timers` pastes that answered ten rows at once. | Evidence |
 | [`QE24-TestResults-Timer_Rows_2.md`](QE24-TestResults-Timer_Rows_2.md) | Zeis's second Timer run: the S-03 cancel log, the clock panel reading, and the two fixtures that exposed the editor bug. | Evidence |
-| `mod/` | The raw in-game harness, mod **1.0.11**. **`qe24 run`** starts a quest on demand (nothing auto-starts any more); **`qe24 timers`** prints every pending Scheduler job with the in-game moment it will fire, so the calendar rows are read instead of waited for. `qe24 twotter` (r179) keeps its results. | Tool |
+| `mod/` | The raw in-game harness, mod **1.0.12**. **`qe24 run`** starts a quest on demand (nothing auto-starts any more); **`qe24 timers`** prints every pending Scheduler job with the in-game moment it will fire, so the calendar rows are read instead of waited for; **`qe24 twotter backdate`** is P-01's row (r185). `qe24 twotter` (r179) keeps its results. | Tool |
 | `projects/sdk-0.24-ingame-qa.project.json` | The editor-importable project the export is built from (four auto-start quests). | Source of truth for the export |
 | `projects/fixture-*.project.json` | Two tiny legacy drafts for the migration rows S-12 and S-15: a pre-r176 `after` project and an r176-era `offsetAmount`/`offsetUnit` one. Open them in the editor. | Fixtures, run by hand |
-| `editor-export/` | The installable export (mod 1.0.10, editor build `2026-09-18.r182`; four quests, **none auto-starting** — see `qe24 run`). | **Generated** — never edit by hand |
+| `editor-export/` | The installable export (mod 1.0.12, editor build `2026-09-18.r184`; four quests, **none auto-starting** — see `qe24 run`). Not needed for P-01: that row is harness-only. | **Generated** — never edit by hand |
 | `editor-export.notes.md` | Hand-written notes the generator appends to the export README. | — |
 
 Regenerate the export with `npm run gen:qa-export`. The guard test
@@ -56,7 +63,7 @@ Only needed when a future round asks for a specific in-game check.
 
 `qe24 run [timer|cal|wait|probe|twotter|surface|clear]` — **start one quest on demand** ·
 `qe24 timers` — **every pending job, and when it fires** ·
-`qe24 twotter [guide|status|seed|bad|update|post|cleanup]` ·
+`qe24 twotter [guide|status|seed|bad|update|post|backdate|cleanup]` ·
 `qe24 guide` · `next` · `seed` · `status` · `history` · `clock` · `http-fetch` ·
 `schedule N` · `collab` · `intercept on|queue|forward|drop|off` ·
 `claim complete|button|retire|unclaim|phone-auto|phone-direct` · `complete` ·

@@ -16,6 +16,7 @@ import { describe, expect, it } from "vitest";
 
 import { compileProject } from "../compile";
 import { parseProjectFile } from "@/templates/share";
+import { useEditor } from "@/store/editor";
 
 const QA_DIR = join(process.cwd(), "reference", "sdk-0.24-qa");
 const EXPORT_DIR = join(QA_DIR, "editor-export");
@@ -141,6 +142,35 @@ describe("SDK 0.24 QA export", () => {
             for (const [key, value] of Object.entries(want)) {
                 expect(data[key], `${file}: ${key} (${label})`).toBe(value);
             }
+        }
+    });
+
+    it("opens the fixtures on their quest, not on an empty canvas", () => {
+        /* S-12/S-15, 2026-09-18: the tester opened both fixtures in the editor
+           and reported them broken — "No quest selected", an empty canvas and
+           the first-run template hint, because neither file carries
+           `editor.activeQuestId` (they are old, hand-written shapes) and the
+           editor used to take that literally. `ProjectSchema` now points the
+           editor at the first quest that ships, so the row is a look at the
+           boxes rather than a puzzle. This asserts the whole chain the editor
+           runs: parse the file → load it into the store → a quest is active. */
+        for (const file of [
+            "fixture-pre-r176-after.project.json",
+            "fixture-r176-coming-day.project.json",
+        ]) {
+            const parsed = parseProjectFile(readFileSync(join(QA_DIR, "projects", file), "utf8"));
+            expect(parsed.ok, `${file} no longer parses`).toBe(true);
+            if (!parsed.ok) continue;
+            expect(parsed.project.editor.activeQuestId, `${file} opened on no quest`).toBe(
+                parsed.project.quests[0].id,
+            );
+            useEditor.getState().load(parsed.project, { clearHistory: true });
+            const active = useEditor.getState().project.editor.activeQuestId;
+            expect(active, `${file} lost its active quest in the store`).toBe(parsed.project.quests[0].id);
+            expect(
+                useEditor.getState().project.quests.find((q) => q.id === active)?.graph.nodes.length,
+                `${file} left the canvas empty`,
+            ).toBeGreaterThan(0);
         }
     });
 

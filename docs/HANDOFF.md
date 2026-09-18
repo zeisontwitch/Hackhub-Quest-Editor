@@ -1,3 +1,53 @@
+# Handoff — r182
+
+Plan: [`plans/r182-fixtures-and-honest-log.md`](plans/r182-fixtures-and-honest-log.md).
+The second Timer run came back; it closed a row, and it found two defects of ours.
+
+## S-03 is green — the evidence was in the log he pasted
+
+He abandoned `QESdk024TimerQa` after Timer A fired and waited two real minutes:
+nothing popped. He said he could not find a cancel line in the log, but his own
+paste has the whole sequence: `timer node qe-tmrf7pia armed after 2m` → fired →
+`timer node qe-9b919r74 armed after 2h` → `OnAbandon: starting` →
+`cancelled … pending timer(s)` → `OnAbandon: finished`.
+
+## Defect 1: the fixtures opened on an empty canvas (editor bug)
+
+S-12 and S-15 came back "broken": **"No quest selected"**, an empty canvas, the
+first-run "browse 13 templates" hint. Cause: neither fixture carries
+`editor.activeQuestId` — old, hand-written shapes, which is what a migration
+fixture is — and no load path picked a quest. Not fixture-specific either: any
+hand-written project, or one whose active quest was deleted, opened the same way.
+
+**Fix:** `ProjectSchema` transforms on parse — if the active id is not a quest in
+the file, point it at the first quest that ships. It lives in the schema because
+file load, import, the autosaved draft, template construction and the QA export
+generator all parse through it, and a repair at call sites can be forgotten.
+`createProject`'s private copy of the same repair is gone.
+
+## Defect 2: the cancel line miscounted
+
+His log said `cancelled 2 pending timer(s)` with only one timer left — a fired
+job's id stayed in the mod's list. Fired jobs are now dropped as they fire
+(`beatJobsByQuest` map, since the handler runs outside any quest's closure), and
+a test asserts the cancel call names the pending job and not the fired one.
+
+## Rows still open (four, none needing a wait)
+
+- **S-10** clamp — needs a 29th–31st in-game date (his run fell on the 19th); unit-tested.
+- **S-11** — partly answered: the clock panel showed the **game's own** queued job (4d 6h), not the pending mod job, so a mod job does not take `NEXT EVENT` ahead of it. The definitive check is `qe24 schedule 120` (a harness job ~2 real minutes out, so it *is* nearest), then read the panel.
+- **S-12 / S-15** — now one look at the boxes each; they were blocked until this fix.
+
+`TIMER-ROWS.md` now tells testers to search the game log for `quest-editor`,
+which is where the cancel line had been all along.
+
+Gates: typecheck clean; `npm test` **1,658 passed / 82 files** (+2); build OK;
+manual and QA export regenerated (export **1.0.10**). Falsified 2/2 — removing
+the schema repair fails the fixture guard (and the template determinism test);
+dropping the fired-job line fails the S-03 count test and the export byte guard.
+
+---
+
 # Handoff — r181
 
 Plan: [`plans/r181-quiet-qa.md`](plans/r181-quiet-qa.md). The short version:

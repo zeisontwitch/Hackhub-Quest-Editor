@@ -4,7 +4,7 @@ The checklist for the Timer QA rows (**S-01 … S-15**). It lives here because
 this is the folder you install from; the ledger of what is settled is
 [`STATUS.md`](STATUS.md).
 
-## Read this first: nine of the fifteen rows are already answered
+## Read this first: eleven of the fifteen rows are already answered
 
 Your 2026-09-18 run closed them. Do not re-run them — see
 [`STATUS.md`](STATUS.md) for the evidence:
@@ -12,12 +12,16 @@ Your 2026-09-18 run closed them. Do not re-run them — see
 | Closed | Why |
 | --- | --- |
 | **S-01** fire, **S-02** reload | Timer A/B fired; after the reload the same job ids came back with the same `fireAt` and nothing double-armed. |
+| **S-03** cancel | Abandoning the quest stopped Timer B: nothing popped after two real minutes, and the log ends with `OnAbandon: finished` after cancelling the pending timer. |
 | **S-05**, **S-06** | The calendar quest's third row *armed at all* — a Timer suspends its chain, so the two instant rows before it must have fired. |
 | **S-07** reload survival | Same five jobs, same ids, same raw timestamps before and after save/quit/reload. |
 | **S-08**, **S-13** | The mixed row resolved to **Tue 3 Nov, 18:23** — 18 Sep + 1 month + 2 weeks + 2 days, clock pinned. |
 | **S-09**, **S-14** | `Wait 1 month` resolved to **18 Oct, 19:27** — one month on, same day number, same clock time. |
 
-**Still open: S-03, S-10, S-11, S-12, S-15.** None of them needs waiting.
+**Still open: S-10, S-11, S-12, S-15.** None of them needs waiting. S-12 and
+S-15 were blocked until r182 — the editor used to open those fixtures on an
+empty canvas (see [`STATUS.md`](STATUS.md)); with export **1.0.10** they open on
+their quest.
 
 ## What changed since that run: nothing starts by itself
 
@@ -45,11 +49,10 @@ yourself — one quest, so the journal stays readable.
 
 | Row | Do this | Green looks like |
 | --- | --- | --- |
-| **S-03** cancel | `qe24 run timer`. Timer B is 2 in-game hours out. Claim the quest, then **complete or abandon it** from the journal, then wait ~2 real minutes. | Timer B never fires, and the log says `cancelled 1 pending timer(s)`. |
 | **S-10** short-month clamp | Only if today's in-game date is the **29th, 30th or 31st** — otherwise skip it (the clamp is unit-tested). `qe24 run wait`, then `qe24 timers`. | The month job's day is the last day of the next month, not a roll into the one after. |
-| **S-11** clock panel | `qe24 run wait`, then `qe24 timers` to confirm the month job is pending. Open the game's **clock panel** (the one with `NEXT EVENT`). | **Just tell us what you see.** Does the pending job appear in `NEXT EVENT` at all, and in what units? Either answer is useful — nothing to pass or fail. |
-| **S-12** pre-r176 draft | In the **editor**: Open project → `reference/sdk-0.24-qa/projects/fixture-pre-r176-after.project.json`. Look at the Timer node. | **When it fires** reads **Wait** and the hours box shows **2**. Nothing empty or zeroed. |
-| **S-15** r176-era draft | Same, with `fixture-r176-coming-day.project.json`. | The **Weeks** box shows **2** and the clock shows **18:23**. |
+| **S-11** clock panel | `qe24 schedule 120` — that arms a **harness** job two in-game hours out, about **two real minutes**, so it is nearer than the game's own next event. Open the game's **clock panel** straight away and read `NEXT EVENT`. | **Just tell us what it says.** Does it show that job (or any mod job), or still only the game's own? Either answer is useful — nothing to pass or fail. |
+| **S-12** pre-r176 draft | In the **editor** (export **1.0.10** or newer): Open project → `reference/sdk-0.24-qa/projects/fixture-pre-r176-after.project.json`. Look at the Timer node. | The quest opens on its canvas (not "No quest selected"), **When it fires** reads **Wait**, and the hours box shows **2**. Nothing empty or zeroed. |
+| **S-15** r176-era draft | Same, with `fixture-r176-coming-day.project.json`. | Same, and the **Weeks** box shows **2** while the clock shows **18:23**. |
 
 That is the whole list. S-12 and S-15 are just opening a file — no game needed.
 
@@ -73,3 +76,9 @@ not armed — run `qe24 run` first and give it a second.
 Paste the `qe24 timers` output and the log lines it names. That is enough to
 tell "wrong moment" from "never armed" from "fired twice" — no waiting, no
 guessing.
+
+**Where the mod's log lines are:** everything this mod writes starts with
+`[quest-editor]`. Search the game log for that word and you get the arm, fire,
+cancel and cleanup lines in order — the cancel line for S-03 was in a pasted log
+for an hour before we noticed it, because the checklist never said where to
+look.

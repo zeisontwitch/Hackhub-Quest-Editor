@@ -177,15 +177,32 @@ export const EditorStateSchema = z.object({
     viewports: z.record(z.string(), ViewportSchema).default({}),
 });
 
-export const ProjectSchema = z.object({
-    schemaVersion: z.number().default(PROJECT_SCHEMA_VERSION),
-    kind: z.literal("hackhub-quest-editor/project").default("hackhub-quest-editor/project"),
-    mod: ModSchema.default({} as never),
-    quests: z.array(QuestSchema).min(1, "a mod needs at least one quest").default([]),
-    /** Sites built with the website builder, shared by every quest in the mod. */
-    websites: z.array(WebsiteSchema).default([]),
-    editor: EditorStateSchema.default({} as never),
-});
+export const ProjectSchema = z
+    .object({
+        schemaVersion: z.number().default(PROJECT_SCHEMA_VERSION),
+        kind: z.literal("hackhub-quest-editor/project").default("hackhub-quest-editor/project"),
+        mod: ModSchema.default({} as never),
+        quests: z.array(QuestSchema).min(1, "a mod needs at least one quest").default([]),
+        /** Sites built with the website builder, shared by every quest in the mod. */
+        websites: z.array(WebsiteSchema).default([]),
+        editor: EditorStateSchema.default({} as never),
+    })
+    /* Every valid project ships at least one quest (`.min(1)` above), so a parse
+       that points the editor at no quest — or at one that is not in the file —
+       can only come from a hand-written file, a build older than `activeQuestId`,
+       or a project whose active quest was deleted. Point it at the first quest
+       that actually ships. Without this the editor opens on "No quest
+       selected.", the canvas is empty, and the first-run "browse templates"
+       hint appears on top — indistinguishable from a broken file, which is
+       exactly how a QA round was lost (2026-09-18, S-12/S-15). Living in the
+       schema rather than at each call site is deliberate: file load, import,
+       the autosaved draft, template construction and the QA export generator
+       all parse through here, and a repair that can be forgotten is the bug
+       again. */
+    .transform((project) => {
+        if (project.quests.some((q) => q.id === project.editor.activeQuestId)) return project;
+        return { ...project, editor: { ...project.editor, activeQuestId: project.quests[0]!.id } };
+    });
 export type ProjectDocument = z.infer<typeof ProjectSchema>;
 
 /* ── Factories ───────────────────────────────────────────────────────────── */
@@ -208,19 +225,15 @@ export function createQuest(partial: Partial<QuestDoc> = {}): QuestDoc {
 
 export function createProject(partial: Partial<ProjectDocument> = {}): ProjectDocument {
     const quest = createQuest({ name: "FirstQuest", title: "First Quest" });
-    const project = ProjectSchema.parse({
+    /* A multi-quest caller replaces the quests array wholesale — the default
+       quest (and its id in activeQuestId) is gone. `ProjectSchema`'s transform
+       already points the editor at the first quest that ships, so multi-quest
+       projects open on their first act rather than a quest that does not exist
+       (and templates stay byte-deterministic across builds). */
+    return ProjectSchema.parse({
         mod: {},
         quests: [quest],
         editor: { activeQuestId: quest.id, viewports: {} },
         ...partial,
     });
-    /* A multi-quest caller replaces the quests array wholesale — the default
-       quest (and its id in activeQuestId) is gone. Point the editor at the
-       first quest that actually ships, so multi-quest projects open on their
-       first act instead of a quest that does not exist (and so templates stay
-       byte-deterministic across builds). */
-    if (!partial.editor && project.quests[0]) {
-        project.editor.activeQuestId = project.quests[0].id;
-    }
-    return project;
 }

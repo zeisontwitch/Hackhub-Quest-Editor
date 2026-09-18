@@ -1,6 +1,6 @@
 # How the editor works today
 
-**Current as of build `2026-09-18.r181`.** Where the other documents are
+**Current as of build `2026-09-18.r182`.** Where the other documents are
 histories — how we got here, and what we learned on the way — this one is a
 snapshot of the thing as it stands. If it disagrees with an older document,
 this one is right.

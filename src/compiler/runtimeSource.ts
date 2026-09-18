@@ -313,6 +313,24 @@ function __qeRegisterProject(sdk, PROJECT) {
     /* questId -> fire(nodeId). Rebound by each quest's OnStart /
        OnObjectivesStart to whichever instance the engine actually runs. */
     var liveBeats = {};
+    /* questId -> job ids that quest armed and has not cancelled. Kept here,
+       above the quest factory, because the job handler below runs outside any
+       quest's closure and needs to drop a job the moment it fires. */
+    var beatJobsByQuest = {};
+    /* The job ids we armed, minus the ones that have already fired. Leaving a
+       fired id in the list made the cancel line overstate itself — "cancelled 2
+       pending timer(s)" with only one left, in the very log a tester is told to
+       trust (S-03, 2026-09-18). */
+    function forgetBeatJob(questId, id) {
+        var list = beatJobsByQuest[questId];
+        if (!list || !id) return;
+        for (var i = 0; i < list.length; i++) {
+            if (list[i] === id) {
+                list.splice(i, 1);
+                return;
+            }
+        }
+    }
     /* How many times a due job may be re-armed while its quest is not
        live yet (the engine can fire due jobs at mod load, before quest
        start). A quest that auto-starts on load is live within a few
@@ -320,8 +338,9 @@ function __qeRegisterProject(sdk, PROJECT) {
        with a log line instead of looping forever. */
     var BEAT_REARM_MAX = 20;
     if (sdk.Scheduler && sdk.Scheduler.register) {
-        sdk.Scheduler.register(BEAT_KIND, function (payload) {
+        sdk.Scheduler.register(BEAT_KIND, function (payload, job) {
             var p = payload || {};
+            if (job) forgetBeatJob(p.questId, job.id);
             var fire = liveBeats[p.questId];
             if (!fire) {
                 if ((p.attempts || 0) < BEAT_REARM_MAX) {
@@ -547,9 +566,11 @@ function __qeRegisterProject(sdk, PROJECT) {
            nothing), drained in OnComplete/OnAbandon. */
         var questCleanup = [];
 
-        /* Job ids armed by flow.timer nodes, cancelled when the quest
-           ends: a timer for a finished quest must not fire. */
-        var beatJobs = [];
+        /* Job ids armed by flow.timer nodes, cancelled when the quest ends: a
+           timer for a finished quest must not fire. The same array is reachable
+           as beatJobsByQuest[qd.id], which is how the job handler (outside this
+           closure) drops an id once it has fired. */
+        var beatJobs = beatJobsByQuest[qd.id] || (beatJobsByQuest[qd.id] = []);
 
         /* Has the quest already been torn down once?
 

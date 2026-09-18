@@ -166,6 +166,22 @@ function timerProject(data: Record<string, unknown> = { minutes: 1 }): ProjectDo
     return project;
 }
 
+/** The QA quest's shape: a quick timer, then a long one chained behind it. */
+function twoTimerProject(): ProjectDocument {
+    const project = timerProject({ minutes: 1 });
+    const quest = project.quests[0];
+    const first = quest.graph.nodes[1];
+    const notify = quest.graph.nodes[2];
+    const second = node("flow.timer", { hours: 2 });
+    quest.graph.nodes = [quest.graph.nodes[0], first, notify, second];
+    quest.graph.edges = [
+        edge(quest.graph.nodes[0].id, first.id, "flow"),
+        edge(first.id, notify.id, "flow"),
+        edge(notify.id, second.id, "flow"),
+    ];
+    return project;
+}
+
 const settle = async () => {
     for (let i = 0; i < 60; i++) await new Promise((r) => setTimeout(r, 0));
 };
@@ -232,6 +248,36 @@ describe("flow.timer (Timer)", () => {
         expect(calls).toContain(`timerCancel:${jobId}`);
         expect(sdk.__jobs).toHaveLength(0);
         expect(calls).not.toContain("notify:the timer");
+    });
+
+    it("counts only jobs that are still pending when the quest ends", async () => {
+        /* S-03, 2026-09-18: the tester aborted a quest whose first timer had
+           already fired, and the log said "cancelled 2 pending timer(s)" with
+           only one left — the fired job's id was never dropped. The cancel
+           call is what actually matters: it must name the job that is still
+           pending and not the one that already ran. */
+        const calls: string[] = [];
+        const { sdk, q } = boot(twoTimerProject(), calls);
+        q.OnStart();
+        await settle();
+        const first = sdk.__jobs[0].id;
+        sdk.__fire(first);
+        await settle();
+        /* The chain reached the second timer, so exactly one job is ours now.
+           (The stub keeps fired jobs in its own list, so take the one that is
+           not the first.) */
+        const pending = sdk.__jobs.find((j) => j.id !== first)!.id;
+        const cancelLog: string[] = [];
+        const logSpy = vi.spyOn(console, "log").mockImplementation((line: unknown) => {
+            cancelLog.push(String(line));
+        });
+        q.OnComplete();
+        await settle();
+        logSpy.mockRestore();
+
+        expect(calls.filter((c) => c.startsWith("timerCancel:"))).toEqual([`timerCancel:${pending}`]);
+        expect(cancelLog.some((line) => line.includes("cancelled 1 pending timer(s)"))).toBe(true);
+        expect(cancelLog.some((line) => line.includes("cancelled 2 pending timer(s)"))).toBe(false);
     });
 
     it("re-arms a due job while its quest is not live, then drops it instead of looping forever", async () => {

@@ -1,8 +1,7 @@
 # QE24 QA status (2026-09-18)
 
-One page, so nobody re-runs a finished check. **The Twotter probe is answered and
-so are ten of the fifteen Timer rows** — five remain, none of which needs
-waiting: [`TIMER-ROWS.md`](TIMER-ROWS.md). A future round that
+One page, so nobody re-runs a finished check. **The Twotter probe is answered, and
+so are eleven of the fifteen Timer rows** — four remain: [`TIMER-ROWS.md`](TIMER-ROWS.md). A future round that
 needs an in-game check adds a *new* row here and a new harness version — never a
 re-run of the ones below.
 
@@ -60,11 +59,60 @@ transcript: [`QE24-TestResults - Timer-Rows.md`](QE24-TestResults%20-%20Timer-Ro
 local rendering still reads **18:23** — the promised wall-clock time holds. That
 matters because the in-game clock displays local time (S-04).
 
-Still open, and none of them needs waiting: **S-03** (cancel), **S-10**
-(short-month clamp — needs a 29th–31st in-game date, and is unit-tested), **S-11**
-(does a pending job show in `NEXT EVENT`; fact-finding, not pass/fail), **S-12**
-and **S-15** (two old drafts to open in the editor — no game at all).
-[`TIMER-ROWS.md`](TIMER-ROWS.md) has the steps.
+**S-03 (cancel) is green too**, from the second run — see below. Still open:
+**S-10** (short-month clamp — the run fell on 19 September, and the row needs a
+29th–31st in-game date; unit-tested either way), **S-11** (see below),
+and **S-12** / **S-15**, which were **blocked by an editor bug now fixed** — they
+are one look at the boxes each, no game needed.
+
+### Settled: S-03 cancel, and the miscounting log (second run, 2026-09-18)
+
+Transcript: [`QE24-TestResults-Timer_Rows_2.md`](QE24-TestResults-Timer_Rows_2.md).
+
+The tester claimed `QESdk024TimerQa`, let Timer A fire, **abandoned** the quest
+and waited ~2 real minutes: nothing popped. His own pasted log contains the
+whole sequence — `timer node qe-tmrf7pia armed after 2m (job T6nLZcpwsu)` →
+`timer qe-tmrf7pia fired` → `timer node qe-9b919r74 armed after 2h (job
+uO1ZDpc81C)` → `OnAbandon: starting` → `cancelled … pending timer(s)` →
+`OnAbandon: finished`. **S-03 is green.**
+
+That log also exposed a small lie: it said **`cancelled 2 pending timer(s)`**
+when only one timer was still pending — a job that had already fired stayed in
+the mod's list. Fixed in r182 (the handler drops a job the moment it fires), and
+guarded by a test that asserts the cancel call names the pending job and not the
+fired one.
+
+**Reading the log:** the mod's lines all start with `[quest-editor]`. The cancel
+line was in the paste the whole time; the checklist never said where to look, so
+it now does.
+
+### S-11 answered in part: `NEXT EVENT` shows the game's own job
+
+With a mod job pending 29 days out, the clock panel read **`NEXT EVENT 4d 6h
+[Wait]`** — the *game's* queued post job (23 Sep), not ours. So a mod job does
+**not** take the panel's next-event slot ahead of a game job. Whether the panel
+can show a mod job *at all* is still open, because ours was never the nearest.
+
+The definitive check needs no new tooling (`TIMER-ROWS.md` has it):
+`qe24 schedule 120` arms a harness job two in-game hours out — about two real
+minutes — which **is** the nearest. Open the clock panel inside that window. If
+it shows that job, mod jobs appear; if it still shows only the game's own, they
+never do.
+
+### The S-12 / S-15 blocker: an editor bug, fixed in r182
+
+Both fixtures opened in the editor as **"No quest selected"** with an empty
+canvas and the first-run "Browse 13 templates" hint — indistinguishable from a
+broken file, and the tester reported them broken.
+
+The cause was ours and not fixture-specific: neither file carries
+`editor.activeQuestId` (old, hand-written shapes — exactly what a migration
+fixture should be), the schema accepts a missing one as `null`, and no load path
+picked a quest. `ProjectSchema` now points the editor at the first quest that
+ships whenever the active id is not a quest in the file, so **file load, import,
+the autosaved draft, template construction and the export generator** all agree.
+
+S-12 and S-15 are therefore **one look each**: open the file, read the boxes.
 
 ### The mess, and what caused it
 
@@ -118,6 +166,7 @@ inside the test, so deleting the correction fails it wherever it runs.
 | S-04 clock zone | This file, above |
 | Twotter probe T-01…T-03, T-05…T-07 | This file, above — game 1.3.0, build 25388883, report 2026-09-18 |
 | Timer rows S-01…S-09, S-13, S-14 | This file, above — game 1.3.1, build 25388883, report 2026-09-18 |
+| Timer row S-03 (cancel) | This file, above — same build, second run |
 
 ## Blocked, or deliberately not supported
 
@@ -128,19 +177,20 @@ inside the test, so deleting the correction fails it wherever it runs.
 | Editor HTTP events on static websites | Static pages load, but their Browser traffic did not tick `Http.Request`/`Http.Response`; HTTP authoring stays fenced. Recorded in the r166 table. |
 | Bettercap `set wifi.ap <BSSID>` showing `SSID: undefined` | Game-side display wart, not a mod bug. Noted so nobody re-files it. |
 
-## Not run — five Timer rows
+## Not run — four Timer rows
 
-**S-03** (cancel), **S-10** (short-month clamp), **S-11** (`NEXT EVENT`) and the
-two fixture rows **S-12** / **S-15**. Steps and what green looks like:
-[`TIMER-ROWS.md`](TIMER-ROWS.md). S-12 and S-15 are opening a file in the editor;
-none of the five needs waiting for a Timer.
+**S-10** (short-month clamp — needs a 29th–31st in-game date), **S-11** (the
+definitive `NEXT EVENT` check via `qe24 schedule 120`), and **S-12** / **S-15**
+(open a fixture in the editor and read the boxes — available since the r182
+fix). Steps and what green looks like: [`TIMER-ROWS.md`](TIMER-ROWS.md). None of
+the four needs waiting for a Timer.
 
 They are **not blockers**: the runtime paths are covered by unit tests
 (`src/compiler/__tests__/scheduleBeat.test.ts`), and harness **1.0.11**'s
 `qe24 timers` prints every pending Scheduler job with the in-game moment it will
 fire, so a "1 month" row is read rather than waited for.
 
-Install `editor-export/` (mod 1.0.9, build `2026-09-18.r181`) and `mod/`
+Install `editor-export/` (mod 1.0.10, build `2026-09-18.r182`) and `mod/`
 (harness 1.0.11) on a throwaway save. **Nothing auto-starts**: `qe24 run` lists
 the quests, `qe24 run <alias>` claims one, `qe24 run clear` removes quests an
 older build left behind. Row definitions:

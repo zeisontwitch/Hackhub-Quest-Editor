@@ -481,10 +481,22 @@ function __qeRegisterProject(sdk, PROJECT) {
         if (account.banner) fields.banner = account.banner;
 
         if (existing) {
-            twotterAdopted[account.id] = true;
+            /* Ours or somebody else's? A record carrying the id we create with
+               is the account this mod registered — in this session, or in one
+               before the last reload — and it stays ours to clean up. Anything
+               else is a genuine adoption: the player, or another mod, had that
+               handle first, and it is not ours to delete. */
+            var ours = String(existing.id) === String(account.id);
+            if (ours) {
+                if (!twotterCreatedBy[account.id]) twotterCreatedBy[account.id] = questId;
+            } else {
+                twotterAdopted[account.id] = true;
+            }
             try {
                 if (sdk.Twotter.updateUser) sdk.Twotter.updateUser(existing.id, fields);
-                __QE.log("twotter: adopted @" + handle + " (already existed); author fields refreshed");
+                __QE.log(ours
+                    ? "twotter: refreshed @" + handle + " (our account, already in the save)"
+                    : "twotter: adopted @" + handle + " (already existed); author fields refreshed");
             } catch (e) {
                 __QE.log("twotter: refreshing @" + handle + " failed (continuing): " + e);
             }
@@ -543,27 +555,39 @@ function __qeRegisterProject(sdk, PROJECT) {
         }
     }
 
-    /* A quest has finished (complete or abandon): take back the accounts it
-       brought into the world, unless the author asked for the character to
-       outlive the story, another live quest still declares it, or it was not
-       ours to begin with. */
+    /* A quest has finished (complete or abandon): the accounts that quest
+       declared may have become unneeded — take back the ones this mod created
+       and no live quest still declares.
+
+       Note which accounts are looked at: the ones THIS quest declares, not the
+       ones it created. The creator and the last declarer are usually different
+       quests (quest A brings a character into the world, quest B still posts
+       from it), and an account is only due for removal when the LAST quest that
+       needs it ends — whoever that turns out to be. Three things keep an
+       account: the author asked for it to outlive the story, another live quest
+       still declares it, or it was not ours (we adopted it). */
     function releaseTwotterAccounts(questId) {
         twotterQuestEnded[questId] = true;
         if (!twotterReady) return;
-        var ids = Object.keys(twotterCreatedBy);
+        var ids = Object.keys(twotterDeclaredBy);
         for (var i = 0; i < ids.length; i++) {
             var accountId = ids[i];
-            if (twotterCreatedBy[accountId] !== questId) continue;
+            var declared = twotterDeclaredBy[accountId] || [];
+            var mine = false;
+            for (var k = 0; k < declared.length; k++) {
+                if (declared[k] === questId) { mine = true; break; }
+            }
+            if (!mine) continue;
+            if (twotterAdopted[accountId] || !twotterCreatedBy[accountId]) continue;
             var account = twotterAccount(accountId);
             if (!account) continue;
             if (account.removeWhenQuestEnds === false) {
                 __QE.log("twotter: keeping @" + twotterHandle(account) + " - the author asked for it to outlive the quest");
                 continue;
             }
-            var declared = twotterDeclaredBy[accountId] || [];
             var stillNeeded = false;
             for (var j = 0; j < declared.length; j++) {
-                if (declared[j] !== questId && !twotterQuestEnded[declared[j]]) {
+                if (!twotterQuestEnded[declared[j]]) {
                     stillNeeded = true;
                     break;
                 }
@@ -572,7 +596,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                 __QE.log("twotter: keeping @" + twotterHandle(account) + " - another live quest declares it");
                 continue;
             }
-            removeTwotterAccount(accountId, "quest " + questId + " ended");
+            removeTwotterAccount(accountId, "the last quest that needs it ended");
         }
     }
 
@@ -595,7 +619,9 @@ function __qeRegisterProject(sdk, PROJECT) {
             } catch (e) {
                 exists = null;
             }
-            if (!exists) continue;
+            /* Only the record we registered: if somebody else is carrying the
+               handle now, that account is not ours to delete. */
+            if (!exists || String(exists.id) !== String(account.id)) continue;
             removeTwotterAccount(exists.id, "mod unloaded");
         }
     }

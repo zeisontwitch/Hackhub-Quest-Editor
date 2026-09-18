@@ -1,10 +1,10 @@
 # QE24 QA status (2026-09-18)
 
-One page, so nobody re-runs a finished check. **The Twotter probe is answered and
-so are thirteen of the fifteen Timer rows** — two remain, both needing a specific
-in-game moment: [`TIMER-ROWS.md`](TIMER-ROWS.md). A future round that
-needs an in-game check adds a *new* row here and a new harness version — never a
-re-run of the ones below.
+One page, so nobody re-runs a finished check. **Everything here is closed or
+deliberately shelved — there is nothing left to run.** One row (S-10, the
+short-month clamp) is shelved by the author's decision rather than passed, and is
+marked as such. A future round that needs an in-game check adds a *new* row here
+and a new harness version — never a re-run of the ones below.
 
 ## Settled: the Twotter probe (r179 → answered 2026-09-18)
 
@@ -60,10 +60,9 @@ transcript: [`QE24-TestResults - Timer-Rows.md`](QE24-TestResults%20-%20Timer-Ro
 local rendering still reads **18:23** — the promised wall-clock time holds. That
 matters because the in-game clock displays local time (S-04).
 
-**S-03 (cancel) is green** from the second run, and **S-12 / S-15 are green**
-from the third — see below. Still open: **S-10** (short-month clamp — needs a
-29th–31st in-game date; unit-tested either way) and **S-11** (see below). Both
-need a specific in-game moment, not effort.
+**S-03 (cancel)** is green from the second run, **S-12 / S-15** from the third,
+and the last two rows are closed by the fourth: **S-11 green** and **S-10
+shelved by the author's decision**. Details below — the folder is done.
 
 ### Settled: S-03 cancel, and the miscounting log (second run, 2026-09-18)
 
@@ -98,6 +97,33 @@ The definitive check needs no new tooling (`TIMER-ROWS.md` has it):
 minutes — which **is** the nearest. Open the clock panel inside that window. If
 it shows that job, mod jobs appear; if it still shows only the game's own, they
 never do.
+
+### Settled: S-11 green, S-10 shelved (fourth run, 2026-09-18)
+
+**S-11 — mod jobs DO appear in the game's `NEXT EVENT`.** Running
+`qe24 schedule 120` (a two-in-game-hour harness job, about two real minutes)
+changed the clock panel's `NEXT EVENT` to **1 h 55 m and it ticked down**. So the
+panel does show a mod's scheduled job when that job is the nearest one — the
+earlier reading (`4d 6h`, the game's own post queue) was simply the game's job
+being nearer, not a fence.
+
+**S-10 — shelved, deliberately.** The short-month clamp needs an in-game date on
+the 29th, 30th or 31st; two runs landed on other days and the author's call is
+that the row costs more time than it is worth:
+
+> I'm going to make a judgement call and shelf S-10 for now. We have more
+> important things to check and this test eats up too much time. If it becomes a
+> problem we'll deal with it.
+
+Recorded as a decision, not a pass. The clamp logic stays covered by unit tests
+(`src/schema/__tests__/timerCalendar.test.ts` — 31 Jan + 1 month = 28/29 Feb,
+leap years included), and the plan's rule stands: if a bug report ever arrives,
+that row becomes the first in-game check of the next Timer round.
+
+**Visual pass on the row-fold fix (r183): green.** The author confirms the
+inspector rows no longer clip and the layout is "nicely responsive when pushing
+or pulling the inspector drawer" — which is the confirmation jsdom could not
+give; the tests only asserted the shape of the fix.
 
 ### Settled: S-12 and S-15, and the clipped row they exposed (third run)
 
@@ -204,6 +230,7 @@ inside the test, so deleting the correction fails it wherever it runs.
 | Timer rows S-01…S-09, S-13, S-14 | This file, above — game 1.3.1, build 25388883, report 2026-09-18 |
 | Timer row S-03 (cancel) | This file, above — same build, second run |
 | Timer rows S-12, S-15 (the two migration fixtures) | This file, above — third run, editor build r183 |
+| Timer row S-11 (`NEXT EVENT` and mod jobs) | This file, above — fourth run, harness 1.0.11 |
 
 ## Blocked, or deliberately not supported
 
@@ -214,12 +241,11 @@ inside the test, so deleting the correction fails it wherever it runs.
 | Editor HTTP events on static websites | Static pages load, but their Browser traffic did not tick `Http.Request`/`Http.Response`; HTTP authoring stays fenced. Recorded in the r166 table. |
 | Bettercap `set wifi.ap <BSSID>` showing `SSID: undefined` | Game-side display wart, not a mod bug. Noted so nobody re-files it. |
 
-## Not run — two Timer rows
+## Shelved — one Timer row
 
-**S-10** (short-month clamp — needs a 29th–31st in-game date) and **S-11** (the
-definitive `NEXT EVENT` check: `qe24 schedule 120`, then read the clock panel
-within about two real minutes). Steps and what green looks like:
-[`TIMER-ROWS.md`](TIMER-ROWS.md). Neither needs waiting out a Timer.
+**S-10**, the short-month clamp: shelved by the author on 2026-09-18 (reason
+above). Not a pass — a decision. The logic is unit-tested, and the row returns
+only if a bug report asks for it.
 
 They are **not blockers**: the runtime paths are covered by unit tests
 (`src/compiler/__tests__/scheduleBeat.test.ts`), and harness **1.0.11**'s

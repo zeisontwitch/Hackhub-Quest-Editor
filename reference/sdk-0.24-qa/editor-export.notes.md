@@ -33,6 +33,7 @@ In-game console lines are the ones to quote in a report: `timer node … armed f
 
 | Export | Editor build | Result |
 |---|---|---|
+| 1.0.12 | 2026-09-18.r184 | **Build stamp only — the QA ledger is closed.** No editor behaviour changed; the Timer rows finished (S-11 green, S-10 shelved by Zeis's decision) and the r183 row-fold fix was confirmed visually ("nicely responsive when pushing or pulling the inspector drawer"). The next round is the Twotter re-integration, planned in `docs/plans/r185-twotter-return.md`.
 | 1.0.11 | 2026-09-18.r183 | **Build stamp only, for the inspector row fix** — the Timer's four-box "In" row used to run off the right edge of the 340px docked inspector; it now folds to two columns below the width its unit captions need and opens back up when the panel is dragged wider. Exported mods are unaffected (this is editor layout).
 | 1.0.10 | 2026-09-18.r182 | **The end-of-quest cancel line stops overstating itself.** A timer that had already fired stayed in the mod's pending list, so completing or abandoning the quest logged "cancelled 2 pending timer(s)" with only one left (seen during S-03). Fired jobs are dropped as they fire, so the count matches reality. No behaviour change otherwise.
 | 1.0.9 | 2026-09-18.r181 | **No quest auto-starts, and no QA debug node toasts.** The 2026-09-18 Timer run became a notification storm — five auto-starting quests on top of what an earlier build had left claimed — so every quest here is now claimed on demand from the harness: `qe24 run`. The quests and their contents are unchanged otherwise.

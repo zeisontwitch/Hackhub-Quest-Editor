@@ -1,10 +1,11 @@
 # SDK 0.24 QA harness — kept as tooling; five Timer rows are open
 
-Everything this folder was built to verify has been verified, **except two
-Timer rows** (S-10, S-11, each needing a specific in-game moment) — and those have their own
-step-by-step checklist: **[`TIMER-ROWS.md`](TIMER-ROWS.md)**. Ten of the fifteen
-are already answered by the 2026-09-18 run. The one-page ledger is
-[`STATUS.md`](STATUS.md); read that for what is settled.
+**Everything this folder was built to verify is verified, or shelved by the
+author's decision.** The Timer rows (S-01…S-15) are closed: S-11's answer is in
+[`STATUS.md`](STATUS.md) — `NEXT EVENT` does show a mod's job when it is the
+nearest — and S-10 (short-month clamp) is shelved deliberately, unit-tested
+either way. [`TIMER-ROWS.md`](TIMER-ROWS.md) keeps the steps for the record.
+The one-page ledger is [`STATUS.md`](STATUS.md).
 
 **Playing the rows:** nothing auto-starts. After the 2026-09-18 run turned into a
 notification storm (five quests starting at load, four of them toasting), every

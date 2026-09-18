@@ -4,7 +4,7 @@ The checklist for the Timer QA rows (**S-01 … S-15**). It lives here because
 this is the folder you install from; the ledger of what is settled is
 [`STATUS.md`](STATUS.md).
 
-## Read this first: thirteen of the fifteen rows are already answered
+## Done — every row is answered or shelved
 
 Your 2026-09-18 run closed them. Do not re-run them — see
 [`STATUS.md`](STATUS.md) for the evidence:
@@ -19,8 +19,14 @@ Your 2026-09-18 run closed them. Do not re-run them — see
 | **S-08**, **S-13** | The mixed row resolved to **Tue 3 Nov, 18:23** — 18 Sep + 1 month + 2 weeks + 2 days, clock pinned. |
 | **S-09**, **S-14** | `Wait 1 month` resolved to **18 Oct, 19:27** — one month on, same day number, same clock time. |
 
-**Still open: S-10 and S-11** — both need a specific in-game moment, neither
-needs waiting out a Timer (see the table below).
+**S-11 is green** — `qe24 schedule 120` changed the clock panel's `NEXT EVENT` to
+**1 h 55 m, ticking down**, so mod jobs do appear there when the job is the
+nearest one.
+
+**S-10 is shelved** by the author's decision (it needs an in-game date on the
+29th–31st, and the two runs that tried it landed elsewhere). Not a pass: the
+clamp logic is unit-tested, and the row comes back only if a bug report asks for
+it. Nothing here needs running.
 
 **About the two fixture rows:** S-12 and S-15 were **editor-only** — open the
 file, read the boxes, done. No export, no install, no in-game step. (They were
@@ -51,12 +57,12 @@ old rounds, then claim one row at a time. The command prints the journal title
 to look for; if the build ever refuses a cross-mod claim, claim that title
 yourself — one quest, so the journal stays readable.
 
-## The rows that are left
+## The last two rows, for the record
 
-| Row | Do this | Green looks like |
+| Row | State | Evidence |
 | --- | --- | --- |
-| **S-10** short-month clamp | Only if today's in-game date is the **29th, 30th or 31st** — otherwise skip it (the clamp is unit-tested). `qe24 run wait`, then `qe24 timers`. | The month job's day is the last day of the next month, not a roll into the one after. |
-| **S-11** clock panel | `qe24 schedule 120` — that arms a **harness** job two in-game hours out, about **two real minutes**, so it is nearer than the game's own next event. Open the game's **clock panel** straight away and read `NEXT EVENT`. | **Just tell us what it says.** Does it show that job (or any mod job), or still only the game's own? Either answer is useful — nothing to pass or fail. |
+| **S-11** clock panel | **Green** | `qe24 schedule 120` → the panel's `NEXT EVENT` read **1 h 55 m and ticked down**, so a mod job shows there when it is the nearest. |
+| **S-10** short-month clamp | **Shelved** by the author's decision | Needs a 29th–31st in-game date; two runs landed on other days. The logic is unit-tested (`timerCalendar.test.ts`). |
 
 That is the whole list. S-12 and S-15 are just opening a file — no game needed.
 

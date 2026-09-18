@@ -1,13 +1,14 @@
-# SDK 0.24 QA harness — closed; kept as tooling
+# SDK 0.24 QA harness — kept as tooling; one probe open
 
-Everything this folder was built to verify has been verified. **Nothing here
-needs running.** The one-page ledger is [`STATUS.md`](STATUS.md) — read that,
-not this file, if you want to know what is settled.
+Everything this folder was built to verify has been verified, **except the
+Twotter probe (r179)** — that one is open by design, and it is the only thing
+here that needs running. The one-page ledger is [`STATUS.md`](STATUS.md); read
+that, not this file.
 
 The folder stays because its export is the installable QA build and its raw mod
-is the in-game probe tool future rounds extend. Neither is a checklist anymore:
-the old step-by-step routes were removed in r178 once every row was green, so
-there is nothing here to accidentally re-run.
+is the in-game probe tool future rounds extend. The old step-by-step routes were
+removed in r178 once their rows were green, so the only thing to run is the one
+labelled open below.
 
 ## What is in here
 
@@ -15,7 +16,7 @@ there is nothing here to accidentally re-run.
 | --- | --- | --- |
 | [`STATUS.md`](STATUS.md) | What is verified, blocked, and not run. | Read this first |
 | [`QE24-TestResults - 3.md`](QE24-TestResults%20-%203.md) | Zeis's 2026-09-16 in-game transcript of the r166 run. | Evidence |
-| `mod/` | The raw in-game harness, mod **1.0.8**: `qe24` commands still work (`seed`, `status`, `history`, `clock`, `reset`) for future probes. | Tool, not a checklist |
+| `mod/` | The raw in-game harness, mod **1.0.9**. **Open probe: `qe24 twotter`** (r179). Everything else is tooling (`seed`, `status`, `history`, `clock`, `reset`). | Tool, one open probe |
 | `projects/sdk-0.24-ingame-qa.project.json` | The editor-importable project the export is built from. | Source of truth for the export |
 | `editor-export/` | The installable export (mod 1.0.6, editor build `2026-09-18.r178`; quests `QESdk024EditorQa` and `QESdk024TimerQa`). | **Generated** — never edit by hand |
 | `editor-export.notes.md` | Hand-written notes the generator appends to the export README. | — |
@@ -36,6 +37,7 @@ Only needed when a future round asks for a specific in-game check.
 
 ## Raw harness — commands still available
 
+`qe24 twotter [guide|status|seed|bad|update|post|cleanup]` — **the open probe** ·
 `qe24 guide` · `next` · `seed` · `status` · `history` · `clock` · `http-fetch` ·
 `schedule N` · `collab` · `intercept on|queue|forward|drop|off` ·
 `claim complete|button|retire|unclaim|phone-auto|phone-direct` · `complete` ·

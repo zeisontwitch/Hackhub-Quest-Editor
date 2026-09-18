@@ -9,6 +9,7 @@ Not current documentation. For how the editor works today, see
 
 | Round | Investigation | What it established |
 |---|---|---|
+| r179 | The Twotter probe | sdk-0.24 declares `updateUser`/`removeUser` and 1.3.0 claims the crash is fixed, so the raw harness gets one open probe (`qe24 twotter`, rows T-01–T-07) that plants the exact r31 bad-record shape, tests repair-on-load, and checks the quest-declared write path. Eleven tests drive the probe against a stub SDK. |
 | r178 | QA folder closed, S-04 answered | The in-game clock displays the machine's local time (20:17 on screen vs 20:15 local / 18:15 UTC), so the `at` correction stays. The QA folder becomes tooling: one STATUS ledger, no procedures, harness guide no longer lists finished checks. Twotter's r31 crash cause is fixed in 1.3.0, reopening the feature. |
 | r177 | Every unit, both ways | Both relative rows take one box per unit: a coming day counts years/months/weeks/days from now and pins a clock, Wait takes every unit (calendar included, via `scheduleAt` — the engine's duration form has no month field). The clamp is applied once, on the calendar part, before weeks and days. |
 | r176 | Timer inspector: the digital clock, rows, and relative units | The Timer resolves “in N days / weeks / months / years, at HH:MM” inside the game at arm time; the editor says the rule, warns about impossible dates and clamps short months. Rows and the clock are layout kinds, transparent to the manual extractor and to every walker. |

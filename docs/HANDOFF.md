@@ -1,3 +1,90 @@
+# Handoff — r179
+
+r179 builds the test Zeis asked for: can **Twotter** come back? The answer is
+not obvious from the code, so the round is a probe plus its own test suite.
+Plan: [`plans/r179-twotter-probe.md`](plans/r179-twotter-probe.md).
+
+## What was wrong (why the fence exists)
+
+Twotter was removed in r31 for a *game* bug, not a design choice. A
+quest-declared account was written to the save with **`bio: undefined`**;
+Twotter's search called `.toLowerCase()` on it; the crash was permanent, lived in
+the save, and **no mod could repair it** (BUG 3 in
+[`docs/05-bug-report-for-hotbunny.md`](05-bug-report-for-hotbunny.md), seven QA
+rounds on game 1.1.2).
+
+## Why it is worth testing now — three independent changes
+
+1. **`Twotter.createUser(options?)`** exists and documents "sensible defaults
+   for missing fields" — the defaults-filling creation path the bug's fix
+   suggested.
+2. **`updateUser(id, patch)` and `removeUser(id)`** now exist. The old report's
+   point 4 was *"no mod can repair it"*, and these are exactly the repairs:
+   `getUserById` hands back a copy, `updateUser` is the call that reaches the
+   stored record, `removeUser` deletes it and what referenced it.
+3. **1.3.0 claims the fix, with save repair**: "a content pack could break
+   Twotter permanently … Affected saves are repaired on load."
+
+## The probe — `qe24 twotter` (harness 1.0.9)
+
+Rows T-01…T-07, in [`reference/sdk-0.24-qa/STATUS.md`](reference/sdk-0.24-qa/STATUS.md):
+
+| Row | Does |
+| --- | --- |
+| T-01 | `seed` → search `qe24_probe`: the API account is browsable (API path works). |
+| T-02 | `bad` → search `qe24_badrecord`: **the exact r31 shape** (bio present and `undefined`) must not crash search. |
+| T-03 | Save → quit to menu → reload → `status`: is the bad bio repaired on load? |
+| T-04 | `update` → `updateUser` ×2 must return `true` (the repair no mod could do). |
+| T-05 | `post` → the tweet is on the profile; `Twotter.PostSeen` fires. |
+| T-06 | `cleanup` → `removeUser` ×3 `true`, handles gone (accounts are removable at all). |
+| T-07 | Open the profile of `qe24_declared` — a **quest-declared** account: the bio shows → the write path is fixed, not just search. |
+
+Decisions the results drive (spelled out in `STATUS.md`): all green → re-
+implement; T-02 red → the fence stays and SteelWaffe gets the crash log; T-02
+green with T-07 red → ship against the API only, never the declarative path;
+T-06 red → do not ship accounts at all.
+
+Two details that matter: the bad record plants `bio` **present and undefined**
+(not omitted — that is the shape the save actually held, and the test suite
+asserts it so the probe cannot rot into a no-op), and `createUser` is
+deliberately *not* used to build it, since filling missing fields is the exact
+thing under test.
+
+## The probe has its own tests now
+
+The harness is hand-authored and nothing compiled it, which has already bitten
+once (r173 mangled this same file). `sdk024QaScaffold.test.ts` loads the real
+`mod/dist/mod.js` against a stub SDK and drives the whole probe: **9 new tests**
+(registration, event wiring — including that someone else's account does *not*
+tick our objectives, seed/bad/status/update/post/cleanup, the
+"no Twotter API" path, and the planted-record shape). The stub emulates the
+engine registering quest-declared accounts, because that is what T-07 asks about.
+
+## Housekeeping
+
+- r178's "nothing to run in this folder" wording was wrong the moment this probe
+  existed; the QA `README.md` and `STATUS.md` now say plainly that this is the
+  one open probe.
+- Export regenerated for the build stamp only (mod **1.0.7**) — the probe lives
+  in the raw harness, which the export guard does not compile.
+- The probe's guide also asks for a two-second `curl http://qe24-http.test/`
+  check on the 1.3.1 build: 1.3.0's changelog claims curl was added, and the
+  tested build lacked it.
+
+Gates: `npm run typecheck` 0 errors; `npm test` **1,643 passed / 82 files**
+(was 1,634 — +9, the probe's suite); `npm run build` succeeds; `node --check` on
+the patched harness; `gen:manual` and `gen:qa-export` regenerated. Falsified:
+the probe's planted-record assertion and the event wiring.
+
+Stamp: `2026-09-18.r179`.
+
+Supporting notes:
+
+- [`plans/r179-twotter-probe.md`](plans/r179-twotter-probe.md)
+- [`plans/r178-qa-closeout-and-s04.md`](plans/r178-qa-closeout-and-s04.md)
+
+---
+
 # Handoff — r178
 
 r178 closes the in-game QA effort and answers its last open question. It is a

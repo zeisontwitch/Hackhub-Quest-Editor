@@ -20,6 +20,12 @@ var SCHEDULE_KIND = MOD_ID + ".scheduled-mail";
 var HTTP_IP_KEY = "qe24.httpIp";
 var WIFI_IP_KEY = "qe24.wifiIp";
 var SESSION_KEY = "qe24.sessionSeen";
+/* Twotter probe (r179): fixed ids, so the tester can search for the usernames
+   by hand and `status` can name a record that is missing. */
+var TWOTTER_GOOD_ID = "qe24-probe-user";
+var TWOTTER_BAD_ID = "qe24-bad-record";
+var TWOTTER_DECLARED_ID = "qe24-declared-user";
+var TWOTTER_TWEET_ID = "qe24-probe-tweet";
 var sessionHookRegistered = false;
 
 function log(message) {
@@ -305,11 +311,183 @@ function printClockProbe(tools) {
     tools.println("Tip: run qe24 clock twice, a minute apart, if the first read is ambiguous.");
 }
 
+/* ── Twotter probe (r179) ─────────────────────────────────────────────────
+ * r31 removed Twotter support because a quest-declared account was written to
+ * the save with `bio: undefined`, Twotter's search called .toLowerCase() on it,
+ * and the crash was permanent (game 1.1.2, seven QA rounds - BUG 3 in
+ * docs/05-bug-report-for-hotbunny.md). SDK 0.24 declares updateUser and
+ * removeUser, and the 1.3.0 changelog says the crash is fixed with affected
+ * saves repaired on load. This probe decides whether that is true: it plants
+ * the exact bad shape on purpose, and it exercises the repair calls that did
+ * not exist when the feature was pulled.
+ * Rows: reference/sdk-0.24-qa/STATUS.md (T-01...T-07). */
+
+function twotterApi() {
+    return sdk.Twotter && sdk.Twotter.createUser ? sdk.Twotter : null;
+}
+
+function twotterRecord(id) {
+    var api = twotterApi();
+    if (!api || !api.getUserById) return null;
+    return safe("Twotter.getUserById", function () { return api.getUserById(id); }, null);
+}
+
+/* The stored record, with an undefined field NAMED rather than hidden: JSON
+   drops undefined keys, and "bio missing" is the whole question. */
+function describeTwotterRecord(id) {
+    var rec = twotterRecord(id);
+    if (!rec) return "  " + id + ": NOT FOUND";
+    var lines = ["  " + id + ":"];
+    for (var k in rec) {
+        if (Object.prototype.hasOwnProperty.call(rec, k)) {
+            lines.push("    " + k + ": " + (rec[k] === undefined ? "undefined" : JSON.stringify(rec[k])));
+        }
+    }
+    if (!Object.prototype.hasOwnProperty.call(rec, "bio")) lines.push("    bio: ABSENT (no property at all)");
+    return lines.join("\n");
+}
+
+function printTwotterGuide(tools) {
+    tools.println("QE24 Twotter probe (r179) - the test that decides whether Twotter can come back.");
+    tools.println("");
+    tools.println("Why: a quest-declared account used to be saved with an undefined bio, and Twotter's");
+    tools.println("search crashed on it permanently (r31). 1.3.0 says that is fixed and that affected");
+    tools.println("saves are repaired on load. This proves it, or proves it is not.");
+    tools.println("");
+    tools.println("Throwaway save. Run in this order and paste the console lines:");
+    tools.println("  1. qe24 twotter seed     then search Twotter for:  qe24_probe");
+    tools.println("  2. qe24 twotter bad      then search Twotter for:  qe24_badrecord");
+    tools.println("     (the exact r31 shape: a record with no bio at all. Search must survive.)");
+    tools.println("  3. qe24 twotter status   -> the stored records; a missing bio shows as undefined");
+    tools.println("  4. Save, quit to the main menu, reload, then: qe24 twotter status");
+    tools.println("     (if repair-on-load works, the bad record's bio is no longer missing)");
+    tools.println("  5. qe24 twotter update   -> updateUser repairs both records; prints true/false");
+    tools.println("  6. qe24 twotter post     -> a tweet from our account; check the profile screen");
+    tools.println("  7. qe24 twotter cleanup  -> removeUser/removeTweet; the accounts must disappear");
+    tools.println("  8. Open the profile of qe24_declared (declared by the probe quest, not the API).");
+    tools.println("");
+    tools.println("While you are here: does this build have curl? Try:  curl http://qe24-http.test/");
+    tools.println("Row meanings and what each result decides: reference/sdk-0.24-qa/STATUS.md");
+}
+
+function printTwotterStatus(tools) {
+    var api = twotterApi();
+    tools.println("QE24 Twotter probe status");
+    tools.println("Twotter API: " + (api ? "available" : "NOT AVAILABLE in this build"));
+    if (api) {
+        var names = ["createUser", "addUser", "updateUser", "removeUser", "postTweet", "removeTweet", "getUserById", "getUserByUsername", "toggleLike"];
+        var present = [];
+        for (var i = 0; i < names.length; i++) {
+            if (typeof api[names[i]] === "function") present.push(names[i]);
+        }
+        tools.println("Functions present: " + present.join(", "));
+    }
+    tools.println("Records in this save:");
+    tools.println(describeTwotterRecord(TWOTTER_GOOD_ID));
+    tools.println(describeTwotterRecord(TWOTTER_BAD_ID));
+    tools.println(describeTwotterRecord(TWOTTER_DECLARED_ID));
+    tools.println("Tweets: SDK 0.24 has no tweet reader, so check the profile screen for:");
+    tools.println("  qe24_probe (API post) and qe24_declared (quest-declared tweet)");
+}
+
+function twotterSeed(tools) {
+    var api = twotterApi();
+    if (!api) { tools.printError("Twotter API unavailable in this build"); return; }
+    var user = api.createUser({
+        id: TWOTTER_GOOD_ID,
+        username: "qe24_probe",
+        bio: "SDK 0.24 probe account, made by qe24 twotter seed.",
+        verified: true,
+    });
+    api.addUser(user);
+    tools.println("createUser + addUser done. Search Twotter for: qe24_probe");
+    tools.println("The profile must open, show the bio above, and search must not crash.");
+    tools.println("Stored record now:");
+    tools.println(describeTwotterRecord(TWOTTER_GOOD_ID));
+}
+
+function twotterBad(tools) {
+    var api = twotterApi();
+    if (!api) { tools.printError("Twotter API unavailable in this build"); return; }
+    /* Deliberately the pre-1.3.0 shape: `bio` present and undefined. It is
+       exactly what the save held after the old bug — not a missing property,
+       which is what JSON.stringify would make of an omitted one — so the record
+       reproduces what crashed search, and `createUser()` is not used here
+       because its whole job is to fill in the fields this test leaves out. */
+    api.addUser({
+        id: TWOTTER_BAD_ID,
+        username: "qe24_badrecord",
+        name: "QE24",
+        surname: "BadRecord",
+        avatar: "",
+        banner: "",
+        bio: undefined,
+        joinedAt: new Date().toISOString(),
+        followers: 0,
+        following: 0,
+        password: "",
+    });
+    tools.println("Planted a record with NO bio (the r31 shape). Now search Twotter for: qe24_badrecord");
+    tools.println("Search surviving = the crash is fixed at the read path. It crashing = the bug is open.");
+    tools.println("Stored record now:");
+    tools.println(describeTwotterRecord(TWOTTER_BAD_ID));
+}
+
+function twotterUpdate(tools) {
+    var api = twotterApi();
+    if (!api || !api.updateUser) { tools.printError("Twotter.updateUser unavailable in this build"); return; }
+    var fixedGood = api.updateUser(TWOTTER_GOOD_ID, { bio: "Updated by updateUser (qe24 twotter update)." });
+    var fixedBad = api.updateUser(TWOTTER_BAD_ID, { bio: "" });
+    tools.println("updateUser(qe24_probe) -> " + fixedGood);
+    tools.println("updateUser(qe24_badrecord) -> " + fixedBad + "  (the repair the old report said no mod could do)");
+    tools.println("Two true results mean a mod can repair a record it did not create.");
+    tools.println("Stored records now:");
+    tools.println(describeTwotterRecord(TWOTTER_GOOD_ID));
+    tools.println(describeTwotterRecord(TWOTTER_BAD_ID));
+}
+
+function twotterPost(tools) {
+    var api = twotterApi();
+    if (!api || !api.postTweet) { tools.printError("Twotter.postTweet unavailable in this build"); return; }
+    api.postTweet({
+        id: TWOTTER_TWEET_ID,
+        userId: TWOTTER_GOOD_ID,
+        content: "QE24 probe tweet (qe24 twotter post). If you can read this on the profile, posts work.",
+        interaction: { comments: 1, share: 0, likes: 3, views: 42 },
+        showInTimeline: true,
+    });
+    tools.println("postTweet done. Open the profile of qe24_probe and confirm the tweet is there.");
+    tools.println("The post-seen objective should tick if you open it from the timeline.");
+}
+
+function twotterCleanup(tools) {
+    var api = twotterApi();
+    if (!api) { tools.printError("Twotter API unavailable in this build"); return; }
+    if (api.removeTweet) {
+        tools.println("removeTweet -> " + safe("Twotter.removeTweet", function () { api.removeTweet(TWOTTER_TWEET_ID); return "called"; }, "threw"));
+    }
+    var ids = [["qe24_probe", TWOTTER_GOOD_ID], ["qe24_badrecord", TWOTTER_BAD_ID], ["qe24_declared", TWOTTER_DECLARED_ID]];
+    for (var i = 0; i < ids.length; i++) {
+        var result = "no removeUser";
+        if (api.removeUser) {
+            /* Function-scoped copy: `var id` inside a callback would be the same
+               binding for every iteration under ES5. */
+            result = (function (id) {
+                return safe("Twotter.removeUser", function () { return api.removeUser(id); }, "threw");
+            })(ids[i][1]);
+        }
+        tools.println("removeUser(" + ids[i][0] + ") -> " + result);
+    }
+    tools.println("true = gone. Search for each handle: none should appear, and search must still work.");
+    tools.println("false on qe24_declared means the quest-declared path needs a second look before we ship accounts.");
+}
+
 function printGuide(tools) {
     ensureSession();
     tools.println("QE24 is a QA harness, not a puzzle quest.");
     tools.println("");
-    tools.println("Every check this harness was built for is CLOSED (2026-09-18).");
+    tools.println("Every check but ONE is closed: the Twotter probe (r179) is open, and it decides");
+    tools.println("whether Twotter can return to the editor. Run: qe24 twotter");
     tools.println("Results, and the one question it answered (S-04, the clock zone): reference/sdk-0.24-qa/STATUS.md");
     tools.println("");
     tools.println("This mod stays as a TOOL, not a checklist: seed/status/history/clock/reset still work, and the next round that needs an in-game probe adds new commands.");
@@ -318,8 +496,9 @@ function printGuide(tools) {
 }
 
 function printNextSteps(tools) {
-    tools.println("Nothing further to run in this harness - all of its checks are closed.");
-    tools.println("Results: reference/sdk-0.24-qa/STATUS.md. A future probe arrives as a new harness version, not as a re-run of these.");
+    tools.println("One open probe: qe24 twotter (r179) - the Twotter crash fix and the repair calls.");
+    tools.println("Everything else in this harness is closed; do not re-run it.");
+    tools.println("Results and rows: reference/sdk-0.24-qa/STATUS.md");
 }
 
 function printInterceptGuide(tools) {
@@ -632,6 +811,85 @@ class QE24PhoneOnEndDirectCompleteProbe extends sdk.Quest {
     OnAbandon() { log("phone-direct abandoned"); }
 }
 
+class QE24TwotterProbe extends sdk.Quest {
+    constructor() {
+        super();
+        this.Name = "QE24TwotterProbe";
+        this.Title = "QE24 Twotter probe";
+        this.Description = "Developer QA harness. Run qe24 twotter for the steps; the objectives are reminders, not a puzzle path.";
+        this.Group = "sandbox";
+        this.AutoStart = true;
+        this.AutoComplete = false;
+        this.HasCompleteButton = false;
+        this.Abandonable = true;
+        /* The declarative path the editor used before r31: the engine writes
+           these records itself. If the bio comes through here, the write path
+           is fixed; if it does not, the guard is on the read side only. */
+        this.TwotterAccounts = [
+            {
+                id: TWOTTER_DECLARED_ID,
+                username: "qe24_declared",
+                displayName: "QE24 Declared Account",
+                avatar: "",
+                bio: "Declared by the quest definition, not by the API.",
+                verified: true,
+            },
+        ];
+        this.Tweets = [
+            {
+                accountId: TWOTTER_DECLARED_ID,
+                content: "Quest-declared tweet (QE24 Twotter probe).",
+                likes: 3,
+                comments: 1,
+                shares: 0,
+                views: 42,
+                postedAgo: "2 days",
+            },
+        ];
+        this.Objectives = [
+            { name: "api-account-seen", description: "Run qe24 twotter seed, then search Twotter for qe24_probe. Ticks when the game reports Twotter.AccountCreated." },
+            { name: "declared-profile-seen", description: "Open the profile of qe24_declared (quest-declared account). Ticks on Twotter.ProfileSeen." },
+            { name: "post-seen", description: "Run qe24 twotter post, then open the tweet. Ticks on Twotter.PostSeen." },
+            { name: "bad-record-search", description: "Run qe24 twotter bad, then search Twotter for qe24_badrecord. Reminder only: the result to report is whether search survives." },
+            { name: "repair-after-reload", description: "Save, quit to the main menu, reload, then qe24 twotter status. Reminder only: a repaired bio means 1.3.0's save repair works." },
+            { name: "cleanup", description: "Run qe24 twotter cleanup. Reminder only: all three removeUser calls should print true." },
+        ];
+    }
+    CreateData() { return {}; }
+    OnStart() {
+        log("QE24TwotterProbe started");
+        sendMailSafe("QE24 Twotter probe", "Run qe24 twotter in the terminal for the steps.\n\nSearches to make: qe24_probe (API account) and qe24_badrecord (the r31 shape, no bio).\nOpen the profile of qe24_declared for the quest-declared account.\nFinish with qe24 twotter cleanup.");
+    }
+    OnObjectivesStart() {
+        var self = this;
+        function done(name, detail) {
+            completeObjectiveSafe(self, name);
+            log("twotter objective " + name + " passed" + (detail ? ": " + detail : ""));
+        }
+        this.Events.on("Twotter.AccountCreated", function (account) {
+            log("Twotter.AccountCreated payload: " + JSON.stringify(account));
+            if (account && (account.id === TWOTTER_GOOD_ID || account.username === "qe24_probe")) {
+                done("api-account-seen", account.username);
+            }
+        });
+        this.Events.on("Twotter.ProfileSeen", function (profile) {
+            log("Twotter.ProfileSeen payload: " + JSON.stringify(profile));
+            if (profile && (profile.username === "qe24_declared" || profile.id === TWOTTER_DECLARED_ID)) {
+                done("declared-profile-seen", profile.username);
+            }
+        });
+        this.Events.on("Twotter.PostSeen", function (post) {
+            log("Twotter.PostSeen payload: " + JSON.stringify(post));
+            if (post && post.userId === TWOTTER_GOOD_ID) done("post-seen", String(post.id));
+        });
+        this.Events.on("Twotter.AccountLogin", function (account) {
+            log("Twotter.AccountLogin (not ours, logging only): " + JSON.stringify(account));
+        });
+    }
+    OnComplete() { log("QE24TwotterProbe OnComplete fired"); }
+    OnAbandon() { log("QE24TwotterProbe abandoned"); }
+}
+
 class QE24Command extends sdk.Command {
     constructor() {
         super();
@@ -639,7 +897,7 @@ class QE24Command extends sdk.Command {
         this.Description = "SDK 0.24 QA harness commands";
         this.Autocomplete = [
             { label: "qe24", type: "STRING" },
-            { label: "guide|next|status|history|clock|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
+            { label: "guide|next|status|history|clock|twotter|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
         ];
     }
     async Run(tools) {
@@ -678,7 +936,7 @@ class QE24Command extends sdk.Command {
             tools.println("Connected Wi-Fi is QE24 target: " + (connectedMatchesTarget ? "yes" : "no"));
             if (targetWifi && currentWifi && !connectedMatchesTarget) tools.println("Note: if the game UI says QE24 is connected, paste this mismatch before we unhide Wi-Fi.");
             tools.println("Tip: run qe24 next if the 6/6 surface objective quest is already done, qe24 intercept for proxy-test steps, or qe24 history for HTTP/collab evidence.");
-            tools.println("Commands: qe24 guide · qe24 next · qe24 status · qe24 history · qe24 clock · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
+            tools.println("Commands: qe24 guide · qe24 next · qe24 status · qe24 history · qe24 clock · qe24 twotter [seed|bad|update|post|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
             return;
         }
         if (sub === "history") {
@@ -687,6 +945,18 @@ class QE24Command extends sdk.Command {
         }
         if (sub === "clock") {
             printClockProbe(tools);
+            return;
+        }
+        if (sub === "twotter") {
+            var verb = args[1] || "guide";
+            if (verb === "guide") { printTwotterGuide(tools); return; }
+            if (verb === "status") { printTwotterStatus(tools); return; }
+            if (verb === "seed") { twotterSeed(tools); return; }
+            if (verb === "bad") { twotterBad(tools); return; }
+            if (verb === "update") { twotterUpdate(tools); return; }
+            if (verb === "post") { twotterPost(tools); return; }
+            if (verb === "cleanup") { twotterCleanup(tools); return; }
+            tools.printError("Unknown twotter verb: " + verb + " (try: qe24 twotter)");
             return;
         }
         if (sub === "seed") {
@@ -829,6 +1099,17 @@ class QE24Bootstrap extends sdk.Bootstrap {
         safe("Http.unregisterHost", function () { if (sdk.Http && sdk.Http.unregisterHost) sdk.Http.unregisterHost(HTTP_HOST); });
         safe("Http.unpublish", function () { if (sdk.Http && sdk.Http.unpublish) sdk.Http.unpublish(HTTP_HOST); });
         safe("Scheduler.unregister", function () { if (sdk.Scheduler && sdk.Scheduler.unregister) sdk.Scheduler.unregister(SCHEDULE_KIND); });
+        /* The SDK docs say mod-added accounts stay in the save after uninstall,
+           so the probe cleans up after itself. removeUser is the call that did
+           not exist when Twotter was pulled (r31), which is exactly why it is
+           worth exercising from the unload path too. */
+        safe("Twotter cleanup on unload", function () {
+            if (!sdk.Twotter || !sdk.Twotter.removeUser) return;
+            var ids = [TWOTTER_GOOD_ID, TWOTTER_BAD_ID, TWOTTER_DECLARED_ID];
+            for (var i = 0; i < ids.length; i++) {
+                log("unload removeUser(" + ids[i] + ") -> " + sdk.Twotter.removeUser(ids[i]));
+            }
+        });
     }
 }
 
@@ -839,6 +1120,7 @@ sdk.RegisterQuest(QE24RetireProbe);
 sdk.RegisterQuest(QE24UnclaimTarget);
 sdk.RegisterQuest(QE24PhoneOnEndAutoCompleteProbe);
 sdk.RegisterQuest(QE24PhoneOnEndDirectCompleteProbe);
+sdk.RegisterQuest(QE24TwotterProbe);
 if (typeof sdk.RegisterCommand === "function") {
     sdk.RegisterCommand({ default: true, scope: "local" })(QE24Command);
 }

@@ -1,19 +1,27 @@
 /**
  * Migrations: an older draft or an exported file must still open.
  *
- * The Twotter rules here are the ones that matter today. Support was removed in
- * round 31 — the game stores a quest-declared account with an undefined `bio`
- * and Twotter's search calls `.toLowerCase()` on it, so any search that does
- * not match something sooner crashes the game, before *and* after the mod is
- * uninstalled, with no way for a mod to repair the record (QA rounds 5–7).
- * Projects made while the feature existed must not be lost because of it.
+ * The Twotter rules here are the ones that matter today. r31 REMOVED the
+ * feature — the game stored a quest-declared account with an undefined `bio`
+ * and Twotter's search called `.toLowerCase()` on it, so any search that did
+ * not match something sooner crashed the game (QA rounds 5–7) — and the
+ * migration of that round deleted every tweet node to keep old drafts opening.
+ *
+ * r185 brought the feature back on the API path the r179 probe proved safe, so
+ * that deletion is now the wrong answer: somebody's r30 draft must open with
+ * its tweets INTACT, rewritten into the new shape. `dropTwotter` became
+ * `mapTwotter`, and these tests pin what it maps to.
  */
 import { describe, expect, it } from "vitest";
 import { migrateProject } from "@/schema/migrate";
 import { ProjectSchema, createProject } from "@/schema/project";
 import { parseProjectFile, serializeProject } from "@/templates/share";
 
-/** A project the way r30 and earlier wrote it: accounts, a tweet, wires. */
+/**
+ * A project the way r30 and earlier wrote it: a quest-level account list, a
+ * tweet node carrying the old `TweetDefinition` fields (`username` on the
+ * account, `content` / `postedAgo` / `postLive` on the node), and wires.
+ */
 function oldProjectJson() {
     const base = JSON.parse(JSON.stringify(createProject())) as Record<string, unknown>;
     const quest = (base.quests as Record<string, unknown>[])[0];
@@ -34,20 +42,165 @@ function oldProjectJson() {
     return base;
 }
 
-describe("projects made before Twotter was removed", () => {
-    it("drops the tweet node and the wire that fed it, keeping the rest", () => {
+/** The one tweet node the fixtures migrate, as the r185 shape. */
+function tweetNode(raw: Record<string, unknown>) {
+    const migrated = migrateProject(raw) as {
+        quests: { graph: { nodes: { type: string; data: Record<string, unknown> }[] } }[];
+    };
+    const node = migrated.quests[0].graph.nodes.find((n) => n.type === "comms.tweet");
+    expect(node, "the tweet node survived the migration").toBeDefined();
+    const tweets = node!.data.tweets as Record<string, unknown>[];
+    expect(tweets).toHaveLength(1);
+    return { data: node!.data, row: tweets[0]! };
+}
+
+/** The old project, with the tweet node's data replaced. */
+function oldProjectWithTweet(data: Record<string, unknown>) {
+    const base = oldProjectJson();
+    ((base.quests as Record<string, unknown>[])[0].graph as { nodes: Record<string, unknown>[] }).nodes[1] = {
+        id: "n2",
+        type: "comms.tweet",
+        position: { x: 300, y: 0 },
+        data,
+    };
+    return base;
+}
+
+describe("projects made before Twotter was removed (r30 drafts)", () => {
+    it("keeps the tweet node and its wires, and turns it into a row", () => {
         const migrated = migrateProject(oldProjectJson()) as Record<string, unknown>;
         const quest = (migrated.quests as Record<string, unknown>[])[0];
         const graph = quest.graph as { nodes: { id: string }[]; edges: { id: string }[] };
 
-        expect(graph.nodes.map((n) => n.id)).toEqual(["n1", "n3"]);
-        expect(graph.edges.map((e) => e.id)).toEqual(["e2"]); // no wire left dangling
+        // r31 deleted the node and its wire. r185 must not: those tweets are
+        // somebody's writing.
+        expect(graph.nodes.map((n) => n.id)).toEqual(["n1", "n2", "n3"]);
+        expect(graph.edges.map((e) => e.id)).toEqual(["e1", "e2"]);
+
+        const node = (graph.nodes as { id: string; data: Record<string, unknown> }[])[1]!;
+        expect(node.data.accountId).toBe("acc1");
+        const row = (node.data.tweets as Record<string, unknown>[])[0]!;
+        expect(row.content).toBe("Hello World!");
+        expect(row.timeMode).toBe("earlier");
+        expect(row.agoAmount).toBe(1);
+        expect(row.agoUnit).toBe("months");
+        // No time was written by that round at all, so the age is a stand-in
+        // and the node says so rather than pretending the migration was exact.
+        expect(node.data.migratedDate).toBe(true);
+    });
+
+    it("lifts the quest's accounts to the mod level, keeping every field", () => {
+        const migrated = migrateProject(oldProjectJson()) as Record<string, unknown>;
+        const accounts = migrated.twotterAccounts as Record<string, unknown>[];
+        expect(accounts).toHaveLength(1);
+        expect(accounts[0]).toMatchObject({
+            id: "acc1",
+            handle: "qatest", // the old field was `username`
+            displayName: "QA Test",
+            bio: "hi",
+            verified: false,
+            removeWhenQuestEnds: true,
+        });
+        const quest = (migrated.quests as Record<string, unknown>[])[0];
         expect("twotterAccounts" in quest).toBe(false);
+    });
+
+    it("gives a missing bio an empty string, never undefined", () => {
+        // The r31 crash in one assertion: a record whose bio is not a string is
+        // what made the game's Twotter search throw.
+        const base = oldProjectJson();
+        const quest = (base.quests as Record<string, unknown>[])[0];
+        (quest.twotterAccounts as Record<string, unknown>[])[0]!.bio = undefined;
+        const migrated = migrateProject(base) as Record<string, unknown>;
+        const account = (migrated.twotterAccounts as Record<string, unknown>[])[0]!;
+        expect(account.bio).toBe("");
+        expect(typeof account.bio).toBe("string");
+    });
+
+    it("keeps a readable age exactly as it was written", () => {
+        const { row, data } = tweetNode(oldProjectWithTweet({ accountId: "acc1", content: "two days old", postedAgo: "2 days" }));
+        expect(row).toMatchObject({ timeMode: "earlier", agoAmount: 2, agoUnit: "days" });
+        expect("migratedDate" in data).toBe(false);
+    });
+
+    it("reads the age whatever else the old node also carried", () => {
+        // The r30 shape had `postedAgo` and no `timeMode`; an intermediate
+        // draft might have both. The age is the field that means something.
+        const { row } = tweetNode(oldProjectWithTweet({ accountId: "acc1", content: "x", timeMode: "relative", postedAgo: "3 hours" }));
+        expect(row).toMatchObject({ timeMode: "earlier", agoAmount: 3, agoUnit: "hours" });
+    });
+
+    it("lands a fixed calendar date on an age of a month, and flags it", () => {
+        const { row, data } = tweetNode(oldProjectWithTweet({ accountId: "acc1", content: "x", timeMode: "absolute", postedAt: "2026-01-04T12:00:00Z" }));
+        expect(row).toMatchObject({ timeMode: "earlier", agoAmount: 1, agoUnit: "months" });
+        expect(data.migratedDate).toBe(true);
+    });
+
+    it("lands an age it cannot read on the same month, and flags it", () => {
+        const { row, data } = tweetNode(oldProjectWithTweet({ accountId: "acc1", content: "x", postedAgo: "3h" }));
+        expect(row).toMatchObject({ timeMode: "earlier", agoAmount: 1, agoUnit: "months" });
+        expect(data.migratedDate).toBe(true);
+    });
+
+    it("keeps a live tweet posting when the story arrives", () => {
+        const { row, data } = tweetNode(oldProjectWithTweet({ accountId: "acc1", content: "x", postLive: true }));
+        expect(row.timeMode).toBe("arrival");
+        expect("migratedDate" in data).toBe(false);
+    });
+
+    it("keeps the counts and the picture the node carried", () => {
+        const { row } = tweetNode(
+            oldProjectWithTweet({
+                accountId: "acc1",
+                content: "x",
+                image: "data:image/png;base64,AAAA",
+                likes: 12,
+                comments: 3,
+                shares: 1,
+                views: 400,
+                showInTimeline: true,
+            }),
+        );
+        expect(row).toMatchObject({ likes: 12, comments: 3, shares: 1, views: 400, showInTimeline: true });
+        expect(row.image).toBe("data:image/png;base64,AAAA");
+    });
+
+    it("folds two quests that declared the same handle onto one account", () => {
+        // The old shape made people declare the same character once per quest.
+        // Accounts live at the mod level now, so the second declaration must
+        // not become a second account — and the nodes that used it must end up
+        // on the one that is kept.
+        const base = oldProjectJson();
+        const quests = base.quests as Record<string, unknown>[];
+        const second = JSON.parse(JSON.stringify(quests[0])) as Record<string, unknown>;
+        second.id = "second-quest";
+        second.title = "Second Quest";
+        // Same handle, different case — Twotter search does not care about
+        // case, so the fold must not either.
+        second.twotterAccounts = [
+            { id: "acc2", username: "QATEST", displayName: "QA Test again", bio: "" },
+        ];
+        second.graph = {
+            nodes: [
+                { id: "m1", type: "entry.start", position: { x: 0, y: 0 }, data: {} },
+                { id: "m2", type: "comms.tweet", position: { x: 300, y: 0 }, data: { accountId: "acc2", content: "second" } },
+            ],
+            edges: [],
+        };
+        quests.push(second);
+
+        const migrated = migrateProject(base) as Record<string, unknown>;
+        const accounts = migrated.twotterAccounts as Record<string, unknown>[];
+        expect(accounts.map((a) => a.handle)).toEqual(["qatest"]);
+
+        const kept = migrated.quests as Record<string, unknown>[];
+        const secondNodes = ((kept[1]!.graph as { nodes: Record<string, unknown>[] }).nodes);
+        expect((secondNodes[1]!.data as Record<string, unknown>).accountId).toBe("acc1");
     });
 
     it("validates afterwards — the whole point of migrating", () => {
         const result = ProjectSchema.safeParse(migrateProject(oldProjectJson()));
-        expect(result.success).toBe(true);
+        expect(result.success, JSON.stringify(result.success ? null : result.error.issues)).toBe(true);
     });
 
     it("opens as a file instead of being called “not a quest project”", () => {
@@ -57,8 +210,21 @@ describe("projects made before Twotter was removed", () => {
         if (!parsed.ok) return;
         expect(parsed.project.quests[0].graph.nodes.map((n) => n.type)).toEqual([
             "entry.start",
+            "comms.tweet",
             "fx.notify",
         ]);
+        expect(parsed.project.twotterAccounts).toHaveLength(1);
+    });
+
+    it("opens an r30 draft with a relative age as a file, fully validated", () => {
+        const parsed = parseProjectFile(JSON.stringify(oldProjectWithTweet({ accountId: "acc1", content: "x", postedAgo: "2 weeks" })));
+        expect(parsed.ok).toBe(true);
+        if (!parsed.ok) return;
+        const node = parsed.project.quests[0].graph.nodes.find((n) => n.type === "comms.tweet");
+        expect(node?.data).toMatchObject({ accountId: "acc1" });
+        if (node?.type === "comms.tweet") {
+            expect(node.data.tweets[0]).toMatchObject({ timeMode: "earlier", agoAmount: 2, agoUnit: "weeks" });
+        }
     });
 
     it("leaves a project with nothing Twotter in it exactly as it was", () => {

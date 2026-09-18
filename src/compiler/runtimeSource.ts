@@ -358,6 +358,248 @@ function __qeRegisterProject(sdk, PROJECT) {
         __QE.log("no Scheduler API in this game build - timers will not fire");
     }
 
+    /* ── Twotter (r185) ──────────────────────────────────────────────────
+       Accounts are mod-level data (PROJECT.twotterAccounts); the Tweet node
+       posts from one of them. Everything an account needs happens through the
+       platform API here, never through the declarative TwotterAccounts /
+       Tweets quest fields — those are the fields the engine writes with
+       bio: undefined, which crashed the game's Twotter search for seven QA
+       rounds and got the whole feature removed in r31.
+
+       What the r179 probe established and this code relies on:
+
+       - createUser() fills a COMPLETE record (name, surname, avatar,
+         banner, joinedAt, password) for the fields we cannot express, so we
+         hand it the ones we own and let it fill the rest.
+       - A bio we send as "" stays a string. Nothing may ever send
+         undefined - that is the whole bug.
+       - removeUser() deletes accounts, quest-declared ones included.
+       - postTweet() posts, and Twotter.PostSeen fires for the player.
+
+       And what the P-01 probes added (2026-09-18):
+
+       - A sendedAt we send is KEPT: all three spellings read back "a month
+         ago", while a tweet with no time read "a few seconds ago". So a
+         backdated series is possible, and the runtime sends ISO with
+         milliseconds computed from the in-game clock.
+       - A profile shows the newest tweet first, whatever order we posted in.
+         We post oldest -> newest anyway (deterministic, and it matches the
+         author's list), and the display sorts itself.
+
+       Ownership, in the words of the rule the author approved: a quest removes
+       only what it created, and only when no other live quest declares the
+       same account. An account we merely ADOPTED (it already existed) is never
+       ours to remove. Uninstalling the mod removes what the mod declares,
+       because the SDK says mod-added accounts outlive an uninstall otherwise —
+       "the story is gone with the mod". */
+    var TWOTTER_ACCOUNTS = PROJECT.twotterAccounts || [];
+    var twotterReady = !!(sdk.Twotter && sdk.Twotter.createUser && sdk.Twotter.addUser);
+    /* accountId -> questId that created it in this session. */
+    var twotterCreatedBy = {};
+    /* accountId -> true when the account already existed and we only refreshed
+       it. Adopted accounts belong to someone else (another mod, or the player)
+       and are never removed by us. */
+    var twotterAdopted = {};
+    /* questId -> true once that quest has completed or been abandoned in this
+       session. Anything else counts as live, including a quest that has not
+       started yet: keeping an account one beat too long is recoverable, and
+       deleting one a later act needs is not. */
+    var twotterQuestEnded = {};
+    /* accountId -> [questId] for every quest whose Tweet nodes post from it.
+       Read from PROJECT's graphs, so it covers quests that have not started. */
+    var twotterDeclaredBy = {};
+    (PROJECT.quests || []).forEach(function (q) {
+        ((q.graph && q.graph.nodes) || []).forEach(function (n) {
+            if (n.type !== "comms.tweet" || !n.data || !n.data.accountId) return;
+            var list = twotterDeclaredBy[n.data.accountId] || (twotterDeclaredBy[n.data.accountId] = []);
+            if (list.indexOf(q.id) < 0) list.push(q.id);
+        });
+    });
+
+    function twotterAccount(id) {
+        for (var i = 0; i < TWOTTER_ACCOUNTS.length; i++) {
+            if (TWOTTER_ACCOUNTS[i].id === id) return TWOTTER_ACCOUNTS[i];
+        }
+        return null;
+    }
+
+    function twotterHandle(account) {
+        var handle = String(account.handle == null ? "" : account.handle).replace(/^@+/, "");
+        return handle.replace(/ +/g, "_");
+    }
+
+    /* A display name is one line to the author; the platform stores a first
+       name and a surname, so the first word is the first name and the rest is
+       the surname ("Justyna Kuznetsova" -> "Justyna" / "Kuznetsova"). */
+    function twotterSplitName(displayName) {
+        var parts = String(displayName == null ? "" : displayName).trim().split(" ");
+        var words = [];
+        for (var i = 0; i < parts.length; i++) {
+            if (parts[i]) words.push(parts[i]);
+        }
+        if (!words.length) return { first: "", last: "" };
+        return { first: words[0], last: words.slice(1).join(" ") };
+    }
+
+    /* Create the account, or adopt the one already carrying this handle.
+
+       The id is the editor's own account id, which makes creation idempotent
+       across reloads: a second call finds the account and refreshes it instead
+       of making a twin. */
+    function ensureTwotterAccount(account, questId) {
+        if (!twotterReady || !account) return null;
+        var handle = twotterHandle(account);
+        if (!handle) {
+            __QE.log("twotter: account " + account.id + " has no handle; skipping it");
+            return null;
+        }
+        var existing = null;
+        try {
+            if (sdk.Twotter.getUserByUsername) existing = sdk.Twotter.getUserByUsername(handle);
+        } catch (e) {
+            __QE.log("twotter: looking up @" + handle + " failed (continuing): " + e);
+        }
+        var name = twotterSplitName(account.displayName);
+        var fields = {
+            username: handle,
+            firstName: name.first,
+            lastName: name.last,
+            name: name.first,
+            surname: name.last,
+            /* ALWAYS a string. A blank bio is "", never undefined — the exact
+               shape that crashed the game's search. */
+            bio: account.bio == null ? "" : String(account.bio),
+            verified: !!account.verified,
+            followers: Math.max(0, Math.round(Number(account.followers) || 0)),
+            following: Math.max(0, Math.round(Number(account.following) || 0)),
+        };
+        /* Author-supplied pictures are passed through when they exist, and left
+           out entirely when they do not, so the engine's own default is used
+           rather than an empty string (r20: an empty avatar was what first
+           broke the profile screen). */
+        if (account.avatar) fields.avatar = account.avatar;
+        if (account.banner) fields.banner = account.banner;
+
+        if (existing) {
+            twotterAdopted[account.id] = true;
+            try {
+                if (sdk.Twotter.updateUser) sdk.Twotter.updateUser(existing.id, fields);
+                __QE.log("twotter: adopted @" + handle + " (already existed); author fields refreshed");
+            } catch (e) {
+                __QE.log("twotter: refreshing @" + handle + " failed (continuing): " + e);
+            }
+            return existing.id;
+        }
+        try {
+            var user = sdk.Twotter.createUser({
+                id: account.id,
+                username: fields.username,
+                firstName: fields.firstName,
+                lastName: fields.lastName,
+                bio: fields.bio,
+                verified: fields.verified,
+                followers: fields.followers,
+                following: fields.following,
+                avatar: fields.avatar,
+                banner: fields.banner,
+            });
+            sdk.Twotter.addUser(user);
+            twotterCreatedBy[account.id] = questId;
+            __QE.log("twotter: created @" + handle + " (" + account.id + ") for quest " + questId);
+            return account.id;
+        } catch (e) {
+            __QE.log("twotter: creating @" + handle + " failed (the story continues): " + e);
+            return null;
+        }
+    }
+
+    /* Every account the mod declares, ensured once. Called from the quest's
+       start hooks: the first quest that needs an account brings it into the
+       world, and a later quest that needs the same one simply finds it. */
+    function ensureDeclaredTwotterAccounts(questId) {
+        if (!twotterReady) {
+            __QE.log("twotter: no Twotter API in this game build - accounts are not registered");
+            return;
+        }
+        var declared = Object.keys(twotterDeclaredBy);
+        for (var i = 0; i < declared.length; i++) {
+            var quests = declared[i];
+            if (quests.indexOf(questId) < 0) continue;
+            ensureTwotterAccount(twotterAccount(declared[i]), questId);
+        }
+    }
+
+    function removeTwotterAccount(accountId, why) {
+        if (!twotterReady || !sdk.Twotter.removeUser) return;
+        try {
+            var gone = sdk.Twotter.removeUser(accountId);
+            __QE.log("twotter: removeUser(" + accountId + ") -> " + gone + (why ? " (" + why + ")" : ""));
+            if (gone) {
+                delete twotterCreatedBy[accountId];
+                delete twotterAdopted[accountId];
+            }
+        } catch (e) {
+            __QE.log("twotter: removing " + accountId + " failed (continuing): " + e);
+        }
+    }
+
+    /* A quest has finished (complete or abandon): take back the accounts it
+       brought into the world, unless the author asked for the character to
+       outlive the story, another live quest still declares it, or it was not
+       ours to begin with. */
+    function releaseTwotterAccounts(questId) {
+        twotterQuestEnded[questId] = true;
+        if (!twotterReady) return;
+        var ids = Object.keys(twotterCreatedBy);
+        for (var i = 0; i < ids.length; i++) {
+            var accountId = ids[i];
+            if (twotterCreatedBy[accountId] !== questId) continue;
+            var account = twotterAccount(accountId);
+            if (!account) continue;
+            if (account.removeWhenQuestEnds === false) {
+                __QE.log("twotter: keeping @" + twotterHandle(account) + " - the author asked for it to outlive the quest");
+                continue;
+            }
+            var declared = twotterDeclaredBy[accountId] || [];
+            var stillNeeded = false;
+            for (var j = 0; j < declared.length; j++) {
+                if (declared[j] !== questId && !twotterQuestEnded[declared[j]]) {
+                    stillNeeded = true;
+                    break;
+                }
+            }
+            if (stillNeeded) {
+                __QE.log("twotter: keeping @" + twotterHandle(account) + " - another live quest declares it");
+                continue;
+            }
+            removeTwotterAccount(accountId, "quest " + questId + " ended");
+        }
+    }
+
+    /* Uninstall: the SDK's own advice is that accounts a mod adds live in the
+       player's save and are NOT removed when the mod goes away, so the mod
+       takes its characters with it. Adopted accounts are left alone — they were
+       never ours — and everything gets a log line, because the alternative is
+       an account nobody can explain. */
+    function removeAllTwotterAccounts() {
+        if (!twotterReady || !sdk.Twotter.removeUser) return;
+        for (var i = 0; i < TWOTTER_ACCOUNTS.length; i++) {
+            var account = TWOTTER_ACCOUNTS[i];
+            if (twotterAdopted[account.id]) {
+                __QE.log("twotter: leaving @" + twotterHandle(account) + " - we adopted it, it was not ours");
+                continue;
+            }
+            var exists = null;
+            try {
+                exists = sdk.Twotter.getUserByUsername ? sdk.Twotter.getUserByUsername(twotterHandle(account)) : null;
+            } catch (e) {
+                exists = null;
+            }
+            if (!exists) continue;
+            removeTwotterAccount(exists.id, "mod unloaded");
+        }
+    }
+
     /* ── one quest ─────────────────────────────────────────────────────── */
     function registerQuest(qd) {
         var g = qd.graph;
@@ -561,6 +803,91 @@ function __qeRegisterProject(sdk, PROJECT) {
             }, Promise.resolve());
         }
 
+        /* ── Twotter posts (r185) ──────────────────────────────────────── */
+
+        /* Node ids that have already posted in this playthrough. The flow
+           re-runs on a save reload (entry.load chains replayed by
+           OnObjectivesStart), and a node that posted twice would stack
+           duplicates in a feed the player may still be reading. */
+        var postedTweetNodes = {};
+
+        /* The moment an "already on the profile" tweet was posted, as ISO with
+           milliseconds — the one spelling the game kept in all three P-01a
+           tests, and what its relative ages are rendered from. */
+        function twotterEarlierIso(row) {
+            var base = (sdk.Time && sdk.Time.date) ? sdk.Time.date() : new Date();
+            var when = new Date(base.getTime());
+            var amount = Math.max(1, Math.round(Number(row.agoAmount) || 1));
+            var unit = String(row.agoUnit || "days");
+            if (unit === "minutes") when.setMinutes(when.getMinutes() - amount);
+            else if (unit === "hours") when.setHours(when.getHours() - amount);
+            else if (unit === "days") when.setDate(when.getDate() - amount);
+            else if (unit === "weeks") when.setDate(when.getDate() - 7 * amount);
+            else if (unit === "months") when.setMonth(when.getMonth() - amount);
+            else if (unit === "years") when.setFullYear(when.getFullYear() - amount);
+            return when.toISOString();
+        }
+
+        /* Post this node's tweets, once per playthrough. Rows are posted oldest
+           -> newest: the author writes a history the way it happened, and while
+           the profile sorts by time anyway (P-01b), posting in order keeps two
+           tweets at the same age reading in the order they were written. */
+        function postTweets(node, scope) {
+            if (!twotterReady || !sdk.Twotter.postTweet) {
+                __QE.log("twotter node " + node.id + ": no Twotter API in this build - nothing posted");
+                return;
+            }
+            if (postedTweetNodes[node.id]) {
+                __QE.log("twotter node " + node.id + ": already posted in this playthrough; skipping");
+                return;
+            }
+            postedTweetNodes[node.id] = true;
+            var account = twotterAccount(node.data.accountId);
+            if (!account) {
+                __QE.log("twotter node " + node.id + ": no account set (or the account was deleted) - nothing posted");
+                return;
+            }
+            var userId = ensureTwotterAccount(account, qd.id);
+            if (!userId) return;
+            var rows = node.data.tweets || [];
+            if (!rows.length) {
+                __QE.log("twotter node " + node.id + ": no tweets to post");
+                return;
+            }
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                /* Deterministic id: a reload cannot post a second copy under a
+                   different name, and cleanup has something stable to remove. */
+                var tweetId = "qe-" + qd.id + "-" + node.id + "-" + i;
+                var tweet = {
+                    id: tweetId,
+                    userId: userId,
+                    content: __QE.fill(row.content || "", scope),
+                    interaction: {
+                        comments: Math.max(0, Math.round(Number(row.comments) || 0)),
+                        share: Math.max(0, Math.round(Number(row.shares) || 0)),
+                        likes: Math.max(0, Math.round(Number(row.likes) || 0)),
+                        views: Math.max(0, Math.round(Number(row.views) || 0)),
+                    },
+                    showInTimeline: !!row.showInTimeline,
+                };
+                if (row.timeMode === "earlier") tweet.sendedAt = twotterEarlierIso(row);
+                /* The posting API's record has no picture field (SDK 0.24
+                   TwotterTweet). The key is passed anyway when the author
+                   attached one — an ignored key costs nothing, and the in-game
+                   check is what decides whether a picture ever appears. */
+                if (row.image) tweet.image = row.image;
+                try {
+                    sdk.Twotter.postTweet(tweet);
+                    __QE.log("twotter node " + node.id + ": posted " + tweetId +
+                        (tweet.sendedAt ? " (backdated to " + tweet.sendedAt + ")" : " (now)"));
+                    questCleanup.push({ kind: "tweet", id: tweetId });
+                } catch (e) {
+                    __QE.log("twotter node " + node.id + ": posting failed (the story continues): " + e);
+                }
+            }
+        }
+
         /* Everything this quest added to the world that should disappear with
            it. Filled as the flow runs (a node the story never reaches added
            nothing), drained in OnComplete/OnAbandon. */
@@ -628,6 +955,12 @@ function __qeRegisterProject(sdk, PROJECT) {
             questCleanup.length = 0;
             __QE.log("cleanup starting (" + reason + "): " + todo.length + " item(s) to undo" +
                 (skipped ? ", leaving " + skipped + " network(s) standing" : ""));
+            /* The quest's Twotter characters go with it (r185). Done here
+               rather than in the loop below because it asks a question the
+               other kinds do not: whether another live quest still needs the
+               account. */
+            releaseTwotterAccounts(qd.id);
+
             while (todo.length) {
                 var item = todo.pop();
                 __QE.log("cleanup: " + item.kind + " " + (item.ip || item.domain || item.command || item.id || ""));
@@ -649,6 +982,10 @@ function __qeRegisterProject(sdk, PROJECT) {
                     }
                     if (item.kind === "domain" && sdk.Network.removeDomain) sdk.Network.removeDomain(item.domain);
                     if (item.kind === "commandData" && sdk.Shell && sdk.Shell.removeCommandData) sdk.Shell.removeCommandData(item.command, item.input);
+                    if (item.kind === "tweet" && sdk.Twotter && sdk.Twotter.removeTweet) {
+                        sdk.Twotter.removeTweet(item.id);
+                        __QE.log("cleanup: tweet " + item.id + " removed");
+                    }
                     if (item.kind === "firewall" && sdk.Network.removeFirewallRule) sdk.Network.removeFirewallRule(item.ip, item.port);
                     if (item.kind === "database" && sdk.Database && sdk.Database.remove) sdk.Database.remove(item.id);
                     if (item.kind === "port") {
@@ -1680,6 +2017,10 @@ function __qeRegisterProject(sdk, PROJECT) {
                     });
                     return next();
                 }
+                case "comms.tweet": {
+                    postTweets(node, scope);
+                    return next();
+                }
                 case "comms.dialogue": {
                     /* Timed chat → play it here, message by message, so a
                        conversation can land on a Sequence beat. */
@@ -2436,6 +2777,10 @@ function __qeRegisterProject(sdk, PROJECT) {
                     questRef = this;
                     bindBeatFire(this);
                     refillObjectives();
+                    /* The story is starting (or a reload re-ran OnStart): make
+                       sure the characters it needs exist. Idempotent, so a
+                       second call adopts what the first one created. */
+                    ensureDeclaredTwotterAccounts(qd.id);
                     var ctx = { payload: {}, vars: {} };
                     var starts = g.nodes.filter(function (n) { return n.type === "entry.start"; });
                     /* Logged unconditionally. A quest whose OnStart never runs
@@ -2456,6 +2801,11 @@ function __qeRegisterProject(sdk, PROJECT) {
                     var self = this;
                     bindBeatFire(this);
                     __QE.log("quest \"" + qd.name + "\" objectives started");
+                    /* OnObjectivesStart runs again after every reload, which is
+                       exactly why the accounts are ensured here too: a save
+                       loaded into a session where the account never got made
+                       gets it made now. */
+                    ensureDeclaredTwotterAccounts(qd.id);
                     var ctx = { payload: {}, vars: {} };
                     refillComms();
                     weechatServers.forEach(function (s) {
@@ -2788,6 +3138,19 @@ function __qeRegisterProject(sdk, PROJECT) {
        printed nothing at all. A mod that announces itself turns "the mail is
        broken" into "the mod never ran", which is a different bug entirely. */
     var Mod = class extends sdk.Bootstrap {
+        /* The SDK's advice, followed: accounts a mod adds live in the player's
+           save and are NOT removed when the mod is uninstalled, so the mod
+           takes its characters with it on the way out. Synchronous, and it
+           returns nothing — the game awaits whatever this hook returns, and
+           r72 is the story of what happens when that promise never settles. */
+        OnModPackageUnloaded() {
+            try {
+                __QE.log("unloading: removing the Twotter accounts this mod declared");
+                removeAllTwotterAccounts();
+            } catch (e) {
+                __QE.log("unloading: Twotter cleanup failed (continuing): " + e);
+            }
+        }
         OnModPackageLoaded() {
             __QE.log(PROJECT.mod.name + " v" + PROJECT.mod.version +
                 " loaded (editor build " + __QE_BUILD + ").");

@@ -9,7 +9,7 @@
 import { create } from "zustand";
 import { original, produce } from "immer";
 import { nanoid } from "nanoid";
-import type { ProjectDocument, QuestDoc, ModDoc, WebsiteDoc, WebPageDoc } from "@/schema/project";
+import type { ProjectDocument, QuestDoc, ModDoc, WebsiteDoc, WebPageDoc, TwotterAccountDoc } from "@/schema/project";
 import type { NodeDoc } from "@/schema/nodes";
 import type { EdgeDoc } from "@/schema/edges";
 import { ProjectSchema, createProject, createQuest } from "@/schema/project";
@@ -33,7 +33,7 @@ export interface UiState {
     inspectorCollapsed: boolean;
     paletteCollapsed: boolean;
     /** Set while a modal (templates, export, settings) is open. */
-    modal: null | "templates" | "mod" | "shortcuts" | "websites" | "dialogues" | "newProject" | "simulator" | "toolpacks" | "settings";
+    modal: null | "templates" | "mod" | "shortcuts" | "websites" | "twotter" | "dialogues" | "newProject" | "simulator" | "toolpacks" | "settings";
     /** While set, the dialogues modal edits this node instead of listing all. */
     dialogueNode: string | null;
     toast: { id: string; message: string; tone: ToastTone } | null;
@@ -104,6 +104,11 @@ export interface EditorStore {
     cutSelection: () => void;
     pasteClipboard: () => void;
     duplicateSelection: () => void;
+
+    /* Twotter accounts (r185) — mod level, like the websites */
+    addTwotterAccount: (account: TwotterAccountDoc) => void;
+    removeTwotterAccount: (id: string) => void;
+    updateTwotterAccount: (id: string, patch: Partial<Omit<TwotterAccountDoc, "id">>) => void;
 
     /* websites */
     addWebsite: (website: WebsiteDoc) => void;
@@ -314,6 +319,23 @@ export const useEditor = create<EditorStore>()((set, get) => {
             mutate((project) => {
                 const quest = project.quests.find((q) => q.id === id);
                 if (quest) Object.assign(quest, patch);
+            }),
+
+        /* Twotter accounts — the Twotter panel writes through these (r185) */
+        addTwotterAccount: (account) =>
+            mutate((project) => {
+                project.twotterAccounts.push(account);
+            }),
+
+        removeTwotterAccount: (id) =>
+            mutate((project) => {
+                project.twotterAccounts = project.twotterAccounts.filter((a) => a.id !== id);
+            }),
+
+        updateTwotterAccount: (id, patch) =>
+            mutate((project) => {
+                const account = project.twotterAccounts.find((a) => a.id === id);
+                if (account) Object.assign(account, patch);
             }),
 
         /* websites — the builder dialog writes through these */

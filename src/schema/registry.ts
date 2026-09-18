@@ -22,6 +22,8 @@ import {
     DatabaseNodeDataSchema,
     DelayNodeDataSchema,
     DomainNodeDataSchema,
+    TWOTTER_AGO_UNITS,
+    TweetNodeDataSchema,
     EntryStartData,
     FilesNodeDataSchema,
     FirewallNodeDataSchema,
@@ -200,6 +202,7 @@ export type FieldDef =
           showWhen?: FieldShowWhen;
       }
     | { kind: "handbookArticle"; key: string; label: string; hint?: string }
+    | { kind: "twotterAccount"; key: string; label: string; hint?: string }
     | { kind: "date"; key: string; label: string; hint?: string; showWhen?: FieldShowWhen }
     | { kind: "color"; key: string; label: string; hint?: string; showWhen?: FieldShowWhen }
     | { kind: "image"; key: string; label: string; hint?: string; showWhen?: FieldShowWhen }
@@ -861,6 +864,113 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         hook: "onStart",
         fields: [],
         create: () => seed(DialogueNodeDataSchema),
+    },
+
+    "comms.tweet": {
+        type: "comms.tweet",
+        category: "comms",
+        label: "Twotter",
+        blurb: "Post tweets from one of the mod's Twotter accounts — one, or a profile's worth of history",
+        icon: "bird",
+        targets: [inFlow],
+        sources: [outFlow],
+        hook: "onStart",
+        fields: [
+            { kind: "twotterAccount", key: "accountId", label: "Account", hint: "Which of the mod's Twotter accounts posts these. Accounts are shared by every quest, so one character can carry a story arc across several of them — make one with “Manage accounts”." },
+            {
+                kind: "note",
+                tone: "info",
+                text: "Tweets are written oldest first, the order they happened. A profile shows them the other way up — the newest at the top — and that is done by the game, not by you.",
+            },
+            {
+                kind: "note",
+                tone: "warn",
+                showWhen: { key: "migratedDate", equals: "true" },
+                text: "This node came from an older draft whose tweet time could not be carried over exactly — either it pinned a calendar date, or that was the draft's default. A fixed date cannot be turned into an age without reading today's clock, which the editor never does before export, so the node now says “1 month earlier”. Set the amount and unit below to the age you meant.",
+            },
+            {
+                kind: "list",
+                key: "tweets",
+                label: "Tweets",
+                hint: "One row is a single post. A handful of rows with “Already on the profile” times is a history the player finds when they look the character up — a month of excitement before a disappearance, say.",
+                addLabel: "Add a tweet",
+                itemTitle: (t, i) => {
+                    const text = String(t.content ?? "").replace(/\s+/g, " ").trim();
+                    const age = t.timeMode === "earlier"
+                        ? `${Number(t.agoAmount ?? 2)} ${String(t.agoUnit ?? "days")} earlier`
+                        : "on arrival";
+                    return `${text ? (text.length > 34 ? `${text.slice(0, 34)}…` : text) : `Tweet ${i + 1}`} — ${age}`;
+                },
+                fields: [
+                    { kind: "textarea", key: "content", label: "Tweet", rows: 3, hint: "What the character wrote. Tags work here, like everywhere else an author writes text." },
+                    { kind: "image", key: "image", label: "Attached picture", hint: "Optional. A photo on a post is often the clue — a boarding pass, a view from a hotel window." },
+                    {
+                        kind: "select",
+                        key: "timeMode",
+                        label: "When",
+                        display: "segmented",
+                        hint: "“When the story arrives” posts the tweet as the flow reaches this node. “Already on the profile” has it sitting there from the start, that far back.",
+                        options: [
+                            { value: "arrival", label: "When the story arrives", hint: "The player sees it appear, reading “a few seconds ago”." },
+                            { value: "earlier", label: "Already on the profile", hint: "Backdated by the amount beside this: the profile reads “a month ago” the moment the player finds it." },
+                        ],
+                    },
+                    {
+                        kind: "row",
+                        label: "Posted",
+                        showWhen: { key: "timeMode", equals: "earlier" },
+                        fields: [
+                            { kind: "number", key: "agoAmount", label: "How long ago", min: 1, step: 1, hint: "Counted back from the moment the story reaches this node, on the in-game clock." },
+                            {
+                                kind: "select",
+                                key: "agoUnit",
+                                label: "Unit",
+                                hint: "Minutes through years, the same units a Timer takes.",
+                                options: TWOTTER_AGO_UNITS.map((u) => ({ value: u, label: u })),
+                            },
+                        ],
+                    },
+                    {
+                        kind: "row",
+                        label: "Shown on the post",
+                        columns: 4,
+                        fields: [
+                            { kind: "number", key: "likes", label: "Likes", min: 0, step: 1, hint: "Cosmetic, but it sells the fiction. A brand-new account with 400 likes reads as fake." },
+                            { kind: "number", key: "comments", label: "Replies", min: 0, step: 1, hint: "How many replies the post shows. The game does not open them — this is the number under the post, nothing more." },
+                            { kind: "number", key: "shares", label: "Reposts", min: 0, step: 1, hint: "How many times the post was shared. Zero is fine and often truest — a small account screaming into the void." },
+                            { kind: "number", key: "views", label: "Views", min: 0, step: 1, hint: "How many people saw it. It has to look plausible next to the likes: thousands of views with two likes reads wrong." },
+                        ],
+                    },
+                    { kind: "toggle", key: "showInTimeline", label: "Also in the main timeline", hint: "Off keeps a year of history on the profile where the player looked for it. On drops it into the public feed too — good for an announcement the whole city should see." },
+                ],
+                newItem: () => ({
+                    id: nanoid(8),
+                    content: "",
+                    timeMode: "arrival",
+                    agoAmount: 2,
+                    agoUnit: "days",
+                    likes: 24,
+                    comments: 3,
+                    shares: 1,
+                    views: 512,
+                    showInTimeline: false,
+                }),
+            },
+        ],
+        create: () => seed(TweetNodeDataSchema, {
+            tweets: [{
+                id: nanoid(8),
+                content: "",
+                timeMode: "arrival",
+                agoAmount: 2,
+                agoUnit: "days",
+                likes: 24,
+                comments: 3,
+                shares: 1,
+                views: 512,
+                showInTimeline: false,
+            }],
+        }),
     },
 
     "reply.input": {

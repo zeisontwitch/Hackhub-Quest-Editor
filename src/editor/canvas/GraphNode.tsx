@@ -64,7 +64,11 @@ export function GraphNode({ data, selected }: NodeProps<GraphRFNode>) {
         removeEdges(attached.map((e) => e.id));
     };
     const updateNodeData = useEditor((s) => s.updateNodeData);
-    const lines = useMemo(() => summarize(doc, quest ?? undefined).filter(Boolean), [doc, quest]);
+    const twotterAccounts = useEditor((s) => s.project.twotterAccounts);
+    const lines = useMemo(
+        () => summarize(doc, quest ?? undefined, twotterAccounts).filter(Boolean),
+        [doc, quest, twotterAccounts],
+    );
     const [hovered, setHovered] = useState(false);
     const [beatExpanded, setBeatExpanded] = useState(false);
     const connecting = useConnection((c) => c.inProgress);

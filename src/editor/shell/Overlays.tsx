@@ -10,6 +10,7 @@ import { TEMPLATES, type Template } from "@/templates";
 import { downloadProject, parseProjectFile, projectFileName } from "@/templates/share";
 import { clearDraft } from "@/store/autosave";
 import { WebsiteBuilderDialog } from "@/editor/websites/WebsiteBuilder";
+import { TwotterPanelDialog } from "@/editor/twotter/TwotterPanel";
 import { DialoguesDialog } from "./DialoguesDialog";
 import { SimulatorDialog } from "@/editor/simulator/SimulatorDialog";
 import { ExportDialog } from "./ExportDialog";
@@ -425,6 +426,7 @@ export function Overlays() {
             <TemplatesDialog open={modal === "templates"} onOpenChange={(o) => setUi({ modal: o ? "templates" : null })} />
             <ShortcutsDialog open={modal === "shortcuts"} onOpenChange={(o) => setUi({ modal: o ? "shortcuts" : null })} />
             <WebsiteBuilderDialog open={modal === "websites"} onOpenChange={(o) => setUi({ modal: o ? "websites" : null })} />
+            <TwotterPanelDialog open={modal === "twotter"} onOpenChange={(o) => setUi({ modal: o ? "twotter" : null })} />
             <DialoguesDialog open={modal === "dialogues"} onOpenChange={(o) => setUi({ modal: o ? "dialogues" : null })} />
             <ExportDialog open={modal === "mod"} onOpenChange={(o) => setUi({ modal: o ? "mod" : null })} />
             <SimulatorDialog open={modal === "simulator"} onOpenChange={(o) => setUi({ modal: o ? "simulator" : null })} />

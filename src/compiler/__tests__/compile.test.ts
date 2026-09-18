@@ -477,13 +477,24 @@ describe("export build stamp", () => {
     it("stamps the editor build id into dist/mod.js", () => {
         const modJs = compileProject(createProject()).files.find((f) => f.path === "dist/mod.js")!.content;
         expect(modJs).toContain(`build ${EDITOR_BUILD}`);
-        // Twotter support was removed in round 31: the game stores a quest
-        // account with an undefined `bio` and its search crashes on it, with
-        // no way for a mod to repair the record (QA rounds 5–7, see
-        // docs/02-editor-shell.md). Nothing Twotter-shaped may come back
-        // without a fresh look at the SDK.
-        expect(modJs).not.toContain("Twotter");
-        expect(modJs).not.toContain("Tweets");
+        /* Twotter came back in r185, on the API path the r179 probe proved
+           safe. The r31 fence was "the mod must not contain the words Twotter
+           or Tweets at all", which cannot stand any more: the runtime calls
+           `sdk.Twotter.createUser` and friends by name. What replaces it is
+           narrower and stronger — the compiled quest definition must never
+           carry the DECLARATIVE fields, the ones the engine fills with
+           `bio: undefined`. Checked on the parsed PROJECT rather than by
+           grepping the file, so a comment mentioning the old field names
+           cannot fail the fence, and a real key cannot sneak past it either.
+           The behavioural half of the fence (what the runtime actually sends
+           to the API) lives in twotter.test.ts. */
+        const projectLine = modJs.split("\n").find((line) => line.startsWith("var PROJECT = "));
+        expect(projectLine, "the compiled mod carries its project").toBeDefined();
+        const compiled = JSON.parse(projectLine!.replace("var PROJECT = ", "").replace(/;$/, "")) as Record<string, unknown>;
+        expect("TwotterAccounts" in compiled).toBe(false);
+        expect("Tweets" in compiled).toBe(false);
+        expect(JSON.stringify(compiled)).not.toContain("TwotterA");
+        expect(compiled.twotterAccounts).toEqual([]);
     });
 });
 

@@ -247,6 +247,16 @@ export function TopBar() {
                 <span className="hidden lg:inline">Websites</span>
             </button>
 
+            <button
+                type="button"
+                className="btn-default"
+                onClick={() => setUi({ modal: "twotter" })}
+                title="The characters this mod has on Twotter, and what their profiles look like"
+            >
+                <Icon name="bird" size={13} />
+                <span className="hidden lg:inline">Twotter</span>
+            </button>
+
             <button type="button" className="btn-default" onClick={() => setUi({ modal: "shortcuts" })}>
                 <Icon name="keyboard" size={13} />
                 <span className="hidden lg:inline">Shortcuts</span>

@@ -376,6 +376,75 @@ export const WeeChatNodeDataSchema = z.object({
     messages: z.array(WeeChatMessageSchema).default([]),
 });
 
+/* ── Twotter (r185) ────────────────────────────────────────────────────────
+   The Tweet node posts from one of the mod's Twotter accounts. Accounts live
+   at MOD level (`project.twotterAccounts`) because a character is
+   world-building — the same account is meant to be usable by several quests —
+   while the node owns only the posts.
+
+   The rows are written oldest → newest, the order things happened, because
+   that is how a history is written. **The game shows a profile newest first**
+   (measured in game, P-01b: three tweets whose time order and posting order
+   disagreed came back sorted by time), so what the author writes and what the
+   player reads are mirror images, and the inspector says so rather than
+   letting it be a surprise.
+
+   Nothing here ever reaches the SDK's declarative `TwotterAccounts`/`Tweets`
+   fields: those are the fields the engine writes with `bio: undefined`, which
+   is what crashed Twotter's search for seven QA rounds (r31). The runtime
+   authors accounts and posts through the API instead — `createUser` +
+   `addUser`, `postTweet` with a `sendedAt` we computed, `removeTweet` /
+   `removeUser` on the way out. The fence set in the compiler's tests holds
+   that line.
+   ─────────────────────────────────────────────────────────────────────── */
+
+/** Ages an "already on the profile" tweet can be given. */
+export const TWOTTER_AGO_UNITS = ["minutes", "hours", "days", "weeks", "months", "years"] as const;
+export const TwotterAgoUnitSchema = z.enum(TWOTTER_AGO_UNITS);
+export type TwotterAgoUnit = z.infer<typeof TwotterAgoUnitSchema>;
+
+export const TweetRowSchema = z.object({
+    id: z.string(),
+    content: z.string().default(""),
+    /**
+     * - `arrival`: posted the moment the story reaches the node. No time is
+     *   sent, so the engine stamps it — the tweet reads "a few seconds ago"
+     *   (P-01a's control row).
+     * - `earlier`: already on the profile, that far back. The runtime computes
+     *   the moment from the in-game clock and sends it as `sendedAt`, which the
+     *   platform keeps (P-01a: all three spellings read back "a month ago").
+     */
+    timeMode: z.enum(["arrival", "earlier"]).default("arrival"),
+    /** How long ago, for `earlier`. A number plus the unit below — never free text. */
+    agoAmount: z.number().default(2),
+    agoUnit: TwotterAgoUnitSchema.default("days"),
+    /** Optional attached picture, embedded as a data URL. */
+    image: z.string().optional(),
+    likes: z.number().default(0),
+    comments: z.number().default(0),
+    shares: z.number().default(0),
+    views: z.number().default(0),
+    /** Surface this one in the main timeline, not just on the profile. */
+    showInTimeline: z.boolean().default(false),
+});
+export type TweetRow = z.infer<typeof TweetRowSchema>;
+
+export const TweetNodeDataSchema = z.object({
+    /** Must match one of the mod's Twotter accounts, by its id. */
+    accountId: z.string().default(""),
+    tweets: z.array(TweetRowSchema).default([]),
+    /**
+     * Set by the r30 → r185 migration when the old node pinned a fixed
+     * calendar date. That has no counterpart now — an age cannot be computed
+     * from a date without the editor reading today's clock, which it
+     * deliberately never does — so the row lands on "already on the profile,
+     * 1 month" and this flag makes the export report and the inspector say so
+     * instead of pretending the migration was lossless.
+     */
+    migratedDate: z.boolean().optional(),
+});
+export type TweetNodeData = z.infer<typeof TweetNodeDataSchema>;
+
 /**
  * The general dialogue node: one node, four flavours. The payload for every
  * flavour lives on the node; `kind` selects which one the editor shows and the
@@ -700,6 +769,7 @@ export const NodeSchema = z.discriminatedUnion("type", [
     node("world.packData", PackDataNodeDataSchema),
     node("pack.node", PackNodeDataSchema),
     node("comms.dialogue", DialogueNodeDataSchema),
+    node("comms.tweet", TweetNodeDataSchema),
     node("reply.input", ManualInputNodeDataSchema),
     node("fx.pay", PayNodeDataSchema),
     node("fx.withdraw", PayNodeDataSchema),

@@ -1,14 +1,14 @@
 {
   "generatedBy": "scripts/extract-manual-inventory.mjs",
-  "editorBuild": "2026-09-18.r184",
+  "editorBuild": "2026-09-18.r185",
   "sdkVersion": "0.24.0",
   "counts": {
-    "nodeTypes": 39,
-    "obtainableNodeTypes": 39,
+    "nodeTypes": 40,
+    "obtainableNodeTypes": 40,
     "categories": 10,
-    "editableFields": 149,
-    "editableFieldsExcludingLists": 142,
-    "sockets": 74,
+    "editableFields": 161,
+    "editableFieldsExcludingLists": 153,
+    "sockets": 76,
     "events": 99,
     "eventGroups": 10
   },
@@ -1670,6 +1670,223 @@
           "messages": []
         },
         "postLive": false
+      }
+    },
+    {
+      "type": "comms.tweet",
+      "slug": "comms-tweet",
+      "label": "Twotter",
+      "blurb": "Post tweets from one of the mod's Twotter accounts — one, or a profile's worth of history",
+      "icon": "bird",
+      "category": "comms",
+      "hook": "onStart",
+      "obtainable": true,
+      "targets": [
+        {
+          "id": "in",
+          "kind": "flow",
+          "label": "In"
+        }
+      ],
+      "sources": [
+        {
+          "id": "out",
+          "kind": "flow",
+          "label": "Out"
+        }
+      ],
+      "hasDynamicSockets": false,
+      "fields": [
+        {
+          "depth": 0,
+          "path": "accountId",
+          "kind": "twotterAccount",
+          "key": "accountId",
+          "label": "Account",
+          "hint": "Which of the mod's Twotter accounts posts these. Accounts are shared by every quest, so one character can carry a story arc across several of them — make one with “Manage accounts”."
+        },
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "tone": "info",
+          "text": "Tweets are written oldest first, the order they happened. A profile shows them the other way up — the newest at the top — and that is done by the game, not by you."
+        },
+        {
+          "depth": 0,
+          "path": "note",
+          "kind": "note",
+          "key": null,
+          "label": null,
+          "hint": null,
+          "showWhen": {
+            "key": "migratedDate",
+            "equals": "true"
+          },
+          "tone": "warn",
+          "text": "This node came from an older draft that pinned an exact calendar date. A fixed date cannot be turned into an age without reading today's clock, which the editor never does before export — so the tweet is set to “1 month earlier”. Change the amount and unit below to the age you meant."
+        },
+        {
+          "depth": 0,
+          "path": "tweets",
+          "kind": "list",
+          "key": "tweets",
+          "label": "Tweets",
+          "hint": "One row is a single post. A handful of rows with “Already on the profile” times is a history the player finds when they look the character up — a month of excitement before a disappearance, say.",
+          "addLabel": "Add a tweet",
+          "fields": [
+            {
+              "depth": 1,
+              "path": "tweets.content",
+              "kind": "textarea",
+              "key": "content",
+              "label": "Tweet",
+              "hint": "What the character wrote. Tags work here, like everywhere else an author writes text.",
+              "rows": 3
+            },
+            {
+              "depth": 1,
+              "path": "tweets.image",
+              "kind": "image",
+              "key": "image",
+              "label": "Attached picture",
+              "hint": "Optional. A photo on a post is often the clue — a boarding pass, a view from a hotel window."
+            },
+            {
+              "depth": 1,
+              "path": "tweets.timeMode",
+              "kind": "select",
+              "key": "timeMode",
+              "label": "When",
+              "hint": "“When the story arrives” posts the tweet as the flow reaches this node. “Already on the profile” has it sitting there from the start, that far back.",
+              "options": [
+                {
+                  "value": "arrival",
+                  "label": "When the story arrives",
+                  "hint": "The player sees it appear, reading “a few seconds ago”."
+                },
+                {
+                  "value": "earlier",
+                  "label": "Already on the profile",
+                  "hint": "Backdated by the amount beside this: the profile reads “a month ago” the moment the player finds it."
+                }
+              ]
+            },
+            {
+              "depth": 1,
+              "path": "tweets.agoAmount",
+              "kind": "number",
+              "key": "agoAmount",
+              "label": "How long ago",
+              "hint": "Counted back from the moment the story reaches this node, on the in-game clock.",
+              "min": 1,
+              "step": 1
+            },
+            {
+              "depth": 1,
+              "path": "tweets.agoUnit",
+              "kind": "select",
+              "key": "agoUnit",
+              "label": "Unit",
+              "hint": "Minutes through years, the same units a Timer takes.",
+              "options": [
+                {
+                  "value": "minutes",
+                  "label": "minutes"
+                },
+                {
+                  "value": "hours",
+                  "label": "hours"
+                },
+                {
+                  "value": "days",
+                  "label": "days"
+                },
+                {
+                  "value": "weeks",
+                  "label": "weeks"
+                },
+                {
+                  "value": "months",
+                  "label": "months"
+                },
+                {
+                  "value": "years",
+                  "label": "years"
+                }
+              ]
+            },
+            {
+              "depth": 1,
+              "path": "tweets.likes",
+              "kind": "number",
+              "key": "likes",
+              "label": "Likes",
+              "hint": "Cosmetic, but it sells the fiction. A brand-new account with 400 likes reads as fake.",
+              "min": 0,
+              "step": 1
+            },
+            {
+              "depth": 1,
+              "path": "tweets.comments",
+              "kind": "number",
+              "key": "comments",
+              "label": "Replies",
+              "hint": "How many replies the post shows. The game does not open them — this is the number under the post, nothing more.",
+              "min": 0,
+              "step": 1
+            },
+            {
+              "depth": 1,
+              "path": "tweets.shares",
+              "kind": "number",
+              "key": "shares",
+              "label": "Reposts",
+              "hint": "How many times the post was shared. Zero is fine and often truest — a small account screaming into the void.",
+              "min": 0,
+              "step": 1
+            },
+            {
+              "depth": 1,
+              "path": "tweets.views",
+              "kind": "number",
+              "key": "views",
+              "label": "Views",
+              "hint": "How many people saw it. It has to look plausible next to the likes: thousands of views with two likes reads wrong.",
+              "min": 0,
+              "step": 1
+            },
+            {
+              "depth": 1,
+              "path": "tweets.showInTimeline",
+              "kind": "toggle",
+              "key": "showInTimeline",
+              "label": "Also in the main timeline",
+              "hint": "Off keeps a year of history on the profile where the player looked for it. On drops it into the public feed too — good for an announcement the whole city should see."
+            }
+          ]
+        }
+      ],
+      "editableFieldCount": 12,
+      "defaults": {
+        "accountId": "",
+        "tweets": [
+          {
+            "id": "<generated>",
+            "content": "",
+            "timeMode": "arrival",
+            "agoAmount": 2,
+            "agoUnit": "days",
+            "likes": 24,
+            "comments": 3,
+            "shares": 1,
+            "views": 512,
+            "showInTimeline": false
+          }
+        ]
       }
     },
     {

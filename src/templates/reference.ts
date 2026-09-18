@@ -1,4 +1,4 @@
-import { createQuest, createProject } from "@/schema/project";
+import { createQuest, createProject, createTwotterAccount } from "@/schema/project";
 import type { ProjectDocument } from "@/schema/project";
 import { NODE_TYPES_REGISTRY, PALETTE_HIDDEN_TYPES, nodeTypeDef } from "@/schema/registry";
 import type { NodeDoc, NodeType } from "@/schema/nodes";
@@ -167,6 +167,33 @@ export const EXAMPLES: Partial<Record<NodeType, Record<string, unknown>>> = {
             ],
         },
     },
+    "comms.tweet": {
+        accountId: "acc-harbourmaster",
+        tweets: [
+            {
+                id: "t1",
+                content: "Night shift again. The manifest says 4471 was sealed at 02:40 — nobody signed for it.",
+                timeMode: "earlier",
+                agoAmount: 3,
+                agoUnit: "days",
+                likes: 34,
+                comments: 2,
+                shares: 1,
+                views: 812,
+                showInTimeline: false,
+            },
+            {
+                id: "t2",
+                content: "Someone is asking the right questions about container 4471. That makes two of us.",
+                timeMode: "arrival",
+                likes: 11,
+                comments: 0,
+                shares: 0,
+                views: 240,
+                showInTimeline: true,
+            },
+        ],
+    },
     "reply.input": {
         commandName: "decrypt",
         commandDescription: "Decrypt a sealed manifest archive",
@@ -329,6 +356,19 @@ export function buildReference(): ProjectDocument {
             apiVersion: 1,
         },
         quests: [quest],
+        /* The Tweet node above posts from this account. Accounts are mod-level,
+           so the reference sheet ships one for the example to point at. */
+        twotterAccounts: [
+            createTwotterAccount({
+                id: "acc-harbourmaster",
+                handle: "harbourmaster",
+                displayName: "Dana Whitlock",
+                bio: "Harbour master, night shift. Everything that leaves this dock goes through me.",
+                verified: false,
+                followers: 412,
+                following: 96,
+            }),
+        ],
         editor: { activeQuestId: quest.id, viewports: {} },
     });
 }

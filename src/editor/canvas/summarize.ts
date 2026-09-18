@@ -6,7 +6,7 @@
  * nothing but the header".
  */
 import type { DialogueKind, NodeDoc } from "@/schema/nodes";
-import type { QuestDoc } from "@/schema/project";
+import type { QuestDoc, TwotterAccountDoc } from "@/schema/project";
 import { humanEventName } from "@/schema/events";
 import { clockText, OFFSET_UNITS, shortDateText, unitsShort, WAIT_UNITS } from "@/schema/timer";
 import { DEVICE_TYPE_LABELS } from "@/schema/common";
@@ -74,7 +74,17 @@ function deviceLine(d: { ip: string; type: string; children?: unknown[]; ports?:
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Loose = Record<string, any>;
 
-export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
+export function summarize(
+    node: NodeDoc,
+    quest?: QuestDoc,
+    /**
+     * The mod's Twotter accounts, when the caller has them. Optional so the
+     * many existing `summarize(node)` call sites keep working: without it the
+     * card says the account name is not set yet, which is true of the field it
+     * can see.
+     */
+    accounts?: Pick<TwotterAccountDoc, "id" | "handle">[],
+): string[] {
     const d = node.data as Loose;
     switch (node.type) {
         case "entry.start":
@@ -188,6 +198,19 @@ export function summarize(node: NodeDoc, quest?: QuestDoc): string[] {
                 lines.push(d.phone?.continueMode === "immediate" ? "Out after call starts" : "Out when call ends");
             }
             return lines;
+        }
+
+        case "comms.tweet": {
+            const account = accounts?.find((a) => a.id === d.accountId);
+            const rows = (d.tweets as { content?: string; timeMode?: string; agoAmount?: number; agoUnit?: string }[] | undefined) ?? [];
+            const handle = account ? `@${account.handle || "unnamed"}` : "no account yet";
+            if (!rows.length) return [handle, "no tweets yet"];
+            const first = clip(String(rows[0]?.content ?? ""), 40);
+            const when = rows[0]?.timeMode === "earlier"
+                ? `${Number(rows[0]?.agoAmount ?? 1)} ${String(rows[0]?.agoUnit ?? "days")} ago`
+                : "posts on arrival";
+            if (rows.length === 1) return [handle, first ? `${first} — ${when}` : `empty tweet — ${when}`];
+            return [handle, `${rows.length} tweets — first ${when}`];
         }
 
         case "reply.input":

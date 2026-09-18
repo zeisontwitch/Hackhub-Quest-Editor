@@ -92,6 +92,54 @@ export const WebsiteSchema = z.object({
 });
 export type WebsiteDoc = z.infer<typeof WebsiteSchema>;
 
+/* ── Twotter accounts (r185) ───────────────────────────────────────────────
+   A character on the in-game social network, authored once for the whole mod
+   and usable by every quest in it — the same shape as `websites` below, and for
+   the same reason: an account is world-building rather than a beat of one
+   story. The Tweet node (`comms.tweet`) posts from one of these.
+
+   Two SDK facts shape the fields:
+
+   1. Every record the runtime creates is COMPLETE. `Twotter.createUser()`
+      fills the platform fields the editor cannot express (name, surname,
+      banner, joinedAt, password); we hand it `bio` as a string even when the
+      author left it blank, because a record stored with `bio: undefined` is
+      the exact shape that crashed the game's Twotter search for seven QA
+      rounds (r31).
+   2. The declarative `TwotterAccounts` quest field is never emitted — the
+      engine fills that one incompletely. Accounts are authored through the
+      API in the runtime instead.
+   ─────────────────────────────────────────────────────────────────────── */
+
+/*
+ * Re-exported so the editor (inspector, migration, tests) keeps importing it
+ * from the schema they already have in hand; the definition lives in a leaf
+ * module because the compiler needs it without the template HTML that this
+ * file drags in. See `src/schema/twotter.ts`.
+ */
+export { TWOTTER_HANDLE_PATTERN } from "./twotter";
+
+export const TwotterAccountSchema = z.object({
+    id: z.string(),
+    /** Without the `@` — the editor shows the `@`. */
+    handle: z.string().default(""),
+    displayName: z.string().default(""),
+    /** Always written as a string; a blank bio is `""`, never `undefined`. */
+    bio: z.string().default(""),
+    avatar: z.string().optional(),
+    banner: z.string().optional(),
+    verified: z.boolean().default(false),
+    followers: z.number().default(0),
+    following: z.number().default(0),
+    /**
+     * Remove this account when the last quest that needs it ends. Off for a
+     * character who should outlive the story (the trade-off is written on the
+     * field: the account then stays in the player's save).
+     */
+    removeWhenQuestEnds: z.boolean().default(true),
+});
+export type TwotterAccountDoc = z.infer<typeof TwotterAccountSchema>;
+
 /* ── Quest ───────────────────────────────────────────────────────────────── */
 
 export const EmployerSchema = z.object({
@@ -185,6 +233,8 @@ export const ProjectSchema = z
         quests: z.array(QuestSchema).min(1, "a mod needs at least one quest").default([]),
         /** Sites built with the website builder, shared by every quest in the mod. */
         websites: z.array(WebsiteSchema).default([]),
+        /** Twotter characters, shared by every quest in the mod (r185). */
+        twotterAccounts: z.array(TwotterAccountSchema).default([]),
         editor: EditorStateSchema.default({} as never),
     })
     /* Every valid project ships at least one quest (`.min(1)` above), so a parse
@@ -215,6 +265,18 @@ export function createWebsite(partial: Partial<WebsiteDoc> = {}): WebsiteDoc {
     return WebsiteSchema.parse({
         id: nanoid(10),
         pages: [createPage({ path: "/", title: "Home", content: STARTER_PAGE })],
+        ...partial,
+    });
+}
+
+export function createTwotterAccount(partial: Partial<TwotterAccountDoc> = {}): TwotterAccountDoc {
+    return TwotterAccountSchema.parse({
+        id: nanoid(10),
+        handle: "new_character",
+        displayName: "New character",
+        bio: "",
+        followers: 12,
+        following: 8,
         ...partial,
     });
 }

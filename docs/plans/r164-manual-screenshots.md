@@ -148,6 +148,7 @@ Load *Node Reference*, click the node, screenshot. Same three steps every time.
 | `node-pack-node-inspector.png` | Addon node | `pack.node` |
 | `node-world-toolresponse-inspector.png` | Tool response | `world.toolResponse` |
 | `node-comms-dialogue-inspector.png` | Dialogue | `comms.dialogue` |
+| `node-comms-tweet-inspector.png` | Twotter | `comms.tweet` |
 | `node-reply-input-inspector.png` | Manual input | `reply.input` |
 | `node-fx-pay-inspector.png` | Pay the player | `fx.pay` |
 | `node-fx-withdraw-inspector.png` | Charge the player | `fx.withdraw` |

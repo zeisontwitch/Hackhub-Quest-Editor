@@ -23,7 +23,7 @@
 import type { NodeDoc } from "@/schema/nodes";
 import { nodeTypeDef, sourcesOf } from "@/schema/registry";
 import { summarize } from "./summarize";
-import type { QuestDoc } from "@/schema/project";
+import type { QuestDoc, TwotterAccountDoc } from "@/schema/project";
 
 /** `w-60` on the card: 15rem at the default 16px root font size. */
 export const CARD_WIDTH = 240;
@@ -62,7 +62,12 @@ export interface Size {
  * `quest` is optional and only affects summary text, which can change how many
  * lines a card shows; without it the size is still correct to within a line.
  */
-export function nodeSize(doc: NodeDoc, quest?: QuestDoc): Size {
+export function nodeSize(
+    doc: NodeDoc,
+    quest?: QuestDoc,
+    /** See `summarize`: only the Twotter card needs these. */
+    twotterAccounts?: Pick<TwotterAccountDoc, "id" | "handle">[],
+): Size {
     if (doc.type === "layout.group") {
         const data = doc.data as { width?: number; height?: number };
         return { width: data.width ?? 360, height: data.height ?? 240 };
@@ -110,7 +115,7 @@ if (doc.type === "flow.beat") {
     const sockets = Math.max(sources.length, def.targets.length);
     const socketHeight = CARD_MIN_HEIGHT + Math.max(0, sockets - 2) * SOCKET_ROW_HEIGHT;
 
-    const lines = summarize(doc, quest).filter(Boolean).slice(0, MAX_SUMMARY_LINES);
+    const lines = summarize(doc, quest, twotterAccounts).filter(Boolean).slice(0, MAX_SUMMARY_LINES);
     const contentHeight =
         HEADER_HEIGHT +
         (lines.length > 0 ? lines.length * SUMMARY_LINE_HEIGHT + SUMMARY_PADDING : 0);

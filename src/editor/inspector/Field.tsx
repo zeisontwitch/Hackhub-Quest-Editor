@@ -18,6 +18,7 @@ import { DeviceEditor, DeviceListEditor } from "./DeviceTree";
 import { EventPicker } from "./EventPicker";
 import { ListEditor } from "./ListEditor";
 import { HANDBOOK_ARTICLES } from "@/schema/handbookArticles";
+import { createTwotterAccount } from "@/schema/project";
 import { SelectOrCustomInput } from "./SelectOrCustom";
 import { TablesEditor } from "./TablesEditor";
 import { TokenTextInput } from "./TokenInsert";
@@ -49,6 +50,63 @@ const GROUP_COLORS = [
     { value: "#fb923c", label: "Orange" },
     { value: "#22d3ee", label: "Cyan" },
 ] as const;
+
+/**
+ * Picks one of the mod's Twotter accounts (r185), by handle. Accounts are
+ * mod-level, so the options come from the project rather than the quest — and
+ * the empty row makes the next step obvious instead of leaving a new author
+ * with a dropdown that only says "none".
+ */
+function TwotterAccountPicker({
+    value,
+    onChange,
+    onManage,
+}: {
+    value: string;
+    onChange: (next: string) => void;
+    onManage: () => void;
+}) {
+    const accounts = useEditor((s) => s.project.twotterAccounts);
+    const addTwotterAccount = useEditor((s) => s.addTwotterAccount);
+    const account = accounts.find((a) => a.id === value) ?? null;
+
+    return (
+        <div className="space-y-1.5">
+            <SelectInput
+                ariaLabel="Account"
+                value={account ? account.id : ""}
+                onChange={(next) => {
+                    /* Creating from here keeps the author on the node: the
+                       account exists, it is selected, and the Twotter panel is
+                       where it gets its handle and face. */
+                    if (next === "__new") {
+                        const created = createTwotterAccount({});
+                        addTwotterAccount(created);
+                        onChange(created.id);
+                        onManage();
+                        return;
+                    }
+                    onChange(next);
+                }}
+                options={[
+                    ...(account ? [] : [{ value: "", label: accounts.length ? "Pick an account…" : "No accounts yet" }]),
+                    ...accounts.map((a) => ({
+                        value: a.id,
+                        label: `@${a.handle || "unnamed"}${a.displayName ? ` — ${a.displayName}` : ""}`,
+                    })),
+                    { value: "__new", label: "＋ New account…" },
+                ]}
+            />
+            <button
+                type="button"
+                className="text-[11px] text-accent-2 hover:underline"
+                onClick={onManage}
+            >
+                Manage accounts
+            </button>
+        </div>
+    );
+}
 
 export function Field({
     def,
@@ -476,6 +534,17 @@ export function Field({
             return (
                 <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
                     <EventPicker value={asString(raw)} onChange={write} />
+                </FieldShell>
+            );
+
+        case "twotterAccount":
+            return (
+                <FieldShell label={def.label} hint={def.hint} warning={fieldWarning}>
+                    <TwotterAccountPicker
+                        value={asString(raw)}
+                        onChange={write}
+                        onManage={() => useEditor.getState().setUi({ modal: "twotter" })}
+                    />
                 </FieldShell>
             );
 

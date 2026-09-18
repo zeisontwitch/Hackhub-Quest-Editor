@@ -686,9 +686,13 @@ function CanvasInner() {
              * height follows the same formula the component renders with. See
              * nodeSize.ts, whose constants are asserted against GraphNode.
              */
+            /* The Twotter card's summary names the account it posts from, so
+               the measuring pass reads the same accounts the card renders
+               with — a mismatch would size the card wrong. */
+            const twotterAccounts = useEditor.getState().project.twotterAccounts;
             const chosen = q.graph.nodes
                 .filter((n) => selection.nodeIds.includes(n.id))
-                .map((n) => ({ ...n, size: nodeSize(n, q) }));
+                .map((n) => ({ ...n, size: nodeSize(n, q, twotterAccounts) }));
             if (chosen.length < 2) return;
             /*
              * Snapping is handed to alignPositions so it can snap the shared

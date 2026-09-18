@@ -14,6 +14,7 @@
 import type { ProjectDocument } from "@/schema/project";
 import type { ToolPack } from "@/toolpacks/schema";
 import { warnTargetMatching } from "@/compiler/targetWarnings";
+import { TWOTTER_HANDLE_PATTERN } from "@/schema/twotter";
 import { seedRemoteFiles } from "./seedRemoteFiles";
 import type { NodeDoc } from "@/schema/nodes";
 import type { EdgeDoc } from "@/schema/edges";
@@ -117,7 +118,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-18.r184";
+export const EDITOR_BUILD = "2026-09-18.r185";
 
 /** Warning severity (r153): info = good to know, warn = could cause issues,
     error = will break or strand the player. */
@@ -627,6 +628,70 @@ function warnWebsites(project: ProjectDocument): CompilerWarning[] {
     return warnings;
 }
 
+/**
+ * Twotter (r185): the things an author cannot see from the node itself — an
+ * account that does not exist, a handle the game would reject, a node that
+ * posts nothing, and rows the migration could not translate faithfully.
+ */
+function warnTwotter(project: ProjectDocument): CompilerWarning[] {
+    const warnings: CompilerWarning[] = [];
+    const accounts = new Map(project.twotterAccounts.map((a) => [a.id, a]));
+
+    const seenHandles = new Map<string, number>();
+    for (const account of project.twotterAccounts) {
+        const handle = account.handle.replace(/^@/, "");
+        seenHandles.set(handle.toLowerCase(), (seenHandles.get(handle.toLowerCase()) ?? 0) + 1);
+        if (!TWOTTER_HANDLE_PATTERN.test(handle)) {
+            warnings.push({ level: "error", text:
+                `“@${account.handle}” cannot be a Twotter handle: use letters, numbers and underscores, 3 to 15 characters. The game's own search matches on this, so an account with a handle it will not accept cannot be found — and an account nothing can find is a clue the player never gets.` });
+        }
+        if (!account.displayName.trim()) {
+            warnings.push({ level: "info", text:
+                `@${handle || "unnamed"} has no display name. The game shows the display name on the profile and falls back to something generic without it.` });
+        }
+    }
+    for (const [handle, count] of seenHandles) {
+        if (count > 1) {
+            warnings.push({ level: "error", text:
+                `Two Twotter accounts share the handle @${handle}. Handles are what players search for, so only one of them can ever be found — give one a different handle.` });
+        }
+    }
+
+    for (const quest of project.quests) {
+        for (const node of quest.graph.nodes) {
+            if (node.type !== "comms.tweet") continue;
+            const where = `${quest.title}: the Twotter node`;
+            const account = accounts.get(node.data.accountId);
+            if (!node.data.accountId) {
+                warnings.push({ level: "error", text:
+                    `${where} has no account yet. Open the Twotter panel (Manage accounts) and add the character who posts, then pick it here.` });
+            } else if (!account) {
+                warnings.push({ level: "error", text:
+                    `${where} points at a Twotter account that is not in this mod any more. Pick an account, or add one in the Twotter panel.` });
+            }
+            if (!node.data.tweets.length) {
+                warnings.push({ level: "warn", text:
+                    `${where} posts nothing — it has no tweet rows. Add one, or delete the node.` });
+            }
+            for (const row of node.data.tweets) {
+                if (!row.content.trim() && !row.image) {
+                    warnings.push({ level: "warn", text:
+                        `${where} has a tweet with no text and no picture. Twotter renders that as an empty post.` });
+                }
+                if (row.image) {
+                    warnings.push({ level: "info", text:
+                        `${where} has a tweet with a picture. The posting API does not declare pictures, so it may not appear on the profile — the in-game check (T-09) is what settles it. If it does not show, use the picture in a dialogue or a file instead.` });
+                }
+            }
+            if (node.data.migratedDate) {
+                warnings.push({ level: "info", text:
+                    `${where} came from an older draft whose tweet time could not be carried over exactly, so it now says “1 month earlier”. That is the one thing worth a look after opening an old file: set the amount and unit to the age you meant.` });
+            }
+        }
+    }
+    return warnings;
+}
+
 export function computeWarningDetails(project: ProjectDocument, packs: ToolPack[] = []): CompilerWarning[] {
     return [
         ...tag("error", warnUnstartableQuests(project)),
@@ -639,6 +704,7 @@ export function computeWarningDetails(project: ProjectDocument, packs: ToolPack[
         ...warnDialogue(project),
         ...warnCommunityNodes(project),
         ...warnWebsites(project),
+        ...warnTwotter(project),
         ...tag("warn", warnTargetMatching(project, packs)),
     ];
 }
@@ -677,6 +743,12 @@ function buildModJs(project: ProjectDocument, planningBlock: string): string {
             graph: q.graph,
         })),
         websites: project.websites,
+        /* Twotter accounts are mod-level (r185). They are DATA here, not part
+           of any quest definition: the runtime registers them through the
+           platform API and never emits the declarative TwotterAccounts field,
+           which is the one the engine fills incompletely. The fence tests hold
+           that line. */
+        twotterAccounts: project.twotterAccounts,
     };
 
     return [

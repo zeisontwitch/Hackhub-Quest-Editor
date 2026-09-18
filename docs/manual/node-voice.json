@@ -1707,5 +1707,57 @@
     "the “Out” socket is unwired, so the story stops at the timer when it fires"
    ]
   ]
+ },
+ "comms.tweet": {
+  "oneliner": "Post tweets from one of the mod's Twotter accounts — a single post, or a profile's worth of history.",
+  "what": "A post on Twotter, the game's social network. The node posts from one of your mod's accounts, so a character can have a public voice your players can look up and read.",
+  "when": [
+   "Use it when the story is something the player should be able to <i>find</i> rather than be told: a missing person's last posts, a company account issuing a flat denial, a journalist building a case in public.",
+   "Several rows on one node make a history. Set them to <b class=\"ui\">Already on the profile</b> with ages of weeks or months and the account has been living in the world since long before the quest began.",
+   "One row set to <b class=\"ui\">When the story arrives</b> posts as the flow reaches the node — the player is watching it land, seconds old. That is the shape for a post the story itself provokes."
+  ],
+  "game": "The profile in the in-game Twotter app shows the account's name, handle, picture and the posts. Players can search for a handle there, and a post with <b class=\"ui\">Also in the main timeline</b> switched on also turns up in the public feed everyone sees.",
+  "sockets": {
+   "in": {
+    "in": "Whatever should run immediately before the tweets are posted."
+   },
+   "out": {
+    "out": "Whatever happens after the posts go out. The node does not wait for the player to read anything."
+   }
+  },
+  "steps": [
+   "Find <b class=\"ui\">Twotter</b> under <b>Communication</b> in the palette.",
+   "Drag it onto the canvas where the posts belong, and wire it into the story.",
+   "Pick the account that posts. If the character does not exist yet, use <b class=\"ui\">Manage accounts</b> — accounts belong to the whole mod, so the same one can post in several quests.",
+   "Write the first tweet. Set <b class=\"ui\">When</b> to <b class=\"ui\">Already on the profile</b> and give it an age if it should have been there all along.",
+   "Press <b class=\"ui\">Add a tweet</b> for each further post. Write them oldest first — that is the order they happened.",
+   "Fill in the numbers the post shows: likes, replies, reposts and views. They are decoration, and they are what makes an account look real."
+  ],
+  "mistakes": [
+   [
+    "Numbers that do not add up.",
+    "A post with four thousand views and one like reads as invented. Keep the figures in proportion to how many followers the account has."
+   ],
+   [
+    "A handle the game will not accept.",
+    "Handles take letters, numbers and underscores, three to fifteen characters. The compiler says so before you export, and an account nothing can find is a clue the player never gets."
+   ],
+   [
+    "Ages that run the wrong way.",
+    "A row marked <b class=\"ui\">Already on the profile</b> counts back from the moment the story reaches the node, so ages further down the list should be smaller, not larger."
+   ]
+  ],
+  "messages": [
+   [
+    "No account to post as",
+    "msg-export-twotter-account",
+    "the node has no account chosen, so nothing is posted"
+   ],
+   [
+    "Nothing to post",
+    "msg-export-twotter-empty",
+    "the node has no tweet rows, so it does nothing at all"
+   ]
+  ]
  }
 }

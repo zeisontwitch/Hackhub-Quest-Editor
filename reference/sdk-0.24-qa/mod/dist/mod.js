@@ -307,47 +307,19 @@ function printClockProbe(tools) {
 
 function printGuide(tools) {
     ensureSession();
-    tools.println("QE24 is a QA harness, not a puzzle quest. The quest objectives are reminders for tests you can run in any order.");
+    tools.println("QE24 is a QA harness, not a puzzle quest.");
     tools.println("");
-    tools.println("What is new enough to check in SDK 0.24:");
-    tools.println("1. HTTP/browser/curl events: Browser, curl or Http.fetch traffic should raise Http.Request/Http.Response events.");
-    tools.println("2. HTTP intercept: a proxy-style switch can HOLD browser/curl requests so a tool can inspect or forward them.");
-    tools.println("3. Collaborator hits: a one-use callback domain should record when Browser, curl or DNS touches it.");
-    tools.println("4. Scheduler/Time: jobs should fire on the in-game clock and survive save/load.");
-    tools.println("5. Native Wi-Fi: a mod can create a real Wi-Fi AP with BSSID, channel and WPS fields.");
-    tools.println("6. Quest completion APIs: complete, retire and unclaim should not freeze or leave stale quests.");
-    tools.println("7. Phone Dialog onEnd completion: a line-end callback should be able to finish a quest without freezing.");
+    tools.println("Every check this harness was built for is CLOSED (2026-09-18).");
+    tools.println("Results, and the one question it answered (S-04, the clock zone): reference/sdk-0.24-qa/STATUS.md");
     tools.println("");
-    tools.println("Easy first pass:");
-    tools.println("- qe24 http-fetch. If it printed status 200 and the http-response objective ticked, record that as a pass.");
-    tools.println("- Optional proxy test: run qe24 intercept with no extra word to print the two-terminal steps.");
-    tools.println("- Time test: qe24 schedule 1, then use the clock Wait button or wait until the scheduler mail/toast appears.");
-    tools.println("- Clock zone test: qe24 clock prints two renderings of the current in-game time; compare them with the clock on screen (S-04).");
-    tools.println("- Collaborator test: qe24 collab, then open the printed URL in the in-game browser, or run the curl command if your build has curl.");
-    tools.println("- Wi-Fi test: connect to " + WIFI_SSID + " with passphrase " + WIFI_PASSWORD + ", then disconnect.");
+    tools.println("This mod stays as a TOOL, not a checklist: seed/status/history/clock/reset still work, and the next round that needs an in-game probe adds new commands.");
     tools.println("");
-    tools.println("If the surface quest is already 6/6, run qe24 next. The remaining QA is in separate probe quests and reload checks.");
-    tools.println("Safety: if any browser/curl request seems stuck after an intercept test, open another terminal and run qe24 intercept off.");
-    tools.println("If curl says command not found, no request was made: run qe24 intercept off and mark curl-only rows Blocked for that game build.");
+    tools.println("Safety: if a browser/curl request seems stuck after an intercept test, open another terminal and run qe24 intercept off.");
 }
 
 function printNextSteps(tools) {
-    tools.println("Next after QE24SurfaceProbe is 6/6:");
-    tools.println("1. Evidence snapshot: qe24 status, then qe24 history. Paste those lines if you can.");
-    tools.println("2. Wi-Fi: do NOT need to crack " + WIFI_SSID + "; the passphrase is intentionally known. We are checking SDK AP creation/events, not solving a Wi-Fi puzzle.");
-    tools.println("   Connect with " + WIFI_PASSWORD + ", run qe24 status, and confirm Connected Wi-Fi is QE24 target: yes.");
-    tools.println("   Then disconnect from the QE24 network, run qe24 status again, reload, and confirm Target Wi-Fi matches stays at 1.");
-    tools.println("   Optional but useful: crack/test it with Bettercap. If set wifi.ap by BSSID prints SSID undefined but handshake/hashcat works, record W-04 as Partial.");
-    tools.println("3. Quest lifecycle probes, preferably on a clean throwaway save:");
-    tools.println("   qe24 claim complete  -> qe24 complete  -> save/reload and check no duplicate mail/reward/freeze.");
-    tools.println("   qe24 claim button    -> qe24 button-ready -> click the quest Complete button -> save/reload.");
-    tools.println("   qe24 claim retire    -> qe24 retire    -> quest should disappear without OnComplete/reward.");
-    tools.println("   qe24 claim unclaim   -> qe24 unclaim   -> quest should disappear without being completed.");
-    tools.println("   qe24 claim phone-auto -> qe24 phone-auto -> let the call end; AutoComplete should finish without freezing.");
-    tools.println("   qe24 claim phone-direct -> qe24 phone-direct -> let the call end; onEnd calls complete() without freezing.");
-    tools.println("4. Scheduler reload: qe24 schedule 10, save/reload before it fires if you can, then wait. It should fire once.");
-    tools.println("5. Clock zone (S-04): qe24 clock, then compare its two renderings with the in-game clock on screen.");
-    tools.println("6. Later, install the editor export to test QE24-LAB-5G, qe24-website.test and the QESdk024TimerQa rows.");
+    tools.println("Nothing further to run in this harness - all of its checks are closed.");
+    tools.println("Results: reference/sdk-0.24-qa/STATUS.md. A future probe arrives as a new harness version, not as a re-run of these.");
 }
 
 function printInterceptGuide(tools) {

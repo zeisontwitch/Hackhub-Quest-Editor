@@ -9,6 +9,7 @@ Not current documentation. For how the editor works today, see
 
 | Round | Investigation | What it established |
 |---|---|---|
+| r178 | QA folder closed, S-04 answered | The in-game clock displays the machine's local time (20:17 on screen vs 20:15 local / 18:15 UTC), so the `at` correction stays. The QA folder becomes tooling: one STATUS ledger, no procedures, harness guide no longer lists finished checks. Twotter's r31 crash cause is fixed in 1.3.0, reopening the feature. |
 | r177 | Every unit, both ways | Both relative rows take one box per unit: a coming day counts years/months/weeks/days from now and pins a clock, Wait takes every unit (calendar included, via `scheduleAt` — the engine's duration form has no month field). The clamp is applied once, on the calendar part, before weeks and days. |
 | r176 | Timer inspector: the digital clock, rows, and relative units | The Timer resolves “in N days / weeks / months / years, at HH:MM” inside the game at arm time; the editor says the rule, warns about impossible dates and clamps short months. Rows and the clock are layout kinds, transparent to the manual extractor and to every walker. |
 | r175 | Refreshed QA export + the r174 leftovers | The installable QA export is regenerated at build r175 (mod 1.0.3, both quests) and guarded byte-for-byte against the compiler; the manual's conditional-field sentence names the value it waits for (G16); the stale freeze hints are gone; and `qe24 clock` in raw harness 1.0.7 settles the Timer `at` timezone question (S-04) without a date edit. |

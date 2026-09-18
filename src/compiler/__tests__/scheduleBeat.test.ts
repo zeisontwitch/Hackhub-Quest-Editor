@@ -400,19 +400,30 @@ describe("flow.timer (Timer)", () => {
 
     it("at mode: scheduleAt with the player-zone correction for the chosen clock time", async () => {
         const calls: string[] = [];
-        const { sdk, q } = boot(timerProject({ mode: "at", dateYear: 2026, dateMonth: 9, dateDay: 20, hour: 9, minute: 30 }), calls);
-        q.OnStart();
-        await settle();
+        /* The correction only exists to offset the machine's zone — so on a UTC
+           box (`getTimezoneOffset() === 0`, which is what CI runs) the shipped
+           line `- tz` is a no-op and a test written the obvious way passes even
+           with the correction deleted. Fake a non-zero zone instead, so this
+           fails wherever it runs the moment the correction is dropped.
+           S-04 settled the direction: the in-game clock shows local time. */
+        const realOffset = Date.prototype.getTimezoneOffset;
+        Date.prototype.getTimezoneOffset = () => -120; // UTC+2
+        try {
+            const { sdk, q } = boot(timerProject({ mode: "at", dateYear: 2026, dateMonth: 9, dateDay: 20, hour: 9, minute: 30 }), calls);
+            q.OnStart();
+            await settle();
 
-        const tz = new Date().getTimezoneOffset() * 60000;
-        const expected = Date.UTC(2026, 8, 20, 9, 30) - tz;
-        expect(sdk.__jobs).toHaveLength(1);
-        expect(sdk.__jobs[0].fireAt).toBe(expected);
-        expect(calls).not.toContain("notify:the timer");
+            const expected = Date.UTC(2026, 8, 20, 9, 30) + 120 * 60_000;
+            expect(sdk.__jobs).toHaveLength(1);
+            expect(sdk.__jobs[0].fireAt).toBe(expected);
+            expect(calls).not.toContain("notify:the timer");
 
-        sdk.__fire(sdk.__jobs[0].id);
-        await settle();
-        expect(calls).toContain("notify:the timer");
+            sdk.__fire(sdk.__jobs[0].id);
+            await settle();
+            expect(calls).toContain("notify:the timer");
+        } finally {
+            Date.prototype.getTimezoneOffset = realOffset;
+        }
     });
 
     it("at mode: a past date fails open; an incomplete date fails open", async () => {

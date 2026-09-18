@@ -1154,11 +1154,12 @@ function __qeRegisterProject(sdk, PROJECT) {
             var day = Math.round(Number(d.dateDay) || 0);
             if (!(y > 0 && m > 0 && day > 0)) return null;
             /* "The clock shows h:mi": interpret the chosen wall time in the
-               player machine's zone (the one the in-game clock displays).
-               If S-04 proves the clock shows UTC, drop the tz correction.
-               Probe: the raw QA harness's "qe24 clock" (1.0.7) prints
-               Time.now in both renderings to compare with the in-game
-               clock, and this arm log prints ISO next to the raw value. */
+               player machine's zone - the zone the in-game clock displays.
+               Settled in game on 2026-09-18 (S-04): the taskbar clock read
+               20:17 while Time.now rendered 20:15 local and 18:15 UTC, so
+               local it is, and this correction stays. The probe was the raw
+               QA harness's "qe24 clock"; the arm log keeps printing ISO next
+               to the raw value for future spot checks. */
             var tz = new Date().getTimezoneOffset() * 60000;
             return Date.UTC(y, m - 1, day, h, mi) - tz;
         }

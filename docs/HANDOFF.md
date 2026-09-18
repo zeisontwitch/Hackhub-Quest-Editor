@@ -1,3 +1,65 @@
+# Handoff — r178
+
+r178 closes the in-game QA effort and answers its last open question. It is a
+documentation-and-tooling round: no editor behaviour changed, no new guards
+(and §*S-04* below says why one was not needed).
+
+- **S-04 is answered: the in-game clock displays the machine's local time.**
+  `qe24 clock` printed `Time.now` as 20:15 local / 18:15 UTC while the taskbar
+  clock read **20:17** — the local rendering matches. So the `at` mode's
+  timezone correction (`Date.UTC(...) − tz` in `computeTimerFireAt`) is correct
+  as shipped and **stays**; the code comment now records that instead of
+  holding the question open, and the r173 plan's S-04 row is marked answered.
+  **The guard needed repairing first**: the `at`-mode test asserted the
+  corrected value using the *ambient* timezone offset, which is 0 on this
+  sandbox (and any UTC CI), so falsification showed it passing with the
+  correction deleted. It now fakes a UTC+2 machine inside the test, and the
+  deletion fails it — checked by doing exactly that.
+- **`reference/sdk-0.24-qa/` is no longer a checklist.** A new `STATUS.md` is
+  the one-page ledger: *verified* (the r166 surface, all Pass on 2026-09-16, plus
+  the editor Wi-Fi/website rows, plus S-04), *blocked / deliberately
+  unsupported* (`curl` — absent in the tested build even though the 1.3.0
+  changelog adds it, so one re-check on a newer build; DNS-only collaborator;
+  editor HTTP on static sites; the Bettercap `SSID: undefined` display wart),
+  and *not run* — the honest table: the Timer rows **S-01…S-03 and S-05…S-15
+  have no tester report in this repo**, because they were written in plan docs
+  rather than in the folder's own README. They are unit-tested and not
+  blockers; the ledger says where to run them if a future round ever needs the
+  belt and braces.
+- **The README was cut** from 199 lines of finished procedures (quick passes,
+  intercept walkthrough, editor-export route) to a folder map, install steps,
+  the harness command list and the safety notes. Nothing left to re-run by
+  accident.
+- **The raw harness stops printing test rows**: `qe24 guide` and `qe24 next`
+  used to list the finished checks, which is exactly what a tester sees first.
+  Mod **1.0.8** prints "every check is closed — results in
+  `reference/sdk-0.24-qa/STATUS.md`" and keeps the commands as tooling. The
+  hand-edited file was patched with an assert-guarded script and passed
+  `node --check`.
+- **Export regenerated** at mod **1.0.6**, editor build `2026-09-18.r178`
+  (byte-guarded). The only emitted change is the settled comment.
+- **Twotter is back on the table, with evidence.** Zeis's new
+  `docs/Game-Patch-1.3.0-1.3.1.md` records that 1.3.0 *fixed the exact crash
+  that forced the r31 removal* — "a content pack could break Twotter
+  permanently … affected saves are repaired on load". The root README's Next-up
+  row now points at a Twotter re-implementation feasibility read as the next
+  round.
+
+Gates: `npm run typecheck` 0 errors; `npm test` **1,634 passed / 82 files**
+(unchanged — the round adds no tests, deliberately: the one decision it settles
+was already guarded); `npm run build` succeeds; `npm run gen:manual` (build
+stamp swept to r178) and `npm run gen:qa-export` regenerated. Nothing visual is
+claimed.
+
+Stamp: `2026-09-18.r178`.
+
+Supporting notes:
+
+- [`plans/r178-qa-closeout-and-s04.md`](plans/r178-qa-closeout-and-s04.md)
+- [`plans/r177-every-unit.md`](plans/r177-every-unit.md)
+
+---
+
 # Handoff — r177
 
 r177 closes the gap Zeis found the moment he opened r176's Timer: the

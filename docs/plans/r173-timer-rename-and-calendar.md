@@ -155,6 +155,10 @@ node gets a **"When it fires"** select with **three** options:
   QESdk024BeatQa keeps its relative beats (S-01…S-03 unchanged). New rows:
   - **S-04 timezone probe:** load the QA mod, open the console; the arm log
     prints the computed fire time — compare it with the in-game clock.
+    **Answered 2026-09-18:** `qe24 clock` read 20:15 local / 18:15 UTC while
+    the on-screen clock showed 20:17 — the clock displays local time, so the
+    `at` correction stays. Evidence:
+    [`reference/sdk-0.24-qa/STATUS.md`](../../reference/sdk-0.24-qa/STATUS.md).
   - **S-05 "daytime" fire:** in the editor, set beat B to mode `daytime` —
     0 days from now, a few in-game minutes ahead (read from the in-game
     clock) → it must fire when the clock shows that time, across a

@@ -54,7 +54,7 @@ thing under test.
 
 The harness is hand-authored and nothing compiled it, which has already bitten
 once (r173 mangled this same file). `sdk024QaScaffold.test.ts` loads the real
-`mod/dist/mod.js` against a stub SDK and drives the whole probe: **9 new tests**
+`mod/dist/mod.js` against a stub SDK and drives the whole probe: **10 new tests**
 (registration, event wiring — including that someone else's account does *not*
 tick our objectives, seed/bad/status/update/post/cleanup, the
 "no Twotter API" path, and the planted-record shape). The stub emulates the
@@ -71,8 +71,8 @@ engine registering quest-declared accounts, because that is what T-07 asks about
   check on the 1.3.1 build: 1.3.0's changelog claims curl was added, and the
   tested build lacked it.
 
-Gates: `npm run typecheck` 0 errors; `npm test` **1,643 passed / 82 files**
-(was 1,634 — +9, the probe's suite); `npm run build` succeeds; `node --check` on
+Gates: `npm run typecheck` 0 errors; `npm test` **1,644 passed / 82 files**
+(was 1,634 — +10, the probe's suite); `npm run build` succeeds; `node --check` on
 the patched harness; `gen:manual` and `gen:qa-export` regenerated. Falsified:
 the probe's planted-record assertion and the event wiring.
 

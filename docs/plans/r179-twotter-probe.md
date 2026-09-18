@@ -87,12 +87,15 @@ yet, and this is a question about the engine's behaviour.
 
 The harness is hand-authored and nothing compiled it, which has already bitten
 once (r173 mangled this very file with an edit tool). `sdk024QaScaffold.test.ts`
-now loads `mod/dist/mod.js` against a stub SDK and drives the probe: 9 new tests
+now loads `mod/dist/mod.js` against a stub SDK and drives the probe: 10 new tests
 covering registration of the probe quest, the event wiring (and that someone
 else's account does **not** tick our objectives), the seed/bad/status/update/
 post/cleanup commands, the honest "Twotter API unavailable" path, and the
-shape of the planted record. The stub emulates the engine writing
-quest-declared accounts, because that is the path T-07 asks about.
+shape of the planted record, and the guide's own wording — that the bad
+record's `bio` is *present and undefined* rather than missing, and that a
+tester who sees the crash should close the game **without saving**. The stub
+emulates the engine writing quest-declared accounts, because that is the path
+T-07 asks about.
 
 ## Housekeeping
 
@@ -115,11 +118,13 @@ and stamps, and the README / `06` / HANDOFF / plans rows.
 
 ## Gates and evidence
 
-`npm run typecheck` clean, `npm test` green (**+9** — the probe's own suite),
+`npm run typecheck` clean, `npm test` green (**+10** — the probe's own suite),
 `npm run build` succeeds, `node --check` on the patched harness, the probe
 exercised end-to-end against a stub SDK, `gen:manual` and `gen:qa-export`
-regenerated. Falsified: the probe's record-shape assertion (revert the planted
-`bio: undefined` and the test must fail) and the event wiring.
+regenerated. Falsified 7/7: the planted `bio: undefined`, the objective's account guard,
+`removeUser` actually being called, `RegisterQuest`, the stub-side
+declared-account path, and both halves of the guide-wording guard (the wrong
+"no bio at all" phrasing and a dropped crash-safety line).
 
 ## Stamp
 

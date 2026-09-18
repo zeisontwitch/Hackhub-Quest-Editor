@@ -19,7 +19,7 @@ Harness **1.0.9**, command `qe24 twotter` (throwaway save):
 | Row | Steps | Green means |
 | --- | --- | --- |
 | T-01 | `qe24 twotter seed`, then search Twotter for `qe24_probe` | The profile opens with its bio and search does not crash — the API path works. |
-| T-02 | `qe24 twotter bad`, then search for `qe24_badrecord` | Search survives the **exact r31 record shape** (a `bio` that is `undefined`). A crash here means the fix is incomplete. |
+| T-02 | `qe24 twotter bad`, then search for `qe24_badrecord` | Search survives the **exact r31 record shape** — `bio` present but `undefined`, like the broken save, not merely missing. A crash here means the fix is incomplete: close the game **without saving** and report it, that is the whole T-02 answer. |
 | T-03 | `qe24 twotter status` → save, quit to the main menu, reload → `status` again | The bad record's bio is no longer `undefined` → "affected saves are repaired on load" is true. |
 | T-04 | `qe24 twotter update` | Both `updateUser` calls return `true` → a mod can repair a record it did not create. The old report said no mod could. |
 | T-05 | `qe24 twotter post`, then open the profile | The tweet is on the profile, and the `post-seen` objective ticks when you open it from the timeline. |

@@ -357,8 +357,10 @@ function printTwotterGuide(tools) {
     tools.println("Throwaway save. Run in this order and paste the console lines:");
     tools.println("  1. qe24 twotter seed     then search Twotter for:  qe24_probe");
     tools.println("  2. qe24 twotter bad      then search Twotter for:  qe24_badrecord");
-    tools.println("     (the exact r31 shape: a record with no bio at all. Search must survive.)");
-    tools.println("  3. qe24 twotter status   -> the stored records; a missing bio shows as undefined");
+    tools.println("     (the exact r31 shape: bio is present but undefined, like the broken save.)");
+    tools.println("     Search must survive. If the game crashes here, close it WITHOUT saving -");
+    tools.println("     that half-done save is fine, and the crash IS the answer for T-02.");
+    tools.println("  3. qe24 twotter status   -> the stored records; the bad bio shows as undefined");
     tools.println("  4. Save, quit to the main menu, reload, then: qe24 twotter status");
     tools.println("     (if repair-on-load works, the bad record's bio is no longer missing)");
     tools.println("  5. qe24 twotter update   -> updateUser repairs both records; prints true/false");
@@ -427,8 +429,9 @@ function twotterBad(tools) {
         following: 0,
         password: "",
     });
-    tools.println("Planted a record with NO bio (the r31 shape). Now search Twotter for: qe24_badrecord");
+    tools.println("Planted the r31 record shape: bio present but undefined. Now search Twotter for: qe24_badrecord");
     tools.println("Search surviving = the crash is fixed at the read path. It crashing = the bug is open.");
+    tools.println("If it crashes, close the game WITHOUT saving; the crash itself is the T-02 answer.");
     tools.println("Stored record now:");
     tools.println(describeTwotterRecord(TWOTTER_BAD_ID));
 }

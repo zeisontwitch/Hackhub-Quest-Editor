@@ -290,8 +290,31 @@ describe("r179 raw harness — the Twotter probe", () => {
         runCommand(tools);
         const text = tools.text();
         expect(text).toContain("bio: undefined");
+        /* And specifically NOT the other shape: a missing property is what an
+           omitted key would produce, and it is not what we planted. */
+        expect(text).not.toContain("bio: ABSENT");
         expect(text).toContain("Functions present:");
         expect(text).toContain("NOT FOUND"); // the seeded account, not yet created
+    });
+
+    it("tells the tester the truth about the bad record, and how to bail out of a crash", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["twotter", "guide"];
+        runCommand(tools);
+        const guide = tools.text();
+        /* The record has `bio` present and undefined — not a missing property.
+           The two are easy to conflate in prose, and the earlier draft did
+           exactly that, so the wording is guarded. */
+        expect(guide).toContain("bio is present but undefined");
+        expect(guide).not.toContain("no bio at all");
+        expect(guide).toContain("WITHOUT saving");
+        tools.lines.length = 0;
+        tools.getArgs = () => ["twotter", "bad"];
+        runCommand(tools);
+        expect(tools.text()).toContain("bio present but undefined");
+        expect(tools.text()).toContain("WITHOUT saving");
     });
 
     it("repairs both records with updateUser — the call the old report said no mod had", () => {

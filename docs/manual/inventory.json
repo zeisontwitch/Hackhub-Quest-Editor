@@ -1,6 +1,6 @@
 {
   "generatedBy": "scripts/extract-manual-inventory.mjs",
-  "editorBuild": "2026-09-18.r185",
+  "editorBuild": "2026-09-18.r186",
   "sdkVersion": "0.24.0",
   "counts": {
     "nodeTypes": 40,
@@ -1753,7 +1753,7 @@
               "kind": "image",
               "key": "image",
               "label": "Attached picture",
-              "hint": "Optional. A photo on a post is often the clue — a boarding pass, a view from a hotel window."
+              "hint": "Optional — and the game will not show it: a tweet's posting record has no picture field (checked in game, r185), so this editor shows it and players do not. Put the clue in the tweet's words instead. The export report repeats this."
             },
             {
               "depth": 1,

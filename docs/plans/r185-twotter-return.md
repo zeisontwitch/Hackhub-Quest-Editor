@@ -343,5 +343,7 @@ avatar/banner sizes, how it spells an age the engine computed itself, and
 whether the timeline flood is pleasant. jsdom cannot see any of it — those are
 T-08/T-09's "paste what you see" lines, handed to you.
 
-Stamp: `EDITOR_BUILD r185`, QA export **1.0.14**, harness mod **1.0.14** (1.0.13 was P-01's, and Zeis ran it — the audits and the two
-quests are a new version rather than a quiet edit of his build).
+Stamp: `EDITOR_BUILD r186`, QA export **1.0.15**, harness mod **1.0.15** (1.0.13
+was P-01's and 1.0.14 the first editor-row run — both were handed to Zeis and
+run, so the r186 fixes are a new version rather than a quiet edit of a build he
+has already tested).

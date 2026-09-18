@@ -86,6 +86,9 @@ describe("SDK 0.24 QA export", () => {
             "QESdk024TimerQa",
             "QESdk024TimerCalQa",
             "QESdk024WaitMonthQa",
+            "QESdk024TwotterQa",
+            "QESdk024TwotterShareQa",
+            "QESdk024TwotterPostEventQa",
         ]) {
             expect(mod, `${quest} is not in the shipped export`).toContain(`"${quest}"`);
         }
@@ -166,10 +169,27 @@ describe("SDK 0.24 QA export", () => {
         expect(conditions(tw1, "Twotter.PostSeen")).toEqual([
             expect.objectContaining({ field: "userId", value: account?.id }),
         ]);
-        expect(trigger(tw1, "Twotter.Post"), "the negative T-13 trigger is gone").toBeDefined();
-        for (const event of ["Twotter.ProfileSeen", "Twotter.PostSeen", "Twotter.Post"]) {
+        for (const event of ["Twotter.ProfileSeen", "Twotter.PostSeen"]) {
             const wired = tw1?.graph.edges.some((e) => e.source === trigger(tw1, event)?.id && e.kind === "condition");
             expect(wired, `${event} is not wired to an objective`).toBe(true);
+        }
+
+        /* The T-13 canary is its own quest since r186, and it is deliberately
+           NOT part of the quest a tester has to finish: the game shows the
+           Complete button only when every objective is done, so an
+           always-unchecked row in T-11's quest made that row's own button
+           unreachable (r185 run). */
+        const tw3 = project.quests.find((q) => q.name === "QESdk024TwotterPostEventQa");
+        expect(tw3, "the T-13 canary quest is gone").toBeDefined();
+        const canaryTrigger = tw3?.graph.nodes.find(
+            (n) => n.type === "trigger.event" && (n.data as { event?: string }).event === "Twotter.Post",
+        );
+        expect(canaryTrigger, "Twotter.Post is no longer watched anywhere").toBeDefined();
+        expect(trigger(tw1, "Twotter.Post"), "the canary must not block the finishable quest").toBeUndefined();
+        expect(tw1?.graph.nodes.some((n) => n.type === "objective" && n.data.hidden === false)).toBe(true);
+        for (const q of [tw1, tw2, tw3]) {
+            const wired = q?.graph.edges.some((e) => e.source === canaryTrigger?.id && e.kind === "condition");
+            if (q === tw3) expect(wired, "the canary objective is not wired").toBe(true);
         }
     });
 

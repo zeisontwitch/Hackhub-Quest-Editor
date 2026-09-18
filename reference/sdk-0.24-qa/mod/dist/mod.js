@@ -363,6 +363,12 @@ var QA_QUESTS = [
         what: "the second quest on the SAME account, for the shared-account rule: finish one and the account stays while the other lives; finish both and it goes. Check with 'qe24 twotter audit'.",
     },
     {
+        alias: "tw3",
+        name: "QESdk024TwotterPostEventQa",
+        title: "Twotter QA (T-13: does Twotter.Post ever fire?)",
+        what: "the canary, alone: claim it, open a Twotter post, and see whether its single objective ticks by itself (r185 says no). Nothing has to be finished here.",
+    },
+    {
         alias: "surface",
         name: "QESdk024EditorQa",
         title: "QE SDK 0.24 editor QA",
@@ -1360,7 +1366,7 @@ class QE24Command extends sdk.Command {
             tools.println("Connected Wi-Fi is QE24 target: " + (connectedMatchesTarget ? "yes" : "no"));
             if (targetWifi && currentWifi && !connectedMatchesTarget) tools.println("Note: if the game UI says QE24 is connected, paste this mismatch before we unhide Wi-Fi.");
             tools.println("Tip: run qe24 next if the 6/6 surface objective quest is already done, qe24 intercept for proxy-test steps, or qe24 history for HTTP/collab evidence.");
-            tools.println("Commands: qe24 guide · qe24 next · qe24 run [timer|cal|wait|probe|twotter|tw1|tw2|surface|clear] · qe24 status · qe24 history · qe24 clock · qe24 timers · qe24 twotter [seed|bad|update|post|backdate|order|audit|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
+            tools.println("Commands: qe24 guide · qe24 next · qe24 run [timer|cal|wait|probe|twotter|tw1|tw2|tw3|surface|clear] · qe24 status · qe24 history · qe24 clock · qe24 timers · qe24 twotter [seed|bad|update|post|backdate|order|audit|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
             return;
         }
         if (sub === "history") {

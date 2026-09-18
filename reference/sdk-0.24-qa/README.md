@@ -22,8 +22,8 @@ older build left behind.
 
 The Twotter probe came back **green on the API path** (2026-09-18, build
 25388883): search survives the record shape that used to crash the game, and
-accounts can be removed again. The probe's results and the **open** editor rows
-T-08…T-15 are in `STATUS.md` — that section is the one to run now.
+accounts can be removed again. The probe's results, the first editor-row run and the four rows
+still open (T-11b/T-12b/T-15b/T-09c) are in `STATUS.md`.
 
 The folder stays because its export is the installable QA build and its raw mod
 is the in-game probe tool future rounds extend. The old step-by-step routes were
@@ -39,12 +39,13 @@ theirs back in r180, which is this file's neighbour.
 | [`STATUS.md`](STATUS.md) | What is verified, blocked, and not run. | Read this first |
 | [`QE24-TestResults - 3.md`](QE24-TestResults%20-%203.md) | Zeis's 2026-09-16 in-game transcript of the r166 run. | Evidence |
 | [`QE24-TestResults - Twotter.md`](QE24-TestResults%20-%20Twotter.md) | Zeis's 2026-09-18 Twotter transcript (build 25388883) — the report that unblocks the feature. | Evidence |
+| [`QE24-TestResults-Twotter.md`](QE24-TestResults-Twotter.md) | Zeis's **r185 editor-row run** (game 1.3.1) with the game log — the transcript that answered T-08…T-14, found the two runtime bugs, and left T-11b/T-12b/T-15b/T-09c open. | Evidence, newest |
 | [`QE24-TestResults - Timer-Rows.md`](QE24-TestResults%20-%20Timer-Rows.md) | Zeis's first Timer-row transcript, including the `qe24 timers` pastes that answered ten rows at once. | Evidence |
 | [`QE24-TestResults-Timer_Rows_2.md`](QE24-TestResults-Timer_Rows_2.md) | Zeis's second Timer run: the S-03 cancel log, the clock panel reading, and the two fixtures that exposed the editor bug. | Evidence |
-| `mod/` | The raw in-game harness, mod **1.0.14**. **`qe24 run`** starts a quest on demand (nothing auto-starts any more) and now lists **`tw1`** / **`tw2`**, the editor export's two Twotter quests; **`qe24 timers`** prints every pending Scheduler job with the in-game moment it will fire; **`qe24 twotter backdate`** (P-01a) and **`qe24 twotter order`** (P-01b) are answered; **`qe24 twotter audit`** (r185) lists the round's handles and flags the r31 poison shape, which is how T-10/T-11/T-12 are read. `qe24 twotter` (r179) keeps its results. | Tool |
-| `projects/sdk-0.24-ingame-qa.project.json` | The editor-importable project the export is built from: six quests, **none auto-starting**, plus the mod-level Twotter account `qe24_editor` the T-08…T-13 rows read. | Source of truth for the export |
+| `mod/` | The raw in-game harness, mod **1.0.15**. **`qe24 run`** starts a quest on demand (nothing auto-starts any more) and now lists **`tw1`** / **`tw2`** / **`tw3`**, the editor export's Twotter quests; **`qe24 timers`** prints every pending Scheduler job with the in-game moment it will fire; **`qe24 twotter backdate`** (P-01a) and **`qe24 twotter order`** (P-01b) are answered; **`qe24 twotter audit`** (r185) lists the round's handles and flags the r31 poison shape, which is how T-10/T-11/T-12 are read. `qe24 twotter` (r179) keeps its results. | Tool |
+| `projects/sdk-0.24-ingame-qa.project.json` | The editor-importable project the export is built from: seven quests, **none auto-starting**, plus the mod-level Twotter account `qe24_editor` the T-08…T-13 rows read. | Source of truth for the export |
 | `projects/fixture-*.project.json` | Three tiny legacy drafts, opened in the editor, no game needed: S-12's pre-r176 `after` project, S-15's r176-era amount/unit one, and **T-14's r30 Twotter draft** (quest-level accounts, one node per tweet, four time spellings). | Fixtures, run by hand |
-| `editor-export/` | The installable export (mod **1.0.14**, editor build `2026-09-18.r185`; six quests, **none auto-starting** — see `qe24 run`). This is the mod under test for the open Twotter rows T-08…T-13; install it beside the raw harness. | **Generated** — never edit by hand |
+| `editor-export/` | The installable export (mod **1.0.15**, editor build `2026-09-18.r186`; seven quests, **none auto-starting** — see `qe24 run`). This is the mod under test for the open Twotter rows T-11b/T-12b/T-15b; install it beside the raw harness. | **Generated** — never edit by hand |
 | `editor-export.notes.md` | Hand-written notes the generator appends to the export README. | — |
 
 Regenerate the export with `npm run gen:qa-export`. The guard test
@@ -61,12 +62,13 @@ Only needed when a future round asks for a specific in-game check.
    local mods folder and restart.
 3. Nothing auto-starts. Claim one quest at a time with the harness:
    `qe24 run tw1` (the Twotter series), `qe24 run tw2` (the shared account),
-   `qe24 run timer`, `qe24 run cal`, `qe24 run wait`, `qe24 run surface`.
+   `qe24 run tw3` (the `Twotter.Post` canary), `qe24 run timer`, `qe24 run cal`,
+   `qe24 run wait`, `qe24 run surface`.
    `qe24 run clear` sheds quests an older build left claimed.
 
 ## Raw harness — commands still available
 
-`qe24 run [timer|cal|wait|probe|twotter|tw1|tw2|surface|clear]` — **start one quest on demand** ·
+`qe24 run [timer|cal|wait|probe|twotter|tw1|tw2|tw3|surface|clear]` — **start one quest on demand** ·
 `qe24 timers` — **every pending job, and when it fires** ·
 `qe24 twotter [guide|status|seed|bad|update|post|backdate|order|audit|cleanup]` ·
 `qe24 guide` · `next` · `seed` · `status` · `history` · `clock` · `http-fetch` ·

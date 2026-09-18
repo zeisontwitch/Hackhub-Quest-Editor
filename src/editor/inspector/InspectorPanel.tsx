@@ -274,7 +274,7 @@ function QuestInspector() {
             />
             <Toggle
                 label="Show a manual complete button"
-                hint="Puts a Complete button in the player's quest panel, so they decide when the quest is over."
+                hint="Puts a Complete button in the player's quest panel, so they decide when the quest is over. The game shows it once every objective is done — an objective left unchecked keeps the button away, so do not leave a deliberate dead end on a quest that ends this way (observed in game, r185)."
                 checked={quest.hasCompleteButton}
                 onChange={(hasCompleteButton) => write({ hasCompleteButton })}
             />

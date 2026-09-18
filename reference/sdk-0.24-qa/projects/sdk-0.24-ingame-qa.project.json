@@ -4,7 +4,7 @@
   "mod": {
     "id": "qe-sdk-024-editor-qa",
     "name": "QE SDK 0.24 Editor QA Scaffold",
-    "version": "1.0.14",
+    "version": "1.0.15",
     "author": "HackHub Quest Editor",
     "description": "Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, the Timer node delay and calendar modes, and the Twotter node (accounts, backdated series, cleanup). Nothing auto-starts — claim one quest at a time with the harness command `qe24 run` — so a tester sees one row's noise, not five.",
     "tags": [
@@ -1335,7 +1335,7 @@
       "id": "qe-tw1",
       "name": "QESdk024TwotterQa",
       "title": "Twotter QA (T-08/T-09/T-10/T-11/T-13)",
-      "description": "Claim it with 'qe24 run tw1'. The moment it starts, the editor's Twotter node posts a series from @qe24_editor: five tweets, four backdated (a year, three months, a picture six weeks back, twelve days) and one that posts as you watch. Open Twotter and search qe24_editor: T-08 is the face and the counts, T-09 is the order and the ages. Then save and reload (T-10), and finally press the Complete button in the journal (T-11): the account and its posts must disappear from search.",
+      "description": "Claim it with 'qe24 run tw1'. The moment it starts, the editor's Twotter node posts a series from @qe24_editor: five tweets, four backdated (a year, three months, a picture six weeks back, twelve days) and one that posts as you watch. Open Twotter and search qe24_editor: T-08 is the face and the counts, T-09 is the order and the ages. Then save and reload (T-10), and finally open the profile and one post so both objectives tick — the Complete button appears then, and pressing it is T-11: the account and its posts must disappear.",
       "group": "sandbox",
       "rewards": {
         "money": 0,
@@ -1478,7 +1478,7 @@
             "data": {
               "name": "profile-seen",
               "description": "Open Twotter, search qe24_editor and open the profile. This row ticks here when Twotter.ProfileSeen reaches the quest.",
-              "hint": "T-08: on that screen, the bio, avatar, banner, followers (412) and following (96) must be the ones authored in the editor. Report anything missing or wrong.",
+              "hint": "On that screen, the bio, avatar, banner, followers (412) and following (96) must be the ones authored in the editor. Report anything missing or wrong — and, if it is no trouble, whether the banner showed.",
               "info": "r185 Twotter QA. Row meanings: reference/sdk-0.24-qa/STATUS.md.",
               "terminalCommand": "",
               "hidden": false
@@ -1513,36 +1513,8 @@
             },
             "data": {
               "name": "post-seen",
-              "description": "Open one of the series' posts. Ticks when Twotter.PostSeen fires for our account — T-13's yes.",
-              "hint": "The post can be the newest one (posted as you arrived). Report whether this row ticked.",
-              "info": "r185 Twotter QA. Row meanings: reference/sdk-0.24-qa/STATUS.md.",
-              "terminalCommand": "",
-              "hidden": false
-            }
-          },
-          {
-            "id": "qe-tw1-post-trigger",
-            "type": "trigger.event",
-            "position": {
-              "x": 760,
-              "y": 560
-            },
-            "data": {
-              "event": "Twotter.Post",
-              "conditions": []
-            }
-          },
-          {
-            "id": "qe-tw1-obj-post-event",
-            "type": "objective",
-            "position": {
-              "x": 1060,
-              "y": 560
-            },
-            "data": {
-              "name": "post-event",
-              "description": "Expected to STAY unchecked: the plan says Twotter.Post does not fire for a player opening a post.",
-              "hint": "If this row ever ticks, say so — it changes what the manual is allowed to promise about When-event triggers.",
+              "description": "Open one of the series' posts. Ticks when Twotter.PostSeen fires for our account — T-13's yes. Both this and the profile row done means the game shows the Complete button (row T-11).",
+              "hint": "The post can be the newest one (posted as you arrived). Report whether this row ticked. Once both rows are ticked, the Complete button appears in the journal — press it for T-11.",
               "info": "r185 Twotter QA. Row meanings: reference/sdk-0.24-qa/STATUS.md.",
               "terminalCommand": "",
               "hidden": false
@@ -1579,14 +1551,6 @@
             "source": "qe-tw1-postseen-trigger",
             "sourceHandle": "when",
             "target": "qe-tw1-obj-post",
-            "targetHandle": "trigger",
-            "kind": "condition"
-          },
-          {
-            "id": "qe-tw1-e5",
-            "source": "qe-tw1-post-trigger",
-            "sourceHandle": "when",
-            "target": "qe-tw1-obj-post-event",
             "targetHandle": "trigger",
             "kind": "condition"
           }
@@ -1720,6 +1684,100 @@
             "source": "qe-tw2-seen-trigger",
             "sourceHandle": "when",
             "target": "qe-tw2-obj-profile",
+            "targetHandle": "trigger",
+            "kind": "condition"
+          }
+        ]
+      }
+    },
+    {
+      "id": "qe-tw3",
+      "name": "QESdk024TwotterPostEventQa",
+      "title": "Twotter QA (T-13: does Twotter.Post ever fire?)",
+      "description": "Optional, and it never completes anything. The plan says the game's Twotter.Post event is about a quest's own DECLARED tweets — the path the editor refuses to use — so opening one of our API-posted tweets should fire PostSeen and not Post. Claim it with 'qe24 run tw3' before browsing, open a post, and look at the journal: the row ticking by itself is the finding. The r185 run already answered this (it stayed unchecked), so this quest is here to keep the question testable.",
+      "group": "sandbox",
+      "rewards": {
+        "money": 0,
+        "xp": 0
+      },
+      "employer": {},
+      "autoStart": false,
+      "autoComplete": false,
+      "abandonable": true,
+      "hasCompleteButton": false,
+      "hideObjectivesWhenDone": false,
+      "closingObjectiveText": "",
+      "questsToComplete": [],
+      "dialog": [],
+      "graph": {
+        "nodes": [
+          {
+            "id": "qe-tw3-start",
+            "type": "entry.start",
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "data": {}
+          },
+          {
+            "id": "qe-tw3-note",
+            "type": "flow.debug",
+            "position": {
+              "x": 240,
+              "y": 0
+            },
+            "data": {
+              "label": "T-13 canary armed: open any Twotter post now and watch this quest's single objective.",
+              "labelAuto": false,
+              "toast": false,
+              "includeData": false,
+              "includePayload": false
+            }
+          },
+          {
+            "id": "qe-tw3-post-trigger",
+            "type": "trigger.event",
+            "position": {
+              "x": 760,
+              "y": 0
+            },
+            "data": {
+              "event": "Twotter.Post",
+              "conditions": []
+            }
+          },
+          {
+            "id": "qe-tw3-obj-post-event",
+            "type": "objective",
+            "position": {
+              "x": 1060,
+              "y": 0
+            },
+            "data": {
+              "name": "post-event-canary",
+              "description": "Expected to STAY unchecked: Twotter.Post is what the game fires for a quest's own declared tweets, and the editor does not emit those. If this row ever ticks by itself, say so — it changes what the manual may promise about When-event triggers.",
+              "hint": "Nothing to press: the whole point is that it cannot be completed by hand either. Report only if it ticks.",
+              "info": "r185/r186 Twotter QA. Row meaning: reference/sdk-0.24-qa/STATUS.md.",
+              "terminalCommand": "",
+              "hidden": false
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "qe-tw3-e1",
+            "source": "qe-tw3-start",
+            "sourceHandle": "out",
+            "target": "qe-tw3-note",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "qe-tw3-e2",
+            "source": "qe-tw3-post-trigger",
+            "sourceHandle": "when",
+            "target": "qe-tw3-obj-post-event",
             "targetHandle": "trigger",
             "kind": "condition"
           }

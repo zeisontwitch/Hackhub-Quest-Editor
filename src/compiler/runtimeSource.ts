@@ -400,10 +400,14 @@ function __qeRegisterProject(sdk, PROJECT) {
        it. Adopted accounts belong to someone else (another mod, or the player)
        and are never removed by us. */
     var twotterAdopted = {};
-    /* questId -> true once that quest has completed or been abandoned in this
-       session. Anything else counts as live, including a quest that has not
-       started yet: keeping an account one beat too long is recoverable, and
-       deleting one a later act needs is not. */
+    /* questId -> true once the quest has been seen to start (OnStart or
+       OnObjectivesStart) and -> true once it has completed or been abandoned.
+       A quest only counts as LIVE while it is started and not ended, which is
+       the rule the author approved. An account a quest declares but has never
+       needed does not hold it: a mod whose act I is abandoned leaves an empty
+       profile behind otherwise, and act II brings the account back itself when
+       it starts (see ensureDeclaredTwotterAccounts). */
+    var twotterQuestLive = {};
     var twotterQuestEnded = {};
     /* accountId -> [questId] for every quest whose Tweet nodes post from it.
        Read from PROJECT's graphs, so it covers quests that have not started. */
@@ -533,11 +537,17 @@ function __qeRegisterProject(sdk, PROJECT) {
             __QE.log("twotter: no Twotter API in this game build - accounts are not registered");
             return;
         }
-        var declared = Object.keys(twotterDeclaredBy);
-        for (var i = 0; i < declared.length; i++) {
-            var quests = declared[i];
-            if (quests.indexOf(questId) < 0) continue;
-            ensureTwotterAccount(twotterAccount(declared[i]), questId);
+        var accountIds = Object.keys(twotterDeclaredBy);
+        for (var i = 0; i < accountIds.length; i++) {
+            /* The map is accountId -> [questId]. Until r186 this loop walked the
+               account ids and searched THEM for the quest id, so it never
+               matched and never ran: the only thing that ever created an
+               account was a tweet node, which meant a quest whose posting was
+               skipped (a re-run after the account had been removed) came back
+               with no account at all. */
+            var declarers = twotterDeclaredBy[accountIds[i]] || [];
+            if (declarers.indexOf(questId) < 0) continue;
+            ensureTwotterAccount(twotterAccount(accountIds[i]), questId);
         }
     }
 
@@ -586,14 +596,18 @@ function __qeRegisterProject(sdk, PROJECT) {
                 continue;
             }
             var stillNeeded = false;
+            var keptBy = "";
             for (var j = 0; j < declared.length; j++) {
-                if (!twotterQuestEnded[declared[j]]) {
+                var other = declared[j];
+                if (other === questId) continue;
+                if (twotterQuestLive[other] && !twotterQuestEnded[other]) {
                     stillNeeded = true;
+                    keptBy = other;
                     break;
                 }
             }
             if (stillNeeded) {
-                __QE.log("twotter: keeping @" + twotterHandle(account) + " - another live quest declares it");
+                __QE.log("twotter: keeping @" + twotterHandle(account) + " - quest " + keptBy + " is still live and declares it");
                 continue;
             }
             removeTwotterAccount(accountId, "the last quest that needs it ended");
@@ -899,10 +913,15 @@ function __qeRegisterProject(sdk, PROJECT) {
                 };
                 if (row.timeMode === "earlier") tweet.sendedAt = twotterEarlierIso(row);
                 /* The posting API's record has no picture field (SDK 0.24
-                   TwotterTweet). The key is passed anyway when the author
-                   attached one — an ignored key costs nothing, and the in-game
-                   check is what decides whether a picture ever appears. */
-                if (row.image) tweet.image = row.image;
+                   TwotterTweet), and the r185 QA run confirmed it: a tweet with
+                   an attached picture showed no picture in the timeline or on
+                   the detail page. Both plausible key names go along anyway —
+                   unknown keys cost nothing if the game ignores them, and the
+                   QA row re-checks with the second spelling in place. */
+                if (row.image) {
+                    tweet.image = row.image;
+                    tweet.media = row.image;
+                }
                 try {
                     sdk.Twotter.postTweet(tweet);
                     __QE.log("twotter node " + node.id + ": posted " + tweetId +
@@ -981,6 +1000,15 @@ function __qeRegisterProject(sdk, PROJECT) {
             questCleanup.length = 0;
             __QE.log("cleanup starting (" + reason + "): " + todo.length + " item(s) to undo" +
                 (skipped ? ", leaving " + skipped + " network(s) standing" : ""));
+            /* A quest that ends may be lived through again: the engine lets a
+               finished quest be claimed afresh, and the tweets this node
+               posted were just removed with everything else. Forgetting the
+               posting guard here is what lets the next run post them again —
+               without it a re-claimed quest shows a profile with nothing on it
+               and objectives waiting for a post that can never arrive (seen in
+               the r185 QA run). Reloading mid-story is unaffected: the guard is
+               what stops a replayed flow from stacking duplicates then. */
+            postedTweetNodes = {};
             /* The quest's Twotter characters go with it (r185). Done here
                rather than in the loop below because it asks a question the
                other kinds do not: whether another live quest still needs the
@@ -2806,6 +2834,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                     /* The story is starting (or a reload re-ran OnStart): make
                        sure the characters it needs exist. Idempotent, so a
                        second call adopts what the first one created. */
+                    twotterQuestLive[qd.id] = true;
                     ensureDeclaredTwotterAccounts(qd.id);
                     var ctx = { payload: {}, vars: {} };
                     var starts = g.nodes.filter(function (n) { return n.type === "entry.start"; });
@@ -2831,6 +2860,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                        exactly why the accounts are ensured here too: a save
                        loaded into a session where the account never got made
                        gets it made now. */
+                    twotterQuestLive[qd.id] = true;
                     ensureDeclaredTwotterAccounts(qd.id);
                     var ctx = { payload: {}, vars: {} };
                     refillComms();

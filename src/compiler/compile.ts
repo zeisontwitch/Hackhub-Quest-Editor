@@ -118,7 +118,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-18.r185";
+export const EDITOR_BUILD = "2026-09-18.r186";
 
 /** Warning severity (r153): info = good to know, warn = could cause issues,
     error = will break or strand the player. */
@@ -688,8 +688,8 @@ function warnTwotter(project: ProjectDocument): CompilerWarning[] {
                         `${where} has a tweet with no text and no picture. Twotter renders that as an empty post.` });
                 }
                 if (row.image) {
-                    warnings.push({ level: "info", text:
-                        `${where} has a tweet with a picture. The posting API does not declare pictures, so it may not appear on the profile — the in-game check (T-09) is what settles it. If it does not show, use the picture in a dialogue or a file instead.` });
+                    warnings.push({ level: "warn", text:
+                        `${where} has a tweet with a picture, and the game's posting record has no picture field — this was checked in game (r185) and nothing appeared, in the timeline or on the post's own page. The picture stays in your project and in the editor's preview, but players will not see it: put the clue in the tweet's text, or in a file the player opens.` });
                 }
             }
             if (node.data.migratedDate) {

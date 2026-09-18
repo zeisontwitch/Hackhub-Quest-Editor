@@ -426,6 +426,95 @@ describe("comms.tweet (Twotter) — the fences", () => {
         expect(sdk.__users.size).toBe(0);
     });
 
+    it("removes the account when the quest that declares it is the only one that ever STARTED", () => {
+        const calls: string[] = [];
+        const sdk = twotterSdk(calls);
+        const project = tweetProject();
+        /* A second quest that declares the same account but is never claimed.
+           The r185 QA run found the difference the hard way: the first quest
+           was abandoned and the account was kept "for a live quest" that had
+           never started — the player was left looking at an empty profile. A
+           quest only holds an account while it is started and not ended. */
+        const second = JSON.parse(JSON.stringify(project.quests[0])) as ProjectDocument["quests"][0];
+        second.id = "second-quest";
+        second.name = "twotterquest2";
+        second.title = "Twotter Quest 2";
+        for (const n of second.graph.nodes) n.id = `${n.id}-b`;
+        second.graph.edges = [
+            { id: "e-b", source: second.graph.nodes[0]!.id, sourceHandle: "out", target: second.graph.nodes[1]!.id, targetHandle: "in", kind: "flow" },
+        ];
+        project.quests.push(second);
+
+        const { quest } = boot(project, sdk);
+        const account = project.twotterAccounts[0]!;
+        quest(0).OnStart();
+        expect(sdk.__users.has(account.id)).toBe(true);
+
+        quest(0).OnAbandon();
+        expect(calls, "an unstarted quest must not hold the account").toContain(`removeUser:${account.id}:true`);
+        expect(sdk.__users.size).toBe(0);
+    });
+
+    it("brings the quest's accounts into the world at quest start, before any tweet is posted", () => {
+        const calls: string[] = [];
+        const sdk = twotterSdk(calls);
+        /* The tweet node is in the graph but wired to nothing, so the ONLY
+           thing that could create the account is the quest-start hook. That is
+           the contract the r185 QA run caught broken: the hook walked the
+           declarer map's keys as if they were its values, never matched, and
+           silently did nothing — so an account could only ever come into the
+           world as a side effect of posting. */
+        const project = tweetProject();
+        project.quests[0]!.graph.edges = [];
+        const { quest } = boot(project, sdk);
+
+        quest().OnStart();
+        expect(sdk.__users.size).toBe(1);
+        expect(calls.filter((c) => c.startsWith("createUser:nightowl"))).toHaveLength(1);
+        expect(calls.filter((c) => c.startsWith("postTweet:")), "nothing was posted").toHaveLength(0);
+    });
+
+    it("brings the account back when a quest that needs it starts again", () => {
+        const calls: string[] = [];
+        const sdk = twotterSdk(calls);
+        const project = tweetProject();
+        const { quest } = boot(project, sdk);
+        const account = project.twotterAccounts[0]!;
+
+        quest().OnStart();
+        expect(sdk.__users.has(account.id)).toBe(true);
+        quest().OnComplete();
+        expect(sdk.__users.size, "the story ended, the account went with it").toBe(0);
+
+        /* Claiming the same quest again — which the engine allows once a quest
+           is finished — has to rebuild the world it needs. The quest-start hook
+           is what does it; the r185 QA run showed a re-claimed quest with no
+           account and no tweets, because the posting guard skipped the node
+           (that guard is cleared when a quest ends, asserted separately) and
+           nothing else put the account back. */
+        calls.length = 0;
+        quest().OnStart();
+        /* `toContain` on an array matches whole elements, and the stub's line
+           carries the bio too — filter, do not substring-match. */
+        expect(calls.filter((c) => c.startsWith(`createUser:${account.handle}`))).toHaveLength(1);
+        expect(sdk.__users.has(account.id)).toBe(true);
+    });
+
+    it("re-posts the series on a re-run, so a re-claimed quest is playable", () => {
+        const calls: string[] = [];
+        const sdk = twotterSdk(calls);
+        const project = tweetProject({ rows: [{ content: "one" }, { content: "two" }] });
+        const { quest } = boot(project, sdk);
+
+        quest().OnStart();
+        expect(sdk.__tweets.size).toBe(2);
+        quest().OnAbandon();
+        expect(sdk.__tweets.size, "an abandon takes the tweets with it").toBe(0);
+
+        quest().OnStart();
+        expect(calls.filter((c) => c.startsWith("postTweet:")), "the re-run posts again").toHaveLength(4);
+    });
+
     it("takes the mod's accounts with it when the package is unloaded", () => {
         const calls: string[] = [];
         const sdk = twotterSdk(calls);

@@ -903,7 +903,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                 },
                 fields: [
                     { kind: "textarea", key: "content", label: "Tweet", rows: 3, hint: "What the character wrote. Tags work here, like everywhere else an author writes text." },
-                    { kind: "image", key: "image", label: "Attached picture", hint: "Optional. A photo on a post is often the clue — a boarding pass, a view from a hotel window." },
+                    { kind: "image", key: "image", label: "Attached picture", hint: "Optional — and the game will not show it: a tweet's posting record has no picture field (checked in game, r185), so this editor shows it and players do not. Put the clue in the tweet's words instead. The export report repeats this." },
                     {
                         kind: "select",
                         key: "timeMode",

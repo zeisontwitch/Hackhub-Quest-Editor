@@ -18,7 +18,7 @@ npm run build
 
 ## What the editor compiled for you
 
-- Quests: QESdk024EditorQa, QESdk024TimerQa, QESdk024TimerCalQa, QESdk024WaitMonthQa, QESdk024TwotterQa, QESdk024TwotterShareQa
+- Quests: QESdk024EditorQa, QESdk024TimerQa, QESdk024TimerCalQa, QESdk024WaitMonthQa, QESdk024TwotterQa, QESdk024TwotterShareQa, QESdk024TwotterPostEventQa
 - Websites: qe24-website.test
 - Permissions requested: network, mail, events, ui
 
@@ -30,9 +30,10 @@ npm run build
 - Timer QA (Wait in months: S-14, S-09): nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.
 - Twotter QA (T-08/T-09/T-10/T-11/T-13): nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.
 - Twotter QA (T-12: two quests, one account): nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.
+- Twotter QA (T-13: does Twotter.Post ever fire?): nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.
 - QESdk024EditorQa: “Create Wi-Fi” exports as a native access point in HackHub 1.3.0+. Current QA found one game display wart: Bettercap may show no network name after targeting the AP by BSSID, but scanning, joining and cracking still worked.
 - qe24-website.test: 1 unlisted page (/hidden/result). Nothing links to it and the in-game search will not show it, so the player reaches it only by typing the address or by running dirhunter on the host — which is exactly what makes a good hiding place for a clue. If you meant this to be findable normally, turn on “Listed in search” for the page.
-- Twotter QA (T-08/T-09/T-10/T-11/T-13): the Twotter node has a tweet with a picture. The posting API does not declare pictures, so it may not appear on the profile — the in-game check (T-09) is what settles it. If it does not show, use the picture in a dialogue or a file instead.
+- Twotter QA (T-08/T-09/T-10/T-11/T-13): the Twotter node has a tweet with a picture, and the game's posting record has no picture field — this was checked in game (r185) and nothing appeared, in the timeline or on the post's own page. The picture stays in your project and in the editor's preview, but players will not see it: put the clue in the tweet's text, or in a file the player opens.
 <!--
 Hand-maintained. `npm run gen:qa-export` appends this file to the compiled
 README.md, and the guard test (`src/compiler/__tests__/sdk024QaExport.test.ts`)

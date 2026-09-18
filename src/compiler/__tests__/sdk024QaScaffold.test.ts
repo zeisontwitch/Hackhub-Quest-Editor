@@ -250,8 +250,8 @@ describe("r179 raw harness — the Twotter probe", () => {
         const code = readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/dist/mod.js"), "utf8");
         /* r180 added `qe24 timers`; r185 added `qe24 twotter backdate` (P-01a),
            `qe24 twotter order` (P-01b) and `qe24 twotter audit` (the T-11/T-12
-           checks); the Twotter probe is still in the same harness. */
-        expect(manifest.version).toBe("1.0.14");
+           checks); r186 added the launcher entry for the T-13 canary quest. */
+        expect(manifest.version).toBe("1.0.15");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
@@ -701,7 +701,7 @@ describe("r181 raw harness — starting a quest on demand", () => {
         runCommand(tools);
         const text = tools.text();
         expect(text).toContain("nothing auto-starts");
-        for (const alias of ["timer", "cal", "wait", "probe", "twotter", "tw1", "tw2", "surface"]) {
+        for (const alias of ["timer", "cal", "wait", "probe", "twotter", "tw1", "tw2", "tw3", "surface"]) {
             expect(text, `${alias} is missing from the launcher`).toContain(alias);
         }
         /* The journal title is the fallback when a build refuses to claim
@@ -739,6 +739,7 @@ describe("r181 raw harness — starting a quest on demand", () => {
             "QE24TwotterProbe",
             "QESdk024TwotterQa",
             "QESdk024TwotterShareQa",
+            "QESdk024TwotterPostEventQa",
             "QESdk024EditorQa",
         ]);
         expect(tools.text()).toContain("Unclaimed:");

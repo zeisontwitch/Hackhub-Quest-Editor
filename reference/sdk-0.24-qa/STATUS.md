@@ -1,13 +1,112 @@
 # QE24 QA status (2026-09-18)
 
-One page, so nobody re-runs a finished check. **The Twotter editor rows
-(T-08…T-15) are open** — they are the only thing on this page still waiting on a
-tester. Everything below them is closed or deliberately shelved. One row (S-10,
+One page, so nobody re-runs a finished check. **Four Twotter rows are open after
+the first run** (T-11b, T-12b, T-15b, T-09c) — two runtime bugs and one
+unreachable ending were found and fixed in r186, and those rows are the re-check.
+Everything else on this page is closed, answered or deliberately shelved. One row (S-10,
 the short-month clamp) is shelved by the author's decision rather than passed,
 and is marked as such. A future round that needs an in-game check adds a *new*
 row here and a new harness version — never a re-run of the ones below.
 
+## Settled: the Twotter editor rows, first run — 2026-09-18 (game 1.3.1, build 25388883)
+
+Zeis ran the r185 rows on a clean save, resetting after each. Transcript:
+[`QE24-TestResults-Twotter.md`](QE24-TestResults-Twotter.md). Six rows are
+answered; two could not be run as written, and the run found two real bugs in
+the runtime.
+
+| Row | Verdict | Evidence |
+| --- | --- | --- |
+| **T-08** the authored account | **Pass, with two numbers to re-check** | Search found `qe24_editor`; bio read as authored (the record holds it at 102 chars), blue avatar rendered, verified tick, **412 followers**. Two wrinkles: the profile read **86 following** where the record holds **96** (the audit prints the stored 96, so the profile screen is doing its own math or the reading was a slip), and the **banner was not reported** at all. |
+| **T-09** a lived-in series | **Pass except the picture** | Five tweets, top to bottom: *a few seconds ago, 12 days ago, a month ago, 3 months ago, a year ago* — the authored ages (6 weeks reads "a month"), newest first, counters as authored. **No tweet carried its picture**, in the feed or on the detail page. |
+| **T-09b** the moment.js line | **Not ours** | The log does contain one moment.js deprecation warning — at **21:35:41**, two minutes *before* our series posted (21:37:14), with `_i: Wed Sep 09 2026 12:32:30 GMT+0200` = a **game** tweet's `sendedAt` (the same stamps the `Twotter.PostSeen` payloads carry for `QUESTS.13`/`CYBER_JUSTICE`). Our ISO-with-ms stamps never trigger it. The old blemish belongs to the game's own content. |
+| **T-10** save, quit, reload | **Pass** | After save → quit → reload: no duplicate account, five tweets (not ten), same order. The audit confirmed the record: `bio is a string (102 chars); verified yes; followers 412; following 96`. |
+| **T-11** complete removes it | **Failed — fixed in r186** (row re-opened as T-11b) | The Complete button never appeared, because the quest carried a deliberately-unchecked canary objective and the game shows the button only when **every** objective is done. He abandoned instead: **the tweets went and the account stayed** — `twotter: keeping @qe24_editor - another live quest declares it`, while that "live" quest (tw2) had never been claimed. Two bugs, both ours: "live" included quests that had never started, and the ensure-at-start hook that puts an account back was a no-op. |
+| **T-12** two quests, one account | **Pass** | `qe24 run clear`, then `run tw2`: the account stayed (as a leftover) and gained exactly one new tweet; its objective ticked the moment he opened the profile; **Complete removed the account and its posts** (`removeUser(qe-tw-account) -> true (the last quest that needs it ended)`). |
+| **T-13** When-event triggers | **Pass** | `objective "profile-seen" completed by Twotter.ProfileSeen`, `objective "post-seen" completed by Twotter.PostSeen`, and `post-event` never fired — the log only ever shows it *listening* for `Twotter.Post`. Bonus evidence: `Twotter.PostSeen` fires for the **game's own** tweets too (four payloads with foreign userIds were logged and correctly did not match our `userId` condition). |
+| **T-14** the r30 draft | **Pass** | Four tweets from @legacy_smith, in order: *2 days ago*, *1 month ago* (flagged as migrated), *when story arrives*, and the fourth *flagged*. One account, though the draft declared the handle twice. One gap he noticed: the account itself carries no migrated warning — only the tweet rows do. |
+| **T-15** uninstall | **Not run as written** (row re-opened as T-15b) | By the time he uninstalled, there was nothing left to remove: the account had already gone, and a re-claimed `tw1` could not bring it back (the ensure bug above). He confirmed the mod's quest left the journal on uninstall. |
+
+### What the run found in the runtime (fixed in r186)
+
+1. **`ensureDeclaredTwotterAccounts` never ran.** It walked the declarer map's
+   **keys** (account ids) looking for the quest id *inside the account id*, so it
+   never matched — the log has no Twotter line at any quest start in either
+   session. The only thing that ever created an account was a tweet node, which
+   is why a re-claimed quest came back with no account and no tweets. The loop
+   now reads the value (the quest list) it was always meant to.
+2. **"Live" meant "has not ended".** A quest that had never started still held
+   the account, so abandoning the only quest that needed it left an empty
+   profile behind. A quest now counts as live only while it is **started and not
+   ended**; act II brings the account back itself when it starts.
+3. **A finished quest could never post again.** The posting guard survived the
+   quest's end, so a re-claimed quest posted nothing and its PostSeen objectives
+   could never complete. The guard is cleared when the quest ends; reloading
+   mid-story is unaffected (the guard is what stops a replayed flow duplicating
+   tweets, and the start chain does not re-run on a reload).
+
+Each fix has a behavioural fence over the compiled mod, and each fence was
+falsified against the old code.
+
+### What the run found in the QA fixtures (fixed in r186)
+
+The canary objective (`Twotter.Post`, deliberately never completable) sat inside
+the quest that T-11 needs to finish — and an unchecked objective hides the
+Complete button, so the row could not reach its own ending. The canary is now
+its own quest (`qe24 run tw3`, *Twotter QA (T-13: does Twotter.Post ever fire?)*)
+which nothing has to finish. T-11's quest now carries only rows that can tick.
+One more fixture lie removed: the objective's suggested "terminal command" was
+described as if typing it ticked the row; the field only ever shows a
+copy-pasteable nudge.
+
+### Settled: the tweet picture (T-09's negative half)
+
+**SDK 0.24 cannot carry one.** `TwotterTweet` has no picture field — `id`,
+`userId`, `content`, `sendedAt`, `interaction`, `showInTimeline` and nothing
+else — and the r185 run proved the consequence in game: a tweet with an attached
+picture showed no picture in the timeline *or* on the post's own page, while the
+account's avatar (same data-URI shape) rendered fine. The editor keeps the
+field, tells the truth about it in the field's own hint, and the export report
+says plainly that players will not see it. The runtime sends the picture under
+both plausible key names (`image` and `media`) so that the re-check below can
+settle whether the game reads either. **Authors should put the clue in the
+tweet's text, or in a file the player opens.**
+
+## Open after the first run: T-11b, T-12b, T-15b, T-09c — r186, editor export 1.0.15
+
+Three rows could not be answered by the r185 build (one was unreachable, one had
+nothing to remove, one is a re-check after a fix). The mods:
+
+| Mod | Where | Version |
+| --- | --- | --- |
+| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.15** |
+| Raw harness (commands) | `reference/sdk-0.24-qa/mod/` | **1.0.15** |
+
+Nothing auto-starts. Claim with `qe24 run tw1` / `qe24 run tw2` / `qe24 run tw3`;
+shed anything an older build left claimed with `qe24 run clear`. If a claim is
+refused, the journal titles are *Twotter QA (T-08/T-09/T-10/T-11/T-13)* (tw1),
+*Twotter QA (T-12: two quests, one account)* (tw2) and *Twotter QA (T-13: does
+Twotter.Post ever fire?)* (tw3).
+
+| Row | Do this | Report |
+| --- | --- | --- |
+| **T-11b** complete removes it | On a **clean save**, `qe24 run tw1`, then open the profile (row 1 ticks) and open one post (row 2 ticks). The **Complete button** now appears in the journal — press it. | `qe24 twotter audit` must read `@qe24_editor: not on this save`; Twotter search must not find it; searching for something else must still work. *Second half, same save:* claim tw1 again, then abandon it instead of completing — the tweets and the account must both go (this is the r185 failure). |
+| **T-12b** the shared account, in order | Clean save. `qe24 run tw1` **and** `qe24 run tw2`, then finish **tw2 first** (one objective: open the profile). | After tw2's completion the account must **still be there** — with tw1's tweets on it (`qe24 twotter audit`, then the profile). Then finish **tw1**: the account must go. The order you finish them in must not change the outcome. |
+| **T-15b** uninstall | Clean save. `qe24 run tw1`, confirm the account exists (`qe24 twotter audit`), save, quit. Remove/disable the **editor export** mod only, relaunch. | `@qe24_editor` must read `not on this save`, and the handle must leave Twotter search. (The harness's own handles are a different mod and stay.) |
+| **T-09c** the picture, second attempt | `qe24 run tw1` and look at the six-weeks-back tweet. | Whether a picture appears now (the export also sends the picture under the name `media`). Either answer is useful: yes means we know which spelling works; no closes the question for SDK 0.24. Easy alternative if you happen to have Twotter open anyway: does **any** built-in quest's tweet show a picture? If one does, the engine supports pictures and we are using the wrong field. |
+
+Both wrinkles from T-08 are worth an eye while you are in there: whether the
+**banner** shows on the profile, and whether **following** reads 96 (as stored)
+or 86 (as the first run saw it).
+
+---
+
+## Earlier: the r185 rows as first handed over (all now answered above)
+
 ## Open: the Twotter editor rows (T-08…T-15) — r185, editor export 1.0.14
+
+*(Kept for the record — this is the checklist as it was handed over before the
+run. Everything in it is answered above.)*
 
 The rows below test the **editor's own Twotter node** in the game, so they run in
 the *editor export*; the raw harness is only there for the three commands. Both

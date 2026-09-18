@@ -4,7 +4,7 @@ The checklist for the Timer QA rows (**S-01 … S-15**). It lives here because
 this is the folder you install from; the ledger of what is settled is
 [`STATUS.md`](STATUS.md).
 
-## Read this first: eleven of the fifteen rows are already answered
+## Read this first: thirteen of the fifteen rows are already answered
 
 Your 2026-09-18 run closed them. Do not re-run them — see
 [`STATUS.md`](STATUS.md) for the evidence:
@@ -13,15 +13,21 @@ Your 2026-09-18 run closed them. Do not re-run them — see
 | --- | --- |
 | **S-01** fire, **S-02** reload | Timer A/B fired; after the reload the same job ids came back with the same `fireAt` and nothing double-armed. |
 | **S-03** cancel | Abandoning the quest stopped Timer B: nothing popped after two real minutes, and the log ends with `OnAbandon: finished` after cancelling the pending timer. |
+| **S-12**, **S-15** | Both migration fixtures open on their quest and show the migrated values: **Wait** + hours **2**, and **A coming day** with the clock at **18:23** and the card reading `in 2w at 18:23`. |
 | **S-05**, **S-06** | The calendar quest's third row *armed at all* — a Timer suspends its chain, so the two instant rows before it must have fired. |
 | **S-07** reload survival | Same five jobs, same ids, same raw timestamps before and after save/quit/reload. |
 | **S-08**, **S-13** | The mixed row resolved to **Tue 3 Nov, 18:23** — 18 Sep + 1 month + 2 weeks + 2 days, clock pinned. |
 | **S-09**, **S-14** | `Wait 1 month` resolved to **18 Oct, 19:27** — one month on, same day number, same clock time. |
 
-**Still open: S-10, S-11, S-12, S-15.** None of them needs waiting. S-12 and
-S-15 were blocked until r182 — the editor used to open those fixtures on an
-empty canvas (see [`STATUS.md`](STATUS.md)); with export **1.0.10** they open on
-their quest.
+**Still open: S-10 and S-11** — both need a specific in-game moment, neither
+needs waiting out a Timer (see the table below).
+
+**About the two fixture rows:** S-12 and S-15 were **editor-only** — open the
+file, read the boxes, done. No export, no install, no in-game step. (They were
+also blocked for two runs: the editor used to open those fixtures on an empty
+canvas, fixed in r182; and the four-box "In" row was clipped off the right edge
+of the docked inspector, fixed in r183 — if you still see clipped boxes, say so,
+that is a bug.)
 
 ## What changed since that run: nothing starts by itself
 
@@ -51,8 +57,6 @@ yourself — one quest, so the journal stays readable.
 | --- | --- | --- |
 | **S-10** short-month clamp | Only if today's in-game date is the **29th, 30th or 31st** — otherwise skip it (the clamp is unit-tested). `qe24 run wait`, then `qe24 timers`. | The month job's day is the last day of the next month, not a roll into the one after. |
 | **S-11** clock panel | `qe24 schedule 120` — that arms a **harness** job two in-game hours out, about **two real minutes**, so it is nearer than the game's own next event. Open the game's **clock panel** straight away and read `NEXT EVENT`. | **Just tell us what it says.** Does it show that job (or any mod job), or still only the game's own? Either answer is useful — nothing to pass or fail. |
-| **S-12** pre-r176 draft | In the **editor** (export **1.0.10** or newer): Open project → `reference/sdk-0.24-qa/projects/fixture-pre-r176-after.project.json`. Look at the Timer node. | The quest opens on its canvas (not "No quest selected"), **When it fires** reads **Wait**, and the hours box shows **2**. Nothing empty or zeroed. |
-| **S-15** r176-era draft | Same, with `fixture-r176-coming-day.project.json`. | Same, and the **Weeks** box shows **2** while the clock shows **18:23**. |
 
 That is the whole list. S-12 and S-15 are just opening a file — no game needed.
 

@@ -384,16 +384,27 @@ export function Field({
                     )}
                     <div
                         className={cn(
-                            "grid [&>*]:min-w-0",
-                            /* `columns` wraps a long row (six unit boxes) onto
-                               as many lines as it takes; without it the fields
-                               share one line. */
+                            /* `@container`: the row's own width decides its
+                               columns, not the window's — the inspector is a
+                               resizable panel, so a viewport breakpoint would
+                               be wrong the moment someone drags it.
+
+                               `columns` used to be an unconditional
+                               `grid-cols-N`, which cannot be right at every
+                               width: a cell is `px-3` (24px) plus a ~36px unit
+                               caption plus the number box, so the Timer's
+                               four-box "In" row needs ~28rem of panel and the
+                               docked panel is 340px wide. It clipped the boxes
+                               off the right edge (r183). The row now folds to
+                               two columns below the width its captions need and
+                               opens back up when the panel is dragged wider. */
+                            "@container grid [&>*]:min-w-0",
                             def.columns === 2
                                 ? "grid-cols-2"
                                 : def.columns === 3
-                                  ? "grid-cols-3"
+                                  ? "grid-cols-2 @min-[21rem]:grid-cols-3"
                                   : def.columns === 4
-                                    ? "grid-cols-4"
+                                    ? "grid-cols-2 @min-[28rem]:grid-cols-4"
                                     : "auto-cols-fr grid-flow-col",
                         )}
                     >

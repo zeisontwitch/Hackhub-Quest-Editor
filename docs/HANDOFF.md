@@ -1,3 +1,54 @@
+# Handoff — r183
+
+Plan: [`plans/r183-inspector-row-width.md`](plans/r183-inspector-row-width.md).
+The third fixture pass closed the last two editor rows and found a real layout
+bug.
+
+## S-12 and S-15 are green
+
+Both fixtures open on their quest and the screenshots show the migration values:
+**Wait** + hours **2** (readback "= 2 hours", card `2h`), and **A coming day**
+with the clock at **18:23**, the preview "Fires in 2 weeks, at 18:23 in-game…"
+and the card reading `in 2w at 18:23` — the r176 `offsetAmount`/`offsetUnit`
+pair landed in the Weeks box.
+
+**Both rows are editor-only** — that was the tester's question, and it was fair:
+`TIMER-ROWS.md` said "look at the Timer node" but not "and that is the whole
+row". It says it now.
+
+## The clipped row (the real work)
+
+Screenshot 2 shows the "In" row's four boxes running off the inspector's right
+edge. The arithmetic: each cell is `px-3` (24px) + `gap-1.5` (6px) + a ~36px
+unit caption + a usable number box (≥44px) ≈ **110px**, so the four-box row
+needs ~**28rem**. The docked inspector is **340px** and cannot be dragged below
+that; a floating drawer can be 280px. The row could never fit.
+
+**Fix:** the row wrapper is a **`@container`** and the column count follows the
+panel's width, not the window's. Four-box row: 2 × 2 at the default, one line of
+four above 28rem. Six-box Wait row: its shipped two lines of three, folding only
+below 21rem (a narrow floating drawer). Verified in the built CSS —
+`@container (width>=28rem){…grid-cols-4…}` is really emitted.
+
+**Not** done on purpose: widening the default. It moves the cliff rather than
+removing it.
+
+**What is not tested:** jsdom has no layout, so no test proves the pixels fit.
+`src/editor/inspector/__tests__/rowFold.test.tsx` asserts the shape of the fix —
+the row declares a container, folds below the caption width, and never uses a
+bare `grid-cols-4` again — and the visual confirmation is a screenshot pass.
+Falsified 2/2 (reverting to a bare `grid-cols-4`, and folding too late).
+
+## Open (two rows, both needing a specific moment)
+
+- **S-10** short-month clamp — a 29th–31st in-game date.
+- **S-11** `NEXT EVENT` — `qe24 schedule 120`, then read the clock panel inside ~2 real minutes.
+
+Gates: typecheck clean; `npm test` **1,661 passed / 83 files** (+3, one new test file); build OK;
+manual and QA export regenerated (export **1.0.11**, `EDITOR_BUILD` r183).
+
+---
+
 # Handoff — r182
 
 Plan: [`plans/r182-fixtures-and-honest-log.md`](plans/r182-fixtures-and-honest-log.md).

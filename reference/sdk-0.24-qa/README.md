@@ -1,7 +1,7 @@
 # SDK 0.24 QA harness — kept as tooling; five Timer rows are open
 
-Everything this folder was built to verify has been verified, **except four
-Timer rows** (S-10, S-11, S-12, S-15) — and those have their own
+Everything this folder was built to verify has been verified, **except two
+Timer rows** (S-10, S-11, each needing a specific in-game moment) — and those have their own
 step-by-step checklist: **[`TIMER-ROWS.md`](TIMER-ROWS.md)**. Ten of the fifteen
 are already answered by the 2026-09-18 run. The one-page ledger is
 [`STATUS.md`](STATUS.md); read that for what is settled.

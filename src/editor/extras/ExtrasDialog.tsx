@@ -22,6 +22,7 @@ import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import * as Dialog from "@radix-ui/react-dialog";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/Icon";
+import { ImagePickerField } from "@/editor/inspector/ModFields";
 import {
     EmptyHint,
     FieldShell,
@@ -711,18 +712,13 @@ export function ExtrasDialog({
                                                         onChange={(v) => patch({ label: v })}
                                                     />
                                                 </FieldShell>
-                                                <FieldShell
-                                                    label="Icon"
-                                                    hint="Optional. A picture inside the pack, with its folder — leave blank for none."
-                                                >
-                                                    <TextInput
-                                                        ariaLabel="Icon"
-                                                        mono
-                                                        value={(current as MenuItemDoc).icon}
-                                                        onChange={(v) => patch({ icon: v })}
-                                                        placeholder="images/menu/flashlight.png"
-                                                    />
-                                                </FieldShell>
+                                                <ImagePickerField
+                                                    label="Picture"
+                                                    ariaLabel="Menu entry picture"
+                                                    hint="Optional. A small picture the entry shows before its words. Verified in game 2026-09-19: a picture picked here shows up in the start menu."
+                                                    value={(current as MenuItemDoc).icon || undefined}
+                                                    onChange={(v) => patch({ icon: v ?? "" })}
+                                                />
                                                 <ActionFields
                                                     action={(current as MenuItemDoc).action}
                                                     quests={quests}
@@ -837,18 +833,13 @@ export function ExtrasDialog({
                                                         }))}
                                                     />
                                                 </FieldShell>
-                                                <FieldShell
-                                                    label="Icon"
-                                                    hint="Optional. A picture inside the pack, with its folder."
-                                                >
-                                                    <TextInput
-                                                        ariaLabel="Icon"
-                                                        mono
-                                                        value={(current as ContextItemDoc).icon}
-                                                        onChange={(v) => patch({ icon: v })}
-                                                        placeholder="images/ctx/inspect.png"
-                                                    />
-                                                </FieldShell>
+                                                <ImagePickerField
+                                                    label="Picture"
+                                                    ariaLabel="Right-click entry picture"
+                                                    hint="Optional. A small picture the entry shows before its words. The same kind of picture the start-menu entries use."
+                                                    value={(current as ContextItemDoc).icon || undefined}
+                                                    onChange={(v) => patch({ icon: v ?? "" })}
+                                                />
                                                 <ActionFields
                                                     action={(current as ContextItemDoc).action}
                                                     quests={quests}

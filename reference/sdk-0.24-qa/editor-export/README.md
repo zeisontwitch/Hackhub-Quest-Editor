@@ -241,12 +241,28 @@ top, no error anywhere. Filed as **Q15** (what are the article ids, or at least
 say when one is unknown), and the editor no longer pretends the page is reached —
 the log, the node's help text and the picker all say what really happens.
 
+### What the fifth run found (2026-09-19) — six rows, six greens, nothing left open
+
+| Row | Verdict |
+| --- | --- |
+| L | **Green.** The claim entry puts `QE24 Extras-Prüfung` in the journal (with no objectives, which is what that quest has). The bug was ours: `Quest.claim` needs the game's name for the quest, not the editor's id. |
+| M | **Green, exactly as predicted.** The handbook opens on its own landing page, and the log says so: `opening the handbook at article "Port Forwarding: Start Here" - the game lands on its own landing page (see Q15)`. Not a failure — the game's, filed as Q15. |
+| N | **Green.** `Right click on a file works. (T-25a)` — the file right-click entry draws. It had never drawn anything: the r204 refusals hit it like the menu item, and the r206 fix had not been tried on a context-menu click. |
+| O | **Green.** `Right click on desktop works. (T-25b)`. |
+| P | **Green.** The mail entry shows a **purple square** before its label — so the editor's picture field works, and a picture picked in the editor reaches the start menu. The field is now a file picker (it used to be a text box asking for the picture's written form, which no author could reasonably produce). |
+| Q | **Green.** With the game in French — a language this pack has no words for — the entries fall back to the **English** labels, not raw tokens. |
+
+That closes the pack extras: every surface an author can put outside a quest has
+now been seen working in game, in two languages, with the fallback checked.
+
 ### Fifth run — ONE session, six rows, one install
 
 Install **export 1.0.33**. The harness is **unchanged at 1.0.23** — if it is
 already installed, leave it alone. Nothing here needs a fresh save, and rows
 L…P are a single German session: click the things, look, write **one line per
 row**. Paste the log only where a row says so. Row Q is last and optional.
+
+**All six are answered — nothing here needs running again.**
 
 | # | What to do | What to write down |
 |---|---|---|
@@ -270,6 +286,7 @@ row**. Paste the log only where a row says so. Row Q is last and optional.
 
 | Export | Editor build | Result |
 |---|---|---|
+| 1.0.34 | 2026-09-19.r208 | **No functional change** — the build stamp inside the packed mod. The editor round behind it: the picture on a menu entry is now a file picker (a text box asking for a picture's written form was not something an author could use), and the handbook has the page this feature owed. Rows L…Q were all green on 1.0.33, so nothing here needs reinstalling. |
 | 1.0.33 | 2026-09-19.r207 | **One batch, six rows.** No runtime change: the mail entry grew an **icon** (a small purple square as a data URL) so the editor's `icon` field can be judged in game, since nothing has ever exercised it. Rows L…Q are the rest of the open questions — the claim fix (L), the handbook's honest log line (M), the two right-click actions, which have never drawn anything (N/O), the icon (P) and the language fallback (Q). |
 | 1.0.32 | 2026-09-19.r207 | **The claim action claims by the game's own name for the quest.** Row I of the r206 run found the click doing nothing: the action sent the editor's document id, which `Quest.claim` does not know, and the game says nothing about an id it does not recognise. The compiler now resolves the author's pick to the quest's name at export (`QESdk024ExtrasQa` here), which is what the harness command and the unclaim node have always used. Nothing else changed except the handbook's log line, which now says the game lands on its own landing page (Q15). |
 | 1.0.31 | 2026-09-19.r206 | **A click no longer does its own work.** From a click every gated call is refused (Q14), so the action is handed to the engine (`Scheduler.schedule`, kind `qe/<mod id>/click`) and runs in its callback, where the mod has a name and the translation table is back. Three new start-menu entries — claim the extras quest, send a mail, open a handbook page — so every action kind can be clicked in game. |

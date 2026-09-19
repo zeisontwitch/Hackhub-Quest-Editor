@@ -21,6 +21,18 @@
 > the editor's own docs should not describe a surface as working before a tester
 > has seen it in game.
 
+> **Stage B closed, 2026-09-19 (r208). All six rows green, in one batched run.**
+> The start-menu entry (with a picture and all four jobs), the desktop widget,
+> both right-click entries, the translated words and the language fallback are
+> verified in game; the two bugs the rows found were ours (a click has to hand
+> its work to the engine — r206 — and a claim has to use the game's name for the
+> quest — r207). The manual page is written: `guides.html#pack-extras`. The
+> picture on an entry is a file picker now, because a text box asking for a
+> picture's written form was not something an author could use. What remains is
+> the developers' half: **Q14** (a click handler has no mod identity) and
+> **Q15** (`Handbook.open` does not deep-link) in
+> `docs/03-questions-for-the-developers.md`.
+
 > **Stage A complete, 2026-09-19 (r200, r201). All four APIs work.** Start-menu
 > items appear in the bottom strip of the start menu (**and the declared
 > `section` has no visible effect — so §4's menu list will not offer it**);

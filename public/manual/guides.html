@@ -10,7 +10,7 @@
 <div class="wrap">
 <nav class="toc" aria-label="Handbook contents">
   <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
-  <p class="build">Handbook · build 2026-09-19.r207</p>
+  <p class="build">Handbook · build 2026-09-19.r208</p>
   <div class="search">
     <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
     <div class="results" role="listbox" aria-label="Search results"></div>
@@ -282,6 +282,83 @@ your quest does.</p>
 <a href="checking.html#where-messages-appear">where messages appear</a>. It
 reads <span class="mono">No issues</span> when the quest is clean.</p>
 
+
+<h2 id="pack-extras">Things outside your quests</h2>
+<p>Every other part of this handbook is about a quest. This section is about the
+four things a pack can put <em>outside</em> a quest — a start-menu entry, a small
+box on the desktop, entries in a right-click menu, and the words your pack can
+speak in another language.</p>
+<p>They all live in one window, opened from <b class="ui">Pack extras</b> on the
+toolbar. Nothing there is required: a pack with none of it exports exactly as it
+always did.</p>
+
+<h3 id="menu-entry">A start-menu entry</h3>
+<p>The start menu has a strip of entries along the bottom. A pack can add one,
+with a picture and four possible jobs: say something, start one of your quests,
+send the player a letter, or open the game's own handbook.</p>
+<dl class="facts-list">
+  <dt>Picture</dt><dd>Optional, and worth having for a pack whose entry sits
+  beside the game's own. Pick a picture from your machine: it travels inside the
+  pack, so keep it small — the menu draws it the size of a letter in this
+  sentence.</dd>
+  <dt>The entry's own words</dt><dd>The label, and the sentence a "say
+  something" entry shows. Both take translated words (see below).</dd>
+  <dt>When it appears</dt><dd>As soon as the player's game loads your pack.
+  Nothing has to be started for it to sit there.</dd>
+</dl>
+<div class="note ok"><b>Positions are the game's.</b> Entries land in the bottom
+strip. An earlier version of the game ignored a "top" or "bottom" choice, so this
+editor does not offer one.</div>
+
+<h3 id="desktop-widget">A box on the desktop</h3>
+<p>A widget is a small web page the game draws on the player's desktop: a note,
+a counter, a status board — anything you can build with the same editor the
+website builder uses, including the preview.</p>
+<dl class="facts-list">
+  <dt>Size and place</dt><dd>Width, height and the corner it sits at, in the
+  desktop's own pixels.</dd>
+  <dt>See-through</dt><dd><em>Off</em> by default, so a widget arrives with a
+  background. Turn it on for a widget meant to look painted onto the
+  wallpaper.</dd>
+</dl>
+<div class="note warn"><b>A widget's own words are a page, not a quest.</b> What
+you type inside the widget is shown as you typed it: translated words do not
+reach in there, because the widget is a file the game opens, not a line of text
+it fills in. Write those words in the language you want them in.</div>
+
+<h3 id="right-click-entry">An entry in a right-click menu</h3>
+<p>Where a player right-clicks, a pack can add an entry: on a file, on the
+desktop, on the taskbar, or on a window. Each entry carries a label, an optional
+picture, and one of the four jobs above.</p>
+<p>Use it for the thing a player reaches for while looking at something —
+"inspect this file", "send this to my notes", "open the walkthrough".</p>
+
+<h3 id="translated-words">The same words in another language</h3>
+<p>The language table is a grid: one row per line of text, one column per
+language you have written it in. The game ships with the languages a player can
+choose, and this editor offers exactly those.</p>
+<p>A line you add is used with a token that looks like this:</p>
+<pre class="code">{{tr.name.of.your.line}}</pre>
+<p>Paste that token wherever a text field takes your words — a quest title, a
+mail's subject, a menu label, a notification. When the game shows it, it looks
+up the line in the player's language, falls back to English when that language
+has no line yet, and shows the token itself if the line is missing
+altogether.</p>
+<div class="note ok"><b>The game reads some words once, at load.</b> A quest's
+title, and the labels on a menu entry, are taken by the game while your pack
+loads. Whatever language the player had chosen for that save is the language
+those words stay in until the next load — which is also why changing the game's
+language mid-session does not change them, and why switching language and loading
+a save does.</div>
+
+<h3 id="extras-handbook">The handbook entry, honestly</h3>
+<p>One of the four jobs opens the game's handbook. In the game as it stands, it
+opens the handbook on that book's own front page: there is no way, yet, to send
+a player to a named page inside it. The entry is still worth having for "here is
+the book", and the editor's log file records what was asked for. See
+<a href="troubleshooting.html">When something goes wrong</a> for reading the
+log.</p>
+
 <h2 id="generate-tags">Two buttons beside a text field</h2>
 <p>Some text fields carry one or two small buttons. They look alike and do
 opposite things, which is worth getting straight early.</p>
@@ -302,7 +379,7 @@ with <kbd>Ctrl</kbd>+<kbd>Z</kbd>, exactly like typing.</div>
 
 <div class="pagefoot"><a href="nodes.html">← Node reference</a><a class="next" href="how-do-i.html">How do I… →</a></div>
 <footer class="colophon">
-  HackHub Quest Editor handbook · documents editor build 2026-09-19.r207 ·
+  HackHub Quest Editor handbook · documents editor build 2026-09-19.r208 ·
   every figure on these pages is taken from the editor's own source.
 </footer>
 </main>

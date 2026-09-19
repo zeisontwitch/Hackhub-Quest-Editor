@@ -1,6 +1,6 @@
 {
   "name": "qe-sdk-024-editor-qa",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "private": true,
   "scripts": {
     "build": "node esbuild.config.mjs"

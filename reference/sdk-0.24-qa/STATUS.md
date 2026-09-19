@@ -1,12 +1,17 @@
 # QE24 QA status (2026-09-19)
 
-**OPEN — one batch, six rows, one install: export 1.0.33, harness unchanged at
-1.0.23.** Rows L…P are one German session (claim entry → journal; handbook entry
-→ log line; right-click a file and the desktop → do the toasts finally draw;
-look at the mail entry for an icon). Row Q is optional and last: switch to a
-language the pack has no words for and check the labels fall back to English
-rather than showing raw tokens. Details and the exact wording to write down are
-in `editor-export/README.md`, "Fifth run".
+**NOTHING OPEN.** Row Q was the last one: six rows in one session, six greens.
+The pack extras are verified in game end to end — start-menu entries (a picture
+and four jobs), a desktop widget with its own background, right-click entries on
+a file and on the desktop, translated words including the fallback to English for
+a language the pack has no words for, and every click action actually doing its
+job through the engine's callback.
+
+**Two things belong to the developers, not to us:** **Q14** (a click handler has
+no mod identity, so every permission-guarded call from one is refused — the
+editor works around it by handing the action to the engine) and **Q15**
+(`Handbook.open` opens the handbook on its own front page whatever id it is
+given). Both are in `docs/03-questions-for-the-developers.md`.
 
 Everything below this line is closed.
 

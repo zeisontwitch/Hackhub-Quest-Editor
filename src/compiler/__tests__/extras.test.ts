@@ -41,6 +41,9 @@ interface ExtrasStub {
     jobs: { kind: string; payload: Record<string, unknown>; id: string }[];
     /** Play the engine: run every pending job, in the order it was scheduled. */
     fireJobs: () => void;
+    /** The handlers the mod registered, by kind — for firing a job the way a
+     *  restored save would (it holds ids we no longer have actions for). */
+    handlers: Map<string, (payload: unknown, job: { id: string }) => void>;
     /** Set the language the stub reports, the way the game's settings would. */
     setLanguage: (code: string) => void;
     /** Fire the game's language-change hook, if the mod subscribed to it. */
@@ -200,6 +203,7 @@ function extrasSdk(): ExtrasStub {
         questClasses: quests,
         jobs,
         fireJobs,
+        handlers: jobHandlers,
         sdk,
     };
 }
@@ -649,6 +653,68 @@ describe("a click hands its work to the engine (r206)", () => {
         b.fireJobs();
         expect(b.calls).toContain("toast:Hello player1!:info");
         expect(b.calls.some((c) => c.includes("greet"))).toBe(false);
+    });
+});
+
+describe("the click job kind (r206/r207)", () => {
+    it("registers its handler at load, so the engine has somewhere to call back to", () => {
+        const b = boot(extrasProject());
+        const kinds = [...b.handlers.keys()];
+        expect(kinds.some((k) => k.endsWith("/click"))).toBe(true);
+    });
+
+    it("registers nothing when the pack has no extras at all (the r84 rule)", () => {
+        /* A pack that uses none of this must keep compiling to the same mod it
+           compiled to before the feature existed - no idle timers, no handlers,
+           no strings. */
+        const b = boot(createProject());
+        /* No handler registered at load, and nothing of the feature in the
+           pack: the runtime source is one template for every pack, but a pack
+           that uses none of this carries none of its data. */
+        expect([...b.handlers.keys()].some((k) => k.endsWith("/click"))).toBe(false);
+        expect(b.modJs).not.toContain('"extras":');
+        expect(b.modJs).not.toContain('"translations":');
+    });
+
+    it("gives two packs different kinds, so neither answers the other's jobs", () => {
+        /* The SDK's kind registry is shared by every installed mod. */
+        const a = extrasProject();
+        const b = extrasProject();
+        a.mod.id = "mod-a";
+        b.mod.id = "mod-b";
+        const kindOf = (project: ProjectDocument) => {
+            const run = boot(project);
+            click(run, "menu", "hello");
+            return run.jobs[0]!.kind;
+        };
+        expect(kindOf(a)).toContain("mod-a");
+        expect(kindOf(b)).toContain("mod-b");
+        expect(kindOf(a)).not.toBe(kindOf(b));
+    });
+
+    it("leaves nothing pending after the callback runs", () => {
+        const b = boot(extrasProject());
+        click(b, "menu", "hello");
+        b.fireJobs();
+        expect(b.jobs).toHaveLength(0);
+        expect(b.calls.filter((c) => c.startsWith("toast:"))).toHaveLength(1);
+    });
+
+    it("shrugs at a job whose action is gone, instead of throwing at load", () => {
+        /* A save can come back holding a job our table no longer knows (a
+           reload between scheduling and firing). The engine fires it anyway, and
+           a throw there would be a pack failing on someone's desktop. */
+        const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+        try {
+            const b = boot(extrasProject());
+            const kind = [...b.handlers.keys()].find((k) => k.endsWith("/click"))!;
+            const handler = b.handlers.get(kind)!;
+            expect(() => handler({ jobId: "click-99", what: "menu item", id: "gone" }, { id: "click-99" })).not.toThrow();
+            const lines = spy.mock.calls.map((c) => String(c[0])).join("\n");
+            expect(lines).toContain("a click job fired but its action was already gone");
+        } finally {
+            spy.mockRestore();
+        }
     });
 });
 

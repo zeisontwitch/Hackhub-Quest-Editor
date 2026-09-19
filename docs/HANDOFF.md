@@ -1,3 +1,36 @@
+# Handoff — r208
+
+**The pack extras are done and verified in game.** Six batched rows, six greens:
+the claim entry adds `QE24 Extras-Prüfung` to the journal; the handbook entry
+opens the handbook on its own front page (the game's, **Q15** — the log says so
+now); **both right-click entries draw** (they had never drawn anything — the r204
+refusals hit them exactly like the menu item, and nobody had re-tried them after
+the r206 fix); a picture on a menu entry **shows**, so the editor's picture field
+is real; and with the game in French the entries fall back to the English labels
+rather than showing tokens.
+
+**What this round changed in the editor:** the picture on a menu or right-click
+entry is now a **file picker** (`ImagePickerField`, the same control the mod's own
+icon uses — it embeds the file, which is what the game was proven to accept),
+instead of a text box asking an author to produce a picture's written form. And
+the handbook got the page this feature owed: **`guides.html#pack-extras`** —
+what the four surfaces are for, the four jobs, the picture, the translated words
+and their token, and the two honest notes (a widget's own text is a page the
+translation table cannot reach; the handbook entry lands on the front page).
+
+**Process change, from the tester:** one install, one session, every open
+question in the same batch. Six rows in one run beat six runs of one row, and the
+findings only ever needed a line each.
+
+**Nothing is open on the QA side.** **Q14** (a click has no mod identity) and
+**Q15** (handbook deep links) are with the developers; the editor works around
+both and says so where an author would look.
+
+Versions: `EDITOR_BUILD` **r208**, export **1.0.34** (stamp only — the six green
+rows ran on 1.0.33), harness **1.0.23**.
+
+---
+
 # Handoff — r207
 
 **The click path works — the log proves the whole round trip** (`clicked` →

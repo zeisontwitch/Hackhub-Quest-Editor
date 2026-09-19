@@ -57,6 +57,40 @@ describe("pack extras dialog (r203)", () => {
         expect(menuItems[0]!.label).toBe("New item");
     });
 
+    it("embeds a picture an author picks, the way the game was proven to accept it", async () => {
+        /* Measured in game 2026-09-19 (row P): a start-menu entry with a data
+           URL in its picture showed the picture. So the field is a file picker
+           that embeds the file, not a text box asking for a data URL by hand -
+           which is what it used to be, and what no author can reasonably do. */
+        const user = renderDialog();
+        await user.click(screen.getByRole("button", { name: /New menu entry/ }));
+        const file = new File([new Uint8Array([137, 80, 78, 71])], "square.png", { type: "image/png" });
+        await user.upload(screen.getByLabelText("Menu entry picture"), file);
+        await screen.findByAltText("Picture preview");
+        expect(useEditor.getState().project.extras.menuItems[0]!.icon).toMatch(/^data:image\/png;base64,/);
+    });
+
+    it("takes the picture back out again when the author removes it", async () => {
+        const user = renderDialog();
+        await user.click(screen.getByRole("button", { name: /New menu entry/ }));
+        const item = () => useEditor.getState().project.extras.menuItems[0]!;
+        const file = new File([new Uint8Array([137, 80, 78, 71])], "square.png", { type: "image/png" });
+        await user.upload(screen.getByLabelText("Menu entry picture"), file);
+        await screen.findByAltText("Picture preview");
+        await user.click(screen.getByRole("button", { name: "Remove" }));
+        expect(item().icon).toBe("");
+        expect(screen.queryByAltText("Picture preview")).toBeNull();
+    });
+
+    it("keeps the picture control off the right-click form too, and on the same footing", async () => {
+        /* Two forms, one control: an author should not have to learn a different
+           answer for the same question. */
+        const user = renderDialog();
+        await user.click(screen.getByRole("button", { name: "Right-click" }));
+        await user.click(screen.getByRole("button", { name: /New right-click entry/ }));
+        expect(screen.getByLabelText("Right-click entry picture")).toBeTruthy();
+    });
+
     it("adds a widget that is opaque by default, with the SDK's default never relied on", async () => {
         const user = renderDialog();
         await user.click(screen.getByRole("button", { name: "Desktop widgets" }));

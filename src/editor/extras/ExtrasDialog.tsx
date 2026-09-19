@@ -801,7 +801,12 @@ export function ExtrasDialog({
                                                 <p className="text-[11px] leading-relaxed text-ink-5">
                                                     A widget is a small web page: write it with the same
                                                     editor as your sites. It sits at the size above,
-                                                    wherever you placed it.
+                                                    wherever you placed it.{" "}
+                                                    <span className="text-ink-3">
+                                                        Write its words in the language you want them in —
+                                                        the game loads this file as it is, so a translated
+                                                        line cannot reach inside it.
+                                                    </span>
                                                 </p>
                                             </>
                                         )}

@@ -341,7 +341,7 @@ var QA_QUESTS = [
     {
         alias: "extras",
         name: "QESdk024ExtrasQa",
-        title: "{{tr.qe24.quest.title}}",
+        title: "QE24 extras QA (its title is translated - T-27)",
         what: "the editor export's own pack extras (r203): claim it only to see the translated Title - the menu entry, the widget and the right-click entries are there from load, with no quest needed.",
     },
     {

@@ -378,7 +378,8 @@ retire with the round, and nobody needs to run it unless a Twotter row returns.
   waiting on them.
 - **Stage 1 (functional):** accounts panel + schema + migration, the node and its
   list, runtime create/post/cleanup, the fences and their tests, the QA export
-  and rows — **all built**; the rows are the part a tester still has to run.
+  and rows — **all built, and every row run** (both halves of T-11b, T-12b, T-15c
+  green; T-15b red by design — see the closing note in §8).
 - **Stage 2 (the whimsy):** the click-to-edit mock profile, the node's timeline
   preview, the card summary, the shimmer — **built in r188**, with 14 new tests
   (9 of the 10 fences falsified; the tenth, the tie-order rule, cannot be

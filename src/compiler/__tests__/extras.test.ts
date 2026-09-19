@@ -19,7 +19,7 @@
  * Technique: compile the real project → run the real mod.js against a stub SDK
  * → call the handlers the game would call (same approach as twotter.test.ts).
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { compileProject } from "@/compiler/compile";
 import { createProject, type ProjectDocument } from "@/schema/project";
 import { nodeTypeDef } from "@/schema/registry";
@@ -34,6 +34,11 @@ interface ExtrasStub {
     context: Record<string, unknown>[];
     translations: { language: string; strings: Record<string, string> }[];
     registeredAt: string[];
+    removed: { menu: string[]; widgets: string[]; context: string[] };
+    /** Set the language the stub reports, the way the game's settings would. */
+    setLanguage: (code: string) => void;
+    /** Fire the game's language-change hook, if the mod subscribed to it. */
+    changeLanguage: (code: string) => void;
     /** The quest classes as the game receives them — the only place the Title
      *  the game reads at registration can be looked at. */
     quests: { new (): { Title: string; Description: string } }[];
@@ -50,6 +55,9 @@ function extrasSdk(): ExtrasStub {
     const translations: { language: string; strings: Record<string, string> }[] = [];
     const registeredAt: string[] = [];
     const quests: { new (): { Title: string; Description: string } }[] = [];
+    const removed = { menu: [] as string[], widgets: [] as string[], context: [] as string[] };
+    let language = "en";
+    const languageListeners: ((code: string) => void)[] = [];
 
     const sdk: Record<string, unknown> = {
         /* A real class: the runtime's quest definitions extend `sdk.Quest`. */
@@ -70,20 +78,63 @@ function extrasSdk(): ExtrasStub {
         Network: { randomIp: () => "10.0.0.1" },
         Shell: { getUsername: () => "player1" },
         Events: { emit: () => {}, on: () => {} },
-        UI: { notify: (m: string) => calls.push(`notify:${m}`), toast: () => {}, prompt: () => Promise.resolve("") },
+        UI: {
+            notify: (m: string) => calls.push(`notify:${m}`),
+            toast: (m: string, t?: string) => calls.push(`toast:${m}:${t ?? ""}`),
+            prompt: () => Promise.resolve(""),
+        },
         Bank: {},
         Time: { now: () => 0, scale: () => 60, isRunning: () => true },
         Scheduler: { register: () => {}, schedule: () => "job", scheduleAt: () => "job", cancel: () => {}, cancelKind: () => {}, list: () => [], remaining: () => null },
         SharedVariables: { get: () => undefined, set: () => {}, remove: () => {}, getAll: () => ({}) },
-        Menu: { addItem: (item: Record<string, unknown>) => { menu.push(item); } },
-        Desktop: { addWidget: (w: Record<string, unknown>) => { widgets.push(w); } },
-        ContextMenu: { register: (item: Record<string, unknown>) => { context.push(item); } },
+        Menu: {
+            addItem: (item: Record<string, unknown>) => {
+                /* The game's own list: a re-registration replaces the old entry
+                   rather than stacking a second one, which is what the stub has
+                   to model for the language-change test to mean anything. */
+                const at = menu.findIndex((m) => m.id === item.id);
+                if (at === -1) menu.push(item);
+                else menu[at] = item;
+            },
+            removeItem: (id: string) => {
+                removed.menu.push(id);
+                const at = menu.findIndex((m) => m.id === id);
+                if (at !== -1) menu.splice(at, 1);
+            },
+        },
+        Desktop: {
+            addWidget: (w: Record<string, unknown>) => {
+                widgets.push(w);
+            },
+            removeWidget: (id: string) => removed.widgets.push(id),
+        },
+        ContextMenu: {
+            register: (item: Record<string, unknown>) => {
+                const at = context.findIndex((c) => c.id === item.id);
+                if (at === -1) context.push(item);
+                else context[at] = item;
+            },
+            unregister: (id: string) => {
+                removed.context.push(id);
+                const at = context.findIndex((c) => c.id === id);
+                if (at !== -1) context.splice(at, 1);
+            },
+        },
         Localization: {
-            register: (language: string, strings: Record<string, string>) => translations.push({ language, strings }),
+            register: (code: string, strings: Record<string, string>) => translations.push({ language: code, strings }),
             languages: () => GAME_LANGUAGE_CODES.slice(),
+            language: () => language,
+            onLanguageChange: (cb: (code: string) => void) => {
+                languageListeners.push(cb);
+                return () => {};
+            },
             t: (key: string) => {
-                const hit = translations.map((t) => t.strings[key]).filter((v) => v !== undefined)[0];
-                return hit === undefined ? key : hit;
+                /* The player's language first, then English, then the key — the
+                   fallback order the SDK documents. */
+                const exact = translations.find((t) => t.language === language)?.strings[key];
+                if (exact !== undefined) return exact;
+                const english = translations.find((t) => t.language === "en")?.strings[key];
+                return english ?? key;
             },
         },
         Mail: {
@@ -94,7 +145,25 @@ function extrasSdk(): ExtrasStub {
             open: (id: string, category?: string) => calls.push(`handbook:${id}${category ? `|${category}` : ""}`),
         },
     };
-    return { calls, menu, widgets, context, translations, registeredAt, quests, questClasses: quests, sdk };
+    return {
+        calls,
+        menu,
+        widgets,
+        context,
+        translations,
+        registeredAt,
+        removed,
+        setLanguage: (code: string) => {
+            language = code;
+        },
+        changeLanguage: (code: string) => {
+            language = code;
+            for (const cb of languageListeners) cb(code);
+        },
+        quests,
+        questClasses: quests,
+        sdk,
+    };
 }
 
 function runMod(modJs: string, sdk: unknown) {
@@ -305,8 +374,10 @@ const click = (b: ReturnType<typeof boot>, which: "menu" | "context", id: string
         const b = boot(extrasProject());
         click(b, "menu", "hello");
         /* "{{tr.greet}} {{player.username}}!" -> the game's translation table
-           supplies one half and the SDK the other. */
-        expect(b.calls).toContain("notify:Hello player1!");
+           supplies one half and the SDK the other. It goes out as a TOAST: that
+           is the one this project has watched work in game (every notification
+           QA ever saw was a toast), so it is tried first. See r204. */
+        expect(b.calls).toContain("toast:Hello player1!:info");
     });
 
     it("claim: starts the named quest through the SDK", () => {
@@ -331,7 +402,50 @@ const click = (b: ReturnType<typeof boot>, which: "menu" | "context", id: string
     it("a right-click action works the same way as a menu one", () => {
         const b = boot(extrasProject());
         click(b, "context", "desktop-note");
-        expect(b.calls).toContain("notify:Nice desktop.");
+        expect(b.calls).toContain("toast:Nice desktop.:info");
+    });
+
+    it("writes the click to the log before anything else, so a dead click and a silent API are told apart", () => {
+        const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+        try {
+            const b = boot(extrasProject());
+            click(b, "menu", "hello");
+            const lines = spy.mock.calls.map((c) => String(c[0]));
+            /* The r204 finding: a click that shows nothing could be the game not
+               calling us at all, or our own message API being silent. The log
+               has to say which. */
+            expect(lines.some((l) => l.includes('extras: menu item "hello" clicked (language en)'))).toBe(true);
+            expect(lines.some((l) => l.includes('extras: said "Hello player1!" via UI.toast'))).toBe(true);
+        } finally {
+            spy.mockRestore();
+        }
+    });
+
+    it("says which API showed the message, and falls back to notify without a toast", () => {
+        const project = extrasProject();
+        const b = boot(project);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (b.sdk as any).UI.toast;
+        click(b, "menu", "hello");
+        /* UI.notify is declared by the SDK and has never been observed working;
+           if it is silent, the log line still proves the click arrived. */
+        expect(b.calls).toContain("notify:Hello player1!");
+        expect(b.calls.some((c) => c.startsWith("toast:"))).toBe(false);
+    });
+
+    it("logs what it registered and in which language", () => {
+        const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+        try {
+            boot(extrasProject());
+            const lines = spy.mock.calls.map((c) => String(c[0]));
+            expect(
+                lines.some((l) =>
+                    l.includes("extras: registered 4 menu item(s), 1 widget(s) and 2 right-click item(s) (language en)"),
+                ),
+            ).toBe(true);
+        } finally {
+            spy.mockRestore();
+        }
     });
 });
 
@@ -406,6 +520,26 @@ describe("localization (r203)", () => {
         expect(new b.quests[0]!().Title).toBe("Job for {{data.client}}");
     });
 
+    it("hands the labels over again when the player switches language", () => {
+        const b = boot(extrasProject());
+        expect(b.menu.find((m) => m.id === "flashlight")!.label).toBe("Flashlight");
+        /* The SDK is explicit that text read once does not update by itself and
+           offers this hook for it: the game drew the item from what it was
+           handed, so a language change has to hand it a new label. */
+        b.changeLanguage("de");
+        expect(b.removed.menu).toContain("flashlight");
+        expect(b.menu.find((m) => m.id === "flashlight")!.label).toBe("Taschenlampe");
+        /* Replaced, not stacked: the game's list still holds one of each. */
+        expect(b.menu.map((m) => m.id)).toEqual(["flashlight", "hello", "write", "readup"]);
+        expect(b.removed.context).toContain("inspect-file");
+        expect(b.context.map((c) => c.id)).toEqual(["inspect-file", "desktop-note"]);
+        /* A widget is a file the language cannot reach, so it is left alone —
+           re-adding it would only flicker. */
+        expect(b.removed.widgets).toEqual([]);
+        expect(b.widgets).toHaveLength(1);
+        expect(b.translations.filter((t) => t.language === "de")).toHaveLength(1);
+    });
+
     it("shows the key even on a build with no Localization API at all", () => {
         const project = extrasProject();
         const b = boot(project);
@@ -414,7 +548,7 @@ describe("localization (r203)", () => {
         click_(b.menu, "hello");
         /* Better the key on screen than an empty notification: a missing
            language must never silently blank a pack's text. */
-        expect(b.calls.some((c) => c.startsWith("notify:greet "))).toBe(true);
+        expect(b.calls.some((c) => c.startsWith("toast:greet "))).toBe(true);
     });
 
     it("shows the key when a translation is missing, rather than nothing", () => {

@@ -3277,18 +3277,59 @@ function __qeRegisterProject(sdk, PROJECT) {
         return __QE.fill(text || "", extraScope());
     }
 
-    function extraAction(action) {
+    /* Which language the game SAYS it is in. Logged with every registration and
+       every click, because a translation that silently does nothing is
+       indistinguishable on screen from a click that never arrived (r204). */
+    function extraLanguage() {
+        var l = __QE.safe(function () {
+            return sdk.Localization && sdk.Localization.language ? sdk.Localization.language() : null;
+        });
+        return l || "unknown";
+    }
+
+    /* Show the player a line of text, and SAY WHICH API did it.
+       UI.toast is the one this project has watched work in game: every
+       notification QA has ever seen came from a toast. UI.notify is declared by
+       the SDK and has never been observed - so it is the fallback, and the log
+       line records which one was used. A silent one must not look like a click
+       that never happened. */
+    function extraSay(text) {
+        if (sdk.UI && sdk.UI.toast) {
+            try { sdk.UI.toast(text, "info"); return "UI.toast"; }
+            catch (e) { __QE.log("extras: UI.toast threw: " + (e && e.message ? e.message : e)); }
+        }
+        if (sdk.UI && sdk.UI.notify) {
+            try { sdk.UI.notify(text); return "UI.notify (declared, never yet observed in game)"; }
+            catch (e2) { __QE.log("extras: UI.notify threw: " + (e2 && e2.message ? e2.message : e2)); }
+        }
+        return "nothing - this build has no UI API";
+    }
+
+    function extraAction(action, what, id) {
         var a = action || {};
+        /* The first line of every handler. If the log has no line for a click,
+           the game never called us - which is a different bug from ours. */
+        function clicked() {
+            __QE.log("extras: " + what + " \"" + id + "\" clicked (language " + extraLanguage() + ")");
+        }
         if (a.kind === "claim") {
             return function () {
-                if (!sdk.Quest || !sdk.Quest.claim) return;
+                clicked();
+                if (!sdk.Quest || !sdk.Quest.claim) {
+                    __QE.log("extras: no Quest.claim in this build - the click did nothing");
+                    return;
+                }
                 __QE.log("extras: claiming quest " + a.questId);
                 __QE.safe(function () { sdk.Quest.claim(a.questId); });
             };
         }
         if (a.kind === "mail") {
             return function () {
-                if (!sdk.Mail || !sdk.Mail.send) return;
+                clicked();
+                if (!sdk.Mail || !sdk.Mail.send) {
+                    __QE.log("extras: no Mail.send in this build - the click did nothing");
+                    return;
+                }
                 var mail = {
                     subject: extraText(a.mailSubject),
                     content: __QE.htmlToText(extraText(a.mailContent)),
@@ -3302,7 +3343,11 @@ function __qeRegisterProject(sdk, PROJECT) {
         }
         if (a.kind === "handbook") {
             return function () {
-                if (!sdk.Handbook || !sdk.Handbook.open) return;
+                clicked();
+                if (!sdk.Handbook || !sdk.Handbook.open) {
+                    __QE.log("extras: no Handbook.open in this build - the click did nothing");
+                    return;
+                }
                 __QE.log("extras: opening handbook article " + a.handbookId);
                 __QE.safe(function () {
                     if (a.handbookCategory) sdk.Handbook.open(a.handbookId, a.handbookCategory);
@@ -3313,29 +3358,41 @@ function __qeRegisterProject(sdk, PROJECT) {
         /* notify, and the safe default for anything unrecognised: say something
            rather than doing nothing at all. */
         return function () {
+            clicked();
             var text = extraText(a.text) || "This item does nothing yet.";
-            if (sdk.UI && sdk.UI.notify) __QE.safe(function () { sdk.UI.notify(text); });
-            else __QE.log("extras: notify \"" + text + "\"");
+            var how = extraSay(text);
+            __QE.log("extras: said \"" + text + "\" via " + how);
         };
     }
 
-    function registerExtras() {
+    /* "again" is true when this runs from a language change: the labels have to
+       be replaced, and the API offers no update - only remove and add. */
+    function registerExtras(again) {
         var extras = PROJECT.extras;
         if (!extras) return;
+        var nMenu = 0;
+        var nWidgets = 0;
+        var nCtx = 0;
         (extras.menuItems || []).forEach(function (item) {
             if (!sdk.Menu || !sdk.Menu.addItem) return;
+            if (again && sdk.Menu.removeItem) __QE.safe(function () { sdk.Menu.removeItem(item.id); });
             __QE.safe(function () {
                 /* The LABEL is read when the item is registered, exactly like
                    a quest's Title - so a {{tr.…}} in it has to be resolved here.
                    The action's own text waits until the click, which is later
                    and may legitimately differ. */
-                var def = { id: item.id, label: __QE.fillTranslations(item.label), onClick: extraAction(item.action) };
+                var def = { id: item.id, label: __QE.fillTranslations(item.label), onClick: extraAction(item.action, "menu item", item.id) };
                 if (item.icon) def.icon = item.icon;
                 sdk.Menu.addItem(def);
+                nMenu++;
             });
         });
         (extras.widgets || []).forEach(function (w) {
             if (!sdk.Desktop || !sdk.Desktop.addWidget) return;
+            /* A widget's words live in its own file, which the language cannot
+               reach - so a language change leaves the widget alone. Re-adding it
+               would only make it flicker. */
+            if (again) return;
             __QE.safe(function () {
                 /* Spread the record the compiler built, then add the two fields
                    the SDK wants in another shape (the position pair and an
@@ -3345,16 +3402,21 @@ function __qeRegisterProject(sdk, PROJECT) {
                 def.position = { x: w.x, y: w.y };
                 def.transparent = !!w.transparent;
                 sdk.Desktop.addWidget(def);
+                nWidgets++;
             });
         });
         (extras.contextItems || []).forEach(function (item) {
             if (!sdk.ContextMenu || !sdk.ContextMenu.register) return;
+            if (again && sdk.ContextMenu.unregister) __QE.safe(function () { sdk.ContextMenu.unregister(item.id); });
             __QE.safe(function () {
-                var def = { id: item.id, label: __QE.fillTranslations(item.label), target: item.target, onClick: extraAction(item.action) };
+                var def = { id: item.id, label: __QE.fillTranslations(item.label), target: item.target, onClick: extraAction(item.action, "right-click item", item.id) };
                 if (item.icon) def.icon = item.icon;
                 sdk.ContextMenu.register(def);
+                nCtx++;
             });
         });
+        __QE.log("extras: " + (again ? "re-registered" : "registered") + " " + nMenu + " menu item(s), " +
+            nWidgets + " widget(s) and " + nCtx + " right-click item(s) (language " + extraLanguage() + ")");
     }
 
     /* Translations go in FIRST, before any quest is registered: a quest's Title
@@ -3378,7 +3440,24 @@ function __qeRegisterProject(sdk, PROJECT) {
     /* Pack extras are registered after the websites, for the same reason the
        websites come after the quests: everything that wants to add to them has
        already run. */
-    registerExtras();
+    registerExtras(false);
+
+    /* The SDK is explicit that text read once and kept does not update by
+       itself, and offers this hook for exactly that reason. A menu label is
+       read once (the game draws the item from what it was handed), so a
+       language change has to hand it a new one - otherwise a player who
+       switches language keeps reading the old one until the game restarts.
+       A quest's Title cannot be redone this way: the journal entry was built
+       from the registration-time copy. */
+    (function followLanguage() {
+        if (!sdk.Localization || !sdk.Localization.onLanguageChange) return;
+        __QE.safe(function () {
+            sdk.Localization.onLanguageChange(function (language) {
+                __QE.log("extras: the language is now " + language + " - handing the labels over again in it");
+                registerExtras(true);
+            });
+        });
+    })();
 
     /* The mod package entry point. Every piece of content is registered by the
        quest, website and command classes above, so this class has almost

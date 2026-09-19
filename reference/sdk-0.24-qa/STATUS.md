@@ -1,14 +1,30 @@
 # QE24 QA status (2026-09-19)
 
-**OPEN: the pack-extras rows T-23…T-27** (Stage B of the cheap wins). They are run
-against the **editor export 1.0.28**, not the harness: the export now carries a
-start-menu entry, an opaque desktop widget, two right-click entries and an
-English + German translation table of its own. Rows and the run order are in
-`editor-export/README.md` (the "Pack extras" section). Two warnings that cost a
-run if missed: copy **both folders whole** — `editor-export/` (its `widgets/`
-folder is the widget) and `mod/` (harness 1.0.21) — and **do not run
-`qe24 extras off`**: that removes the harness's own probe items, never the
-export's. Harness 1.0.21 adds the `extras` alias for T-27 only.
+**OPEN: the pack-extras rows, second run — A…F** (Stage B of the cheap wins).
+Run against the **editor export 1.0.29** and **harness 1.0.22**, both folders
+whole. Rows A…F and what to write down are in `editor-export/README.md` (the
+"Pack extras" section).
+
+First run (2026-09-19, export 1.0.28) — **two green, three that shaped this
+round**: the desktop widget drew with its own background (T-24 ✓), and both
+right-click entries appeared on a file and on the desktop (T-25a/b ✓). The
+start-menu entry **was** there but clicking it did nothing visible, the labels did
+not translate after a language switch, and the widget stayed English (by design —
+its file cannot be translated).
+
+What that produced:
+
+- **A click now writes a line to the log before doing anything**, and a second
+  line naming the API that showed the message. A dead click and a message API
+  that draws nothing look identical on screen and need opposite fixes, so the log
+  has to tell them apart.
+- **`UI.notify` has never been seen working in this project** — every
+  notification QA has observed came from a toast, including the r181 storm. It is
+  what the editor's own *Notify* node uses by default. Rows **A** (two looks,
+  one per API) and **D** (the log) settle it.
+- **Labels are handed over again on a language change**, via the SDK's
+  `Localization.onLanguageChange`, so rows **E**/**F** no longer depend on a
+  reload; a widget's file still cannot follow (documented, not a bug to chase).
 
 Everything below this line is closed.
 

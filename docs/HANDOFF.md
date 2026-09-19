@@ -1,3 +1,54 @@
+# Handoff — r204
+
+**The first pack-extras run came back two green and three findings — and the
+biggest one is not about extras at all.** Zeis installed export 1.0.28 + harness
+1.0.21, fresh save: the desktop widget drew with its own background (T-24 ✓) and
+both right-click entries appeared (T-25a/b ✓). The start-menu entry **was** in the
+start menu but clicking it did nothing visible, and after switching to German the
+labels were still English (and so was the widget — expected, its file cannot be
+translated).
+
+**The finding to act on:** every notification this project has ever *seen in
+game* came from `UI.toast`. `UI.notify` is declared by the SDK, is what the
+editor's **Notify** node uses in its default variant, and has **never** been
+reported appearing. So the r203 click was ambiguous by construction: the game may
+never have called our handler, or `UI.notify` may draw nothing. This round makes
+that unambiguous rather than guessing:
+
+- every extras click logs a line **before** it does anything, and a second line
+  naming the API that showed the message (or that none did) — see
+  `extras.test.ts`'s click/false-path fences;
+- messages now go out via **`UI.toast` first**, with `UI.notify` as the fallback,
+  and the log says which was used;
+- harness 1.0.22 adds **`qe24 extras say notify|toast`** — one call per command,
+  so a single look per command says which one draws. That answer decides what
+  every notification this editor emits should rely on, including the Notify node.
+
+**Why nothing translated:** the labels were handed over once at load, in English,
+and the SDK is explicit that text read once and kept does not update by itself —
+which is exactly what `Localization.onLanguageChange` is for. The runtime now
+subscribes to it and **re-registers the menu and right-click labels** (remove +
+add; there is no update call) when the language changes, so they follow live. A
+widget is a file the language cannot reach, so it is deliberately left alone. A
+quest's Title still follows only the language the game was in when the save
+loaded — the journal entry was built from the registration-time copy, and that is
+now stated in the rows rather than left as a puzzle.
+
+**The second run is rows A…F** in
+`reference/sdk-0.24-qa/editor-export/README.md`: A = `qe24 extras say notify`,
+then `say toast`, one look each; B/C = click the menu entry and both right-click
+entries; D = paste the log's `[quest-editor] extras:` lines; E = switch to German
+and look again **without reloading**; F = set German, load, then `qe24 run extras`
+for the translated Title. Install export **1.0.29** + harness **1.0.22**, both
+folders whole, and still do not run `qe24 extras off`.
+
+Versions: `EDITOR_BUILD` **r204**, export **1.0.29**, harness **1.0.22**.
+Tests: 5 new mutations falsified (log-before-anything, toast-first, the language
+hook, remove-before-add, and leaving widgets alone); the suite is 1,766 across 88
+files.
+
+---
+
 # Handoff — r203
 
 **Stage B of the cheap wins is built — and it is waiting on five rows in game, not

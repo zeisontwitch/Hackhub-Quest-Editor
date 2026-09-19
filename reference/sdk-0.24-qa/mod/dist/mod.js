@@ -1459,6 +1459,7 @@ function extrasGuide(tools) {
     tools.println("  qe24 extras on    register a start-menu item, a desktop widget, two right-click");
     tools.println("                    entries (on a file and on the desktop) and two language bundles");
     tools.println("  qe24 extras lang  what this build says about language, and what t() returns");
+    tools.println("  qe24 extras say notify|toast   does each of the two UI calls draw anything? (r204)");
     tools.println("  qe24 extras off   unregister all of it again");
     tools.println("");
     tools.println("Rows T-16..T-19 in reference/sdk-0.24-qa/STATUS.md, one per API. What to look at:");
@@ -1607,12 +1608,49 @@ function extrasLang(tools) {
     tools.println("  t(\"qe24.absent\"): " + safe("Localization.t", function () { return sdk.Localization.t("qe24.absent"); }, "(threw)"));
     tools.println("Reading: a translated line proves t() resolves; a missing key echoing its own name is");
     tools.println("the SDK's documented fallback, and a blank line there would be worth filing.");
+    tools.println("");
+    tools.println("r204: the line above shows the language the GAME reports. If the game is set to");
+    tools.println("German and language() still says en, no pack can translate anything on this build -");
+    tools.println("that is worth reporting with the whole output of this command.");
+}
+
+/* r204. Every notification QA has ever SEEN in this game came from a toast.
+   UI.notify is declared by the SDK (and used by the editor's Notify node in its
+   default variant), but nothing has ever been reported appearing because of it -
+   and the r203 pack-extras run is the first time a mod has asked a player to
+   notice one. One command per call, so a single look says which one renders:
+   run one, look, run the other, look. */
+function extrasSay(tools, which) {
+    var text = "QE24 " + which + " marker";
+    if (which !== "notify" && which !== "toast") {
+        tools.println("qe24 extras say notify   call UI.notify and say so in the log");
+        tools.println("qe24 extras say toast    call UI.toast and say so in the log");
+        tools.println("Run ONE, look at the screen, then run the other. Whichever draws");
+        tools.println("something tells us what the editor's own notifications can rely on.");
+        return;
+    }
+    if (!sdk.UI || !sdk.UI[which]) {
+        tools.println("UI." + which + " is NOT in this build - nothing was called.");
+        return;
+    }
+    var how = "not called";
+    safe("UI." + which, function () {
+        if (which === "toast") sdk.UI.toast(text, "info");
+        else sdk.UI.notify(text);
+        how = "called";
+    });
+    log("extras say " + which + ": " + how);
+    tools.println("UI." + which + '(\"' + text + '\")' + " was " + how + ".");
+    tools.println("  NOTIFY is the popup the SDK documents; TOAST is the one this project has seen.");
+    tools.println("  Look at the screen now: did \"" + text + "\" appear? Quote it either way -");
+    tools.println("  a call that draws nothing is a finding, not a dead end.");
 }
 
 function extrasProbe(tools, verb) {
     if (verb === "on") { extrasOn(tools); return; }
     if (verb === "off") { extrasOff(tools); return; }
     if (verb === "lang") { extrasLang(tools); return; }
+    if (verb === "say") { extrasSay(tools, tools.getArgs()[2]); return; }
     extrasGuide(tools);
 }
 

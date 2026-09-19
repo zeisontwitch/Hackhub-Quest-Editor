@@ -66,7 +66,7 @@ The lines to quote in a report are the ones in the log file
 (`%APPDATA%/Roaming/hackhub/log`, search it for `quest-editor`): `timer node … armed for …`,
 `timer … fired`, `timer missed: quest …`, `cancelled N pending timer(s)`.
 
-### Pack extras — T-23…T-27 (export 1.0.28, editor build r203)
+### Pack extras — T-23…T-27 (export 1.0.29, editor build r204)
 
 **Install** (as usual, both folders): this export's own folder
 (`reference/sdk-0.24-qa/editor-export/`) **and** the harness
@@ -88,8 +88,48 @@ list and the game is launched again. In particular:
 | T-24 | Look at the desktop, upper left, at 40,40. | A 320×180 box with its **own dark background all the way to its edges**, reading `QE24 extras widget`. That is the new default: the editor sends "not see-through" unless the author turns the switch on. A box with no background at all would mean the switch arrived as see-through. |
 | T-25a | Right-click a file (any file on the desktop or in a folder). | `QE24: inspect this file` is in the menu; clicking it shows `Right-click on a file works (T-25a).` |
 | T-25b | Right-click an empty part of the desktop. | `QE24: desktop action` is in the menu; clicking it shows `Right-click on the desktop works (T-25b).` |
-| T-26 | Switch the game's language to **German** (Deutsch), then look at the start menu and right-click on a file and on the desktop. Switch back to English afterwards. | The labels and the notices are German: `QE24: Extras-Prüfung`, `QE24: diese Datei prüfen`, `QE24: Desktop-Aktion`, `Der eigene Menüeintrag des Packs funktioniert (T-23).` In English they are English again. A label showing `{{tr.…}}` itself means the translation did not arrive. |
-| T-27 | `qe24 run extras` (or claim `QESdk024ExtrasQa` by hand), then read the journal entry's title. | The title is `QE24 Extras-Prüfung` in German and `QE24 extras QA` in English. **This is the row that matters most**: a quest's title is read while the quest is registered, so it is the one text an author cannot fix after the fact. |
+| T-26 | Switch the game's language to **German** (Deutsch), then look at the start menu and right-click on a file and on the desktop. Switch back to English afterwards. | The labels and the notices are German: `QE24: Extras-Prüfung`, `QE24: diese Datei prüfen`, `QE24: Desktop-Aktion`. The labels **change as you switch, without a reload** (the pack hands them over again when the language changes). In English they are English again. A label showing `{{tr.…}}` itself means the translation did not arrive. |
+| T-27 | In German: `qe24 run extras` (or claim `QESdk024ExtrasQa` by hand), then read the journal entry's title. | The title is `QE24 Extras-Prüfung` in German and `QE24 extras QA` in English. **This is the row that matters most**: a quest's title is read while the quest is registered, so it can only follow the language the game was in **when the save was loaded** — switching afterwards leaves the title as it was (the journal entry cannot be rewritten). So: set the language to German first, then load the save, then run this row. |
+
+### What the first run of these rows found (2026-09-19) — and what to do about it
+
+**Green:** the desktop widget (T-24) drew with its own background, and both
+right-click entries (T-25a/b) appeared in the right places.
+
+**The click did nothing (T-23) — and the log is the only thing that can say why.**
+Note that the entry *was* in the start menu: registration works. Two things can
+make a click look dead — the game never calling us, or our own message API
+drawing nothing — and they need opposite fixes. So this build **writes one line
+to the log the instant a click arrives**, before it tries to show anything, and a
+second line saying which API showed it (or that none did).
+
+**Which API to trust is an open question now.** Every notification this project
+has ever *seen* in game came from a **toast**. The SDK declares a separate
+`UI.notify` for "a notification popup", it is what the editor's own *Notify* node
+uses by default — and nobody has ever reported one appearing. `qe24 extras say`
+settles it with two looks.
+
+**Nothing translated (T-26).** The labels were handed over once, when the mod
+loaded, with the game in English — and the SDK is explicit that text read once and
+kept does not update by itself. That is what its `onLanguageChange` hook is for,
+and this build now uses it: change the language and the labels are handed over
+again, in the new words, without a reload.
+
+### Pack extras, second run — install and order
+
+Install **export 1.0.29** and **harness 1.0.22** (both folders, whole). Then, in
+this order:
+
+| # | What to do | What to write down |
+|---|---|---|
+| A | Run `qe24 extras say notify` and **look at the screen**. Then run `qe24 extras say toast` and look again. | Which of the two drew something: `QE24 notify marker`, `QE24 toast marker`, both, or neither. This decides what every notification this editor emits should use. |
+| B | Open the start menu and **click** the `QE24: extras check` entry. | Whether a toast appears, and its exact words. (It should read `The pack's own menu entry works (T-23).`) |
+| C | Right-click a file and click `QE24: inspect this file`; then right-click the desktop and click `QE24: desktop action`. | Whether a toast appears for each. These were never clicked in the first run — only looked at. |
+| D | **Now** open the log file (`%APPDATA%/Roaming/hackhub/log`, search `[quest-editor] extras:`) and paste the lines. | The log is the whole point of this round: it shows whether the click reached the pack at all, and which API was asked to draw. |
+| E | Switch the game's language to **German** and look at the start menu and the two right-click menus again — **without reloading the save**. | Do the labels change to `QE24: Extras-Prüfung`, `QE24: diese Datei prüfen`, `QE24: Desktop-Aktion`? (This is the new language hook at work.) |
+| F | Set the language to German, then **load the save**, then `qe24 run extras`. Read the journal title. | `QE24 Extras-Prüfung` rather than `QE24 extras QA` — the title is read when the quest is registered, so it needs the language set *before* the load. |
+
+Two things still not to test, because the pack cannot do them:
 
 **Two things not to test here, because the pack cannot do them:**
 
@@ -104,6 +144,7 @@ list and the game is launched again. In particular:
 
 | Export | Editor build | Result |
 |---|---|---|
+| 1.0.29 | 2026-09-19.r204 | **The click is now visible in the log, and the labels follow a language change.** Every extras click writes a line before it does anything, and the line after it names the API that showed the message — because the r203 run could not tell a dead click from a message API that draws nothing. Messages now go out through `UI.toast` first (the one every notification QA has ever seen) with `UI.notify` as the fallback. `Localization.onLanguageChange` re-registers the menu and right-click labels when the player switches language, so the words follow without a reload; a widget's own file cannot, and is left alone. |
 | 1.0.28 | 2026-09-19.r203 | **The pack extras, from the editor.** One start-menu entry, one opaque desktop widget (`widgets/qe24-extras-widget.html`), two right-click entries, and a translation table with English + German — plus a new quest, `QESdk024ExtrasQa` (alias `extras`), whose **Title is `{{tr.qe24.quest.title}}`**: it is the row for the one field the game reads at registration. Nothing auto-starts; the extras surfaces are there from load. |
 | 1.0.27 | 2026-09-18.r202 | **Stamp only** — the round closed the pack-extras probe (all four APIs green) and starts Stage B. The compiled quests are unchanged. |
 | 1.0.26 | 2026-09-18.r201 | **Stamp only** — the round is the second pack-extras probe (three menu items, two widgets); the compiled quests are unchanged. |

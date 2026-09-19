@@ -119,6 +119,12 @@ function runHarness(
             language: () => "en",
             languages: () => ["en", "de", "tr"],
         },
+        /* r204: whose calls must be visible BY NAME, because the whole point of
+           `qe24 extras say` is telling UI.notify and UI.toast apart. */
+        UI: {
+            notify: (m: string) => calls.push(`ui.notify:${m}`),
+            toast: (m: string, tone?: string) => calls.push(`ui.toast:${m}:${tone ?? ""}`),
+        },
         RegisterCommand: () => (cls: unknown) => {
             holder.cls = cls as new () => CommandInstance;
         },
@@ -270,6 +276,23 @@ describe("the harness's pack-extras probe", () => {
         const { lines, calls } = runHarness(["extras", "on"], { noExtrasApi: true });
         expect(calls).toEqual([]);
         expect(lines.join("\n")).toContain("NOT IN THIS BUILD: Menu.addItem, Desktop.addWidget, ContextMenu.register, Localization.register");
+    });
+
+    it("calls ONE UI API per `qe24 extras say`, so a single look names the one that draws", () => {
+        const notifyRun = runHarness(["extras", "say", "notify"]);
+        expect(notifyRun.calls).toEqual(["ui.notify:QE24 notify marker"]);
+        expect(notifyRun.lines.join("\n")).toContain('UI.notify("QE24 notify marker") was called.');
+
+        const toastRun = runHarness(["extras", "say", "toast"]);
+        expect(toastRun.calls).toEqual(["ui.toast:QE24 toast marker:info"]);
+        expect(toastRun.lines.join("\n")).toContain('UI.toast("QE24 toast marker") was called.');
+    });
+
+    it("explains `extras say` when it is given neither word, instead of calling anything", () => {
+        const { lines, calls } = runHarness(["extras", "say"]);
+        expect(calls).toEqual([]);
+        expect(lines.join("\n")).toContain("qe24 extras say notify");
+        expect(lines.join("\n")).toContain("Run ONE, look at the screen");
     });
 
     it("prints its own guide when asked for nothing in particular", () => {

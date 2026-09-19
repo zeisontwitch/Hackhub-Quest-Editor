@@ -266,12 +266,17 @@ describe("r179 raw harness — the Twotter probe", () => {
            has any prior art here (same test file drives it). r203 adds the
            `extras` ALIAS: Stage B put the extras into the editor export, so the
            alias claims the new QA quest to show a translated Title - the surfaces
-           themselves need no quest at all, they are there from load. */
-        expect(manifest.version).toBe("1.0.21");
+           themselves need no quest at all, they are there from load. r204 adds
+           `qe24 extras say notify|toast`: the r203 run showed a click that
+           apparently did nothing, and the first question is whether UI.notify -
+           the API the editor's own notification uses - draws anything at all in
+           this build. Every notification QA has ever seen came from a toast. */
+        expect(manifest.version).toBe("1.0.22");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
         expect(code).toContain('alias: "extras"');
+        expect(code).toContain('verb === "say"');
     });
 
     it("audits the round's handles, and calls a present-and-undefined bio by name", () => {

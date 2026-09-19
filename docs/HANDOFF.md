@@ -1,3 +1,33 @@
+# Handoff — r191
+
+**A wording failure of ours, not a tooling gap.** T-15c asked Zeis to check "the
+console" for a line — and he has no console: only the fake terminal, which shows
+nothing unless a command runs. What was meant is the game's own log **file**, the
+`HACKHUB LOG FILE` with the `====` headers that every QA transcript in this folder
+already pastes from. He had it in front of him the whole time; we called it a
+console and never wrote down where it lives.
+
+So the row now names the file and the two exact lines to search for
+(`unloading: removing the Twotter accounts this mod declared`, then
+`twotter: removeUser(...) -> true (mod unloaded)`), and the QA docs say plainly
+that the file's location on disk is **still not recorded anywhere in this repo** —
+every note says "the game log" and stops there. That is a documentation hole worth
+closing the next time somebody runs a row.
+
+Also sharpened while rewriting it: a mod disabled in the Mods list is only
+**queued** ("Restart the game to apply updates"), so the single moment the cleanup
+hook can run is the **shutdown after that disable**, while the mod is still
+installed. And because a save is written *before* the shutdown, a hook that runs
+perfectly at unload may still not stick: T-15c therefore reports two separate
+things — the log line (did the cleanup run) and the audit (did it last) — and the
+combination "line present, account still there" is itself the finding.
+
+Versions: `EDITOR_BUILD` **r191**, QA export **1.0.19** (compiled content identical
+to 1.0.18 apart from the stamp — 1.0.18 runs the row just as well), harness
+**1.0.16**.
+
+---
+
 # Handoff — r190
 
 **The "Graph paper" grid was not graph paper.** Zeis spotted it while testing

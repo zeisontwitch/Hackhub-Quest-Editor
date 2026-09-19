@@ -78,7 +78,7 @@ reach the game. A **feature request for a picture field is filed** in
 — the day the API accepts one, the field comes back and the change is one line.
 **Until then: put the clue in the tweet's text, or in a file the player opens.**
 
-## Open: T-11b (abandon half), T-15c — r190, editor export 1.0.18
+## Open: T-11b (abandon half), T-15c — r191, editor export 1.0.19
 
 Two rows could not be answered by the r185 build (one was unreachable, one had
 nothing to remove) and one is a re-check after a fix. **T-11b and T-12b are now
@@ -89,7 +89,7 @@ T-11b are still open.** The mods:
 
 | Mod | Where | Version |
 | --- | --- | --- |
-| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.18** |
+| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.19** |
 | Raw harness (commands) | `reference/sdk-0.24-qa/mod/` | **1.0.16** |
 
 Nothing auto-starts. Claim with `qe24 run tw1` / `qe24 run tw2` / `qe24 run tw3`;
@@ -103,8 +103,8 @@ Twotter.Post ever fire?)* (tw3).
 | ~~**T-11b**~~ | **Green 2026-09-19 (first half).** Fresh save, `qe24 run tw1`: both objectives ticked, the Complete button appeared and **removed the account and every tweet**. *Still open:* the **abandon** half — claim tw1 again on a clean save and abandon it instead of completing; the tweets and the account must both go (that was the r185 failure). |
 | ~~**T-12b**~~ | **Green 2026-09-19.** tw2 claimed and completed after tw1: both objectives ticked, and its completion **removed the account and its tweets** — the shared-account rule holds in the order that mattered. |
 | ~~**T-15b**~~ uninstall (mod removed outside the game) | **Red 2026-09-19, and the row was wrong, not the mod.** Zeis ran tw1 to completion, saved, quit, removed `editor_export` from disk and relaunched: the **quest** was gone (the game drops an uninstalled mod's quests) but `@qe24_editor` and **all its tweets were still in the save and in search**. The SDK documents exactly this — *"Accounts your mod adds live in the player's save and are not removed when the mod is uninstalled, so clean up in `OnModPackageUnloaded`"* — and a mod removed while the game is closed never loads, so the hook can never run. **The cleanup is not broken; the scenario is outside any mod's reach.** Filed as question 11 in [`docs/03-questions-for-the-developers.md`](../../docs/03-questions-for-the-developers.md). |
-| **T-15c** uninstall, the way the game allows it | Fresh save. Install editor export **1.0.18** + the harness, `qe24 run tw1` (the accounts are created), confirm with `qe24 twotter audit`. Then disable the **editor export** in the game's Mods list — the game answers *"Mod changes detected. Restart the game to apply updates."* — so quit normally and relaunch, load the save, and run `qe24 twotter audit` again. | **Two things, and both are needed.** (1) In the console, did the line **`unloading: removing the Twotter accounts this mod declared`** appear (before or during the quit)? That is the unload hook running. (2) After the reload, is `@qe24_editor` `not on this save`? A line **and** the account still there means the hook ran after the save was written; **no line at all** means the cleanup path the SDK names for a disabled mod never runs — which makes question 11 a bug report rather than a request. |
-| **T-15d** disk deletion (already answered) | — | Leave the export installed and *quit*, so the hook gets its chance there too. If `@qe24_editor` is then gone but T-15b's disk-deletion route still leaves it, the difference between "quit while installed" and "deleted while closed" is the whole finding. Only run this if T-15c is ambiguous. |
+| **T-15c** uninstall, the way the game allows it | Fresh save. Install editor export **1.0.19** + the harness, `qe24 run tw1` (the accounts are created), confirm with `qe24 twotter audit`. **Save**, then quit to desktop — the export is still installed while the game closes, which is the only moment the cleanup hook can ever run (the queued *"Restart the game to apply updates"* happens after it). Then **search the log file of that session** — the `HACKHUB LOG FILE` you paste from, the one with the `====` headers — for `[quest-editor]`, and look at the last lines of the session. Then remove/disable the export, relaunch, load, and `qe24 twotter audit` + search Twotter. | **The log line says whether our cleanup ran; the audit says whether it stuck.**<br>(1) Do you see **`unloading: removing the Twotter accounts this mod declared`** and then a **`twotter: removeUser(...) -> true (mod unloaded)`** at the end of that session? That is the hook running and deleting the account.<br>(2) After the reload, is `@qe24_editor` **`not on this save`** and absent from search?<br>**Line + still there** ⇒ the hook works but the save was already written, so a manual *Save before quitting* is what preserves the account — a different report from **no line at all**, which means the cleanup path the SDK names for a disabled mod never runs. |
+| **T-15d** a save taken *after* the hook has run | Optional, only if T-15c shows the line and the account still survives. Repeat T-15c but let the game save again **after** the quit-unload — i.e. reload with the export still installed, complete or abandon nothing, save once more, then remove the export and reload. | If the account is gone after that, the mechanism is clear: the hook deletes the account in memory, and only a save *afterwards* can persist the deletion. That is worth telling the developer, because it means a mod's cleanup can never cover a save the player made earlier. |
 | ~~**T-08b**~~ the authored pictures | **Green 2026-09-19.** "Banner is bright violet, profile is amber" — both authored pictures really do reach the game, which settles the r185 wrinkle the dark blue banner left open. |
 
 | ~~**E-01**~~ editor-only | **Green 2026-09-19** (screenshot included in the round). Asked for two changes, both built in r189: the blank picture areas now **say the game draws its own** (banner caption + both pickers' tooltips), and a blank **display name** is nudged the way a broken handle is. The panel also states what the game fills in and what it does not — see question 10's neighbour, [§11](../../docs/03-questions-for-the-developers.md), and the note below. |
@@ -281,9 +281,12 @@ the mod's list. Fixed in r182 (the handler drops a job the moment it fires), and
 guarded by a test that asserts the cancel call names the pending job and not the
 fired one.
 
-**Reading the log:** the mod's lines all start with `[quest-editor]`. The cancel
-line was in the paste the whole time; the checklist never said where to look, so
-it now does.
+**Reading the log:** the mod's lines all start with `[quest-editor]` — in the
+`HACKHUB LOG FILE` (the paste with the `====` headers). The cancel line was in the
+paste the whole time; the checklist never said where to look, so it now does. Its
+**location on disk is still not written down anywhere in this repo** — every note
+says "the game log" and stops there. Whoever next runs a row: tell us where that
+file lives and it goes in here.
 
 ### S-11 answered in part: `NEXT EVENT` shows the game's own job
 

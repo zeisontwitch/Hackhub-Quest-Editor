@@ -326,14 +326,14 @@ Twotter probe's, which is where the tester already looks:
 | **T-13** | A **When event** trigger on `Twotter.PostSeen` fires when the player opens our account's post; `Twotter.Post` is recorded as firing or not (expected: not). |
 | **T-14** | A pre-r31 draft opens with its tweets intact (the migration fixture). |
 | ~~**T-15b**~~ | **Red 2026-09-19 — the row was wrong, not the mod.** Uninstalling by deleting the mod from disk leaves the account and its tweets in the save: the SDK documents that accounts a mod adds are *"not removed when the mod is uninstalled"*, and a mod deleted while the game is closed never loads, so `OnModPackageUnloaded` cannot run. Question 11 filed. |
-| **T-15c** | Uninstall the reachable way: disable the editor export **in the game's Mods list** while the game is running → the handle must leave search via the unload hook. |
+| **T-15c** | Uninstall the way the game allows it: disabling a mod in the Mods list only *queues* the change — the game answers **"Mod changes detected. Restart the game to apply updates."** — so the only moment the cleanup hook can run is the **shutdown after that disable**, while the mod is still installed. Run tw1, save, quit to desktop, then **search the session's `HACKHUB LOG FILE`** for `[quest-editor]` (expect `unloading: removing the Twotter accounts this mod declared` and `twotter: removeUser(...) -> true (mod unloaded)`), then remove the export and relaunch: the handle must be gone from `qe24 twotter audit` and from search. The log says whether the cleanup ran, the audit says whether it stuck — and if the hook runs but the account survives, that is the story: a save the player made earlier can never be rewritten. |
 | ~~**E-01**~~ | **Green 2026-09-19** (screenshot). Two follow-ups, both built in r189: the blank picture areas now say the game draws its own, and a blank display name is nudged. |
 | ~~**T-08b**~~ | **Green 2026-09-19** — "banner is bright violet, profile is amber". The r185 banner wrinkle is closed. |
 
 **These rows are runnable now** — the fixtures, the quests and the command all
 exist, and every step is written out in
 [`STATUS.md`](../../reference/sdk-0.24-qa/STATUS.md) *Open: the Twotter editor
-rows*: which mod (editor export **1.0.18**, beside raw harness **1.0.16**), the
+rows*: which mod (editor export **1.0.19**, beside raw harness **1.0.16**), the
 account (`qe24_editor`), the commands (`qe24 run tw1`, `qe24 run tw2`,
 `qe24 twotter audit`, `qe24 run clear`) and what to report per row. The QA
 project carries the pair of quests that share the account (T-12), the five-tweet
@@ -374,7 +374,7 @@ avatar/banner sizes, how it spells an age the engine computed itself, and
 whether the timeline flood is pleasant. jsdom cannot see any of it — those are
 T-08/T-09's "paste what you see" lines, handed to you.
 
-Stamp: `EDITOR_BUILD r190`, QA export **1.0.18**, harness mod **1.0.16** (1.0.13
+Stamp: `EDITOR_BUILD r191`, QA export **1.0.19**, harness mod **1.0.16** (1.0.13
 was P-01's, 1.0.14 the first editor-row run and 1.0.15 the r186 fixes — every one
 of them handed to Zeis and run, so each round of fixes is a new version rather
 than a quiet edit of a build he has already tested. r187 changed only the

@@ -271,8 +271,10 @@ documented example (*"e.g. disabled by user"*) therefore does not describe a
 mid-session unload either. The one moment the hook could still run is the
 **shutdown** that follows the queued disable, because the mod is still installed
 while the game is closing; whether it does is being measured now (T-15c: the
-mod's own console line, `unloading: removing the Twotter accounts this mod
-declared`, plus an audit of the handle after the reload). Two outcomes, and they
+game's own log file, searched for `[quest-editor]` — the lines
+`unloading: removing the Twotter accounts this mod declared` and
+`twotter: removeUser(...) -> true (mod unloaded)` — plus an audit of the handle
+after the reload). Two outcomes, and they
 are different reports:
 
 - **the line appears** → the hook works and the docs are only loosely worded; the

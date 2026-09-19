@@ -88,7 +88,10 @@ tell "wrong moment" from "never armed" from "fired twice" — no waiting, no
 guessing.
 
 **Where the mod's log lines are:** everything this mod writes starts with
-`[quest-editor]`. Search the game log for that word and you get the arm, fire,
-cancel and cleanup lines in order — the cancel line for S-03 was in a pasted log
-for an hour before we noticed it, because the checklist never said where to
-look.
+`[quest-editor]`, and it goes to the game's own log — the `HACKHUB LOG FILE` with
+the `====` headers (the file, not an in-game window: the game has no console you
+can open). Search that file for `[quest-editor]` and you get the arm, fire, cancel
+and cleanup lines in order — the cancel line for S-03 was in a pasted log for an
+hour before we noticed it, because the checklist never said where to look. Where
+that file sits on disk is still not written down here; the note in
+[`STATUS.md`](STATUS.md) says why.

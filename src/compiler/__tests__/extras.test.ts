@@ -33,6 +33,9 @@ interface ExtrasStub {
     context: Record<string, unknown>[];
     translations: { language: string; strings: Record<string, string> }[];
     registeredAt: string[];
+    /** The quest classes as the game receives them — the only place the Title
+     *  the game reads at registration can be looked at. */
+    quests: { new (): { Title: string; Description: string } }[];
     sdk: Record<string, unknown>;
 }
 
@@ -43,6 +46,7 @@ function extrasSdk(): ExtrasStub {
     const context: Record<string, unknown>[] = [];
     const translations: { language: string; strings: Record<string, string> }[] = [];
     const registeredAt: string[] = [];
+    const quests: { new (): { Title: string; Description: string } }[] = [];
 
     const sdk: Record<string, unknown> = {
         /* A real class: the runtime's quest definitions extend `sdk.Quest`. */
@@ -50,10 +54,11 @@ function extrasSdk(): ExtrasStub {
         Website: class {},
         Command: class {},
         Bootstrap: class {},
-        RegisterQuest: () => {
+        RegisterQuest: (cls: { new (): { Title: string; Description: string } }) => {
             /* What the game could resolve at REGISTRATION time — the SDK reads a
                quest's Title then, so a translated title has to be in place. */
             registeredAt.push(`quest:${translations.map((t) => t.language).join(",")}`);
+            quests.push(cls);
         },
         RegisterWebsite: () => {},
         RegisterCommand: () => {},
@@ -86,7 +91,7 @@ function extrasSdk(): ExtrasStub {
             open: (id: string, category?: string) => calls.push(`handbook:${id}${category ? `|${category}` : ""}`),
         },
     };
-    return { calls, menu, widgets, context, translations, registeredAt, sdk };
+    return { calls, menu, widgets, context, translations, registeredAt, quests, sdk };
 }
 
 function runMod(modJs: string, sdk: unknown) {
@@ -334,6 +339,30 @@ describe("localization (r203)", () => {
            time — the label above is registered verbatim and the runtime fills
            it when the game asks. */
         expect(b.modJs).toContain("{{tr.menu.flashlight}}");
+    });
+
+    it("translates a quest's Title, which the game reads at registration", () => {
+        const project = extrasProject();
+        project.quests[0].title = "{{tr.quest.title}}";
+        project.quests[0].description = "<p>{{tr.quest.blurb}}</p>";
+        project.translations.strings.en = {
+            ...project.translations.strings.en,
+            "quest.title": "The Lighthouse Job",
+            "quest.blurb": "Somebody is watching the harbour.",
+        };
+        const b = boot(project);
+        /* Title and Description are taken off the definition while it is handed
+           over — everything else waits until it is used. */
+        const instance = new b.quests[0]!();
+        expect(instance.Title).toBe("The Lighthouse Job");
+        expect(instance.Description).toBe("<p>Somebody is watching the harbour.</p>");
+    });
+
+    it("leaves {{data.…}} in a title alone, because there is none at registration", () => {
+        const project = extrasProject();
+        project.quests[0].title = "Job for {{data.client}}";
+        const b = boot(project);
+        expect(new b.quests[0]!().Title).toBe("Job for {{data.client}}");
     });
 
     it("shows the key even on a build with no Localization API at all", () => {

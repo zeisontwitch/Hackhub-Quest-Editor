@@ -59,6 +59,24 @@ var __QE = (function () {
             return v == null ? "" : String(v);
         });
     }
+    /* The same translation lookup as fill()'s {{tr.}} branch, exposed for the
+       fields the game reads ONCE, at registration: a quest's Title and
+       Description. Everything else is filled when it is used, but those two are
+       taken off the definition while it is handed over - so the token has to be
+       resolved before that, and there is no quest Data to offer at that point. */
+    function fillTranslations(text) {
+        return String(text == null ? "" : text).replace(/\{\{tr\.([^}]+)\}\}/g, function (_m, k) {
+            var tkey = String(k).trim();
+            var out = null;
+            try {
+                out = sdk.Localization && sdk.Localization.t ? sdk.Localization.t(tkey) : null;
+            } catch (eTr) {
+                out = null;
+            }
+            if (out == null || out === "") return tkey;
+            return String(out);
+        });
+    }
     function asString(x) { return x == null ? "" : String(x); }
     /* GoMail renders a mail body as plain text, so any HTML in it is shown
        literally - QA got a briefing that read "<p>His name is <b>Anselm
@@ -335,7 +353,7 @@ var __QE = (function () {
         });
         return JSON.parse(fill(json, scope));
     }
-    return { getPath: getPath, fill: fill, tokenScope: tokenScope, packText: packText, packFill: packFill, htmlToText: htmlToText, matchAll: matchAll, matchInput: matchInput, matchPrompt: matchPrompt, sleep: sleep, seq: seq, describe: describe, wait: wait, ageStringFromDate: ageStringFromDate, safe: safe, log: log };
+    return { getPath: getPath, fill: fill, fillTranslations: fillTranslations, tokenScope: tokenScope, packText: packText, packFill: packFill, htmlToText: htmlToText, matchAll: matchAll, matchInput: matchInput, matchPrompt: matchPrompt, sleep: sleep, seq: seq, describe: describe, wait: wait, ageStringFromDate: ageStringFromDate, safe: safe, log: log };
 })();
 
 function __qeRegisterProject(sdk, PROJECT) {
@@ -2810,8 +2828,12 @@ function __qeRegisterProject(sdk, PROJECT) {
                     super(...arguments);
                     questRef = this;
                     this.Name = qd.name;
-                    this.Title = qd.title;
-                    this.Description = qd.description;
+                    /* Title and Description are read at REGISTRATION, so a
+                       {{tr.…}} in either has to be resolved right here - later
+                       is too late. Everything else keeps its token until it is
+                       used, which is what lets {{data.…}} work at all. */
+                    this.Title = __QE.fillTranslations(qd.title);
+                    this.Description = __QE.fillTranslations(qd.description);
                     this.Group = qd.group;
                     /* Only assign when the author actually set rewards.
                        Assigning undefined still defines the property, and

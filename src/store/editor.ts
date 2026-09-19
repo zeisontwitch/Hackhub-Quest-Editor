@@ -33,7 +33,7 @@ export interface UiState {
     inspectorCollapsed: boolean;
     paletteCollapsed: boolean;
     /** Set while a modal (templates, export, settings) is open. */
-    modal: null | "templates" | "mod" | "shortcuts" | "websites" | "twotter" | "dialogues" | "newProject" | "simulator" | "toolpacks" | "settings";
+    modal: null | "templates" | "mod" | "shortcuts" | "websites" | "twotter" | "extras" | "dialogues" | "newProject" | "simulator" | "toolpacks" | "settings";
     /** While set, the dialogues modal edits this node instead of listing all. */
     dialogueNode: string | null;
     toast: { id: string; message: string; tone: ToastTone } | null;

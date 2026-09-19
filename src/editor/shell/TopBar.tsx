@@ -257,6 +257,16 @@ export function TopBar() {
                 <span className="hidden lg:inline">Twotter</span>
             </button>
 
+            <button
+                type="button"
+                className="btn-default"
+                onClick={() => setUi({ modal: "extras" })}
+                title="What the pack has outside its quests: start-menu entries, desktop widgets, right-click entries and the words in them"
+            >
+                <Icon name="package" size={13} />
+                <span className="hidden lg:inline">Extras</span>
+            </button>
+
             <button type="button" className="btn-default" onClick={() => setUi({ modal: "shortcuts" })}>
                 <Icon name="keyboard" size={13} />
                 <span className="hidden lg:inline">Shortcuts</span>

@@ -11,6 +11,7 @@ import { downloadProject, parseProjectFile, projectFileName } from "@/templates/
 import { clearDraft } from "@/store/autosave";
 import { WebsiteBuilderDialog } from "@/editor/websites/WebsiteBuilder";
 import { TwotterPanelDialog } from "@/editor/twotter/TwotterPanel";
+import { ExtrasDialog } from "@/editor/extras/ExtrasDialog";
 import { DialoguesDialog } from "./DialoguesDialog";
 import { SimulatorDialog } from "@/editor/simulator/SimulatorDialog";
 import { ExportDialog } from "./ExportDialog";
@@ -427,6 +428,7 @@ export function Overlays() {
             <ShortcutsDialog open={modal === "shortcuts"} onOpenChange={(o) => setUi({ modal: o ? "shortcuts" : null })} />
             <WebsiteBuilderDialog open={modal === "websites"} onOpenChange={(o) => setUi({ modal: o ? "websites" : null })} />
             <TwotterPanelDialog open={modal === "twotter"} onOpenChange={(o) => setUi({ modal: o ? "twotter" : null })} />
+            <ExtrasDialog open={modal === "extras"} onOpenChange={(o) => setUi({ modal: o ? "extras" : null })} />
             <DialoguesDialog open={modal === "dialogues"} onOpenChange={(o) => setUi({ modal: o ? "dialogues" : null })} />
             <ExportDialog open={modal === "mod"} onOpenChange={(o) => setUi({ modal: o ? "mod" : null })} />
             <SimulatorDialog open={modal === "simulator"} onOpenChange={(o) => setUi({ modal: o ? "simulator" : null })} />

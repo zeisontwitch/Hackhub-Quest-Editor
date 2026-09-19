@@ -39,6 +39,18 @@ bug; each is simply not built in the editor yet.
 
 | # | SDK surface | What an author could do with it | Notes |
 | --- | --- | --- | --- |
+> **Probe status, 2026-09-19 (r200/r201).** Two of the entries below are now
+> field-tested, and the first probe changed the order: **#2's desktop widgets and
+> right-click items WORK** (a widget renders a mod's own HTML from a mod-relative
+> path; a right-click entry appears on a file), and **#3 localization WORKS**
+> (`t()` translates, placeholders substitute, a missing key echoes itself — and
+> the game offers 30 languages). **Menu entries did not appear** in a first run
+> and are being re-probed with all three section spellings. Two mechanics were
+> learned the hard way and are now recorded in the plan: `transparent` defaults to
+> **true**, so a widget that does not set it draws without its background, and the
+> checked-in `qe24-widget.html` carries a dashed frame so a screenshot shows its
+> size.
+
 | 1 | **`PhoneApp` + `RegisterPhoneApp`** (`index.d.ts:2475`, `:4173`) | Install a real app on the player's phone: own HTML screen, icon, title, and the phone's native back button via `HackhubSDK.Phone`. A branded bank, a delivery tracker, a camera roll, a company intranet. | The closest thing to the website builder that exists in the SDK, and the editor already has an HTML pipeline for websites — this looks like the highest-value, lowest-risk addition. Needs a probe first (does an app appear in the phone's app list in 0.24? does the bridge behave?). |
 | 2 | **`Menu.addItem`**, **`Desktop.addWidget`**, **`ContextMenu.register`** | Entries that live outside a quest: a menu item, a desktop widget/app icon, a right-click action. This is how a pack announces itself is installed. | Three small surfaces, same shape as `fx.handbook`'s registration. |
 | 3 | **`Localization.register/registerAll/t/languages`** | Ship the same story in several languages, and let the game pick by the player's language. | The handbook already carries a language; quest text does not. For a non-English audience this is the difference between "usable" and "not". |

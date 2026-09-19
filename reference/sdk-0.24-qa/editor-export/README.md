@@ -68,6 +68,7 @@ In-game console lines are the ones to quote in a report: `timer node … armed f
 
 | Export | Editor build | Result |
 |---|---|---|
+| 1.0.26 | 2026-09-18.r201 | **Stamp only** — the round is the second pack-extras probe (three menu items, two widgets); the compiled quests are unchanged. |
 | 1.0.25 | 2026-09-18.r200 | **Stamp only** — the round is the harness's pack-extras probe (Stage A of the cheap wins); the compiled quests are unchanged. |
 | 1.0.24 | 2026-09-18.r198 | **Stamp only** — a docs round (the SDK coverage audit, and the phone-proxy row dropped). Nothing in the compiled quests changed. |
 | 1.0.23 | 2026-09-18.r196 | **Stamp only.** The round closed with every row green or resolved (T-11b abandon and T-15c last); nothing in the compiled quests or the runtime changed. |

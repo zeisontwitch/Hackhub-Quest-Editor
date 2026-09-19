@@ -1,3 +1,39 @@
+# Handoff — r201
+
+**The first pack-extras run answered three of four questions, and the answers are
+good.** Zeis's file (plus two screenshots) is on QA-filedump as
+`QE24-TestResults-Extras.md`:
+
+- **`Desktop.addWidget` works.** A mod's own HTML, addressed by a mod-relative
+  path, renders in a desktop iframe. The wrinkle: it drew text without its
+  background — that is `transparent: true`, the **SDK default**, which the probe
+  had not overridden. So Stage B's widget editor must expose the switch and
+  default it to opaque, and the plan says so now.
+- **`ContextMenu.register` works** for `target: "file"` — the entry sits at the
+  bottom of a file's right-click menu.
+- **`Localization` works** — `t()` translated, `{{who}}` substituted, a missing
+  key echoed its own name. **The game offers 30 languages** (ar … zh-Hant-TW), so
+  the editor's language list is a fact now, not an invention.
+- **`Menu.addItem` did not appear.** Registered and reported by `getItems()`,
+  visible nowhere in the start menu.
+
+**My mistake, and it cost the run:** I told him to run `on`, `lang`, `off` and
+"then look", so everything was already unregistered when he looked. He re-ran it
+himself and caught it. The harness now prints **"DO NOT run `qe24 extras off`
+yet"** when it registers, and the row text puts the look before the cleanup.
+
+**The re-probe (r201, one look):** three menu items — one per section spelling the
+interface declares (`no section`, `top`, `bottom`) — so a single look separates
+"wrong section" from "not wired up"; two widgets side by side (opaque at 40,40,
+`transparent: true` at 400,40) so the transparency switch is read off one
+screenshot; a `desktop`-target right-click re-check; and the widget HTML gained a
+dashed frame so its size is measurable. Rows **T-20..T-22** in STATUS.
+
+Versions: `EDITOR_BUILD` **r201**, export **1.0.26** (stamp only), harness
+**1.0.20**.
+
+---
+
 # Handoff — r200
 
 **Stage A of the cheap wins is built and waiting on one run.** The harness gained

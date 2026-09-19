@@ -1,5 +1,14 @@
 # r199: the cheap wins — pack extras and localization
 
+> **Stage A results, 2026-09-19 (r200, then r201).** Widgets, right-click items
+> and localization all work in game; the start-menu item did not appear and is
+> being re-probed with all three section spellings. Two findings already shape
+> Stage B: **`transparent` defaults to `true`** (a widget with no background is the
+> default, so the editor must expose the switch and default it to opaque), and the
+> **game offers 30 languages**, so the Languages table should offer exactly those
+> rather than an invented list. Details in
+> [`STATUS.md`](../../reference/sdk-0.24-qa/STATUS.md).
+
 > **Built 2026-09-19 (r200): Stage A shipped as `qe24 extras on / off / lang` and
 > is waiting on a run — rows T-16..T-19 in
 > [`STATUS.md`](../../reference/sdk-0.24-qa/STATUS.md).** All four click actions

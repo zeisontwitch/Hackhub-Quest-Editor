@@ -1398,8 +1398,9 @@ class QE24TwotterProbe extends sdk.Quest {
  * relative to the mod root, which is the part most likely to be wrong. Rows
  * T-16..T-19 in reference/sdk-0.24-qa/STATUS.md. */
 
-var EXTRAS_MENU_ID = "qe24-extras-menu";
-var EXTRAS_WIDGET_ID = "qe24-extras-widget";
+var EXTRAS_MENU_IDS = ["qe24-extras-menu-none", "qe24-extras-menu-top", "qe24-extras-menu-bottom"];
+var EXTRAS_WIDGET_ID = "qe24-extras-widget";        /* opaque, magenta */
+var EXTRAS_WIDGET_GHOST_ID = "qe24-extras-widget-ghost";  /* transparent: true */
 var EXTRAS_FILE_ITEM_ID = "qe24-extras-file";
 var EXTRAS_DESKTOP_ITEM_ID = "qe24-extras-desktop";
 var EXTRAS_WIDGET_SRC = "widgets/qe24-widget.html";
@@ -1442,6 +1443,13 @@ function extrasReport(tools, label) {
 function extrasGuide(tools) {
     tools.println("Pack extras probe (r199): can a pack put things outside its own quests?");
     tools.println("");
+    tools.println("First run (r200) answered: widgets work and render a mod's own HTML, right-click");
+    tools.println("  items work on files, and Localization.t() translates - 30 languages listed.");
+    tools.println("  Two things came back empty: nothing appeared in the start menu, and the widget");
+    tools.println("  drew its text without its background (that is what transparent: true does).");
+    tools.println("  This round registers THREE menu items (one per section spelling) and TWO widgets");
+    tools.println("  (opaque and transparent) so a single look separates the possibilities.");
+    tools.println("");
     tools.println("  qe24 extras on    register a start-menu item, a desktop widget, two right-click");
     tools.println("                    entries (on a file and on the desktop) and two language bundles");
     tools.println("  qe24 extras lang  what this build says about language, and what t() returns");
@@ -1461,26 +1469,47 @@ function extrasGuide(tools) {
 function extrasOn(tools) {
     var done = [];
     var absent = [];
+    /* Three items, one per section spelling the interface declares, because the
+       first run's single "bottom" item never appeared and there is no way to
+       tell from one sample whether the section, the label or the API itself is
+       the problem. r201. */
     safe("Menu.addItem", function () {
         if (!sdk.Menu || !sdk.Menu.addItem) { absent.push("Menu.addItem"); return; }
-        sdk.Menu.addItem({
-            id: EXTRAS_MENU_ID,
-            label: "QE24 Extras",
-            section: "bottom",
-            onClick: function () { toast("QE24: the start-menu item was clicked", "info"); log("extras: menu item clicked"); },
-        });
-        done.push("start-menu item (section bottom)");
+        var sections = [null, "top", "bottom"];
+        for (var i = 0; i < sections.length; i++) {
+            var item = {
+                id: EXTRAS_MENU_IDS[i],
+                label: "QE24 menu " + (sections[i] || "no section"),
+                onClick: function () { toast("QE24: the start-menu item was clicked", "info"); log("extras: menu item clicked"); },
+            };
+            if (sections[i]) item.section = sections[i];
+            sdk.Menu.addItem(item);
+        }
+        done.push("3 start-menu items (no section, top, bottom)");
     });
     safe("Desktop.addWidget", function () {
         if (!sdk.Desktop || !sdk.Desktop.addWidget) { absent.push("Desktop.addWidget"); return; }
+        /* Two widgets, same HTML, same size, different transparency: the first
+           run's widget rendered its text but not its background, which is what
+           transparent: true (the SDK default, which we did not override) does.
+           Side by side is the only way to read that off one screenshot. r201. */
         sdk.Desktop.addWidget({
             id: EXTRAS_WIDGET_ID,
             src: EXTRAS_WIDGET_SRC,
             width: 320,
             height: 180,
             position: { x: 40, y: 40 },
+            transparent: false,
         });
-        done.push("desktop widget 320x180 at 40,40 from " + EXTRAS_WIDGET_SRC);
+        sdk.Desktop.addWidget({
+            id: EXTRAS_WIDGET_GHOST_ID,
+            src: EXTRAS_WIDGET_SRC,
+            width: 320,
+            height: 180,
+            position: { x: 400, y: 40 },
+            transparent: true,
+        });
+        done.push("2 desktop widgets (opaque at 40,40; transparent at 400,40) from " + EXTRAS_WIDGET_SRC);
     });
     safe("ContextMenu.register", function () {
         if (!sdk.ContextMenu || !sdk.ContextMenu.register) { absent.push("ContextMenu.register"); return; }
@@ -1510,16 +1539,31 @@ function extrasOn(tools) {
     if (done.length) tools.println("Registered: " + done.join("; ") + ".");
     if (absent.length) tools.println("NOT IN THIS BUILD: " + absent.join(", ") + ".");
     extrasReport(tools, "registered");
-    tools.println("Now look: the start menu (bottom section), the desktop, right-clicking a file and the");
-    tools.println("empty desktop. Then run `qe24 extras lang` and paste that block too.");
+    tools.println("");
+    tools.println("DO NOT run `qe24 extras off` yet - everything below has to still be registered while");
+    tools.println("you look at it. When you are done looking, run `qe24 extras off`.");
+    tools.println("Now look, in this order:");
+    tools.println("  1. the desktop, top-left: you asked for TWO widgets side by side (opaque at 40,40, see-through");
+    tools.println("     at 400,40) - are both there, is the left one solid magenta, is the right one see-through,");
+    tools.println("     and do the dashed frames measure about 320x180?");
+    tools.println("  2. the start menu: three entries ('QE24 menu no section', 'QE24 menu top', 'QE24 menu bottom').");
+    tools.println("     Open it, click 'All Applications', and try the 'Downloads' tab too. If you still see none,");
+    tools.println("     try right-clicking the start button and the 'Zeis' row at the bottom of the menu.");
+    tools.println("  3. right-click a file, then right-click empty desktop space: QE24 entries on both?");
+    tools.println("  4. `qe24 extras lang`, and paste that block too.");
 }
 
 function extrasOff(tools) {
     safe("Menu.removeItem", function () {
-        if (sdk.Menu && sdk.Menu.removeItem) sdk.Menu.removeItem(EXTRAS_MENU_ID);
+        if (sdk.Menu && sdk.Menu.removeItem) {
+            for (var i = 0; i < EXTRAS_MENU_IDS.length; i++) sdk.Menu.removeItem(EXTRAS_MENU_IDS[i]);
+        }
     });
     safe("Desktop.removeWidget", function () {
-        if (sdk.Desktop && sdk.Desktop.removeWidget) sdk.Desktop.removeWidget(EXTRAS_WIDGET_ID);
+        if (sdk.Desktop && sdk.Desktop.removeWidget) {
+            sdk.Desktop.removeWidget(EXTRAS_WIDGET_ID);
+            sdk.Desktop.removeWidget(EXTRAS_WIDGET_GHOST_ID);
+        }
     });
     safe("ContextMenu.unregister", function () {
         if (sdk.ContextMenu && sdk.ContextMenu.unregister) {

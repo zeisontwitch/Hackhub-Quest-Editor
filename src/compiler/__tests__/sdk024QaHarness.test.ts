@@ -73,9 +73,19 @@ function runHarness(
             getItems: () => [...menus.values()],
         },
         Desktop: {
-            addWidget: (w: { id: string; src: string; width: number; height: number }) => {
+            addWidget: (w: {
+                id: string;
+                src: string;
+                width: number;
+                height: number;
+                position?: { x: number; y: number };
+                transparent?: boolean;
+            }) => {
                 widgets.set(w.id, w);
-                calls.push(`desktop.addWidget:${w.id}:${w.src}:${w.width}x${w.height}`);
+                calls.push(
+                    `desktop.addWidget:${w.id}:${w.src}:${w.width}x${w.height}` +
+                        `:${w.transparent === false ? "opaque" : "transparent"}`,
+                );
             },
             removeWidget: (id: string) => {
                 widgets.delete(id);
@@ -195,11 +205,25 @@ describe("the harness's export check", () => {
  * screen and exactly which registrations the game is handed.
  */
 describe("the harness's pack-extras probe", () => {
+    it("tells the tester not to unregister before looking — r200's wasted run", () => {
+        const { lines } = runHarness(["extras", "on"]);
+        expect(lines.some((l) => l.startsWith("DO NOT run `qe24 extras off` yet"))).toBe(true);
+    });
+
+    /* Falsification note (r201): removing `transparent: true` from the ghost
+       widget does NOT turn this red, and that is correct — the SDK's default for
+       `transparent` is true, so the explicit flag is documentation of intent, not
+       behaviour. The case that does matter (`transparent: false` dropped from the
+       opaque widget, which collapses the A/B) goes red. Recorded rather than
+       papered over with a stricter assertion that would only test our own stub. */
     it("registers one of each surface, with the shapes the SDK declares", () => {
         const { calls, lines } = runHarness(["extras", "on"]);
         expect(calls).toEqual([
-            "menu.addItem:qe24-extras-menu:QE24 Extras:bottom",
-            "desktop.addWidget:qe24-extras-widget:widgets/qe24-widget.html:320x180",
+            "menu.addItem:qe24-extras-menu-none:QE24 menu no section:",
+            "menu.addItem:qe24-extras-menu-top:QE24 menu top:top",
+            "menu.addItem:qe24-extras-menu-bottom:QE24 menu bottom:bottom",
+            "desktop.addWidget:qe24-extras-widget:widgets/qe24-widget.html:320x180:opaque",
+            "desktop.addWidget:qe24-extras-widget-ghost:widgets/qe24-widget.html:320x180:transparent",
             "contextMenu.register:qe24-extras-file:file",
             "contextMenu.register:qe24-extras-desktop:desktop",
             "localization.register:en:2",
@@ -212,15 +236,18 @@ describe("the harness's pack-extras probe", () => {
 
     it("reports what the game says it has, before and after `off`", () => {
         const on = runHarness(["extras", "on"]);
-        expect(on.lines.join("\n")).toContain("start-menu items:      1 [QE24 Extras]");
-        expect(on.lines.join("\n")).toContain("desktop widgets:       1 [qe24-extras-widget]");
+        expect(on.lines.join("\n")).toContain("start-menu items:      3 [QE24 menu no section, QE24 menu top, QE24 menu bottom]");
+        expect(on.lines.join("\n")).toContain("desktop widgets:       2 [qe24-extras-widget, qe24-extras-widget-ghost]");
         expect(on.lines.join("\n")).toContain("right-click on a file: 1 [QE24: inspect this file]");
         expect(on.lines.join("\n")).toContain("right-click desktop:   1 [QE24: desktop action]");
 
         const off = runHarness(["extras", "off"]);
         expect(off.calls).toEqual([
-            "menu.removeItem:qe24-extras-menu",
+            "menu.removeItem:qe24-extras-menu-none",
+            "menu.removeItem:qe24-extras-menu-top",
+            "menu.removeItem:qe24-extras-menu-bottom",
             "desktop.removeWidget:qe24-extras-widget",
+            "desktop.removeWidget:qe24-extras-widget-ghost",
             "contextMenu.unregister:qe24-extras-file",
             "contextMenu.unregister:qe24-extras-desktop",
         ]);

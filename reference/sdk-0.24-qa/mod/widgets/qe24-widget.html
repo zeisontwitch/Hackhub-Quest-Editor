@@ -9,6 +9,10 @@
      has to measure anything. */
   html, body { margin: 0; height: 100%; }
   body {
+    /* The dashed frame is the measuring tape: with transparent: true the game
+       suppresses the background but not the border, so the frame still shows
+       where the widget is and how big it is. */
+    border: 3px dashed #12001c;
     background: #AA28FF;
     color: #12001c;
     font: 600 15px/1.35 "Segoe UI", system-ui, sans-serif;
@@ -32,8 +36,10 @@
     <b>widgets/qe24-widget.html</b>
   </div>
   <div class="note">
-    If you can read this, a mod's own HTML file shipped and rendered in a desktop
-    iframe. Resize it in your head: the frame should be about 320 pixels wide.
+    Two of these are registered: the left one opaque, the right one
+    <b>transparent: true</b>. If you can read this text on both but only the left
+    one is magenta, that is the transparency switch doing its job &mdash; and the
+    dashed frame shows the widget is the size that was asked for.
   </div>
 </body>
 </html>

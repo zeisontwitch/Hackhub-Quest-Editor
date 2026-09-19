@@ -264,7 +264,7 @@ describe("r179 raw harness — the Twotter probe", () => {
            `qe24 extras` - Stage A of the cheap wins, probing Menu.addItem,
            Desktop.addWidget, ContextMenu.register and Localization, none of which
            has any prior art here (same test file drives it). */
-        expect(manifest.version).toBe("1.0.19");
+        expect(manifest.version).toBe("1.0.20");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");

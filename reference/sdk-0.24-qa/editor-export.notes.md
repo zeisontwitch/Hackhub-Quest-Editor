@@ -181,9 +181,7 @@ game in German (row G already left it that way):
 |---|---|---|
 | I | In the **German** session you already have: click each of the four `QE24: …` start-menu entries, one at a time, and give each two seconds before the next. They are, in order: **Extras-Prüfung**, **Extras-Quest annehmen**, **schick mir einen Brief**, **Handbuchseite öffnen**. | Four separate things: a toast with a full German sentence; the quest `QE24 Extras-Prüfung` appearing in the journal; a letter arriving in the mail app (from `QE24 QA`, subject *Ein Brief aus dem Pack*); and the handbook opening on **Port Forwarding: Start Here**. Say which of the four worked and which did not — one line each is enough. |
 | J | Then look at the log (`%APPDATA%/Roaming/hackhub/log`, search `[quest-editor] extras:`) and paste the lines for **one** of those clicks. | The order proves the fix: `clicked` → `handed … to the engine (job click-1)` → `the engine called back for … running it here` → `said "…" via UI.toast`. If the callback line is missing, the engine never fired the job and the whole approach is wrong — I need to know that before anything else. |
-| K | The Japanese/Korean-style question is answered by the toast text, so just say what the toast said on the first entry (`Extras-Prüfung`). | The **sentence** (`Der eigene Menüeintrag des Packs funktioniert (T-23).`), not `qe24.menu.message`. That is the translation table being visible again from the engine's callback. |
-
-Two things still not to test, because the pack cannot do them:
+| K | Just say what the **toast** said when you clicked `Extras-Prüfung`. | The **sentence** (`Der eigene Menüeintrag des Packs funktioniert (T-23).`), not `qe24.menu.message`. That is the translation table being visible again from the engine's callback. |
 
 **Two things not to test here, because the pack cannot do them:**
 

@@ -23,7 +23,7 @@ older build left behind.
 The Twotter probe came back **green on the API path** (2026-09-18, build
 25388883): search survives the record shape that used to crash the game, and
 accounts can be removed again. The probe's results, the first editor-row run and the four rows
-still open (T-15b, and the abandon half of T-11b) are in `STATUS.md`.
+still open (T-15c, and the abandon half of T-11b) are in `STATUS.md`.
 
 The folder stays because its export is the installable QA build and its raw mod
 is the in-game probe tool future rounds extend. The old step-by-step routes were
@@ -45,7 +45,7 @@ theirs back in r180, which is this file's neighbour.
 | `mod/` | The raw in-game harness, mod **1.0.15**. **`qe24 run`** starts a quest on demand (nothing auto-starts any more) and now lists **`tw1`** / **`tw2`** / **`tw3`**, the editor export's Twotter quests; **`qe24 timers`** prints every pending Scheduler job with the in-game moment it will fire; **`qe24 twotter backdate`** (P-01a) and **`qe24 twotter order`** (P-01b) are answered; **`qe24 twotter audit`** (r185) lists the round's handles and flags the r31 poison shape, which is how T-10/T-11/T-12 are read. `qe24 twotter` (r179) keeps its results. | Tool |
 | `projects/sdk-0.24-ingame-qa.project.json` | The editor-importable project the export is built from: seven quests, **none auto-starting**, plus the mod-level Twotter account `qe24_editor` the T-08…T-13 rows read. | Source of truth for the export |
 | `projects/fixture-*.project.json` | Three tiny legacy drafts, opened in the editor, no game needed: S-12's pre-r176 `after` project, S-15's r176-era amount/unit one, and **T-14's r30 Twotter draft** (quest-level accounts, one node per tweet, four time spellings). | Fixtures, run by hand |
-| `editor-export/` | The installable export (mod **1.0.16**, editor build `2026-09-18.r188`; seven quests, **none auto-starting** — see `qe24 run`). This is the mod under test for the open Twotter rows (T-15b, and the abandon half of T-11b); install it beside the raw harness. | **Generated** — never edit by hand |
+| `editor-export/` | The installable export (mod **1.0.17**, editor build `2026-09-18.r189`; seven quests, **none auto-starting** — see `qe24 run`). This is the mod under test for the open Twotter rows (T-15b, and the abandon half of T-11b); install it beside the raw harness. | **Generated** — never edit by hand |
 | `editor-export.notes.md` | Hand-written notes the generator appends to the export README. | — |
 
 Regenerate the export with `npm run gen:qa-export`. The guard test

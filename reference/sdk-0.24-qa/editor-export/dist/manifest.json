@@ -1,7 +1,7 @@
 {
     "id": "qe-sdk-024-editor-qa",
     "name": "QE SDK 0.24 Editor QA Scaffold",
-    "version": "1.0.16",
+    "version": "1.0.17",
     "author": "HackHub Quest Editor",
     "description": "Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, the Timer node delay and calendar modes, and the Twotter node (accounts, backdated series, cleanup). Nothing auto-starts — claim one quest at a time with the harness command `qe24 run` — so a tester sees one row's noise, not five.",
     "apiVersion": 1,

@@ -12,6 +12,16 @@
  *  - the game decides the final layout, so this is a preview, not a guarantee;
  *  - the tweet list shows the GAME's order (newest first) while the node's list
  *    stays in the order the author wrote it (oldest first, the way it happened).
+ *
+ * And one thing an author asks the moment a blank picture sits in front of them
+ * (Zeis, 2026-09-19): what does the game fill in for me? The r179 probe answers
+ * it — `Twotter.createUser({ username, bio, verified })` came back with a name, a
+ * surname, a picture, a banner, follower counts and a password, because
+ * `createUser` fills whatever it is not handed. We hand it everything the author
+ * typed, so the only place its own defaults get to show is the two pictures we
+ * leave out deliberately. The bio is the exception with a reason: a bio that is
+ * *missing* is the shape that crashed Twotter's search for seven rounds (r31),
+ * so we always send a string and a blank bio stays blank.
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
@@ -57,7 +67,7 @@ function PicturePicker({
             <button
                 type="button"
                 aria-label={`Change ${label.toLowerCase()}`}
-                title={`Choose a ${label.toLowerCase()} (PNG or JPG)`}
+                title={`Choose a ${label.toLowerCase()} (PNG or JPG) — or leave it blank and the game draws its own`}
                 className={cn(
                     "absolute inset-0 flex items-center justify-center gap-1.5 bg-void/45 text-[11px] font-medium text-ink",
                     "opacity-0 transition-opacity group-hover/pic:opacity-100 focus-visible:opacity-100",
@@ -182,11 +192,22 @@ function VerifiedButton({ onToggle }: { onToggle: () => void }) {
     );
 }
 
-/** What an account looks like when it has no picture yet: a bird, on a tint. */
+/**
+ * What an account looks like when it has no picture yet: a bird, on a tint.
+ *
+ * The banner has the room for the sentence an author actually needs — that a
+ * blank picture is not a hole to fill but a choice the game covers for them. The
+ * avatar is 72px of circle and carries the same fact in its tooltip.
+ */
 function Placeholder({ label, className }: { label: string; className?: string }) {
     return (
-        <div className={cn("flex items-center justify-center bg-gradient-to-br from-cat-comms/25 via-surface-2 to-raised text-ink-4", className)}>
+        <div className={cn("flex flex-col items-center justify-center gap-1 bg-gradient-to-br from-cat-comms/25 via-surface-2 to-surface-3 text-ink-4", className)}>
             <Icon name="bird" size={label === "banner" ? 22 : 18} />
+            {label === "banner" && (
+                <span className="px-2 text-center text-[10px] leading-tight">
+                    No banner — blank is fine, the game draws its own
+                </span>
+            )}
         </div>
     );
 }

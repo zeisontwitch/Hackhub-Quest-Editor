@@ -34,6 +34,14 @@ import { useEditor } from "@/store/editor";
 /** Letters, numbers and `_`, 3–15 — the same rule the compiler enforces. */
 function handleProblem(account: TwotterAccountDoc, accounts: TwotterAccountDoc[]): string | null {
     const handle = account.handle.replace(/^@/, "").trim();
+    /* A nameless account is not an error the way a broken handle is, but it does
+       read as one on screen: every post is shown under a blank name line. There
+       is a reason this is a nudge and not a rule — see `MockProfile`'s note: the
+       game fills a name in only for a record that never carried one, and the
+       editor always sends what the author typed. */
+    if (!account.displayName.trim()) {
+        return "Give the account a display name. Without one, every post from this account is shown under an empty name — the editor cannot make one up on the game's behalf.";
+    }
     if (!handle) return "Give the account a handle. It is what players type into Twotter's search.";
     if (!TWOTTER_HANDLE_PATTERN.test(handle)) {
         return "Handles take letters, numbers and underscores, three to fifteen characters. The game's search will not find an account whose handle breaks that rule.";
@@ -234,7 +242,11 @@ export function TwotterPanelDialog({
                                             <span className="text-ink-3">
                                                 Click the banner, the picture, the name, the handle or the bio and
                                                 that part becomes a field right where it sits.
-                                            </span>
+                                            </span>{" "}
+                                            Leave either picture blank and the game draws its own — that is what a
+                                            blank picture is for. The name, handle, bio and counts are sent
+                                            exactly as written; a blank bio stays blank on purpose (a{" "}
+                                            <em>missing</em> bio is the shape that once crashed Twotter's search).
                                         </p>
 
                                         <MockProfile

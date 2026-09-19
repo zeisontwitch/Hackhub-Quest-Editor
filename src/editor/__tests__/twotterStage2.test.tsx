@@ -241,6 +241,34 @@ describe("the panel's click-to-edit profile", () => {
         expect(screen.getByText(/posted by “/)).toBeTruthy();
     });
 
+    /**
+     * Zeis's first look at stage 2 (2026-09-19) asked for exactly this: the blank
+     * picture areas have to say that the game fills them in. It is true — the
+     * runtime omits a picture the author did not supply so the engine's own
+     * default is used — and it was unsaid.
+     */
+    it("says a blank picture is the game's job, not a hole to fill", () => {
+        renderPanel();
+        const bare = useEditor.getState().project.twotterAccounts[0]!;
+        act(() => useEditor.getState().updateTwotterAccount(bare.id, { avatar: undefined, banner: undefined }));
+        expect(screen.getByText(/No banner — blank is fine, the game draws its own/)).toBeTruthy();
+        expect(screen.getByRole("button", { name: /change banner/i }).getAttribute("title")).toContain(
+            "leave it blank and the game draws its own",
+        );
+        expect(screen.getByRole("button", { name: /change profile picture/i }).getAttribute("title")).toContain(
+            "leave it blank and the game draws its own",
+        );
+    });
+
+    it("nudges a blank display name, and stops nudging once there is one", () => {
+        renderPanel();
+        const unnamed = useEditor.getState().project.twotterAccounts[0]!;
+        act(() => useEditor.getState().updateTwotterAccount(unnamed.id, { displayName: "" }));
+        expect(screen.getByText(/Give the account a display name/)).toBeTruthy();
+        act(() => useEditor.getState().updateTwotterAccount(unnamed.id, { displayName: "Wren Ackerly" }));
+        expect(screen.queryByText(/Give the account a display name/)).toBeNull();
+    });
+
     it("flips the blue check off when the check itself is clicked", async () => {
         renderPanel();
         await userEvent.click(screen.getByRole("button", { name: /remove the blue check/i }));

@@ -1,3 +1,53 @@
+# Handoff — r189
+
+Two greens, one honest limitation, and the wording Zeis asked for on his
+screenshot.
+
+**Green.** **T-08b** — the authored pictures really do reach the game ("banner is
+bright violet, profile is amber"), which closes the r185 banner wrinkle. **E-01**
+— the stage-2 visual pass, screenshot included. His two notes are built: the
+blank banner area now says *"blank is fine, the game draws its own"*, both picture
+pickers' tooltips say the same, and a **blank display name** gets the same nudge a
+broken handle gets.
+
+**His question — what does the game fill in? — answered from our own probe.** The
+T-01 probe called `Twotter.createUser({ username, bio, verified })` and the engine
+supplied **name, surname, avatar, banner, followers, following and password**:
+`createUser` fills whatever it is not handed. The editor hands it everything an
+author typed, so the **two pictures are the only place its defaults show** (we
+omit them when blank, deliberately, since r20's empty-avatar bug), while name,
+handle, bio and counts travel as written. The bio is the exception with a reason:
+a *missing* bio is the shape that crashed Twotter's search for seven rounds (r31),
+so we always send a string and a blank bio stays blank.
+
+**One red, and it is a platform limit rather than a bug.** **T-15b**: Zeis
+completed tw1, saved, quit, removed the editor export from disk and relaunched.
+The **quest** was gone (the game drops an uninstalled mod's content) but
+`@qe24_editor` and all its tweets were **still in the save and in search**. The
+SDK says this in so many words — *"Accounts your mod adds live in the player's
+save and are not removed when the mod is uninstalled, so clean up in
+`OnModPackageUnloaded`"* — and the same doc defines that hook as *"called when the
+mod is being unloaded (e.g. disabled by user)"*. A mod deleted while the game is
+closed never loads, so no code of ours can run at any point in that sequence: the
+cleanup is not broken, the scenario is outside any mod's reach. Filed as
+**question 11**; the row is rewritten as **T-15c** — disable the mod in the game's
+Mods list **while running**, which is the path the hook can serve, and the one
+worth confirming.
+
+**A second dead-class find.** r188 swept `accent-2`/`bg-raised` out of the Twotter
+chrome; the follow-up found `to-raised` (the placeholder gradient's end colour)
+and the older `text-accent-2` in `Field.tsx`. Both were silently doing nothing.
+Fixed. Stage 2's copy fences were falsified 3/3.
+
+**Versions:** editor build **r189**, QA export **1.0.17** (the compiled quest
+content is unchanged — the build stamp inside it moved, and the folder a tester
+installs must not disagree with the editor they read), harness **1.0.16**.
+
+Gates: typecheck clean; **16 tests** in the stage-2 file (3 new); manual
+regenerated.
+
+---
+
 # Handoff — r188
 
 Plan: [`plans/r185-twotter-return.md`](plans/r185-twotter-return.md) (the round

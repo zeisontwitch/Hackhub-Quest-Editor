@@ -238,3 +238,50 @@ and tell authors plainly that players will not see it.
 **Evidence.** Game `1.3.1`, build `25388883`; transcript
 `reference/sdk-0.24-qa/QE24-TestResults-Twotter.md`; the account's own avatar in
 the same run rendered, so the image path itself works.
+
+---
+
+## 11. Uninstalling a mod leaves the Twotter accounts it created in the save
+
+**What we saw.** 2026-09-19, game 1.3.0 / build 25388883. A quest had posted its
+series from `@qe24_editor` (an account the mod created with `createUser` +
+`addUser`). The player then **removed the mod from disk while the game was
+closed**, relaunched and loaded the save:
+
+- the **quest** was gone, as expected — the game drops content from a mod that is
+  no longer installed;
+- the **account and every tweet it posted were still there**, and the handle was
+  still findable in Twotter's search.
+
+**This is documented behaviour, not a surprise.** `Twotter.removeUser` says so
+outright: *"Accounts your mod adds live in the player's save and are not removed
+when the mod is uninstalled, so clean up in `OnModPackageUnloaded` if the account
+was only meant to exist for your story."* We do exactly that — our runtime's
+`OnModPackageUnloaded` removes every account the mod declared. But
+`OnModPackageUnloaded` is *"called when the mod is being unloaded (e.g. disabled
+by user)"*, and a mod that was deleted while the game was closed is never loaded,
+so no code of ours can run at any point in that sequence. (The same sentence
+appears on `Mail.remove`, so mail a mod sends has the same tail.)
+
+**Question.** Should a mod's own data be cleaned up when the game notices its
+package is gone — e.g. at save load, drop the mod-declared accounts and posts
+whose owning package is no longer installed, the way the quests are dropped? As
+a mod author I cannot reach that moment: the only hook I have runs while I am
+still loaded, and by then the player either completed the story (our account is
+removed, verified) or uninstalled us, which is the case we cannot see.
+
+**Why it matters.** A player who uninstalls a mod mid-story keeps that mod's fake
+people in their social feed forever, next to their real in-game contacts, with
+posts that reference a story that no longer exists — and no mod can remove them,
+because the one mod that could is gone. Three options as we see them, any of
+which would close this: (a) the game sweeps mod-declared data for missing
+packages at save load, (b) `Bootstrap` gains a hook that runs for a mod that is
+detected as removed, or (c) the SDK documents that mods must accept it and the
+loading screen says nothing (which is where we are today, and is workable — it is
+just worth knowing it is deliberate).
+
+**Our side in the meantime.** The editor's default per account is *"remove when
+the story ends"*, so completing or abandoning the last quest that uses an account
+removes it and its posts — verified in game (T-11b, T-12b, both green). The leak
+needs a player to uninstall the mod with a quest still open, which is the case
+nobody can clean up after.

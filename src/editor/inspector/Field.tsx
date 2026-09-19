@@ -99,7 +99,7 @@ function TwotterAccountPicker({
             />
             <button
                 type="button"
-                className="text-[11px] text-accent-2 hover:underline"
+                className="text-[11px] text-accent hover:underline"
                 onClick={onManage}
             >
                 Manage accounts

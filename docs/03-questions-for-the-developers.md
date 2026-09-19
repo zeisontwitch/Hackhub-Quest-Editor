@@ -268,21 +268,33 @@ appears on `Mail.remove`, so mail a mod sends has the same tail.)
 prompt: *"Mod changes detected. Restart the game to apply updates."* So a
 user-initiated disable is **queued, not applied in-session**, and the hook's
 documented example (*"e.g. disabled by user"*) therefore does not describe a
-mid-session unload either. The one moment the hook could still run is the
-**shutdown** that follows the queued disable, because the mod is still installed
-while the game is closing; whether it does is being measured now (T-15c: the
-game's own log file, searched for `[quest-editor]` — the lines
-`unloading: removing the Twotter accounts this mod declared` and
-`twotter: removeUser(...) -> true (mod unloaded)` — plus an audit of the handle
-after the reload). Two outcomes, and they
-are different reports:
+mid-session unload either. **Measured 2026-09-19: the hook does not run on a plain quit either.** Export
+1.0.20, harness 1.0.18, game 1.3.1 (test file `QE24-TestResults-Twotter-6.md` on
+our QA-filedump branch). A session in which the mod loaded, started its quest,
+created `@qe24_editor` and posted its five tweets ended with the player saving
+and quitting to desktop **with the mod installed and enabled** — and that
+session's log contains **no `unloading:` line at all**. That line is the first
+statement inside the hook, so its absence means the hook was never called.
+The next session, with the mod removed from the folder, still found
+`@qe24_editor` on the save through `getUserByUsername`.
 
-- **the line appears** → the hook works and the docs are only loosely worded; the
-  unreachable case is a mod deleted from disk while the game is closed;
-- **no line** → the cleanup path the SDK's own documentation names for a
-  user-initiated disable does not run at all, and the only case that ever cleans
-  up is a quest ending. That is a stronger finding than this question currently
-  claims, and it would be a bug report rather than a feature request.
+Worth noticing, from the same log, one line after the load — the game does this
+by itself:
+
+```
+[PruneOrphanQuests] Dropping "QESdk024TwotterQa" (Se8JDmyGoK): no installed content defines it.
+```
+
+The game knows which package defined a quest and drops it when that package is
+gone, so the machinery to sweep a missing mod's data exists; it simply does not
+cover what the mod created through `createUser`.
+
+**Still open: the disable path.** Disabling the mod in the Mods list queues the
+change (*"Restart the game to apply updates"*), and the game applies it at some
+later point; if any moment calls `OnModPackageUnloaded`, it is that one. It is
+being measured now (T-15c). If it does not run there either, then the cleanup the
+SDK names for a user-initiated disable is unreachable in every sequence we can
+construct — and this question is a bug report rather than a feature request.
 
 **Question.** Should a mod's own data be cleaned up when the game notices its
 package is gone — e.g. at save load, drop the mod-declared accounts and posts

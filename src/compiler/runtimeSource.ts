@@ -389,9 +389,11 @@ function __qeRegisterProject(sdk, PROJECT) {
        Ownership, in the words of the rule the author approved: a quest removes
        only what it created, and only when no other live quest declares the
        same account. An account we merely ADOPTED (it already existed) is never
-       ours to remove. Uninstalling the mod removes what the mod declares,
-       because the SDK says mod-added accounts outlive an uninstall otherwise —
-       "the story is gone with the mod". */
+       ours to remove. The SDK asks a mod to take its accounts with it when the
+       package unloads, so the unload hook below does that - with the limit
+       measured in game on 2026-09-19: the game does NOT call that hook when the
+       player simply quits, and it cannot call it for a mod deleted from disk, so
+       an uninstall can still leave the accounts behind (question 11). */
     var TWOTTER_ACCOUNTS = PROJECT.twotterAccounts || [];
     var twotterReady = !!(sdk.Twotter && sdk.Twotter.createUser && sdk.Twotter.addUser);
     /* accountId -> questId that created it in this session. */
@@ -614,11 +616,18 @@ function __qeRegisterProject(sdk, PROJECT) {
         }
     }
 
-    /* Uninstall: the SDK's own advice is that accounts a mod adds live in the
-       player's save and are NOT removed when the mod goes away, so the mod
-       takes its characters with it. Adopted accounts are left alone — they were
-       never ours — and everything gets a log line, because the alternative is
-       an account nobody can explain. */
+    /* The game unloading this package (the SDK's own example for it is
+       "disabled by user"): accounts a mod adds live in the player's save and are
+       NOT removed when the mod goes away, so this is where the mod takes its
+       characters with it. Adopted accounts are left alone - they were never
+       ours - and everything gets a log line, because the alternative is an
+       account nobody can explain.
+
+       Measured 2026-09-19 (export 1.0.20, game 1.3.1): a plain quit to desktop
+       does NOT call OnModPackageUnloaded - no "unloading:" line in that
+       session's log, and the account was still on the save at the next launch.
+       The game pruned the orphaned quest record by itself ("[PruneOrphanQuests]
+       ... no installed content defines it") but left the account. */
     function removeAllTwotterAccounts() {
         if (!twotterReady || !sdk.Twotter.removeUser) return;
         for (var i = 0; i < TWOTTER_ACCOUNTS.length; i++) {
@@ -3233,11 +3242,14 @@ function __qeRegisterProject(sdk, PROJECT) {
     }
 
     var Mod = class extends sdk.Bootstrap {
-        /* The SDK's advice, followed: accounts a mod adds live in the player's
-           save and are NOT removed when the mod is uninstalled, so the mod
-           takes its characters with it on the way out. Synchronous, and it
-           returns nothing — the game awaits whatever this hook returns, and
-           r72 is the story of what happens when that promise never settles. */
+        /* The only cleanup moment the SDK offers, and its own example for it is
+           a mod disabled by the user. Synchronous, and it returns nothing - the
+           game awaits whatever this hook returns, and r72 is the story of what
+           happens when that promise never settles.
+
+           It did NOT fire on a plain quit to desktop (measured 2026-09-19), so
+           the account this mod created survived into the next session. See the
+           note above removeAllTwotterAccounts. */
         OnModPackageUnloaded() {
             try {
                 __QE.log("unloading: removing the Twotter accounts this mod declared");

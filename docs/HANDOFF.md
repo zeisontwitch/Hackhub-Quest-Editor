@@ -1,3 +1,37 @@
+# Handoff — r194
+
+**Zeis ran the full T-15c protocol with everything captured, and it closes one
+half of the question the wrong way.** Session 14:52:58: the export loaded
+(`v1.0.20 (2026-09-18.r193)` — r193's readout works in game, both directions),
+tw1 started, `twotter: created @qe24_editor (qe-tw-account) for quest qe-tw1`,
+five tweets out. He saved and quit to desktop with the mod installed and enabled.
+**That session's log has no `unloading:` line at all** — and that line is the
+first statement inside the hook, so the game never called
+`OnModPackageUnloaded`. Session 14:56:49, mod removed from the folder, the audit
+still finds `@qe24_editor` on the save.
+
+So the SDK's instruction — `removeUser`'s *"clean up in `OnModPackageUnloaded`"* —
+is unreachable for the case it names: disk deletion can never run our code, and a
+plain quit does not call the hook. The same log shows the game doing its own
+half: `[PruneOrphanQuests] Dropping "QESdk024TwotterQa" …: no installed content
+defines it.` Quests are swept, accounts are not. Question 11 now carries the
+measurement and says plainly that it becomes a bug report unless the disable path
+runs.
+
+**What changed here:** the three comments in `runtimeSource.ts` that promised
+"uninstalling removes what the mod declares" now say what was measured instead —
+shipped code should not describe behaviour the game does not have. No runtime
+behaviour changed (the hook does what it always did); STATUS's T-15c is rewritten
+as the **disable variant**, the only configuration where the hook could still
+fire, with all three readings spelled out. README's limitation row and the plan's
+row follow.
+
+Versions: `EDITOR_BUILD` **r194**, export **1.0.21** (comments only — the same
+field build runs the disable test; no reinstall needed beyond the stamp),
+harness **1.0.18** unchanged.
+
+---
+
 # Handoff — r193
 
 **Zeis found the real cause of the "no profile" sessions, and it is a game bug —

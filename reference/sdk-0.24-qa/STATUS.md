@@ -78,7 +78,7 @@ reach the game. A **feature request for a picture field is filed** in
 — the day the API accepts one, the field comes back and the change is one line.
 **Until then: put the clue in the tweet's text, or in a file the player opens.**
 
-## Open: T-11b (abandon half), T-15c — r193, editor export 1.0.20
+## Open: T-11b (abandon half), T-15c — r194, editor export 1.0.21
 
 > **Before any row: is the editor export actually ENABLED?** On 2026-09-19 two
 > sessions were wasted because the game had kept the export **disabled** from an
@@ -100,7 +100,7 @@ T-11b are still open.** The mods:
 
 | Mod | Where | Version |
 | --- | --- | --- |
-| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.20** |
+| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.21** |
 | Raw harness (commands) | `reference/sdk-0.24-qa/mod/` | **1.0.18** |
 
 Nothing auto-starts. Claim with `qe24 run tw1` / `qe24 run tw2` / `qe24 run tw3`;
@@ -109,12 +109,36 @@ refused, the journal titles are *Twotter QA (T-08/T-09/T-10/T-11/T-13)* (tw1),
 *Twotter QA (T-12: two quests, one account)* (tw2) and *Twotter QA (T-13: does
 Twotter.Post ever fire?)* (tw3).
 
+### Measured 2026-09-19: the unload hook does not fire on a plain quit (T-15c, half red)
+
+Test file: `QE24-TestResults-Twotter-6.md` (QA-filedump). Export **1.0.20**,
+harness **1.0.18**, game 1.3.1.
+
+1. Session 14:52:58–14:55:26. The export loaded (`v1.0.20 (2026-09-18.r193)` —
+   r193's readout works in game, both ways), `qe24 run tw1` started the quest,
+   `twotter: created @qe24_editor (qe-tw-account) for quest qe-tw1`, five tweets
+   out (four backdated, one now). The player **saved and quit to desktop with the
+   mod installed and enabled**.
+2. That session's log has **no `unloading:` line at all**. It is the first
+   statement inside the hook, so its absence means the game never called
+   `OnModPackageUnloaded` — not that our cleanup failed.
+3. Session 14:56:49–14:57:42, export removed from the folder: `qe24 twotter
+   audit` still finds **`@qe24_editor (id qe-tw-account)`**, bio intact. Its
+   marker line reads `NOT LOADED in this session`, as designed.
+4. The game cleaned up the quest record by itself:
+   `[PruneOrphanQuests] Dropping "QESdk024TwotterQa" (Se8JDmyGoK): no installed
+   content defines it.` **Quests are swept, accounts are not.**
+
+So the SDK's advice — *"clean up in `OnModPackageUnloaded`"* — is unreachable for
+the case it names: a mod deleted from disk can never run our code, and quitting
+with the mod installed does not call the hook either. Filed in question 11.
+
 | Row | Do this | Report |
 | --- | --- | --- |
 | ~~**T-11b**~~ | **Green 2026-09-19 (first half).** Fresh save, `qe24 run tw1`: both objectives ticked, the Complete button appeared and **removed the account and every tweet**. *Still open:* the **abandon** half — claim tw1 again on a clean save and abandon it instead of completing; the tweets and the account must both go (that was the r185 failure). |
 | ~~**T-12b**~~ | **Green 2026-09-19.** tw2 claimed and completed after tw1: both objectives ticked, and its completion **removed the account and its tweets** — the shared-account rule holds in the order that mattered. |
 | ~~**T-15b**~~ uninstall (mod removed outside the game) | **Red 2026-09-19, and the row was wrong, not the mod.** Zeis ran tw1 to completion, saved, quit, removed `editor_export` from disk and relaunched: the **quest** was gone (the game drops an uninstalled mod's quests) but `@qe24_editor` and **all its tweets were still in the save and in search**. The SDK documents exactly this — *"Accounts your mod adds live in the player's save and are not removed when the mod is uninstalled, so clean up in `OnModPackageUnloaded`"* — and a mod removed while the game is closed never loads, so the hook can never run. **The cleanup is not broken; the scenario is outside any mod's reach.** Filed as question 11 in [`docs/03-questions-for-the-developers.md`](../../docs/03-questions-for-the-developers.md). |
-| **T-15c** uninstall, the way the game allows it | Fresh save. Install editor export **1.0.20** + the harness, `qe24 run tw1` (the accounts are created), confirm with `qe24 twotter audit`. **Save**, then quit to desktop — the export is still installed while the game closes, which is the only moment the cleanup hook can ever run (the queued *"Restart the game to apply updates"* happens after it). Then **search the log file of that session** — the `HACKHUB LOG FILE` you paste from, the one with the `====` headers — for `[quest-editor]`, and look at the last lines of the session. Then remove/disable the export, relaunch, load, and `qe24 twotter audit` + search Twotter. | **The log line says whether our cleanup ran; the audit says whether it stuck.**<br>(1) Do you see **`unloading: removing the Twotter accounts this mod declared`** and then a **`twotter: removeUser(...) -> true (mod unloaded)`** at the end of that session? That is the hook running and deleting the account.<br>(2) After the reload, is `@qe24_editor` **`not on this save`** and absent from search?<br>**Line + still there** ⇒ the hook works but the save was already written, so a manual *Save before quitting* is what preserves the account — a different report from **no line at all**, which means the cleanup path the SDK names for a disabled mod never runs. |
+| **T-15c** disable the export in the Mods list, then quit — the one cleanup moment left | Fresh save, install the current editor export (**1.0.21** — 1.0.20 works identically, the difference is the stamp) + the harness, `qe24 run tw1`, `qe24 twotter audit` (the account is there). Then **disable the export in the game's Mods list** and accept *"Mod changes detected. Restart the game to apply updates."* — then **quit to desktop** without touching the folder. **Search that session's log file** (the `HACKHUB LOG FILE` with the `====` headers) for `[quest-editor]`; if the line is not there, **search the next session's log too** — the queued change may be applied at launch instead. Then relaunch (export still installed, now disabled), load, `qe24 twotter audit`. | **Three readings, three different reports.**<br>(1) **`unloading: removing the Twotter accounts this mod declared`** in one of the two sessions **+ `@qe24_editor` `not on this save`** afterwards ⇒ the disable path works; the only unreachable case stays a mod deleted while the game is closed.<br>(2) The line, but the account is still there ⇒ `removeUser` ran and did not stick — a save-timing report (that is T-15d's question).<br>(3) **No line in either session** ⇒ `OnModPackageUnloaded` never runs for any sequence a player can perform, and question 11 becomes a bug report: the cleanup the SDK instructs mods to perform cannot be reached from inside the game. |
 | **T-15d** a save taken *after* the hook has run | Optional, only if T-15c shows the line and the account still survives. Repeat T-15c but let the game save again **after** the quit-unload — i.e. reload with the export still installed, complete or abandon nothing, save once more, then remove the export and reload. | If the account is gone after that, the mechanism is clear: the hook deletes the account in memory, and only a save *afterwards* can persist the deletion. That is worth telling the developer, because it means a mod's cleanup can never cover a save the player made earlier. |
 | ~~**T-08b**~~ the authored pictures | **Green 2026-09-19.** "Banner is bright violet, profile is amber" — both authored pictures really do reach the game, which settles the r185 wrinkle the dark blue banner left open. |
 

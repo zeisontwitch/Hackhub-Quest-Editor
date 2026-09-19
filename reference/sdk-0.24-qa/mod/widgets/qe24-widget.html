@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>QE24 widget</title>
+<style>
+  /* This widget is a probe, not a design. It has to be unmistakable in a
+     screenshot: magenta, large, and it prints its own size so a tester never
+     has to measure anything. */
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: #AA28FF;
+    color: #12001c;
+    font: 600 15px/1.35 "Segoe UI", system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 14px;
+    box-sizing: border-box;
+  }
+  .id { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .75; }
+  .big { font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
+  .note { font-size: 12px; opacity: .85; }
+</style>
+</head>
+<body>
+  <div class="id">QE24 extras probe &middot; T-17</div>
+  <div class="big">Desktop widget</div>
+  <div class="note">
+    id: <b>qe24-extras-widget</b> &middot; asked for 320&times;180 at 40,40 &middot; src:
+    <b>widgets/qe24-widget.html</b>
+  </div>
+  <div class="note">
+    If you can read this, a mod's own HTML file shipped and rendered in a desktop
+    iframe. Resize it in your head: the frame should be about 320 pixels wide.
+  </div>
+</body>
+</html>

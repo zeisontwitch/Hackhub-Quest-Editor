@@ -23,14 +23,28 @@ const EXPORT_KEY = "qe.export.loaded";
 interface HarnessRun {
     lines: string[];
     claimed: string[];
+    /** Every extras registration/unregistration, in the order the harness made it. */
+    calls: string[];
 }
 
 /** Boot the harness mod against a stub SDK and run one `qe24` command. */
-function runHarness(args: string[], opts: { marker?: string; noSharedApi?: boolean } = {}): HarnessRun {
+function runHarness(
+    args: string[],
+    opts: { marker?: string; noSharedApi?: boolean; noExtrasApi?: boolean } = {},
+): HarnessRun {
     const lines: string[] = [];
     const claimed: string[] = [];
+    const calls: string[] = [];
     const shared = new Map<string, unknown>();
     if (opts.marker !== undefined) shared.set(EXPORT_KEY, opts.marker);
+
+    /* A small in-memory model of the four extras surfaces, so the getters the
+       harness prints reflect what it has registered — that is how a tester reads
+       "did `off` actually take them away", and it is what this fence asserts. */
+    const menus = new Map<string, { id: string; label?: string }>();
+    const widgets = new Map<string, { id: string }>();
+    const ctx = new Map<string, { id: string; label?: string; target?: string }>();
+    const bundles = new Map<string, Record<string, string>>();
 
     type CommandInstance = { Run: (tools: unknown) => Promise<void> };
     const holder: { cls?: new () => CommandInstance } = {};
@@ -47,6 +61,54 @@ function runHarness(args: string[], opts: { marker?: string; noSharedApi?: boole
         RegisterModPackage: () => {},
         /* Enough Twotter for `qe24 twotter audit` to reach its own printing. */
         Twotter: { createUser: () => ({}), getUserByUsername: () => null },
+        Menu: {
+            addItem: (item: { id: string; label?: string; section?: string }) => {
+                menus.set(item.id, item);
+                calls.push(`menu.addItem:${item.id}:${item.label ?? ""}:${item.section ?? ""}`);
+            },
+            removeItem: (id: string) => {
+                menus.delete(id);
+                calls.push(`menu.removeItem:${id}`);
+            },
+            getItems: () => [...menus.values()],
+        },
+        Desktop: {
+            addWidget: (w: { id: string; src: string; width: number; height: number }) => {
+                widgets.set(w.id, w);
+                calls.push(`desktop.addWidget:${w.id}:${w.src}:${w.width}x${w.height}`);
+            },
+            removeWidget: (id: string) => {
+                widgets.delete(id);
+                calls.push(`desktop.removeWidget:${id}`);
+            },
+            getWidgets: () => [...widgets.values()],
+        },
+        ContextMenu: {
+            register: (item: { id: string; label?: string; target?: string }) => {
+                ctx.set(item.id, item);
+                calls.push(`contextMenu.register:${item.id}:${item.target ?? ""}`);
+            },
+            unregister: (id: string) => {
+                ctx.delete(id);
+                calls.push(`contextMenu.unregister:${id}`);
+            },
+            getItems: (target: string) => [...ctx.values()].filter((i) => i.target === target),
+        },
+        Localization: {
+            register: (language: string, strings: Record<string, string>) => {
+                bundles.set(language, strings);
+                calls.push(`localization.register:${language}:${Object.keys(strings).length}`);
+            },
+            t: (key: string, vars?: Record<string, string | number>) => {
+                const raw = bundles.get("en")?.[key] ?? bundles.get("de")?.[key] ?? key;
+                return Object.entries(vars ?? {}).reduce(
+                    (acc, [k, v]) => acc.replaceAll(`{{${k}}}`, String(v)),
+                    raw,
+                );
+            },
+            language: () => "en",
+            languages: () => ["en", "de", "tr"],
+        },
         RegisterCommand: () => (cls: unknown) => {
             holder.cls = cls as new () => CommandInstance;
         },
@@ -57,6 +119,9 @@ function runHarness(args: string[], opts: { marker?: string; noSharedApi?: boole
         },
         unclaim: () => {},
     });
+    if (opts.noExtrasApi) {
+        for (const key of ["Menu", "Desktop", "ContextMenu", "Localization"]) delete sdk[key];
+    }
     if (!opts.noSharedApi) {
         sdk.SharedVariables = {
             get: (key: string) => shared.get(key),
@@ -83,7 +148,7 @@ function runHarness(args: string[], opts: { marker?: string; noSharedApi?: boole
     };
     const instance = new CommandClass();
     void instance.Run(tools);
-    return { lines, claimed };
+    return { lines, claimed, calls };
 }
 
 describe("the harness's export check", () => {
@@ -117,5 +182,75 @@ describe("the harness's export check", () => {
     it("prints the same line from `qe24 twotter audit` — the row that reads the save", () => {
         const { lines } = runHarness(["twotter", "audit"], { marker: "1.0.20 (2026-09-18.r193)" });
         expect(lines.some((l) => /Editor export: loaded/.test(l))).toBe(true);
+    });
+});
+
+/**
+ * The r199 pack-extras probe (`qe24 extras on/off/lang`).
+ *
+ * Stage A of the "cheap wins": four APIs the editor cannot author yet, none of
+ * them used anywhere in this project before, and nothing in the SDK docs about
+ * what this build actually honours. The probe has to be right before a tester
+ * spends a run on it — so what is asserted here is exactly what appears on
+ * screen and exactly which registrations the game is handed.
+ */
+describe("the harness's pack-extras probe", () => {
+    it("registers one of each surface, with the shapes the SDK declares", () => {
+        const { calls, lines } = runHarness(["extras", "on"]);
+        expect(calls).toEqual([
+            "menu.addItem:qe24-extras-menu:QE24 Extras:bottom",
+            "desktop.addWidget:qe24-extras-widget:widgets/qe24-widget.html:320x180",
+            "contextMenu.register:qe24-extras-file:file",
+            "contextMenu.register:qe24-extras-desktop:desktop",
+            "localization.register:en:2",
+            "localization.register:de:2",
+        ]);
+        // The tester is told what happened, and what to look at.
+        expect(lines.some((l) => l.startsWith("Registered: "))).toBe(true);
+        expect(lines.join("\n")).toContain("start menu");
+    });
+
+    it("reports what the game says it has, before and after `off`", () => {
+        const on = runHarness(["extras", "on"]);
+        expect(on.lines.join("\n")).toContain("start-menu items:      1 [QE24 Extras]");
+        expect(on.lines.join("\n")).toContain("desktop widgets:       1 [qe24-extras-widget]");
+        expect(on.lines.join("\n")).toContain("right-click on a file: 1 [QE24: inspect this file]");
+        expect(on.lines.join("\n")).toContain("right-click desktop:   1 [QE24: desktop action]");
+
+        const off = runHarness(["extras", "off"]);
+        expect(off.calls).toEqual([
+            "menu.removeItem:qe24-extras-menu",
+            "desktop.removeWidget:qe24-extras-widget",
+            "contextMenu.unregister:qe24-extras-file",
+            "contextMenu.unregister:qe24-extras-desktop",
+        ]);
+        expect(off.lines.join("\n")).toContain("start-menu items:      0 [empty]");
+        expect(off.lines.join("\n")).toContain("desktop widgets:       0 [empty]");
+    });
+
+    it("reports the language, the translation and the missing-key fallback", () => {
+        const { lines } = runHarness(["extras", "lang"]);
+        const text = lines.join("\n");
+        expect(text).toContain("language():                 en");
+        expect(text).toContain("languages():                en, de, tr");
+        expect(text).toContain("Hello from the QE24 harness.");
+        expect(text).toContain("Harness speaking: QE24.");
+        // The SDK documents a missing key echoing itself — the row reads that.
+        expect(text).toContain('t("qe24.absent"): qe24.absent');
+    });
+
+    it("says which APIs the build does not have, instead of throwing", () => {
+        const { lines, calls } = runHarness(["extras", "on"], { noExtrasApi: true });
+        expect(calls).toEqual([]);
+        expect(lines.join("\n")).toContain("NOT IN THIS BUILD: Menu.addItem, Desktop.addWidget, ContextMenu.register, Localization.register");
+    });
+
+    it("prints its own guide when asked for nothing in particular", () => {
+        const { lines, calls } = runHarness(["extras"]);
+        expect(calls).toEqual([]);
+        expect(lines.join("\n")).toContain("qe24 extras on");
+        // Every reading names the row it belongs to, so the tester can find it.
+        expect(lines.join("\n")).toContain("T-16");
+        expect(lines.join("\n")).toContain("T-19");
     });
 });

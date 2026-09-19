@@ -1,4 +1,12 @@
-# r199: the cheap wins — pack extras and localization — plan for review
+# r199: the cheap wins — pack extras and localization
+
+> **Built 2026-09-19 (r200): Stage A shipped as `qe24 extras on / off / lang` and
+> is waiting on a run — rows T-16..T-19 in
+> [`STATUS.md`](../../reference/sdk-0.24-qa/STATUS.md).** All four click actions
+> were approved (notify, quest, mail, handbook), so §5 above is settled. Stage B
+> starts only after those readings are in: the probe exists precisely because
+> nothing in this repository has ever called `Menu`, `Desktop`, `ContextMenu` or
+> `Localization`. Everything below is the plan as it was reviewed.
 
 **Zeis picked the cheap wins from the r198 coverage audit:** the pack-level
 surfaces that live outside a quest (menu entries, desktop widgets, right-click

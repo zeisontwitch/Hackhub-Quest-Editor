@@ -977,6 +977,8 @@ function printGuide(tools) {
     tools.println("Timer rows: checklist in reference/sdk-0.24-qa/TIMER-ROWS.md, results in STATUS.md.");
     tools.println("Most rows are read from qe24 timers instead of waited for.");
     tools.println("");
+    tools.println("Pack extras probe (r199): qe24 extras on / off / lang - does this build show start-menu");
+    tools.println("  items, desktop widgets and right-click entries, and does Localization.t translate? Rows T-16..T-19.");
     tools.println("Safety: if a browser/curl request seems stuck after an intercept test, open another terminal and run qe24 intercept off.");
 }
 
@@ -1384,6 +1386,186 @@ class QE24TwotterProbe extends sdk.Quest {
     OnAbandon() { log("QE24TwotterProbe abandoned"); }
 }
 
+
+/* ── pack extras probe (r199) ────────────────────────────────────────────
+ * Four APIs the no-code editor cannot reach yet, and none of them has any
+ * prior art in this project: Menu.addItem, Desktop.addWidget,
+ * ContextMenu.register and Localization.register/t. The probe registers one
+ * of each so a tester can see whether this build shows them at all, and
+ * unregisters them again so the game is left as it was found.
+ *
+ * The widget HTML ships beside this file at widgets/qe24-widget.html - a path
+ * relative to the mod root, which is the part most likely to be wrong. Rows
+ * T-16..T-19 in reference/sdk-0.24-qa/STATUS.md. */
+
+var EXTRAS_MENU_ID = "qe24-extras-menu";
+var EXTRAS_WIDGET_ID = "qe24-extras-widget";
+var EXTRAS_FILE_ITEM_ID = "qe24-extras-file";
+var EXTRAS_DESKTOP_ITEM_ID = "qe24-extras-desktop";
+var EXTRAS_WIDGET_SRC = "widgets/qe24-widget.html";
+var EXTRAS_HELLO_KEY = "qe24.hello";
+var EXTRAS_VARS_KEY = "qe24.vars";
+var EXTRAS_STRINGS = {
+    en: {
+        "qe24.hello": "Hello from the QE24 harness.",
+        "qe24.vars": "Harness speaking: {{who}}.",
+    },
+    de: {
+        "qe24.hello": "Hallo vom QE24-Testharnisch.",
+        "qe24.vars": "Der Testharnisch spricht: {{who}}.",
+    },
+};
+
+function extrasList(value, name) {
+    if (value === null || value === undefined) return name + " unavailable in this build";
+    if (!Array.isArray(value)) return name + " returned " + typeof value + " instead of a list";
+    var labels = value.map(function (entry) { return (entry && (entry.label || entry.id)) || "?"; });
+    return value.length + " [" + (labels.join(", ") || "empty") + "]";
+}
+
+function extrasReport(tools, label) {
+    var menuItems = sdk.Menu && sdk.Menu.getItems
+        ? safe("Menu.getItems", function () { return sdk.Menu.getItems(); }, null) : null;
+    var widgets = sdk.Desktop && sdk.Desktop.getWidgets
+        ? safe("Desktop.getWidgets", function () { return sdk.Desktop.getWidgets(); }, null) : null;
+    var fileItems = sdk.ContextMenu && sdk.ContextMenu.getItems
+        ? safe("ContextMenu.getItems(file)", function () { return sdk.ContextMenu.getItems("file"); }, null) : null;
+    var desktopItems = sdk.ContextMenu && sdk.ContextMenu.getItems
+        ? safe("ContextMenu.getItems(desktop)", function () { return sdk.ContextMenu.getItems("desktop"); }, null) : null;
+    tools.println("QE24 extras " + label + " - what the game reports it has now:");
+    tools.println("  start-menu items:      " + extrasList(menuItems, "Menu.getItems"));
+    tools.println("  desktop widgets:       " + extrasList(widgets, "Desktop.getWidgets"));
+    tools.println("  right-click on a file: " + extrasList(fileItems, "ContextMenu.getItems(file)"));
+    tools.println("  right-click desktop:   " + extrasList(desktopItems, "ContextMenu.getItems(desktop)"));
+}
+
+function extrasGuide(tools) {
+    tools.println("Pack extras probe (r199): can a pack put things outside its own quests?");
+    tools.println("");
+    tools.println("  qe24 extras on    register a start-menu item, a desktop widget, two right-click");
+    tools.println("                    entries (on a file and on the desktop) and two language bundles");
+    tools.println("  qe24 extras lang  what this build says about language, and what t() returns");
+    tools.println("  qe24 extras off   unregister all of it again");
+    tools.println("");
+    tools.println("Rows T-16..T-19 in reference/sdk-0.24-qa/STATUS.md, one per API. What to look at:");
+    tools.println("  T-16 menu:     is there a \"QE24 Extras\" entry at the BOTTOM of the start menu,");
+    tools.println("                 and does clicking it show a toast?");
+    tools.println("  T-17 widget:   does a magenta 320x180 widget appear on the desktop (it names its");
+    tools.println("                 own size and id), and does `qe24 extras off` remove it?");
+    tools.println("  T-18 menu-2:   right-click a file, then the empty desktop - is there a QE24 entry in each?");
+    tools.println("  T-19 language: paste the whole output of `qe24 extras lang`.");
+    tools.println("");
+    tools.println("If something never appears, the game log is the evidence: search it for [qe24] or extras.");
+}
+
+function extrasOn(tools) {
+    var done = [];
+    var absent = [];
+    safe("Menu.addItem", function () {
+        if (!sdk.Menu || !sdk.Menu.addItem) { absent.push("Menu.addItem"); return; }
+        sdk.Menu.addItem({
+            id: EXTRAS_MENU_ID,
+            label: "QE24 Extras",
+            section: "bottom",
+            onClick: function () { toast("QE24: the start-menu item was clicked", "info"); log("extras: menu item clicked"); },
+        });
+        done.push("start-menu item (section bottom)");
+    });
+    safe("Desktop.addWidget", function () {
+        if (!sdk.Desktop || !sdk.Desktop.addWidget) { absent.push("Desktop.addWidget"); return; }
+        sdk.Desktop.addWidget({
+            id: EXTRAS_WIDGET_ID,
+            src: EXTRAS_WIDGET_SRC,
+            width: 320,
+            height: 180,
+            position: { x: 40, y: 40 },
+        });
+        done.push("desktop widget 320x180 at 40,40 from " + EXTRAS_WIDGET_SRC);
+    });
+    safe("ContextMenu.register", function () {
+        if (!sdk.ContextMenu || !sdk.ContextMenu.register) { absent.push("ContextMenu.register"); return; }
+        sdk.ContextMenu.register({
+            id: EXTRAS_FILE_ITEM_ID,
+            label: "QE24: inspect this file",
+            target: "file",
+            onClick: function (context) {
+                toast("QE24: right-clicked " + ((context && (context.name || context.id)) || "a file"), "info");
+                log("extras: file item clicked");
+            },
+        });
+        sdk.ContextMenu.register({
+            id: EXTRAS_DESKTOP_ITEM_ID,
+            label: "QE24: desktop action",
+            target: "desktop",
+            onClick: function () { toast("QE24: right-clicked the desktop", "info"); log("extras: desktop item clicked"); },
+        });
+        done.push("right-click items (target file and target desktop)");
+    });
+    safe("Localization.register", function () {
+        if (!sdk.Localization || !sdk.Localization.register) { absent.push("Localization.register"); return; }
+        sdk.Localization.register("en", EXTRAS_STRINGS.en);
+        sdk.Localization.register("de", EXTRAS_STRINGS.de);
+        done.push("language bundles (en, de)");
+    });
+    if (done.length) tools.println("Registered: " + done.join("; ") + ".");
+    if (absent.length) tools.println("NOT IN THIS BUILD: " + absent.join(", ") + ".");
+    extrasReport(tools, "registered");
+    tools.println("Now look: the start menu (bottom section), the desktop, right-clicking a file and the");
+    tools.println("empty desktop. Then run `qe24 extras lang` and paste that block too.");
+}
+
+function extrasOff(tools) {
+    safe("Menu.removeItem", function () {
+        if (sdk.Menu && sdk.Menu.removeItem) sdk.Menu.removeItem(EXTRAS_MENU_ID);
+    });
+    safe("Desktop.removeWidget", function () {
+        if (sdk.Desktop && sdk.Desktop.removeWidget) sdk.Desktop.removeWidget(EXTRAS_WIDGET_ID);
+    });
+    safe("ContextMenu.unregister", function () {
+        if (sdk.ContextMenu && sdk.ContextMenu.unregister) {
+            sdk.ContextMenu.unregister(EXTRAS_FILE_ITEM_ID);
+            sdk.ContextMenu.unregister(EXTRAS_DESKTOP_ITEM_ID);
+        }
+    });
+    tools.println("Unregistered the QE24 extras. The language bundles stay - the SDK has no");
+    tools.println("unregister for them, and a handful of strings is harmless.");
+    extrasReport(tools, "after off");
+    tools.println("What matters: the start-menu entry, the widget and both right-click entries are gone.");
+}
+
+function extrasLang(tools) {
+    tools.println("QE24 extras lang - Localization in this build:");
+    if (!sdk.Localization || !sdk.Localization.t) {
+        tools.println("  Localization.t is NOT in this build, so no pack can translate anything yet.");
+        return;
+    }
+    tools.println("  language():                 " + safe("Localization.language", function () { return sdk.Localization.language(); }, "(unavailable)"));
+    var langs = safe("Localization.languages", function () { return sdk.Localization.languages(); }, null);
+    tools.println("  languages():                " + (Array.isArray(langs) ? langs.join(", ") : "(unavailable)"));
+    /* Register here too, so `qe24 extras lang` alone is a complete reading:
+       a tester who runs only this command must still see a real translation. */
+    var registered = "no";
+    safe("Localization.register", function () {
+        if (!sdk.Localization || !sdk.Localization.register) return;
+        sdk.Localization.register("en", EXTRAS_STRINGS.en);
+        sdk.Localization.register("de", EXTRAS_STRINGS.de);
+        registered = "yes";
+    });
+    tools.println("  we registered:              " + registered + " (en, de; keys " + EXTRAS_HELLO_KEY + " and " + EXTRAS_VARS_KEY + ")");
+    tools.println("  t(\"" + EXTRAS_HELLO_KEY + "\"): " + safe("Localization.t", function () { return sdk.Localization.t(EXTRAS_HELLO_KEY); }, "(threw)"));
+    tools.println("  t(\"" + EXTRAS_VARS_KEY + "\", {who: \"QE24\"}): " + safe("Localization.t", function () { return sdk.Localization.t(EXTRAS_VARS_KEY, { who: "QE24" }); }, "(threw)"));
+    tools.println("  t(\"qe24.absent\"): " + safe("Localization.t", function () { return sdk.Localization.t("qe24.absent"); }, "(threw)"));
+    tools.println("Reading: a translated line proves t() resolves; a missing key echoing its own name is");
+    tools.println("the SDK's documented fallback, and a blank line there would be worth filing.");
+}
+
+function extrasProbe(tools, verb) {
+    if (verb === "on") { extrasOn(tools); return; }
+    if (verb === "off") { extrasOff(tools); return; }
+    if (verb === "lang") { extrasLang(tools); return; }
+    extrasGuide(tools);
+}
+
 class QE24Command extends sdk.Command {
     constructor() {
         super();
@@ -1391,7 +1573,7 @@ class QE24Command extends sdk.Command {
         this.Description = "SDK 0.24 QA harness commands";
         this.Autocomplete = [
             { label: "qe24", type: "STRING" },
-            { label: "guide|next|run|status|history|clock|timers|twotter|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
+            { label: "guide|next|run|status|history|clock|timers|extras|twotter|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
         ];
     }
     async Run(tools) {
@@ -1447,6 +1629,10 @@ class QE24Command extends sdk.Command {
         }
         if (sub === "run") {
             runQaQuest(tools, args[1]);
+            return;
+        }
+        if (sub === "extras") {
+            extrasProbe(tools, args[1] || "guide");
             return;
         }
         if (sub === "twotter") {

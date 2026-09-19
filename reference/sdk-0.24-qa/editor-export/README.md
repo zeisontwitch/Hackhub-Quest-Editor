@@ -68,6 +68,7 @@ In-game console lines are the ones to quote in a report: `timer node … armed f
 
 | Export | Editor build | Result |
 |---|---|---|
+| 1.0.25 | 2026-09-18.r200 | **Stamp only** — the round is the harness's pack-extras probe (Stage A of the cheap wins); the compiled quests are unchanged. |
 | 1.0.24 | 2026-09-18.r198 | **Stamp only** — a docs round (the SDK coverage audit, and the phone-proxy row dropped). Nothing in the compiled quests changed. |
 | 1.0.23 | 2026-09-18.r196 | **Stamp only.** The round closed with every row green or resolved (T-11b abandon and T-15c last); nothing in the compiled quests or the runtime changed. |
 | 1.0.22 | 2026-09-18.r195 | **Comments only, and the last of the uninstall story.** The runtime now states the measured edges: disabling the mod in the Mods list makes the game unload the package at the next start (`removeUser(qe-tw-account) -> true (mod unloaded)`, the account gone afterwards — T-15c green), a plain quit calls no hook (nothing to clean), and a mod deleted from disk while the game is closed can never run mod code — the one leak, filed as question 11. |

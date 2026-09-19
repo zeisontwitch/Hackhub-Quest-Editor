@@ -260,8 +260,11 @@ describe("r179 raw harness — the Twotter probe", () => {
            adds that readout for real: the export leaves a SharedVariables marker
            when it loads, and this harness prints whether it is there, after a
            tester lost two sessions to a copy of the export the game had
-           silently left disabled (behaviour: sdk024QaHarness.test.ts). */
-        expect(manifest.version).toBe("1.0.18");
+           silently left disabled (behaviour: sdk024QaHarness.test.ts). r199 adds
+           `qe24 extras` - Stage A of the cheap wins, probing Menu.addItem,
+           Desktop.addWidget, ContextMenu.register and Localization, none of which
+           has any prior art here (same test file drives it). */
+        expect(manifest.version).toBe("1.0.19");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");

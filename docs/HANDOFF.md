@@ -1,3 +1,36 @@
+# Handoff — r200
+
+**Stage A of the cheap wins is built and waiting on one run.** The harness gained
+`qe24 extras on / off / lang`, which registers one of each thing a pack can put
+*outside* its own quests and reports what the game says it has:
+
+- `Menu.addItem` — "QE24 Extras", section `bottom`, click → toast;
+- `Desktop.addWidget` — a deliberately loud magenta widget (320x180 at 40,40)
+  whose `src` is `widgets/qe24-widget.html`, a new file shipped beside
+  `dist/mod.js`, because a mod-root-relative HTML path is the part most likely to
+  be wrong;
+- `ContextMenu.register` — one item targeting `file`, one targeting `desktop`;
+- `Localization.register` — `en` and `de` bundles, plus `t()` with a placeholder
+  and a deliberately missing key.
+
+**Why a probe instead of building the editor feature:** nothing in this project —
+handbook, official transcriptions, shipped mods — has ever called those four
+namespaces, so every design decision in Stage B depends on readings we do not
+have. Four rows (T-16..T-19) tell Zeis exactly what to look at and what each
+reading decides; the answers choose the widget mechanics, the real language list,
+and which permission (if any) each surface needs.
+
+**Fences:** five new tests drive the real harness against a stub SDK and assert
+the exact registrations the game is handed, and that `off` takes them away. Six
+falsifications (each registration removed in turn, `off`'s widget removal, the
+report's right-click line) all went RED.
+
+Versions: `EDITOR_BUILD` **r200**, export **1.0.25** (stamp only), harness
+**1.0.19** (real change — copy the whole `mod` folder: the widget HTML is part of
+it now).
+
+---
+
 # Handoff — r196
 
 **The Twotter round is closed, every row green or resolved.** The last two landed

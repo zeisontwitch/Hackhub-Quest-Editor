@@ -78,7 +78,47 @@ reach the game. A **feature request for a picture field is filed** in
 — the day the API accepts one, the field comes back and the change is one line.
 **Until then: put the clue in the tweet's text, or in a file the player opens.**
 
-## CLOSED 2026-09-19 — round r185 (Twotter), editor export 1.0.24, harness 1.0.18
+## OPEN: pack extras probe — T-16..T-19 (r200, harness 1.0.19)
+
+**Three commands, one run, no quest and no editor export needed.** The harness
+registers one of each thing a pack can put *outside* its own quests, so we learn
+what this game build actually honours before the editor learns to author them.
+The editor is not involved yet — this is Stage A of the plan in
+[`docs/plans/r199-cheap-wins-plan.md`](../../docs/plans/r199-cheap-wins-plan.md).
+
+```
+qe24 extras on      # menu item + desktop widget + two right-click items + two languages
+qe24 extras lang    # what the game says about language, and what t() returns
+qe24 extras off     # take it all away again
+```
+
+Then, in the game:
+
+| Row | Do this | Report |
+| --- | --- | --- |
+| **T-16** start-menu item | After `on`, open the **start menu** and look at the **bottom** section. Click the entry. | Is there a **"QE24 Extras"** item, and is it at the bottom as asked? Does clicking it toast *"QE24: the start-menu item was clicked"*? |
+| **T-17** desktop widget | Look at the **desktop** near the top-left (asked for 40,40). Then run `qe24 extras off`. | Does a **magenta** widget appear, about 320×180, reading "Desktop widget" and its own id? Does it disappear after `off`? Is the "QE24 Extras" widget inside the frame or does it overflow? |
+| **T-18** right-click items | Right-click a **file** somewhere, then right-click **empty desktop** space. | Is there a **"QE24: inspect this file"** entry on the file and a **"QE24: desktop action"** on the desktop? Click one — does it toast? |
+| **T-19** localization | Run `qe24 extras lang` and paste the whole output. | What does `language()` say, what languages does the game offer, does `t("qe24.hello")` come back in English (or German), and does the missing key echo `qe24.absent` rather than blank? |
+
+**Paste back:** the terminal output of all three commands (it prints its own
+state after each) and anything the game log says about them — search that
+session's log for `[qe24]`.
+
+**If an item never appears:** that is the reading, not a failure — the log is the
+evidence. Note which of the four worked and which did not; they are independent.
+
+| Mod | Where | Version |
+| --- | --- | --- |
+| Raw harness (commands) | `reference/sdk-0.24-qa/mod/` | **1.0.19** |
+
+The harness now ships a second folder: `mod/widgets/qe24-widget.html` — the file
+`Desktop.addWidget` points at. **Copy the whole `mod` folder**, not just
+`dist/mod.js`, or T-17 has nothing to render.
+
+---
+
+## CLOSED 2026-09-19 — round r185 (Twotter), editor export 1.0.25, harness 1.0.19
 
 > **Before any row: is the editor export actually ENABLED?** On 2026-09-19 two
 > sessions were wasted because the game had kept the export **disabled** from an
@@ -101,7 +141,7 @@ design. No row is waiting for a tester. The mods:
 
 | Mod | Where | Version |
 | --- | --- | --- |
-| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.24** |
+| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.25** |
 | Raw harness (commands) | `reference/sdk-0.24-qa/mod/` | **1.0.18** |
 
 Nothing auto-starts. Claim with `qe24 run tw1` / `qe24 run tw2` / `qe24 run tw3`;

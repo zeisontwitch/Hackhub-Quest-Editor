@@ -1921,7 +1921,7 @@
         "icon": "",
         "action": {
           "kind": "notify",
-          "text": "{{tr.qe24.menu.message}} Plain text after the translated half.",
+          "text": "{{tr.qe24.menu.message}}",
           "questId": "",
           "mailFrom": "",
           "mailSubject": "",

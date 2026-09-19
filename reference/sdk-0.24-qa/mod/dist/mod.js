@@ -401,6 +401,7 @@ function printRunList(tools) {
 
 function runQaQuest(tools, alias) {
     var api = sdk.Quest;
+    if (alias) printExportLoaded(tools);
     if (!api || typeof api.claim !== "function") {
         tools.printError("Quest.claim is unavailable in this build - claim the quest from the journal instead.");
         return;
@@ -564,6 +565,50 @@ function printTimers(tools) {
  * not exist when the feature was pulled.
  * Rows: reference/sdk-0.24-qa/STATUS.md (T-01...T-07). */
 
+/* ── is the editor export loaded in this session? (r193) ─────────────────
+ * The export leaves a marker in SharedVariables when it loads (see its own
+ * `markThisModLoaded`). This is the only way one mod can find out whether
+ * another is loaded: SDK 0.24's ModInfo is a type with no reader, no API lists
+ * installed mods, and Quest.claim() returns void — so a quest whose mod is
+ * disabled just never appears, with no error.
+ *
+ * Why it matters enough to build: on 2026-09-19 a tester's local export stayed
+ * DISABLED after he had disabled an older copy of it and deleted that copy from
+ * disk. The game remembered the disabled flag (it survives a version change, and
+ * a fresh save), so every `qe24 run tw1` printed "Claimed" and did nothing, and
+ * the profile never appeared. Reported to the developers as a game bug; this
+ * check is what turns the next occurrence into one printed line instead of a
+ * lost session. */
+var EXPORT_LOADED_KEY = "qe.export.loaded";
+
+function exportLoadedMarker() {
+    /* Returns the marker string when the export loaded this session, else null.
+       Absent API (an older game build) is reported as "unknown", not "no". */
+    var shared = sdk.SharedVariables;
+    if (!shared || typeof shared.get !== "function") return "unknown";
+    var value = safe("SharedVariables.get", function () { return shared.get(EXPORT_LOADED_KEY); }, undefined);
+    if (value === undefined || value === null || value === "") return null;
+    return String(value);
+}
+
+/* One line, printed wherever a command depends on the export's quests. */
+function printExportLoaded(tools) {
+    var marker = exportLoadedMarker();
+    if (marker === "unknown") {
+        tools.println("Editor export: this game build has no SharedVariables API, so I cannot tell.");
+        return;
+    }
+    if (marker === null) {
+        tools.println("Editor export: NOT LOADED in this session.");
+        tools.println("  Its quests are not in the game, so `qe24 run` cannot start them (Quest.claim");
+        tools.println("  fails silently). Check the Mods list: an old copy that was disabled stays");
+        tools.println("  disabled even after a new version replaces it, and that survives a fresh save.");
+        tools.println("  Enable it, restart the game, and run `qe24 run <alias>` again.");
+        return;
+    }
+    tools.println("Editor export: loaded (v" + marker + ").");
+}
+
 function twotterApi() {
     return sdk.Twotter && sdk.Twotter.createUser ? sdk.Twotter : null;
 }
@@ -631,6 +676,7 @@ var TWOTTER_AUDIT_HANDLES = ["qe24_probe", "qe24_badrecord", "qe24_declared", "q
 function twotterAudit(tools) {
     var api = twotterApi();
     if (!api || !api.getUserByUsername) { tools.printError("Twotter API unavailable in this build"); return; }
+    printExportLoaded(tools);
     tools.println("QE24 Twotter audit - the handles this QA round creates:");
     var present = 0;
     var poisoned = 0;

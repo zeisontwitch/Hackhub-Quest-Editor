@@ -1,3 +1,39 @@
+# Handoff — r193
+
+**Zeis found the real cause of the "no profile" sessions, and it is a game bug —
+not ours.** The whole session's log had **zero `[quest-editor]` lines**: the
+editor export never loaded. He had disabled it in the Mods list during an earlier
+round and deleted it from disk; the game **kept the disabled flag** through all
+three things that should have cleared it — copying in a **newer version**,
+emptying and refilling the mods folder, and a **fresh save**. A disabled mod's
+quests are never registered, so `qe24 run tw1` printed "Claimed" and did nothing.
+Filed as **question 13** with a concrete ask (a new version should be treated as
+new content), and written into the README's limitations table so the next person
+does not lose a session to it.
+
+**What we built so this is one line instead of two lost sessions.** Nothing in SDK
+0.24 lets a mod see another mod: `ModInfo` is a type with no reader, no API lists
+installed mods, and `Quest.claim()` returns void (§12). What does exist is
+`SharedVariables` — session-scoped, shared by every mod. So the export now writes
+`qe.export.loaded` (`"<version> (<build>)"`) in `OnModPackageLoaded` and removes it
+in `OnModPackageUnloaded`, and the harness prints, from both `qe24 run` and
+`qe24 twotter audit`:
+
+- `Editor export: loaded (v1.0.20 (2026-09-18.r193))`, or
+- `Editor export: NOT LOADED in this session.` — with the cause and the fix in the
+  next three lines (an old copy that was disabled stays disabled, enable it,
+  restart), or
+- `cannot tell` on a build with no `SharedVariables` — never a false "not loaded".
+
+**Fences:** 2 on the export side (marker set at load, withdrawn at unload, and a
+build with no `SharedVariables` still loads), 4 on the harness side — the harness
+file is now run for real against a stub SDK and its command driven, so these are
+behavioural, not string matches. **All 5 falsified.**
+
+Versions: `EDITOR_BUILD` **r193**, export **1.0.20**, harness **1.0.18**.
+
+---
+
 # Handoff — r192
 
 **Zeis reported `qe24 run tw1` producing no profile, and the first job was to

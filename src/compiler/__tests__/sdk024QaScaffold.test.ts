@@ -256,8 +256,12 @@ describe("r179 raw harness — the Twotter probe", () => {
            confused. r192 makes `qe24 run` stop promising more than it can prove:
            `Quest.claim()` returns void, so the command now says that a missing
            journal entry means the claim did nothing, and the Twotter aliases
-           point at `qe24 twotter audit` and the log's [quest-editor] lines. */
-        expect(manifest.version).toBe("1.0.17");
+           point at `qe24 twotter audit` and the log's [quest-editor] lines. r193
+           adds that readout for real: the export leaves a SharedVariables marker
+           when it loads, and this harness prints whether it is there, after a
+           tester lost two sessions to a copy of the export the game had
+           silently left disabled (behaviour: sdk024QaHarness.test.ts). */
+        expect(manifest.version).toBe("1.0.18");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");

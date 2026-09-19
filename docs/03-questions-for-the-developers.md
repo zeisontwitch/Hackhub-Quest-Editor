@@ -338,3 +338,57 @@ campaign pack claiming a chapter, a trigger chaining stories — has no way to k
 whether its chain actually started, so a broken dependency fails silently and the
 player just sees nothing happen. With a boolean we can log it; with a state read
 we can also avoid claiming a quest that is already running.
+
+---
+
+## 13. A mod that was disabled in the Mods list stays disabled forever — across a new version, a folder deletion and a fresh save
+
+**What happened** (reported by our tester, 2026-09-19, game 1.3.1). He had
+disabled our QA mod in the Mods list during an earlier round of testing, then
+deleted it from the local mods folder. Later:
+
+1. local mods folder emptied, except one unrelated mod;
+2. a **fresh, clean save** created and loaded;
+3. our two mods copied into the local mods folder (the export at a **newer
+   version** than the one he had disabled);
+4. game started, save loaded, harness command run to start the mod's quest.
+
+The command started nothing, and the mod's own log lines are absent from the
+**whole session** — the pack never loaded. Checking the Mods list explained it:
+the freshly copied mod was **DISABLED**, remembered from the earlier disable.
+
+**Why this is a bug and not a setting.** Three things should each have cleared it
+and none did: the mod was deleted from disk and its folder re-created; the copied
+build was a **different version**; and the save it was loaded into was **new**. So
+the disabled flag appears to be global state keyed to the mod, with no
+reconciliation against what is actually installed — and it fails **silently**:
+nothing in the UI says "this mod is installed but disabled", the log says nothing
+about it, and no API can see it (see §12).
+
+**Why it hurts.** Every quest in that mod is invisible: `Quest.claim(name)` does
+nothing and returns void, so a QA harness or a quest that chains another mod's
+story cannot tell a disabled dependency from a missing one. A player who disables
+a mod to try something else, then re-subscribes or updates it, will find its
+content silently gone with no obvious cause — and "it works for me" is then very
+hard to debug from the modder side.
+
+**What we would like.** Any one of these:
+
+- an **update or version change re-enables** a mod that was disabled (a new
+  version is new content; the old decision was about the old build);
+- an **explicit state in the Mods UI** for "installed but disabled" that is
+  distinguishable from "not installed", plus a log line when a mod is skipped for
+  being disabled;
+- a **first-run default** where a mod whose folder changed (new version, or
+  re-appeared after deletion) starts enabled unless the player disables it again.
+
+**Where the flag lives** we cannot see — it survives a save deletion, so it is
+not in the save, and it survives the mod folder being emptied, so it is not keyed
+to a file we can inspect. If it is meant to persist, all we need is for a new
+version to be treated as new.
+
+**Until then, our side:** the QA harness now asks `SharedVariables` whether the
+export loaded and prints it (`Editor export: loaded (v…)` / `NOT LOADED in this
+session`, with the fix in the message), and the export leaves that marker when it
+loads. The tester-facing note is in
+[`reference/sdk-0.24-qa/STATUS.md`](../reference/sdk-0.24-qa/STATUS.md).

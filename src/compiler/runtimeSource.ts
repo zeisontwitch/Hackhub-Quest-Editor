@@ -3195,6 +3195,43 @@ function __qeRegisterProject(sdk, PROJECT) {
        in which every other installed mod printed a load banner and ours
        printed nothing at all. A mod that announces itself turns "the mail is
        broken" into "the mod never ran", which is a different bug entirely. */
+    /* ── "did this mod load in this session?" (r193) ─────────────────────
+       A cross-mod marker, and the reason it exists: the QA harness has to start
+       quests that live in a DIFFERENT mod (this pack), and the game can leave a
+       mod disabled - it remembers the disabled flag by mod, and it survives both
+       a version change and the mod being removed from disk. Nothing in SDK 0.24
+       lets one mod ask about another: ModInfo is a type with no reader, and
+       Quest.claim() returns void, so a quest that was never registered fails
+       SILENTLY. On 2026-09-19 exactly that cost a tester a session: qe24 run tw1
+       printed "Claimed", nothing appeared, and the log had no line for this pack
+       at all.
+
+       SharedVariables is session-scoped and shared by every mod, so it answers
+       the one question the harness needs: did this pack actually load? Set on
+       load, removed on unload, both guarded - an older game build without the
+       API keeps working, and nothing here is required for the story. */
+    var LOADED_MARKER = "qe.export.loaded";
+
+    function markThisModLoaded() {
+        try {
+            if (sdk.SharedVariables && typeof sdk.SharedVariables.set === "function") {
+                sdk.SharedVariables.set(LOADED_MARKER, PROJECT.mod.version + " (" + __QE_BUILD + ")");
+            }
+        } catch (e) {
+            __QE.log("could not leave the loaded marker (harmless): " + e);
+        }
+    }
+
+    function clearThisModLoaded() {
+        try {
+            if (sdk.SharedVariables && typeof sdk.SharedVariables.remove === "function") {
+                sdk.SharedVariables.remove(LOADED_MARKER);
+            }
+        } catch (e) {
+            /* Nothing to do: the session is ending anyway. */
+        }
+    }
+
     var Mod = class extends sdk.Bootstrap {
         /* The SDK's advice, followed: accounts a mod adds live in the player's
            save and are NOT removed when the mod is uninstalled, so the mod
@@ -3208,10 +3245,12 @@ function __qeRegisterProject(sdk, PROJECT) {
             } catch (e) {
                 __QE.log("unloading: Twotter cleanup failed (continuing): " + e);
             }
+            clearThisModLoaded();
         }
         OnModPackageLoaded() {
             __QE.log(PROJECT.mod.name + " v" + PROJECT.mod.version +
                 " loaded (editor build " + __QE_BUILD + ").");
+            markThisModLoaded();
 
             /* Nothing else happens here, and nothing is returned.
 

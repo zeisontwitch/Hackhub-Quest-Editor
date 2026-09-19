@@ -73,6 +73,7 @@ function twotterSdk(calls: string[], opts: { now?: number; seed?: StubUser[]; ap
     const tweets = new Map<string, Record<string, unknown>>();
     for (const u of opts.seed ?? []) users.set(u.id, u);
     const registered = { quests: [] as unknown[], mods: [] as unknown[] };
+    const shared = new Map<string, unknown>();
 
     class Quest {
         Data: Record<string, unknown> = {};
@@ -134,6 +135,7 @@ function twotterSdk(calls: string[], opts: { now?: number; seed?: StubUser[]; ap
         __users: Map<string, StubUser>;
         __tweets: Map<string, Record<string, unknown>>;
         __registered: { quests: unknown[]; mods: unknown[] };
+        __shared: Map<string, unknown>;
     } = {
         Quest,
         Website: class {},
@@ -170,9 +172,20 @@ function twotterSdk(calls: string[], opts: { now?: number; seed?: StubUser[]; ap
             list: () => [],
             remaining: () => null,
         },
+        /* The cross-mod marker (r193): the export announces itself here so the
+           QA harness can tell whether it loaded at all. Session-scoped and
+           shared between mods, which is exactly what a "did you load" check
+           needs — nothing in SDK 0.24 lets one mod ask about another. */
+        SharedVariables: {
+            get: (key: string) => shared.get(key),
+            set: (key: string, value: unknown) => shared.set(key, value),
+            remove: (key: string) => shared.delete(key),
+            getAll: () => Object.fromEntries(shared),
+        },
         __users: users,
         __tweets: tweets,
         __registered: registered,
+        __shared: shared,
     };
     /* `api: false` is a game build whose Twotter API is missing — the mod has to
        keep running anyway (fail open). */
@@ -206,7 +219,7 @@ function boot(project: ProjectDocument, sdk: TwotterStub) {
     return {
         modJs,
         quest: (i = 0) => new classes.quests[i]!(),
-        mod: () => new classes.mods[0]!(),
+        mod: () => new classes.mods[0]!() as { OnModPackageLoaded: () => void; OnModPackageUnloaded: () => void },
     };
 }
 
@@ -583,5 +596,37 @@ describe("comms.tweet (Twotter) — the fences", () => {
         expect(() => quest().OnStart()).not.toThrow();
         expect(calls.filter((c) => c.startsWith("createUser:"))).toHaveLength(0);
         expect(sdk.__users.size).toBe(0);
+    });
+
+    /**
+     * r193 — the export announces itself, and withdraws the announcement.
+     *
+     * This is what makes the QA harness able to say "the editor export is not
+     * loaded in this session" instead of printing "Claimed" at a tester whose
+     * copy of the mod had been left disabled by the game (2026-09-19; the flag
+     * survives a version change, a folder delete and a fresh save). Without a
+     * marker there is nothing to read: SDK 0.24 has no mod list and
+     * `Quest.claim()` returns void.
+     */
+    it("leaves a loaded marker for other mods, and takes it back on unload", () => {
+        const calls: string[] = [];
+        const sdk = twotterSdk(calls);
+        const { mod } = boot(tweetProject(), sdk);
+        // Nothing before load: an absent key is what "not loaded" looks like.
+        expect(sdk.__shared.get("qe.export.loaded")).toBeUndefined();
+        mod().OnModPackageLoaded();
+        // version + build stamp, so a tester's readout says which build answered
+        expect(String(sdk.__shared.get("qe.export.loaded"))).toMatch(/^1\.0\.0 \(\d{4}-\d{2}-\d{2}\.r\d+\)$/);
+        mod().OnModPackageUnloaded();
+        expect(sdk.__shared.get("qe.export.loaded")).toBeUndefined();
+    });
+
+    it("still loads when the game build has no SharedVariables at all", () => {
+        const calls: string[] = [];
+        const sdk = twotterSdk(calls);
+        delete (sdk as unknown as Record<string, unknown>).SharedVariables;
+        const { mod } = boot(tweetProject(), sdk);
+        expect(() => mod().OnModPackageLoaded()).not.toThrow();
+        expect(() => mod().OnModPackageUnloaded()).not.toThrow();
     });
 });

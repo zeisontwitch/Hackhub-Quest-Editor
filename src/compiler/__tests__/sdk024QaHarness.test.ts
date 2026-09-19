@@ -25,6 +25,13 @@ interface HarnessRun {
     claimed: string[];
     /** Every extras registration/unregistration, in the order the harness made it. */
     calls: string[];
+    /** Run another `qe24` command against the same harness instance. */
+    run: (args: string[]) => string[];
+    /** Click a menu item the way the game would (r205's probe). */
+    click: (id: string) => void;
+    /** Play the engine: fire a job the harness scheduled. */
+    fireJob: (kind: string) => void;
+    scheduledKinds: string[];
 }
 
 /** Boot the harness mod against a stub SDK and run one `qe24` command. */
@@ -45,6 +52,8 @@ function runHarness(
     const widgets = new Map<string, { id: string }>();
     const ctx = new Map<string, { id: string; label?: string; target?: string }>();
     const bundles = new Map<string, Record<string, string>>();
+    const jobs = new Map<string, (payload: unknown) => void>();
+    const scheduled: string[] = [];
 
     type CommandInstance = { Run: (tools: unknown) => Promise<void> };
     const holder: { cls?: new () => CommandInstance } = {};
@@ -62,7 +71,7 @@ function runHarness(
         /* Enough Twotter for `qe24 twotter audit` to reach its own printing. */
         Twotter: { createUser: () => ({}), getUserByUsername: () => null },
         Menu: {
-            addItem: (item: { id: string; label?: string; section?: string }) => {
+            addItem: (item: { id: string; label?: string; section?: string; onClick?: () => void }) => {
                 menus.set(item.id, item);
                 calls.push(`menu.addItem:${item.id}:${item.label ?? ""}:${item.section ?? ""}`);
             },
@@ -125,6 +134,24 @@ function runHarness(
             notify: (m: string) => calls.push(`ui.notify:${m}`),
             toast: (m: string, tone?: string) => calls.push(`ui.toast:${m}:${tone ?? ""}`),
         },
+        /* r205: the click-context probe schedules a job and expects the engine
+           to call it back — so the stub has to be able to play engine. */
+        Scheduler: {
+            register: (kind: string, handler: (payload: unknown) => void) => {
+                jobs.set(kind, handler);
+            },
+            unregister: () => {},
+            schedule: (kind: string, _payload?: unknown, _delay?: unknown, id?: string) => {
+                scheduled.push(kind);
+                return id ?? "job";
+            },
+            scheduleAt: () => "job",
+            cancel: () => {},
+            cancelKind: () => {},
+            list: () => [],
+            remaining: () => null,
+        },
+        Mail: { send: () => calls.push("mail.send") },
         RegisterCommand: () => (cls: unknown) => {
             holder.cls = cls as new () => CommandInstance;
         },
@@ -162,9 +189,39 @@ function runHarness(
         printError: (line: string) => lines.push(`ERROR: ${line}`),
         print: (line: string) => lines.push(line),
     };
-    const instance = new CommandClass();
-    void instance.Run(tools);
-    return { lines, claimed, calls };
+    /** Run one `qe24` command and hand back just its output. */
+    const runOnce = (runArgs: string[]) => {
+        const out: string[] = [];
+        void new CommandClass().Run({
+            getArgs: () => runArgs,
+            println: (line: string) => out.push(line),
+            printError: (line: string) => out.push(`ERROR: ${line}`),
+            print: (line: string) => out.push(line),
+        });
+        return out;
+    };
+    void new CommandClass().Run(tools);
+
+    return {
+        lines,
+        claimed,
+        calls,
+        /** Run another command against the same harness instance. */
+        run: runOnce,
+        /** Click a menu item the way the game would. */
+        click: (id: string) => {
+            const item = menus.get(id);
+            if (!item) throw new Error(`no such menu item: ${id}`);
+            (item as { onClick?: () => void }).onClick?.();
+        },
+        /** Play the engine: fire the job the probe scheduled. */
+        fireJob: (kind: string) => {
+            const handler = jobs.get(kind);
+            if (!handler) throw new Error(`no job kind registered: ${kind}`);
+            handler({});
+        },
+        scheduledKinds: scheduled,
+    };
 }
 
 describe("the harness's export check", () => {
@@ -286,6 +343,43 @@ describe("the harness's pack-extras probe", () => {
         const toastRun = runHarness(["extras", "say", "toast"]);
         expect(toastRun.calls).toEqual(["ui.toast:QE24 toast marker:info"]);
         expect(toastRun.lines.join("\n")).toContain('UI.toast("QE24 toast marker") was called.');
+    });
+
+    it("runs the click-context probe: every channel is attempted, and each outcome is recorded", () => {
+        const harness = runHarness(["clickprobe", "on"]);
+        expect(harness.lines.join("\n")).toContain("Click probe registered: yes");
+        expect(harness.calls.some((c) => c.startsWith("menu.addItem:qe24-clickprobe-menu"))).toBe(true);
+
+        /* Nothing recorded until it is clicked — the report has to say so rather
+           than look like a run that found nothing. */
+        const before = harness.run(["clickprobe", "report"]).join("\n");
+        expect(before).toContain("Nothing recorded. Either the item was never clicked");
+
+        /* Click it the way the game would, then read the report back. */
+        harness.click("qe24-clickprobe-menu");
+        const report = harness.run(["clickprobe", "report"]).join("\n");
+        for (const channel of [
+            "SharedVariables.set (no permission)",
+            "UI.notify (ui permission)",
+            "UI.toast (ui permission)",
+            "Mail.send (mail permission)",
+            "Quest.claim (the claim action)",
+            "Scheduler.schedule (defer to the engine)",
+        ]) {
+            expect(report, channel).toContain(channel);
+        }
+        /* The direct attempts reach the APIs (the stub cannot reproduce the
+           game's refusal — that is what the run is for), and the deferred half
+           is still pending, which is what the tester reads first. */
+        expect(harness.scheduledKinds).toContain("qe24-clickprobe");
+        expect(report).toContain("deferred job fired: NOT YET");
+
+        /* Play the engine, one second later. */
+        harness.fireJob("qe24-clickprobe");
+        const after = harness.run(["clickprobe", "report"]).join("\n");
+        expect(after).toContain("deferred job fired: yes");
+        expect(after).toContain("DEFERRED UI.toast (from a scheduler job) - WORKED");
+        expect(after).toContain("DEFERRED UI.notify (from a scheduler job) - WORKED");
     });
 
     it("explains `extras say` when it is given neither word, instead of calling anything", () => {

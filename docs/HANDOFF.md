@@ -1,3 +1,57 @@
+# Handoff — r205
+
+**The second run found the real bug, and it is bigger than the extras.** Zeis
+pasted the log, and it answers everything:
+
+```
+[quest-editor] extras: menu item "qe24-menu-extras" clicked (language en)
+[quest-editor] extras: UI.toast threw: [ContentSDK] Mod "null" tried to use UI.toast without "ui" permission. Add "ui" to the permissions array in your manifest.json.
+[quest-editor] extras: UI.notify threw: [ContentSDK] Mod "null" tried to use UI.notify without "ui" permission. ...
+```
+
+The click **does** reach the pack. The call is refused because the permission
+check cannot tell *which mod* is calling from a menu/context-menu handler — it
+reads the mod as `null`. It is not a missing permission: that export's manifest
+lists `ui`, and in the *same session* its quest-context `UI.notify` drew a popup
+(row F, in German) while its click-context one was refused. The harness, which
+shows both popups from a command, also lists `ui`.
+
+Also settled: **`UI.notify` works.** Row A produced *System Notification - qe24
+notify marker* and *Info - QE24 toast marker* — so the editor's default Notify
+variant is fine, and the earlier "notify may be silent" worry is dead. (The
+toast-first ordering in the runtime stays: it costs nothing and the log names the
+API either way.)
+
+**Written up as Q14** in `docs/03-questions-for-the-developers.md`, with the exact
+lines, the same-session counter-example, and three asks (resolve the caller's mod
+from the item's registration; or give a documented way to run a gated call from a
+handler; or at least say "the click handler has no mod context" instead of "add ui
+to your manifest", which sends the reader to a file that is already correct). The
+runtime now logs that explanation itself when it sees this refusal.
+
+**Row F is green** — German popup, German quest title, the registration-time text
+working as designed. **Row E was impossible as written** (languages can only be
+switched from the main menu, which unloads the mod), so it is now row **G**:
+switch, reload, look at the labels.
+
+**Two rows are open, neither needing a fresh save** (export **1.0.30**, harness
+**1.0.23**):
+
+- **G** — German session, look at the start-menu and both right-click labels.
+- **H** — `qe24 clickprobe on`, click `QE24: click probe`, wait three seconds,
+  `qe24 clickprobe report`. It tries every channel from one click
+  (`SharedVariables`, `UI.notify`, `UI.toast`, `Mail.send`, `Quest.claim`) and then
+  a **deferred `Scheduler` job** that makes the same two UI calls. If the deferred
+  lines say WORKED, the editor's fix is to route all four click actions through
+  the engine; if they are refused too, the four click actions cannot be honoured
+  on this build and the editor has to say so where the author picks one.
+
+Do not re-run A…F, and still do not run `qe24 extras off`.
+
+Versions: `EDITOR_BUILD` **r205**, export **1.0.30**, harness **1.0.23**.
+
+---
+
 # Handoff — r204
 
 **The first pack-extras run came back two green and three findings — and the

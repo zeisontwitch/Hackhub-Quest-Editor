@@ -983,6 +983,8 @@ function printGuide(tools) {
     tools.println("Timer rows: checklist in reference/sdk-0.24-qa/TIMER-ROWS.md, results in STATUS.md.");
     tools.println("Most rows are read from qe24 timers instead of waited for.");
     tools.println("");
+    tools.println("Click context probe (r205): qe24 clickprobe on / report / off - which channels does");
+    tools.println("  a start-menu click still have, now that UI calls from one are refused?");
     tools.println("Pack extras probe (r199): qe24 extras on / off / lang - does this build show start-menu");
     tools.println("  items, desktop widgets and right-click entries, and does Localization.t translate? Rows T-16..T-19.");
     tools.println("Safety: if a browser/curl request seems stuck after an intercept test, open another terminal and run qe24 intercept off.");
@@ -1646,6 +1648,152 @@ function extrasSay(tools, which) {
     tools.println("  a call that draws nothing is a finding, not a dead end.");
 }
 
+/* ── the click-context probe (r205) ────────────────────────────────────────
+
+   The r204 run answered the question it was built for, and the answer was not
+   the one either hypothesis expected:
+
+     [quest-editor] extras: menu item "qe24-menu-extras" clicked (language en)
+     [quest-editor] extras: UI.toast threw: [ContentSDK] Mod "null" tried to use
+       UI.toast without "ui" permission. ...
+
+   The click DOES reach a pack. What it does not reach is the permission check's
+   idea of WHICH MOD IS CALLING: from a quest or a command there is a current mod,
+   from a click handler the SDK reads it as "null" and refuses every gated call.
+   The same export, in the same session, showed a UI.notify from a quest context
+   (row F) without complaint - so the manifest is not the problem; the context is.
+
+   What a pack can still do from a click is the part that decides whether the
+   editor's four click actions are usable at all, so this probe tries every
+   channel once and records what each one said. */
+
+var CLICKPROBE_KIND = "qe24-clickprobe";
+var CLICKPROBE_JOB = "qe24-clickprobe-job";
+var CLICKPROBE_MENU_ID = "qe24-clickprobe-menu";
+var clickProbeLog = [];
+var clickProbeJobFired = false;
+
+function clickProbeRecord(line) {
+    clickProbeLog.push(line);
+    log("clickprobe: " + line);
+}
+
+function clickProbeAttempt(label, fn) {
+    try {
+        fn();
+        clickProbeRecord(label + " - WORKED");
+        return true;
+    } catch (e) {
+        clickProbeRecord(label + " - refused: " + ((e && e.message) ? e.message : e));
+        return false;
+    }
+}
+
+function clickProbeHandler() {
+    clickProbeLog = [];
+    clickProbeRecord("click arrived");
+    /* 1. No permission at all: if even this failed, the click would have no
+          access to its own mod's state, which would be a different bug. */
+    clickProbeAttempt("SharedVariables.set (no permission)", function () {
+        sdk.SharedVariables.set("qe.clickprobe.touch", "yes");
+    });
+    /* 2/3. The two UI calls the editor's message action needs. */
+    clickProbeAttempt("UI.notify (ui permission)", function () { sdk.UI.notify("QE24 clickprobe: direct notify"); });
+    clickProbeAttempt("UI.toast (ui permission)", function () { sdk.UI.toast("QE24 clickprobe: direct toast", "info"); });
+    /* 4. Mail, which the editor's mail action needs. */
+    clickProbeAttempt("Mail.send (mail permission)", function () {
+        sdk.Mail.send({ subject: "QE24 clickprobe mail", content: "If this arrived, mail works from a click." });
+    });
+    /* 5. Starting a quest, the editor's claim action. */
+    clickProbeAttempt("Quest.claim (the claim action)", function () { sdk.Quest.claim("QE24SurfaceProbe"); });
+    /* 6. The candidate workaround: hand the work to the engine, which calls the
+          job back with a mod that the permission check can name. */
+    clickProbeAttempt("Scheduler.schedule (defer to the engine)", function () {
+        sdk.Scheduler.schedule(CLICKPROBE_KIND, {}, { ms: 1 }, CLICKPROBE_JOB);
+    });
+}
+
+function clickProbeJob() {
+    clickProbeJobFired = true;
+    clickProbeAttempt("DEFERRED UI.toast (from a scheduler job)", function () {
+        sdk.UI.toast("QE24 clickprobe: the DEFERRED toast works", "info");
+    });
+    clickProbeAttempt("DEFERRED UI.notify (from a scheduler job)", function () {
+        sdk.UI.notify("QE24 clickprobe: the DEFERRED notify works");
+    });
+}
+
+function clickProbeRegister() {
+    safe("Scheduler.register", function () {
+        if (sdk.Scheduler && sdk.Scheduler.register) sdk.Scheduler.register(CLICKPROBE_KIND, clickProbeJob);
+    });
+}
+
+function clickProbe(tools, verb) {
+    if (verb === "on") {
+        clickProbeLog = [];
+        clickProbeJobFired = false;
+        /* Register the job kind here as well as at load: the probe has to work
+           in a session where it was turned on later, and `register` on the same
+           kind twice is a no-op by the SDK's own description. */
+        clickProbeRegister();
+        safe("clickprobe Menu.addItem", function () {
+            if (sdk.Menu && sdk.Menu.removeItem) sdk.Menu.removeItem(CLICKPROBE_MENU_ID);
+        });
+        var ok = false;
+        safe("clickprobe Menu.addItem", function () {
+            sdk.Menu.addItem({
+                id: CLICKPROBE_MENU_ID,
+                label: "QE24: click probe",
+                onClick: clickProbeHandler,
+            });
+            ok = true;
+        });
+        tools.println("Click probe registered: " + (ok ? "yes" : "NO - Menu.addItem is missing"));
+        tools.println("Now, IN THIS ORDER:");
+        tools.println("  1. open the start menu and click \"QE24: click probe\"");
+        tools.println("  2. wait two seconds (the deferred attempt fires about a second later)");
+        tools.println("  3. come back here and run: qe24 clickprobe report");
+        tools.println("Look at the screen too, and say what appeared: the direct attempt should");
+        tools.println("be refused (that is the r204 finding), and the deferred one is the question.");
+        return;
+    }
+    if (verb === "report") {
+        tools.println("QE24 click probe - what happened when the item was clicked:");
+        if (clickProbeLog.length === 0) {
+            tools.println("  Nothing recorded. Either the item was never clicked, or it was clicked");
+            tools.println("  in a session where the menu item was not registered. Run `qe24 clickprobe on`");
+            tools.println("  first, click it, then run this again.");
+            return;
+        }
+        for (var i = 0; i < clickProbeLog.length; i++) tools.println("  " + clickProbeLog[i]);
+        tools.println("  deferred job fired: " + (clickProbeJobFired ? "yes" : "NOT YET (wait a second and report again)"));
+        tools.println("");
+        tools.println("How to read it: every line that says WORKED is a channel the editor's own");
+        tools.println("menu items can use. The REFUSED lines name the mod as \"null\" - that is the");
+        tools.println("permission check not being able to tell which mod clicked, not a missing");
+        tools.println("permission (this mod's manifest lists ui and mail). If the DEFERRED lines");
+        tools.println("worked, the editor can route a click through the engine and keep all four of");
+        tools.println("its click actions.");
+        return;
+    }
+    if (verb === "off") {
+        safe("clickprobe Menu.removeItem", function () {
+            if (sdk.Menu && sdk.Menu.removeItem) sdk.Menu.removeItem(CLICKPROBE_MENU_ID);
+        });
+        tools.println("Click probe removed.");
+        return;
+    }
+    tools.println("qe24 clickprobe on      register \"QE24: click probe\" in the start menu (r205)");
+    tools.println("qe24 clickprobe report  what each channel said when it was clicked");
+    tools.println("qe24 clickprobe off     take the item away again");
+    tools.println("");
+    tools.println("Why: r204's run showed a menu click reaching the pack and then being refused -");
+    tools.println("  [ContentSDK] Mod \"null\" tried to use UI.toast without \"ui\" permission.");
+    tools.println("This probe finds which channels a click CAN use, and whether handing the work");
+    tools.println("to the engine (a scheduler job) gets the mod's identity back.");
+}
+
 function extrasProbe(tools, verb) {
     if (verb === "on") { extrasOn(tools); return; }
     if (verb === "off") { extrasOff(tools); return; }
@@ -1717,6 +1865,12 @@ class QE24Command extends sdk.Command {
         }
         if (sub === "run") {
             runQaQuest(tools, args[1]);
+            return;
+        }
+        if (sub === "clickprobe") {
+            /* `qe24 clickprobe on` - the verb is the FIRST argument after the
+               subcommand, unlike `qe24 extras say toast` where it is the second. */
+            clickProbe(tools, tools.getArgs()[1]);
             return;
         }
         if (sub === "extras") {
@@ -1868,6 +2022,7 @@ class QE24Bootstrap extends sdk.Bootstrap {
         registerSessionHook();
         registerScheduler();
         registerHttp();
+        clickProbeRegister();
     }
     OnModPackageUnloaded() {
         log("mod unloading");

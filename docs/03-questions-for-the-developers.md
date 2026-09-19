@@ -412,3 +412,86 @@ export loaded and prints it (`Editor export: loaded (v…)` / `NOT LOADED in thi
 session`, with the fix in the message), and the export leaves that marker when it
 loads. The tester-facing note is in
 [`reference/sdk-0.24-qa/STATUS.md`](../reference/sdk-0.24-qa/STATUS.md).
+
+## 14. `UI.*` calls made from a menu or right-click handler are refused: the permission check reads the mod as `null`
+
+**Found in game** 2026-09-19, on 1.3.1 / Content SDK 0.24, while testing a pack's
+own start-menu item (editor build r204, export 1.0.29).
+
+A mod registers a start-menu item with `Menu.addItem({ id, label, onClick })`, and
+the handler calls `UI.toast(...)`. Clicking it does nothing visible, and the game
+log has, in order:
+
+```
+[quest-editor] extras: menu item "qe24-menu-extras" clicked (language en)
+[quest-editor] extras: UI.toast threw: [ContentSDK] Mod "null" tried to use UI.toast without "ui" permission. Add "ui" to the permissions array in your manifest.json.
+[quest-editor] extras: UI.notify threw: [ContentSDK] Mod "null" tried to use UI.notify without "ui" permission. Add "ui" to the permissions array in your manifest.json.
+```
+
+The same is true for a right-click item registered with `ContextMenu.register`
+(both `file` and `desktop` targets):
+
+```
+[quest-editor] extras: right-click item "qe24-ctx-file" clicked (language en)
+[quest-editor] extras: UI.toast threw: [ContentSDK] Mod "null" tried to use UI.toast without "ui" permission. ...
+```
+
+**It is not only permissions: the translation table is invisible from a click
+too.** The same click handler said its message through our runtime's `{{tr.…}}`
+token, and the log records the text it was about to show:
+
+```
+[quest-editor] extras: said "qe24.menu.message" via nothing - this build has no UI API
+```
+
+`qe24.menu.message` is the *key*, which is our fallback when
+`Localization.t(key)` returns nothing — and the key is registered in both `en` and
+`de` for that export, in the session whose language is `en` (the same log line says
+`clicked (language en)`). At registration the identical table resolves fine: row G
+below shows the menu label and the quest title translated in German. So a click
+handler also cannot see the mod's own localizations, which is the same shape of
+problem as the permission check: **the mod's own registrations are not reachable
+from the handler**.
+
+**Why we do not think this is a missing permission.** In the *same session of the
+same install*, that export's quest code showed a notification through
+`UI.notify` and it appeared; the harness mod (`qe24` commands) shows both
+`UI.notify` and `UI.toast` popups from a command with no complaint. Its
+`manifest.json` lists `"ui"` — and so does the export's
+(`permissions: ["network", "mail", "events", "ui"]`). The refusal names the mod as
+**`null`**, which reads like the permission check being unable to resolve *which
+mod is calling*, rather than a permission that is absent.
+
+**What we think is happening.** `Menu.addItem`/`ContextMenu.register` handlers are
+invoked by the game's own UI code, outside the mod's load/quest/command
+execution context. If the permission check resolves the caller from that context,
+there is none by the time our handler runs — so every permission-gated call
+(`ui`, and presumably `mail`, `network`, …) is refused from every click handler in
+every mod.
+
+**Why it hurts.** A start-menu or right-click entry is the one place a pack acts
+*because the player asked it to*, and the natural action — say something, send a
+mail, open a page — is gated. If this cannot be fixed at the call site, a pack's
+only options are non-permission channels, or routing the work through something
+the engine calls back later.
+
+**What we would like.** Any one of these:
+
+- the **caller's mod is resolved from the registration** of the menu item (the
+  item knows which mod registered it), so a handler inherits that mod's
+  permissions;
+- or a documented way to make a permission-gated call from a click handler — e.g.
+  an explicit `runAs(mod)`-style wrapper, or a note that the handler is called
+  with the mod's identity if it is declared as an arrow in the registering mod;
+- or, at minimum, a message that says **"the click handler has no mod context"**
+  instead of "add `ui` to your manifest.json", which sends the reader to a file
+  that is already correct.
+
+**Our side, until then.** The editor's runtime logs the click before doing
+anything, names the API it tried, and prints an explanation when it sees this
+refusal (that the manifest is not the problem and quest notifications are
+unaffected). A QA harness probe (`qe24 clickprobe on|report|off`) tries every
+channel from one click — `SharedVariables` (ungated), `UI.notify`, `UI.toast`,
+`Mail.send`, `Quest.claim` — and then whether handing the work to a
+`Scheduler.schedule` job gets the mod's identity back, so we know whether the
+editor's four click actions can be made to work by deferring.

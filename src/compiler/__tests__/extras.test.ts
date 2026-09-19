@@ -433,6 +433,37 @@ const click = (b: ReturnType<typeof boot>, which: "menu" | "context", id: string
         expect(b.calls.some((c) => c.startsWith("toast:"))).toBe(false);
     });
 
+    it("recognises the game's click-context refusal and says it is not a manifest problem", () => {
+        /* Measured in game 2026-09-19 (r204): the same export, in the same
+           session, shows a quest-context notification without complaint and gets
+           this for one made from a menu click. The message names the mod as
+           "null", so it is the permission check losing track of WHICH mod is
+           calling — an author reading "add ui to your manifest.json" would go and
+           add a permission that is already there. */
+        const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+        try {
+            const b = boot(extrasProject());
+            const refusal = () => {
+                throw new Error(
+                    '[ContentSDK] Mod "null" tried to use UI.toast without "ui" permission. Add "ui" to the permissions array in your manifest.json.',
+                );
+            };
+            /* In game BOTH are refused; the hint only has the floor when the
+               fallback has also failed, since a working notify must not print an
+               explanation about a refusal that did not matter. */
+            const ui = (b.sdk as { UI: Record<string, unknown> }).UI;
+            ui.toast = refusal;
+            ui.notify = refusal;
+            click_(b.menu, "hello");
+            const lines = spy.mock.calls.map((c) => String(c[0])).join("\n");
+            expect(lines).toContain("the game refused a message from a MENU CLICK");
+            expect(lines).toContain("not a missing permission in your manifest");
+            expect(lines).toContain("Q14");
+        } finally {
+            spy.mockRestore();
+        }
+    });
+
     it("logs what it registered and in which language", () => {
         const spy = vi.spyOn(console, "log").mockImplementation(() => {});
         try {

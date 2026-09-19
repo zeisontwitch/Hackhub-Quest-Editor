@@ -115,19 +115,60 @@ kept does not update by itself. That is what its `onLanguageChange` hook is for,
 and this build now uses it: change the language and the labels are handed over
 again, in the new words, without a reload.
 
-### Pack extras, second run — install and order
+### What the second run found (2026-09-19) — the click arrives, and is then refused
 
-Install **export 1.0.29** and **harness 1.0.22** (both folders, whole). Then, in
-this order:
+**A — both UI calls draw.** `qe24 extras say notify` produced *System
+Notification - qe24 notify marker*; `say toast` produced *Info - QE24 toast
+marker*. So **`UI.notify` works**, and the earlier suspicion that the editor's
+default Notify variant might be silent is dead. The two popups look the same
+apart from their heading.
+
+**B/C — the click reaches the pack, and the call is refused.** The log, quoted by
+the tester:
+
+```
+[quest-editor] extras: menu item "qe24-menu-extras" clicked (language en)
+[quest-editor] extras: UI.toast threw: [ContentSDK] Mod "null" tried to use UI.toast without "ui" permission. Add "ui" to the permissions array in your manifest.json.
+[quest-editor] extras: UI.notify threw: [ContentSDK] Mod "null" tried to use UI.notify without "ui" permission. ...
+[quest-editor] extras: said "qe24.menu.message" via nothing - this build has no UI API
+```
+
+...and the same three lines for each right-click item. **The manifest is not the
+problem**: this export lists `"ui"` in its permissions, and in the *same session*
+its quest code showed a `UI.notify` without complaint (row F). The refusal names
+the mod as **`null`**, so the permission check cannot tell *which mod* is calling
+from a menu/context-menu handler. Written up as **Q14** in
+`docs/03-questions-for-the-developers.md`; the editor now prints that explanation
+in the log when it sees the refusal, because "add `ui` to your manifest.json"
+sends the reader to a file that is already correct.
+
+**The unfilled token is the same bug, not a second one.** The message line reads
+`said "qe24.menu.message"` — the *key*, not the sentence. Our runtime shows the key
+when the game's `Localization.t(key)` gives back nothing, and that key is
+registered in both `en` and `de` while the log on the same line says
+`(language en)`. Registration-time lookups work (row F, and row G's labels), so a
+click handler cannot see the mod's own translations either — same shape as the
+refused permissions. Row H reports this too.
+
+**F — green.** With the game in German and the save reloaded, `qe24 run extras`
+gave a German notification and a German quest title. The one field read at
+registration is translated correctly.
+
+**E — not possible as written.** A language can only be switched from the main
+menu, which unloads the save and the mod with it. The live re-registration code
+stays (it is what the SDK documents, and it costs nothing), but the row has to be
+run the way the game actually works: **switch, then reload, then look** — row G.
+
+### Third run — install and order
+
+Install **export 1.0.30** and **harness 1.0.23** (both folders, whole). Rows A…F
+are answered — **do not re-run them**. Only two rows are open, and neither needs a
+fresh save:
 
 | # | What to do | What to write down |
 |---|---|---|
-| A | Run `qe24 extras say notify` and **look at the screen**. Then run `qe24 extras say toast` and look again. | Which of the two drew something: `QE24 notify marker`, `QE24 toast marker`, both, or neither. This decides what every notification this editor emits should use. |
-| B | Open the start menu and **click** the `QE24: extras check` entry. | Whether a toast appears, and its exact words. (It should read `The pack's own menu entry works (T-23).`) |
-| C | Right-click a file and click `QE24: inspect this file`; then right-click the desktop and click `QE24: desktop action`. | Whether a toast appears for each. These were never clicked in the first run — only looked at. |
-| D | **Now** open the log file (`%APPDATA%/Roaming/hackhub/log`, search `[quest-editor] extras:`) and paste the lines. | The log is the whole point of this round: it shows whether the click reached the pack at all, and which API was asked to draw. |
-| E | Switch the game's language to **German** and look at the start menu and the two right-click menus again — **without reloading the save**. | Do the labels change to `QE24: Extras-Prüfung`, `QE24: diese Datei prüfen`, `QE24: Desktop-Aktion`? (This is the new language hook at work.) |
-| F | Set the language to German, then **load the save**, then `qe24 run extras`. Read the journal title. | `QE24 Extras-Prüfung` rather than `QE24 extras QA` — the title is read when the quest is registered, so it needs the language set *before* the load. |
+| G | Set the game's language to **German**, then load the save and look at the start menu and the two right-click menus. | The labels are `QE24: Extras-Prüfung`, `QE24: diese Datei prüfen`, `QE24: Desktop-Aktion`. A label showing `{{tr.…}}` itself would mean the translation table never arrived. |
+| H | Run `qe24 clickprobe on`, click **`QE24: click probe`** in the start menu, wait three seconds, then run `qe24 clickprobe report` and paste what it prints. Watch the screen the whole time. | Which channels a click still has. The direct attempts should be refused (that is the Q14 finding); the two lines starting **DEFERRED** are the question — if they worked, a toast appears a second after your click *after* the refusal lines, and the editor can route all four click actions through the engine. |
 
 Two things still not to test, because the pack cannot do them:
 
@@ -144,6 +185,7 @@ Two things still not to test, because the pack cannot do them:
 
 | Export | Editor build | Result |
 |---|---|---|
+| 1.0.30 | 2026-09-19.r205 | **The refusal is explained, not guessed at.** When the game refuses a message from a click, the runtime now logs that the manifest is not the problem (the message the game prints sends authors to a file that is already correct) and points at Q14. Nothing else changed in the compiled content. |
 | 1.0.29 | 2026-09-19.r204 | **The click is now visible in the log, and the labels follow a language change.** Every extras click writes a line before it does anything, and the line after it names the API that showed the message — because the r203 run could not tell a dead click from a message API that draws nothing. Messages now go out through `UI.toast` first (the one every notification QA has ever seen) with `UI.notify` as the fallback. `Localization.onLanguageChange` re-registers the menu and right-click labels when the player switches language, so the words follow without a reload; a widget's own file cannot, and is left alone. |
 | 1.0.28 | 2026-09-19.r203 | **The pack extras, from the editor.** One start-menu entry, one opaque desktop widget (`widgets/qe24-extras-widget.html`), two right-click entries, and a translation table with English + German — plus a new quest, `QESdk024ExtrasQa` (alias `extras`), whose **Title is `{{tr.qe24.quest.title}}`**: it is the row for the one field the game reads at registration. Nothing auto-starts; the extras surfaces are there from load. |
 | 1.0.27 | 2026-09-18.r202 | **Stamp only** — the round closed the pack-extras probe (all four APIs green) and starts Stage B. The compiled quests are unchanged. |

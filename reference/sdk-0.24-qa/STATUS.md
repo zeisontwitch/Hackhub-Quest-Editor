@@ -1,30 +1,29 @@
 # QE24 QA status (2026-09-19)
 
-**OPEN: the pack-extras rows, second run — A…F** (Stage B of the cheap wins).
-Run against the **editor export 1.0.29** and **harness 1.0.22**, both folders
-whole. Rows A…F and what to write down are in `editor-export/README.md` (the
-"Pack extras" section).
+**OPEN: two rows — G (labels in German) and H (the click-context probe).** Rows
+A…F are answered. Install **export 1.0.30** + **harness 1.0.23**, both folders
+whole; the rows are in `editor-export/README.md` ("Third run").
 
-First run (2026-09-19, export 1.0.28) — **two green, three that shaped this
-round**: the desktop widget drew with its own background (T-24 ✓), and both
-right-click entries appeared on a file and on the desktop (T-25a/b ✓). The
-start-menu entry **was** there but clicking it did nothing visible, the labels did
-not translate after a language switch, and the widget stayed English (by design —
-its file cannot be translated).
+**The r204 run, in full:**
 
-What that produced:
+| Row | Verdict |
+| --- | --- |
+| A — `qe24 extras say notify` / `say toast` | **Both draw.** *System Notification - qe24 notify marker* and *Info - QE24 toast marker*. So `UI.notify` works, and the editor's default Notify variant is not silent. |
+| B — click the start-menu entry | **Nothing appeared** — and the log says why (see below). The entry is there and the click reaches the pack. |
+| C — click both right-click entries | Same: the click lands, the message is refused. |
+| D — the log | The decisive evidence: `[quest-editor] extras: menu item "…" clicked (language en)` → `[ContentSDK] Mod "null" tried to use UI.toast without "ui" permission. Add "ui" to the permissions array in your manifest.json.` |
+| E — switch language live | **Not possible as written.** Languages can only be changed from the main menu, which unloads the mod. Rewritten as row **G** (switch, reload, look). |
+| F — German, load, `qe24 run extras` | **Green.** A German notification and a German quest title: the one text read at registration is translated correctly. |
 
-- **A click now writes a line to the log before doing anything**, and a second
-  line naming the API that showed the message. A dead click and a message API
-  that draws nothing look identical on screen and need opposite fixes, so the log
-  has to tell them apart.
-- **`UI.notify` has never been seen working in this project** — every
-  notification QA has observed came from a toast, including the r181 storm. It is
-  what the editor's own *Notify* node uses by default. Rows **A** (two looks,
-  one per API) and **D** (the log) settle it.
-- **Labels are handed over again on a language change**, via the SDK's
-  `Localization.onLanguageChange`, so rows **E**/**F** no longer depend on a
-  reload; a widget's file still cannot follow (documented, not a bug to chase).
+**The finding: a mod's click handlers have no mod identity, so every
+permission-gated call from one is refused.** The refusal names the mod as `null`,
+and in the *same session* that export's quest-context `UI.notify` worked while its
+click-context `UI.notify` was refused — so this is not a missing permission
+(the manifest lists `ui`; so does the harness's, which shows both popups from a
+command). Written up as **Q14** in `docs/03-questions-for-the-developers.md`.
+Row **H** (`qe24 clickprobe on|report|off`) tries every channel from one click and
+then a deferred `Scheduler` job, which is the candidate fix if the engine's
+callback carries the identity back.
 
 Everything below this line is closed.
 

@@ -3294,15 +3294,42 @@ function __qeRegisterProject(sdk, PROJECT) {
        line records which one was used. A silent one must not look like a click
        that never happened. */
     function extraSay(text) {
+        var refused = false;
         if (sdk.UI && sdk.UI.toast) {
             try { sdk.UI.toast(text, "info"); return "UI.toast"; }
-            catch (e) { __QE.log("extras: UI.toast threw: " + (e && e.message ? e.message : e)); }
+            catch (e) {
+                refused = refused || extraPermissionRefusal(e);
+                __QE.log("extras: UI.toast threw: " + (e && e.message ? e.message : e));
+            }
         }
         if (sdk.UI && sdk.UI.notify) {
-            try { sdk.UI.notify(text); return "UI.notify (declared, never yet observed in game)"; }
-            catch (e2) { __QE.log("extras: UI.notify threw: " + (e2 && e2.message ? e2.message : e2)); }
+            try { sdk.UI.notify(text); return "UI.notify"; }
+            catch (e2) {
+                refused = refused || extraPermissionRefusal(e2);
+                __QE.log("extras: UI.notify threw: " + (e2 && e2.message ? e2.message : e2));
+            }
         }
-        return "nothing - this build has no UI API";
+        if (refused) {
+            /* Measured 2026-09-19 (r204): the same export, in the same session,
+               shows a quest-context notification without complaint and is refused
+               for one made from a menu click. The refusal names the mod as
+               "null", so it is the permission check being unable to tell WHICH
+               mod is calling - not a permission the manifest is missing. Said
+               out loud here because the message an author would otherwise read
+               sends them to their manifest, where the answers is not. */
+            __QE.log("extras: the game refused a message from a MENU CLICK (it reads the calling mod as null). " +
+                "This is not a missing permission in your manifest - your quests' own notifications are unaffected. " +
+                "See docs/03-questions-for-the-developers.md, Q14.");
+        }
+        return refused ? "nothing - the game refused it (see Q14)" : "nothing - this build has no UI API";
+    }
+
+    /* True when an SDK error is the click-context permission refusal, whatever
+       API it came from. Matched on the two stable halves of the message rather
+       than the whole string, so a rewording does not turn the explanation off. */
+    function extraPermissionRefusal(e) {
+        var msg = String((e && e.message) ? e.message : e);
+        return msg.indexOf("permission") !== -1 && msg.indexOf("Mod \"null\"") !== -1;
     }
 
     function extraAction(action, what, id) {

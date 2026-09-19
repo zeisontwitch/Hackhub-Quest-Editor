@@ -270,13 +270,21 @@ describe("r179 raw harness — the Twotter probe", () => {
            `qe24 extras say notify|toast`: the r203 run showed a click that
            apparently did nothing, and the first question is whether UI.notify -
            the API the editor's own notification uses - draws anything at all in
-           this build. Every notification QA has ever seen came from a toast. */
-        expect(manifest.version).toBe("1.0.22");
+           this build. Every notification QA has ever seen came from a toast.
+           r205 adds `qe24 clickprobe on|report|off`: the r204 log showed a click
+           REACHING the pack and then being refused - [ContentSDK] Mod "null"
+           tried to use UI.toast without "ui" permission - while the same
+           export's quest-context UI.notify worked in the same session. So the
+           permission check cannot name the mod from a click handler, and the
+           probe asks which channels a click still has, and whether handing the
+           work to the engine (a scheduler job) brings the identity back. */
+        expect(manifest.version).toBe("1.0.23");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
         expect(code).toContain('alias: "extras"');
         expect(code).toContain('verb === "say"');
+        expect(code).toContain('sub === "clickprobe"');
     });
 
     it("audits the round's handles, and calls a present-and-undefined bio by name", () => {

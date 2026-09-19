@@ -68,9 +68,11 @@ The lines to quote in a report are the ones in the log file
 
 ### Pack extras — T-23…T-27 (export 1.0.28, editor build r203)
 
-**Install**: copy the whole `mod/` folder of this export, exactly as it is — the
-`widgets/` folder inside it is part of the widget, and a copy without it shows an
-empty box. Then load a save.
+**Install** (as usual, both folders): this export's own folder
+(`reference/sdk-0.24-qa/editor-export/`) **and** the harness
+(`reference/sdk-0.24-qa/mod/`, v1.0.21). Copy each folder whole — the `widgets/`
+folder inside this export IS the widget, and a copy without it shows an empty box.
+Then load a save.
 
 **Order matters**: look at everything first. Nothing here is removed by a command —
 the extras belong to the export and stay until the mod is switched off in the Mods

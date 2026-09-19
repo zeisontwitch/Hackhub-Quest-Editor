@@ -5,10 +5,10 @@ against the **editor export 1.0.28**, not the harness: the export now carries a
 start-menu entry, an opaque desktop widget, two right-click entries and an
 English + German translation table of its own. Rows and the run order are in
 `editor-export/README.md` (the "Pack extras" section). Two warnings that cost a
-run if missed: copy the export's **whole `mod/` folder** (its `widgets/` folder is
-the widget), and **do not run `qe24 extras off`** — that removes the harness's own
-probe items, never the export's. Harness **1.0.21** adds the `extras` alias for
-T-27 only.
+run if missed: copy **both folders whole** — `editor-export/` (its `widgets/`
+folder is the widget) and `mod/` (harness 1.0.21) — and **do not run
+`qe24 extras off`**: that removes the harness's own probe items, never the
+export's. Harness 1.0.21 adds the `extras` alias for T-27 only.
 
 Everything below this line is closed.
 

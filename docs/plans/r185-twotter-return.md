@@ -264,6 +264,31 @@ S-12/S-15.
 
 ## 7. The whimsy — your correction folded in
 
+**Built in r188.** What shipped, and the two places it deliberately does less
+than this list:
+
+- the canvas card is the normal card (`@handle`, then `N tweets, oldest first —
+  “the oldest line” <age>`), so it says what the node holds without pretending to
+  be a profile;
+- the **panel** is where the click-to-edit profile lives: banner, avatar with its
+  ring, display name, `@handle`, bio and the blue check are all click-to-edit in
+  place, both pictures open their picker, and the panel also lists **what the
+  account has posted across every quest** — the only place two quests' posts from
+  one handle can be read side by side;
+- the **node inspector** shows the same profile **read-only** (an account is
+  shared, so it is edited in one place) with the tweet timeline under it, newest
+  first, each row wearing its age chip, counts and a `timeline` tag when it also
+  drops into the main feed. "Edit this account" opens the panel; the rows
+  themselves stay in the list below, oldest first;
+- **one** CSS shimmer sweeps the arrival row, dropped under
+  `prefers-reduced-motion` (a test reads `src/index.css` and asserts the block);
+- **pictures are left out of both previews** — the SDK has no picture field on a
+  tweet (§10), so a preview that drew one would be lying. A row that still
+  carries a picture from an older draft says so instead.
+
+The Node Reference sheet's own account now wears a banner and an avatar, so the
+feature demonstrates itself the moment the template is opened.
+
 - **The canvas card stays a normal card.** Same frame, same typography as its
   neighbours; it shows the bird icon, the `@handle`, and either the single
   tweet's first line or "N tweets" when it holds a history.
@@ -301,11 +326,12 @@ Twotter probe's, which is where the tester already looks:
 | **T-13** | A **When event** trigger on `Twotter.PostSeen` fires when the player opens our account's post; `Twotter.Post` is recorded as firing or not (expected: not). |
 | **T-14** | A pre-r31 draft opens with its tweets intact (the migration fixture). |
 | **T-15** | *(last priority)* Uninstall the mod: the handles leave search. |
+| **E-01** | **Editor-only, no game.** Open the editor → **Templates → Node Reference** → the Twotter node in the *Communication* section: the profile above the timeline, the tweets newest-first with age chips, the shimmer on the arrival row. Then **Twotter** in the top bar: click the banner, the avatar, the name, the handle, the bio — each turns into a field in place — and the blue check turns itself off when clicked. Report anything that looks wrong, cramped or unclear, and whether the card ever reads as the guide (screenshots welcome). |
 
 **These rows are runnable now** — the fixtures, the quests and the command all
 exist, and every step is written out in
 [`STATUS.md`](../../reference/sdk-0.24-qa/STATUS.md) *Open: the Twotter editor
-rows*: which mod (editor export **1.0.14**, beside raw harness **1.0.14**), the
+rows*: which mod (editor export **1.0.16**, beside raw harness **1.0.16**), the
 account (`qe24_editor`), the commands (`qe24 run tw1`, `qe24 run tw2`,
 `qe24 twotter audit`, `qe24 run clear`) and what to report per row. The QA
 project carries the pair of quests that share the account (T-12), the five-tweet
@@ -333,7 +359,10 @@ really left, and it is what the T-10/T-11/T-12 rows report.
   list, runtime create/post/cleanup, the fences and their tests, the QA export
   and rows — **all built**; the rows are the part a tester still has to run.
 - **Stage 2 (the whimsy):** the click-to-edit mock profile, the node's timeline
-  preview, the card summary, the shimmer.
+  preview, the card summary, the shimmer — **built in r188**, with 14 new tests
+  (9 of the 10 fences falsified; the tenth, the tie-order rule, cannot be
+  falsified through behaviour because JS sorts are stable, and says so in the
+  test file). The visual pass is Zeis's, row **E-01**.
 
 If anything slips, stage 2 is what moves — the feature is complete without it.
 The manual is regenerated for both; stage 2 adds the design notes.
@@ -343,7 +372,9 @@ avatar/banner sizes, how it spells an age the engine computed itself, and
 whether the timeline flood is pleasant. jsdom cannot see any of it — those are
 T-08/T-09's "paste what you see" lines, handed to you.
 
-Stamp: `EDITOR_BUILD r186`, QA export **1.0.15**, harness mod **1.0.15** (1.0.13
-was P-01's and 1.0.14 the first editor-row run — both were handed to Zeis and
-run, so the r186 fixes are a new version rather than a quiet edit of a build he
-has already tested).
+Stamp: `EDITOR_BUILD r188`, QA export **1.0.16**, harness mod **1.0.16** (1.0.13
+was P-01's, 1.0.14 the first editor-row run and 1.0.15 the r186 fixes — every one
+of them handed to Zeis and run, so each round of fixes is a new version rather
+than a quiet edit of a build he has already tested. r187 changed only the
+editor's picture control and the fixtures' colours; the harness number moved so
+the tester's build and this one cannot be confused).

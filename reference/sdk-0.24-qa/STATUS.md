@@ -78,7 +78,7 @@ reach the game. A **feature request for a picture field is filed** in
 — the day the API accepts one, the field comes back and the change is one line.
 **Until then: put the clue in the tweet's text, or in a file the player opens.**
 
-## Open after the first run: T-11b, T-12b, T-15b — r186, editor export 1.0.16
+## Open: T-11b (abandon half), T-15b, T-08b — r188, editor export 1.0.16
 
 Two rows could not be answered by the r185 build (one was unreachable, one had
 nothing to remove) and one is a re-check after a fix. **T-11b and T-12b are now
@@ -89,8 +89,8 @@ T-11b are still open.** The mods:
 
 | Mod | Where | Version |
 | --- | --- | --- |
-| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.15** |
-| Raw harness (commands) | `reference/sdk-0.24-qa/mod/` | **1.0.15** |
+| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.16** |
+| Raw harness (commands) | `reference/sdk-0.24-qa/mod/` | **1.0.16** |
 
 Nothing auto-starts. Claim with `qe24 run tw1` / `qe24 run tw2` / `qe24 run tw3`;
 shed anything an older build left claimed with `qe24 run clear`. If a claim is
@@ -104,6 +104,8 @@ Twotter.Post ever fire?)* (tw3).
 | ~~**T-12b**~~ | **Green 2026-09-19.** tw2 claimed and completed after tw1: both objectives ticked, and its completion **removed the account and its tweets** — the shared-account rule holds in the order that mattered. |
 | **T-15b** uninstall | Clean save. `qe24 run tw1`, confirm the account exists (`qe24 twotter audit`), save, quit. Remove/disable the **editor export** mod only, relaunch. | `@qe24_editor` must read `not on this save`, and the handle must leave Twotter search. (The harness's own handles are a different mod and stay.) |
 | **T-08b** the authored pictures | `qe24 run tw1`, open @qe24_editor. | The banner must be **BRIGHT VIOLET** (`#AA28FF`) and the avatar **AMBER** — both authored in the editor and both now unmistakable. The first run's dark blue banner left the question open. |
+
+| **E-01** editor-only | **No game, no save, no mod.** Start the editor (`npm run dev`, or the preview link) → **Templates → Node Reference** → open the quest, find the **Twotter** node in the *Communication* section. Then click **Twotter** in the top bar. | Stage 2's visual pass: does the profile card read as a guide, or as a form? Does anything look cramped, misaligned or unclear? The node preview must show the tweets **newest first** with their age chips and one shimmering "posting" row; the panel's profile must turn the banner, avatar, name, handle, bio and blue check into fields where they sit. Screenshots welcome; anything that feels wrong is a finding. |
 
 Both wrinkles from T-08 are worth an eye while you are in there: whether the
 **banner** shows on the profile, and whether **following** reads 96 (as stored)

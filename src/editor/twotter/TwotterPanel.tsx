@@ -14,18 +14,21 @@
  *    in the player's save forever) — unless the author wants the character to
  *    outlive the story.
  *
- * Stage 2 replaces the right-hand form with a click-to-edit mock profile. The
- * fields stay the same; they just get a face.
+ * Stage 2 (r188) gives it a face: the right-hand side is the profile the game
+ * will draw, and clicking a part of that profile turns it into the field for
+ * that part. The fields are all still here — they are just wearing a jacket.
  */
 import { useMemo, useState } from "react";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import * as Dialog from "@radix-ui/react-dialog";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/Icon";
-import { EmptyHint, FieldShell, NumberInput, TextArea, TextInput, Toggle } from "@/editor/inspector/primitives";
-import { ImagePickerField } from "@/editor/inspector/ModFields";
+import { EmptyHint, FieldShell, NumberInput, Toggle } from "@/editor/inspector/primitives";
 import { TWOTTER_HANDLE_PATTERN, createTwotterAccount } from "@/schema/project";
 import type { QuestDoc, TwotterAccountDoc } from "@/schema/project";
+import { tweetAgeLabel, tweetAgeMs } from "@/schema/twotter";
+import { MockProfile } from "./MockProfile";
+import { TweetTimeline, type PreviewTweet } from "./TweetTimeline";
 import { useEditor } from "@/store/editor";
 
 /** Letters, numbers and `_`, 3–15 — the same rule the compiler enforces. */
@@ -54,6 +57,38 @@ function usesOf(accountId: string, quests: QuestDoc[]): { quest: string; nodes: 
     return hits;
 }
 
+/**
+ * Everything this account has ever posted, across every quest, in the game's
+ * order. The panel's question is "who is this character", and what they said is
+ * most of the answer — it is also the only place an author can see a handle's
+ * posts side by side when two quests post from the same account.
+ */
+function postsOf(accountId: string, quests: QuestDoc[]): PreviewTweet[] {
+    const out: PreviewTweet[] = [];
+    for (const quest of quests) {
+        for (const node of quest.graph.nodes) {
+            if (node.type !== "comms.tweet" || node.data.accountId !== accountId) continue;
+            for (const row of node.data.tweets) {
+                out.push({
+                    id: `${quest.id}:${node.id}:${row.id}`,
+                    content: row.content,
+                    age: tweetAgeLabel(row),
+                    ageMs: tweetAgeMs(row),
+                    stalePicture: !!row.image,
+                    likes: row.likes,
+                    comments: row.comments,
+                    shares: row.shares,
+                    views: row.views,
+                    showInTimeline: row.showInTimeline,
+                    migrated: !!node.data.migratedDate && row.timeMode === "earlier",
+                    quest: quest.title || quest.name,
+                });
+            }
+        }
+    }
+    return out;
+}
+
 export function TwotterPanelDialog({
     open,
     onOpenChange,
@@ -77,6 +112,7 @@ export function TwotterPanelDialog({
         [account, accounts],
     );
     const uses = useMemo(() => (account ? usesOf(account.id, quests) : []), [account, quests]);
+    const posts = useMemo(() => (account ? postsOf(account.id, quests) : []), [account, quests]);
 
     const patch = (next: Partial<Omit<TwotterAccountDoc, "id">>) => {
         if (account) updateTwotterAccount(account.id, next);
@@ -146,8 +182,8 @@ export function TwotterPanelDialog({
                                                 className={cn(
                                                     "mb-1 flex w-full items-center gap-2 rounded-lg border px-2 py-1.5 text-left",
                                                     active
-                                                        ? "border-accent-2/60 bg-accent-2/10"
-                                                        : "border-transparent hover:border-line hover:bg-raised",
+                                                        ? "border-cat-comms/60 bg-cat-comms/10"
+                                                        : "border-transparent hover:border-line hover:bg-surface-3",
                                                 )}
                                             >
                                                 {a.avatar ? (
@@ -157,7 +193,7 @@ export function TwotterPanelDialog({
                                                         className="h-7 w-7 shrink-0 rounded-full border border-line object-cover"
                                                     />
                                                 ) : (
-                                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line bg-raised text-ink-4">
+                                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line bg-surface-3 text-ink-4">
                                                         <Icon name="bird" size={12} />
                                                     </span>
                                                 )}
@@ -181,6 +217,7 @@ export function TwotterPanelDialog({
                             </div>
 
                             {/* ── the selected account ── */}
+                            {/* ── the selected account ── */}
                             <div className="min-h-0 flex-1 overflow-y-auto p-4">
                                 {!account ? (
                                     <EmptyHint>Select an account, or add one.</EmptyHint>
@@ -192,59 +229,31 @@ export function TwotterPanelDialog({
                                             </p>
                                         )}
 
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <FieldShell label="Display name" hint="What the profile shows above the handle. A person reads as a person; a brand reads as a brand.">
-                                                <TextInput
-                                                    ariaLabel="Display name"
-                                                    value={account.displayName}
-                                                    onChange={(displayName) => patch({ displayName })}
-                                                />
-                                            </FieldShell>
-                                            <FieldShell label="Handle" hint="The @name players search for. Letters, numbers and underscores, three to fifteen characters — the game will not find anything else.">
-                                                <div className="flex items-center gap-1">
-                                                    <span aria-hidden="true" className="font-mono text-[12px] text-ink-4">
-                                                        @
-                                                    </span>
-                                                    <TextInput
-                                                        ariaLabel="Handle"
-                                                        value={account.handle}
-                                                        onChange={(handle) => patch({ handle: handle.replace(/^@/, "") })}
-                                                    />
-                                                </div>
-                                            </FieldShell>
-                                        </div>
+                                        <p className="text-[11px] leading-relaxed text-ink-4">
+                                            This is the profile as the game draws it.{" "}
+                                            <span className="text-ink-3">
+                                                Click the banner, the picture, the name, the handle or the bio and
+                                                that part becomes a field right where it sits.
+                                            </span>
+                                        </p>
 
-                                        <FieldShell
-                                            label="Bio"
-                                            hint="The line under the name. A blank bio is fine and honest — an abandoned account has one too."
-                                        >
-                                            <TextArea
-                                                ariaLabel="Bio"
-                                                rows={2}
-                                                value={account.bio}
-                                                onChange={(bio) => patch({ bio })}
-                                            />
-                                        </FieldShell>
+                                        <MockProfile
+                                            account={account}
+                                            onPatch={patch}
+                                            footer={
+                                                <>
+                                                    The game lays this card out itself, so this is a preview, not a
+                                                    promise. What travels to the game is the text and the two
+                                                    pictures — nothing here is drawn by us in game.
+                                                </>
+                                            }
+                                        />
 
                                         <div className="grid grid-cols-2 gap-3">
-                                            <ImagePickerField
-                                                label="Profile picture"
-                                                hint="Optional. Without one the game shows its own placeholder — that is fine for a burner account."
-                                                ariaLabel="Profile picture"
-                                                value={account.avatar}
-                                                onChange={(avatar) => patch({ avatar })}
-                                            />
-                                            <ImagePickerField
-                                                label="Banner"
-                                                hint="Optional. The wide picture behind the profile. A photograph of a place the story cares about does more work than a logo."
-                                                ariaLabel="Banner"
-                                                value={account.banner}
-                                                onChange={(banner) => patch({ banner })}
-                                            />
-                                        </div>
-
-                                        <div className="grid grid-cols-3 gap-3">
-                                            <FieldShell label="Followers" hint="Cosmetic, and worth getting right: a brand-new account with forty thousand followers reads as fake.">
+                                            <FieldShell
+                                                label="Followers"
+                                                hint="Cosmetic, and worth getting right: a brand-new account with forty thousand followers reads as fake."
+                                            >
                                                 <NumberInput
                                                     ariaLabel="Followers"
                                                     min={0}
@@ -253,7 +262,10 @@ export function TwotterPanelDialog({
                                                     onChange={(followers) => patch({ followers })}
                                                 />
                                             </FieldShell>
-                                            <FieldShell label="Following" hint="How many accounts this one follows. Small next to the follower count is normal for a public figure.">
+                                            <FieldShell
+                                                label="Following"
+                                                hint="How many accounts this one follows. Small next to the follower count is normal for a public figure."
+                                            >
                                                 <NumberInput
                                                     ariaLabel="Following"
                                                     min={0}
@@ -262,17 +274,18 @@ export function TwotterPanelDialog({
                                                     onChange={(following) => patch({ following })}
                                                 />
                                             </FieldShell>
-                                            <FieldShell
-                                                label="Verified"
-                                                hint="The blue check. Give it to a company, a newsroom, an official account — not to somebody who is hiding."
-                                            >
-                                                <Toggle
-                                                    checked={account.verified}
-                                                    onChange={(verified) => patch({ verified })}
-                                                    label={account.verified ? "Verified" : "Not verified"}
-                                                />
-                                            </FieldShell>
                                         </div>
+
+                                        <FieldShell
+                                            label="Verified"
+                                            hint="The blue check. Give it to a company, a newsroom, an official account — not to somebody who is hiding. Clicking the check up on the profile flips it too."
+                                        >
+                                            <Toggle
+                                                checked={account.verified}
+                                                onChange={(verified) => patch({ verified })}
+                                                label={account.verified ? "Verified" : "Not verified"}
+                                            />
+                                        </FieldShell>
 
                                         <FieldShell
                                             label="Remove when the story ends"
@@ -289,7 +302,7 @@ export function TwotterPanelDialog({
                                             />
                                         </FieldShell>
 
-                                        <div className="rounded-lg border border-line bg-raised px-3 py-2">
+                                        <div className="rounded-lg border border-line bg-surface-3 px-3 py-2">
                                             <p className="text-[11px] font-semibold tracking-wide text-ink-3">
                                                 Used by
                                             </p>
@@ -306,6 +319,18 @@ export function TwotterPanelDialog({
                                                     ))}
                                                 </ul>
                                             )}
+                                        </div>
+
+                                        <div className="rounded-lg border border-line bg-surface-3 px-3 py-2.5">
+                                            <TweetTimeline
+                                                tweets={posts}
+                                                displayName={account.displayName}
+                                                handle={account.handle}
+                                                avatar={account.avatar}
+                                                heading="What this account has posted"
+                                                emptyText="Nothing yet. A Twotter node that points at this account adds its posts here."
+                                                compact
+                                            />
                                         </div>
 
                                         <div className="flex justify-end border-t border-line pt-3">

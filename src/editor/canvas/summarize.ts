@@ -201,16 +201,24 @@ export function summarize(
         }
 
         case "comms.tweet": {
+            /*
+             * Stage 2 (r188): the card stays a card — the handle, then what the
+             * node actually says. The row the author reads first on the card is
+             * the OLDEST one, because that is the order the node holds them in;
+             * the profile panel and the inspector are where the game's order
+             * (newest first) is shown.
+             */
             const account = accounts?.find((a) => a.id === d.accountId);
             const rows = (d.tweets as { content?: string; timeMode?: string; agoAmount?: number; agoUnit?: string }[] | undefined) ?? [];
             const handle = account ? `@${account.handle || "unnamed"}` : "no account yet";
             if (!rows.length) return [handle, "no tweets yet"];
             const first = clip(String(rows[0]?.content ?? ""), 40);
+            const line = first ? `“${first}”` : "empty tweet";
             const when = rows[0]?.timeMode === "earlier"
                 ? `${Number(rows[0]?.agoAmount ?? 1)} ${String(rows[0]?.agoUnit ?? "days")} ago`
                 : "posts on arrival";
-            if (rows.length === 1) return [handle, first ? `${first} — ${when}` : `empty tweet — ${when}`];
-            return [handle, `${rows.length} tweets — first ${when}`];
+            if (rows.length === 1) return [handle, `${line} — ${when}`];
+            return [handle, `${rows.length} tweets, oldest first — ${line} ${when}`];
         }
 
         case "reply.input":

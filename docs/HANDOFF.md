@@ -1,3 +1,61 @@
+# Handoff — r188
+
+Plan: [`plans/r185-twotter-return.md`](plans/r185-twotter-return.md) (the round
+that contains all of this). r184–r187 have no sections here; their rows are in
+the root README and the round plan.
+
+**Twotter is back, and it is finished bar three in-game rows.** Stage 1 (accounts
+as mod-level records, the node as a series of tweets, the runtime, the migration)
+shipped in r185 and was field-tested; r186 fixed the three bugs that run found —
+the quest-start hook that never ran, "live" counting quests that had never
+started, and a posting guard that outlived its quest. Stage 2 (the whimsy) shipped
+in r188: the Twotter panel is a **click-to-edit mock profile** — banner, avatar,
+name, handle, bio and the blue check all turn into fields where they sit, both
+pictures open the picker they already had, and the panel lists **what the account
+has posted across every quest**; the node inspector shows the same profile
+**read-only** over its tweet timeline, **newest first** (the game's order — the
+author's list below stays oldest first), each row with its age chip and counts,
+and one CSS shimmer on the row that arrives with the story, dropped under
+`prefers-reduced-motion`.
+
+**The picture question is settled, not pending.** `TwotterTweet` has no picture
+field and the r185 run saw no picture in the feed, on the profile or on the
+post's own page while the same data-URI rendered fine as an avatar. The upload
+control is therefore **hidden** (commented out with its reason; restoring it is
+one line), the runtime still sends the key so a future SDK that accepts one
+brings every already-authored picture back, and a **feature request** is filed as
+question 10 in [`03-questions-for-the-developers.md`](03-questions-for-the-developers.md).
+
+**Open — three in-game rows and one editor row**, all in
+[`reference/sdk-0.24-qa/STATUS.md`](../reference/sdk-0.24-qa/STATUS.md) with the
+commands (editor export **1.0.16** beside raw harness **1.0.16**):
+
+- **T-11b**, the abandon half (completion is green since 2026-09-19).
+- **T-15b** — uninstall the mod, the handles leave search.
+- **T-08b** — the loud colours (`#AA28FF` banner, amber avatar) reach the game.
+- **E-01** — the editor-only visual pass on stage 2: Templates → Node Reference →
+  the Twotter node, then the **Twotter** button in the top bar. jsdom cannot see
+  pixels; this is the half no test here can do.
+
+**`qe24 twotter audit` stays for now, and can go when this round closes.** It is
+a harness-only read-only diagnostic (SDK 0.24 has no "list every account" call, so
+it audits the handles this round creates). Nothing in the editor or the export
+depends on it.
+
+**A real bug found while building stage 2:** `accent-2`, `bg-raised` and friends
+were never in the Tailwind theme, so every class that used them (the r185 panel's
+selected-row highlight among them) silently did nothing. Stage 2's chrome uses
+real tokens (`cat-comms` for the Twotter family); the older `text-accent-2` in
+`Field.tsx` is still dead and still there.
+
+Gates: typecheck clean; `npm test` **1,714 passed / 85 files** (+14, one new test
+file); build OK; manual regenerated (**160** fields after the hidden picture row);
+QA export regenerated (export **1.0.16**, `EDITOR_BUILD` r188). Nine of stage 2's
+ten fences were falsified; the tenth (the tie-order rule) cannot be falsified
+through behaviour — JS sorts are stable — and the test says so.
+
+---
+
 # Handoff — r183
 
 Plan: [`plans/r183-inspector-row-width.md`](plans/r183-inspector-row-width.md).

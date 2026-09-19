@@ -7,11 +7,13 @@ import type { NodeDoc, NodeType } from "@/schema/nodes";
 import { DialogueNodeEditor } from "./DialogueNodeEditor";
 import { PackDataEditor } from "./PackDataEditor";
 import { PackNodeEditor } from "./PackNodeEditor";
+import { TwotterNodeEditor } from "./TwotterNodeEditor";
 
 type SimEditor = ComponentType<{ node: NodeDoc }>;
 
 export const NODE_SIM_EDITORS: Partial<Record<NodeType, SimEditor>> = {
     "comms.dialogue": DialogueNodeEditor as SimEditor,
+    "comms.tweet": TwotterNodeEditor as SimEditor,
     "world.packData": PackDataEditor as SimEditor,
     "pack.node": PackNodeEditor as SimEditor,
 };

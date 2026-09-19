@@ -64,6 +64,20 @@ describe("template registry", () => {
      */
     /* The two Reference sheets (Node Reference, Quest Cookbook) are read-only
        canvases, not playable quests — everything else must be startable. */
+    /**
+     * Stage 2 (r188): the Node Reference sheet is where an author sees what a
+     * node looks like, and the Twotter node's face is the account's profile. An
+     * account with no pictures would preview as two grey placeholders, so the
+     * sheet's own account wears both — and this keeps them from being quietly
+     * dropped.
+     */
+    it("the reference sheet's Twotter account wears a banner and an avatar", () => {
+        const account = getTemplate("reference")!.build().twotterAccounts[0];
+        expect(account.handle).toBe("harbourmaster");
+        expect(account.avatar?.startsWith("data:image/png;base64,")).toBe(true);
+        expect(account.banner?.startsWith("data:image/png;base64,")).toBe(true);
+    });
+
     it("chains the campaign's acts: one autoStart, the rest claimed in order", () => {
         const project = getTemplate("long-game")!.build();
         const [act1, act2, act3] = project.quests;

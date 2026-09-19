@@ -915,9 +915,11 @@ function __qeRegisterProject(sdk, PROJECT) {
                 /* The posting API's record has no picture field (SDK 0.24
                    TwotterTweet), and the r185 QA run confirmed it: a tweet with
                    an attached picture showed no picture in the timeline or on
-                   the detail page. Both plausible key names go along anyway —
-                   unknown keys cost nothing if the game ignores them, and the
-                   QA row re-checks with the second spelling in place. */
+                   the detail page, so the editor no longer offers one (r187).
+                   The key is still sent when an older project carries one:
+                   unknown keys cost the game nothing, and if a future SDK
+                   starts reading either spelling, the pictures authors already
+                   attached come back with it. */
                 if (row.image) {
                     tweet.image = row.image;
                     tweet.media = row.image;

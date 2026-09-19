@@ -4,7 +4,7 @@
   "mod": {
     "id": "qe-sdk-024-editor-qa",
     "name": "QE SDK 0.24 Editor QA Scaffold",
-    "version": "1.0.15",
+    "version": "1.0.16",
     "author": "HackHub Quest Editor",
     "description": "Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, the Timer node delay and calendar modes, and the Twotter node (accounts, backdated series, cleanup). Nothing auto-starts — claim one quest at a time with the harness command `qe24 run` — so a tester sees one row's noise, not five.",
     "tags": [
@@ -1335,7 +1335,7 @@
       "id": "qe-tw1",
       "name": "QESdk024TwotterQa",
       "title": "Twotter QA (T-08/T-09/T-10/T-11/T-13)",
-      "description": "Claim it with 'qe24 run tw1'. The moment it starts, the editor's Twotter node posts a series from @qe24_editor: five tweets, four backdated (a year, three months, a picture six weeks back, twelve days) and one that posts as you watch. Open Twotter and search qe24_editor: T-08 is the face and the counts, T-09 is the order and the ages. Then save and reload (T-10), and finally open the profile and one post so both objectives tick — the Complete button appears then, and pressing it is T-11: the account and its posts must disappear.",
+      "description": "Claim it with 'qe24 run tw1'. The moment it starts, the editor's Twotter node posts a series from @qe24_editor: five tweets, four backdated (a year, three months, six weeks, twelve days) and one that posts as you watch. Open Twotter and search qe24_editor: T-08 is the face and the counts, T-09 is the order and the ages. Then save and reload (T-10), and finally open the profile and one post so both objectives tick — the Complete button appears then, and pressing it is T-11: the account and its posts must disappear.",
       "group": "sandbox",
       "rewards": {
         "money": 0,
@@ -1412,11 +1412,10 @@
                 },
                 {
                   "id": "qe-tw1-row3",
-                  "content": "The picture is the clue (six weeks back). If it is on the wrong tweet, T-09 fails.",
+                  "content": "Six weeks back: an attaché case on a bench, and nobody came back for it. (Six weeks, not a month — the age should read 'a month ago' only if the game rounds it there.)",
                   "timeMode": "earlier",
                   "agoAmount": 6,
                   "agoUnit": "weeks",
-                  "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAT0lEQVR42u3PQQkAAAgEsEtz/QMZxgi+hcEKLNO+FgEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQGBywK5G4EPzFmrLgAAAABJRU5ErkJggg==",
                   "likes": 64,
                   "comments": 2,
                   "shares": 3,
@@ -1478,7 +1477,7 @@
             "data": {
               "name": "profile-seen",
               "description": "Open Twotter, search qe24_editor and open the profile. This row ticks here when Twotter.ProfileSeen reaches the quest.",
-              "hint": "On that screen, the bio, avatar, banner, followers (412) and following (96) must be the ones authored in the editor. Report anything missing or wrong — and, if it is no trouble, whether the banner showed.",
+              "hint": "On that screen: the bio, the BRIGHT VIOLET banner (#AA28FF), the AMBER avatar, followers 412 and following 96 must be the ones authored in the editor. Report anything missing or wrong, and whether the banner showed.",
               "info": "r185 Twotter QA. Row meanings: reference/sdk-0.24-qa/STATUS.md.",
               "terminalCommand": "",
               "hidden": false
@@ -1851,9 +1850,9 @@
       "id": "qe-tw-account",
       "handle": "qe24_editor",
       "displayName": "QE24 Editor Account",
-      "bio": "Made by the editor's Twotter node (r185). If this line is readable in search, createUser kept our bio.",
-      "avatar": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAAOklEQVR42u3OQQ0AAAgEoCtjMuNbwhbOBxsBSPW8EiEhISEhISEhISEhISEhISEhISEhISEhISGhOwsQ7wvEcqrbYwAAAABJRU5ErkJggg==",
-      "banner": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAABACAIAAACr/W2wAAAAlUlEQVR42u3SMQ0AAAgEsXfAiAf8C2TGAmlSBZdL9cAbkQBDg6HB0GBoDA2GBkODocHQGBoMDYYGQ4OhMTQYGgwNhgZDY2gwNBgaDA2GxtBgaDA0GBoMjaHB0GBoMDQYGkODocHQYGgMDYYGQ4OhwdAYGgwNhgZDg6ExNBgaDA2GBkNjaDA0GBoMDYbG0GBoMDQYGq4FaVvBD4rH2GsAAAAASUVORK5CYII=",
+      "bio": "Made by the editor's Twotter node (r185). Banner must be BRIGHT VIOLET (#AA28FF), avatar AMBER - both authored in the editor.",
+      "avatar": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAIAAADYYG7QAAAAN0lEQVR42u3OMQ0AAAgDsOnHNHNBOJpUQLOTVyIkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkdKcsm9HE2Fnb/QAAAABJRU5ErkJggg==",
+      "banner": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAABACAIAAACr/W2wAAAAk0lEQVR42u3SQQ0AAAjEsJODdkzCGwukSRUsS9fAG5EAQ4OhwdBgaAwNhgZDg6HB0BgaDA2GBkODoTE0GBoMDYYGQ2NoMDQYGgwNhsbQYGgwNBgaDI2hwdBgaDA0GBpDg6HB0GBoDA2GBkODocHQGBoMDYYGQ4OhMTQYGgwNhgZDY2gwNBgaDA2GxtBgaDA0GBquBe4NAmTiVBFbAAAAAElFTkSuQmCC",
       "verified": true,
       "followers": 412,
       "following": 96,

@@ -903,7 +903,18 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
                 },
                 fields: [
                     { kind: "textarea", key: "content", label: "Tweet", rows: 3, hint: "What the character wrote. Tags work here, like everywhere else an author writes text." },
-                    { kind: "image", key: "image", label: "Attached picture", hint: "Optional — and the game will not show it: a tweet's posting record has no picture field (checked in game, r185), so this editor shows it and players do not. Put the clue in the tweet's words instead. The export report repeats this." },
+                    /* HIDDEN (r187, Zeis's call): the game cannot show a tweet
+                       picture — `TwotterTweet` has no picture field and the
+                       r185 run saw none in the feed, the profile or the post's
+                       own page, while the same data-URI shape rendered fine as
+                       an account avatar. A control that does nothing is a trap
+                       for authors, so it is gone rather than explained; the
+                       project field stays and keeps migrating, and the export
+                       report still names any picture it finds. A feature
+                       request for the field is filed in
+                       docs/03-questions-for-the-developers.md §10 — this line
+                       goes back the day the API accepts one. */
+                    // { kind: "image", key: "image", label: "Attached picture", hint: "…" },
                     {
                         kind: "select",
                         key: "timeMode",

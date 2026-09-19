@@ -11,6 +11,7 @@
  * project change that is not followed by `npm run gen:qa-export` fails here.
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { inflateSync } from "node:zlib";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -36,6 +37,28 @@ function expectedExportFiles(): Map<string, string> {
     files.set("src/index.ts", "// @ts-nocheck\n" + files.get("src/index.ts"));
     files.set("README.md", files.get("README.md") + readFileSync(NOTES_FILE, "utf8"));
     return files;
+}
+
+/**
+ * The first pixel of a PNG data URI, as `[r, g, b]` — how the QA fixture's
+ * colours are asserted without depending on how an encoder spells its base64.
+ * Reads the IDAT chunk directly; the fixture images are solid single colours, so
+ * the first pixel is the whole picture.
+ */
+function profilePicPixel(dataUri: string | undefined): number[] | null {
+    if (!dataUri) return null;
+    const raw = Buffer.from(dataUri.split(",", 1)[0] === dataUri ? "" : dataUri.slice(dataUri.indexOf(",") + 1), "base64");
+    let pos = 8;
+    while (pos + 8 <= raw.length) {
+        const length = raw.readUInt32BE(pos);
+        const tag = raw.subarray(pos + 4, pos + 8).toString("latin1");
+        if (tag === "IDAT") {
+            const inflated = inflateSync(raw.subarray(pos + 8, pos + 8 + length));
+            return [inflated[1]!, inflated[2]!, inflated[3]!];
+        }
+        pos += 12 + length;
+    }
+    return null;
 }
 
 function existingFiles(dir: string, out: string[] = []): string[] {
@@ -154,7 +177,16 @@ describe("SDK 0.24 QA export", () => {
         const earlier = rows.filter((r) => r.timeMode === "earlier");
         expect(earlier.map((r) => `${r.agoAmount}${r.agoUnit}`)).toEqual(["1years", "3months", "6weeks", "12days"]);
         expect(rows.filter((r) => r.timeMode === "arrival"), "one row must post as the player watches").toHaveLength(1);
-        expect(rows.filter((r) => typeof r.image === "string" && String(r.image).startsWith("data:image")).length, "the picture row").toBe(1);
+        /* No picture rows any more: the editor hides the field (r187) because
+           the game cannot show a tweet picture, so a fixture that still asked a
+           tester to look for one would be testing a control that is gone. */
+        expect(rows.filter((r) => r.image), "a picture row is back in the fixture").toEqual([]);
+        /* The banner and avatar are deliberately loud colours (#AA28FF violet,
+           amber avatar) after the first run could not tell whether the banner
+           had rendered at all. Decoded rather than string-matched: the claim is
+           the colour, and the base64 of a PNG moves if the encoder does. */
+        expect(profilePicPixel(account?.banner), "the banner is no longer the unmistakable violet").toEqual([0xaa, 0x28, 0xff]);
+        expect(profilePicPixel(account?.avatar), "the avatar is no longer the unmistakable amber").toEqual([0xff, 0x8a, 0x00]);
         expect(rows.some((r) => r.showInTimeline === true), "one row must reach the main timeline").toBe(true);
 
         /* The triggers: ProfileSeen identifies the account by handle, PostSeen

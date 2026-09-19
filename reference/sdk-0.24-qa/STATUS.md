@@ -1,9 +1,10 @@
 # QE24 QA status (2026-09-18)
 
-One page, so nobody re-runs a finished check. **Four Twotter rows are open after
-the first run** (T-11b, T-12b, T-15b, T-09c) — two runtime bugs and one
-unreachable ending were found and fixed in r186, and those rows are the re-check.
-Everything else on this page is closed, answered or deliberately shelved. One row (S-10,
+One page, so nobody re-runs a finished check. **Two Twotter rows are open**
+(T-15b the uninstall, and the abandon half of T-11b) after a second pass on
+2026-09-19 confirmed completion, the shared account and the account cleanup all
+behave. Everything else on this page is closed, answered or deliberately
+shelved. One row (S-10,
 the short-month clamp) is shelved by the author's decision rather than passed,
 and is marked as such. A future round that needs an in-game check adds a *new*
 row here and a new harness version — never a re-run of the ones below.
@@ -59,23 +60,32 @@ One more fixture lie removed: the objective's suggested "terminal command" was
 described as if typing it ticked the row; the field only ever shows a
 copy-pasteable nudge.
 
-### Settled: the tweet picture (T-09's negative half)
+### Settled, and closed on purpose: the tweet picture (T-09's negative half)
 
-**SDK 0.24 cannot carry one.** `TwotterTweet` has no picture field — `id`,
+**SDK 0.24 cannot carry one, and the editor no longer offers the control.** `TwotterTweet` has no picture field — `id`,
 `userId`, `content`, `sendedAt`, `interaction`, `showInTimeline` and nothing
 else — and the r185 run proved the consequence in game: a tweet with an attached
 picture showed no picture in the timeline *or* on the post's own page, while the
-account's avatar (same data-URI shape) rendered fine. The editor keeps the
-field, tells the truth about it in the field's own hint, and the export report
-says plainly that players will not see it. The runtime sends the picture under
-both plausible key names (`image` and `media`) so that the re-check below can
-settle whether the game reads either. **Authors should put the clue in the
-tweet's text, or in a file the player opens.**
+account's avatar (same data-URI shape) rendered fine. It is not a spelling problem:
+the account's avatar — the same data-URI shape — rendered in the same run.
 
-## Open after the first run: T-11b, T-12b, T-15b, T-09c — r186, editor export 1.0.15
+So the control is **hidden** (Zeis's call, 2026-09-19: "there's no reason to have
+something there if it doesn't work"). The project field and the migration stay,
+an older project's picture is still carried into the export, and the export
+report still names it; but an author is no longer offered a picker that cannot
+reach the game. A **feature request for a picture field is filed** in
+[`docs/03-questions-for-the-developers.md` §10](../../docs/03-questions-for-the-developers.md)
+— the day the API accepts one, the field comes back and the change is one line.
+**Until then: put the clue in the tweet's text, or in a file the player opens.**
 
-Three rows could not be answered by the r185 build (one was unreachable, one had
-nothing to remove, one is a re-check after a fix). The mods:
+## Open after the first run: T-11b, T-12b, T-15b — r186, editor export 1.0.16
+
+Two rows could not be answered by the r185 build (one was unreachable, one had
+nothing to remove) and one is a re-check after a fix. **T-11b and T-12b are now
+answered green** — Zeis ran them on a fresh save (claim tw1, both objectives
+tick, Complete removed the account and its tweets; then tw2 claimed and
+completed, which removed them again). **T-15b (uninstall) and the abandon half of
+T-11b are still open.** The mods:
 
 | Mod | Where | Version |
 | --- | --- | --- |
@@ -90,10 +100,10 @@ Twotter.Post ever fire?)* (tw3).
 
 | Row | Do this | Report |
 | --- | --- | --- |
-| **T-11b** complete removes it | On a **clean save**, `qe24 run tw1`, then open the profile (row 1 ticks) and open one post (row 2 ticks). The **Complete button** now appears in the journal — press it. | `qe24 twotter audit` must read `@qe24_editor: not on this save`; Twotter search must not find it; searching for something else must still work. *Second half, same save:* claim tw1 again, then abandon it instead of completing — the tweets and the account must both go (this is the r185 failure). |
-| **T-12b** the shared account, in order | Clean save. `qe24 run tw1` **and** `qe24 run tw2`, then finish **tw2 first** (one objective: open the profile). | After tw2's completion the account must **still be there** — with tw1's tweets on it (`qe24 twotter audit`, then the profile). Then finish **tw1**: the account must go. The order you finish them in must not change the outcome. |
+| ~~**T-11b**~~ | **Green 2026-09-19 (first half).** Fresh save, `qe24 run tw1`: both objectives ticked, the Complete button appeared and **removed the account and every tweet**. *Still open:* the **abandon** half — claim tw1 again on a clean save and abandon it instead of completing; the tweets and the account must both go (that was the r185 failure). |
+| ~~**T-12b**~~ | **Green 2026-09-19.** tw2 claimed and completed after tw1: both objectives ticked, and its completion **removed the account and its tweets** — the shared-account rule holds in the order that mattered. |
 | **T-15b** uninstall | Clean save. `qe24 run tw1`, confirm the account exists (`qe24 twotter audit`), save, quit. Remove/disable the **editor export** mod only, relaunch. | `@qe24_editor` must read `not on this save`, and the handle must leave Twotter search. (The harness's own handles are a different mod and stay.) |
-| **T-09c** the picture, second attempt | `qe24 run tw1` and look at the six-weeks-back tweet. | Whether a picture appears now (the export also sends the picture under the name `media`). Either answer is useful: yes means we know which spelling works; no closes the question for SDK 0.24. Easy alternative if you happen to have Twotter open anyway: does **any** built-in quest's tweet show a picture? If one does, the engine supports pictures and we are using the wrong field. |
+| **T-08b** the authored pictures | `qe24 run tw1`, open @qe24_editor. | The banner must be **BRIGHT VIOLET** (`#AA28FF`) and the avatar **AMBER** — both authored in the editor and both now unmistakable. The first run's dark blue banner left the question open. |
 
 Both wrinkles from T-08 are worth an eye while you are in there: whether the
 **banner** shows on the profile, and whether **following** reads 96 (as stored)

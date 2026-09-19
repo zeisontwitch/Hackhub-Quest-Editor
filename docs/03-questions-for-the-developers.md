@@ -199,3 +199,42 @@ player save with a broken record is safe when a pack merely *reads* it.
 **Editor stance.** Nothing depends on repair-on-load: the implementation round
 writes every account through `createUser`/`addUser`, and the read path is
 verified safe against the broken shape.
+
+---
+
+## 10. Feature request: let a posted tweet carry a picture
+
+**Observed.** The r185 QA run posted a tweet from a mod account with an attached
+picture, using `Twotter.postTweet`. The picture did not appear anywhere — not in
+the profile's timeline, not in the main feed, and not on the post's own detail
+page. The same run's account avatar (a data URI, same shape and same size class)
+rendered correctly, so the difference is not how the image is supplied.
+
+**Read of the API.** `TwotterTweet` in SDK 0.24 is
+
+```ts
+interface TwotterTweet {
+    id: string;
+    userId: string;
+    content: string;
+    sendedAt?: string;
+    interaction: TwotterTweetInteraction;
+    showInTimeline?: boolean;
+}
+```
+
+— there is no picture, media, attachment or image field of any kind, and
+`postTweet` does not declare an options bag. So this looks like a **missing
+field rather than a broken one**: the game's own posts show pictures (the
+in-game feed does), but a mod cannot post one.
+
+**Request.** Either a field on `TwotterTweet` (a data URI or a mod asset path,
+whatever the game's own content uses), or an overload such as
+`postTweet(tweet, { image })`. Our editor models a picture per tweet already, so
+the day the API accepts one the feature ships without any further work. Until
+then we keep the field in the project file, show it only as an editor preview,
+and tell authors plainly that players will not see it.
+
+**Evidence.** Game `1.3.1`, build `25388883`; transcript
+`reference/sdk-0.24-qa/QE24-TestResults-Twotter.md`; the account's own avatar in
+the same run rendered, so the image path itself works.

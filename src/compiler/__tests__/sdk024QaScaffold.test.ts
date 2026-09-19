@@ -250,8 +250,11 @@ describe("r179 raw harness — the Twotter probe", () => {
         const code = readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/dist/mod.js"), "utf8");
         /* r180 added `qe24 timers`; r185 added `qe24 twotter backdate` (P-01a),
            `qe24 twotter order` (P-01b) and `qe24 twotter audit` (the T-11/T-12
-           checks); r186 added the launcher entry for the T-13 canary quest. */
-        expect(manifest.version).toBe("1.0.15");
+           checks); r186 added the launcher entry for the T-13 canary quest,
+           and r187's change is the editor's picture field — the harness itself
+           only moved version so the tester's build and this one cannot be
+           confused. */
+        expect(manifest.version).toBe("1.0.16");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");

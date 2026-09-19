@@ -1,13 +1,13 @@
 {
   "generatedBy": "scripts/extract-manual-inventory.mjs",
-  "editorBuild": "2026-09-18.r186",
+  "editorBuild": "2026-09-18.r187",
   "sdkVersion": "0.24.0",
   "counts": {
     "nodeTypes": 40,
     "obtainableNodeTypes": 40,
     "categories": 10,
-    "editableFields": 161,
-    "editableFieldsExcludingLists": 153,
+    "editableFields": 160,
+    "editableFieldsExcludingLists": 152,
     "sockets": 76,
     "events": 99,
     "eventGroups": 10
@@ -1749,14 +1749,6 @@
             },
             {
               "depth": 1,
-              "path": "tweets.image",
-              "kind": "image",
-              "key": "image",
-              "label": "Attached picture",
-              "hint": "Optional — and the game will not show it: a tweet's posting record has no picture field (checked in game, r185), so this editor shows it and players do not. Put the clue in the tweet's words instead. The export report repeats this."
-            },
-            {
-              "depth": 1,
               "path": "tweets.timeMode",
               "kind": "select",
               "key": "timeMode",
@@ -1870,7 +1862,7 @@
           ]
         }
       ],
-      "editableFieldCount": 12,
+      "editableFieldCount": 11,
       "defaults": {
         "accountId": "",
         "tweets": [

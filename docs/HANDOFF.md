@@ -21,10 +21,16 @@ the id, and the guess is disproved. No error from the build, nothing in the log.
 Filed as **Q15**; the editor no longer claims the page is reached (runtime log,
 `Open handbook` node's help text, and the picker's note all say what happens).
 
-**Two rows open** (export **1.0.32**, harness **1.0.23**): **L** re-clicks the
-claim entry and looks in the journal; **M** re-clicks the handbook entry and
-pastes the (new) log lines. Both are already covered above — they exist to
-confirm the fix in game, not to discover anything.
+**Six rows open in ONE batch** (export **1.0.33**, harness **1.0.23**) — the
+tester pushed back, rightly, on rounds of one or two rows: every open question
+goes into one session from now on. **L** claim → journal, **M** handbook → the
+new log line, **N/O** the two right-click actions (they have never actually drawn
+anything: the r204 refusals hit them too, and the r206 deferral has never been
+tested on a context-menu click), **P** the `icon` field, which has never been
+exercised in game — the mail entry now carries a small purple square as a data
+URL, so one glance decides whether the editor keeps offering that field — and
+**Q**, optional: a language the pack has no words for must fall back to English
+rather than showing raw tokens.
 
 **Owed next: the manual page for pack extras.** The plan is explicit that the
 editor's docs must not describe a surface as working before a tester has seen it;
@@ -33,7 +39,7 @@ document the two gotchas too (a widget's HTML is a static file, so `{{tr.…}}`
 does not reach inside it; the handbook action lands on the landing page until the
 game publishes its article ids).
 
-Versions: `EDITOR_BUILD` **r207**, export **1.0.32**, harness **1.0.23**.
+Versions: `EDITOR_BUILD` **r207**, export **1.0.33**, harness **1.0.23**.
 
 ---
 

@@ -1,26 +1,12 @@
 # QE24 QA status (2026-09-19)
 
-**OPEN: rows L and M** (export **1.0.32**, harness unchanged at **1.0.23**).
-Everything else is answered. **L** re-clicks the claim entry, which did nothing
-in the last run because of our bug — `Quest.claim` takes the game's own name for
-the quest, not the editor's id, and the game is silent about an id it does not
-know (r207 sends the name now). **M** re-clicks the handbook entry, which opens
-the handbook at its own landing page rather than the article — a **Q15** for the
-developers, not a regression, and the only thing to check is the new log line.
-
-**Run 4 (r206 build) in one paragraph:** the deferred click path works — the log
-shows `clicked` → `handed … to the engine (job click-4)` → `the engine called
-back for …` → the action running, in German, with the sentence (`Der eigene
-Menüeintrag des Packs funktioniert. (T-23)`) rather than the raw token that a
-click handler logs. Mail delivered. Claim did nothing (our bug, above). The
-handbook opened at its landing page (Q15).
-
-**Earlier rounds:** rows A…H answered. The click refusal was `Mod "null"` — a
-menu or right-click handler has no mod identity, so every permission-gated call
-from one is refused (`UI.notify`, `UI.toast`, `Mail.send`, `Quest.claim` all
-measured); the same calls from a 1 ms `Scheduler` job all work, which is what
-r206 does with every click action. **`UI.notify` and `UI.toast` both draw.**
-German labels, quest titles and messages translate correctly. Row G green.
+**OPEN — one batch, six rows, one install: export 1.0.33, harness unchanged at
+1.0.23.** Rows L…P are one German session (claim entry → journal; handbook entry
+→ log line; right-click a file and the desktop → do the toasts finally draw;
+look at the mail entry for an icon). Row Q is optional and last: switch to a
+language the pack has no words for and check the labels fall back to English
+rather than showing raw tokens. Details and the exact wording to write down are
+in `editor-export/README.md`, "Fifth run".
 
 Everything below this line is closed.
 

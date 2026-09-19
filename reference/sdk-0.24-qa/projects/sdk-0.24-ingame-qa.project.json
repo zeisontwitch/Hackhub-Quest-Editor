@@ -4,7 +4,7 @@
   "mod": {
     "id": "qe-sdk-024-editor-qa",
     "name": "QE SDK 0.24 Editor QA Scaffold",
-    "version": "1.0.32",
+    "version": "1.0.33",
     "author": "HackHub Quest Editor",
     "description": "Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, the Timer node delay and calendar modes, the Twotter node (accounts, backdated series, cleanup), and the pack extras (start-menu entry, desktop widget, right-click entries, translated words). Nothing auto-starts - claim one quest at a time with the harness command qe24 run - so a tester sees one row's noise, not five.",
     "tags": [
@@ -1948,7 +1948,7 @@
       {
         "id": "qe24-menu-mail",
         "label": "{{tr.qe24.menu.mail}}",
-        "icon": "",
+        "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFklEQVR4nGNYpfGfJMQwqmFUw/DVAADfudEQUL3SCgAAAABJRU5ErkJggg==",
         "action": {
           "kind": "mail",
           "text": "",

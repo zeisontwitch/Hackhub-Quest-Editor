@@ -205,17 +205,21 @@ top, no error anywhere. Filed as **Q15** (what are the article ids, or at least
 say when one is unknown), and the editor no longer pretends the page is reached —
 the log, the node's help text and the picker all say what really happens.
 
-### Fifth run — install and order
+### Fifth run — ONE session, six rows, one install
 
-Install **export 1.0.32**. The harness is **unchanged at 1.0.23** — if it is
-already installed, leave it alone. Rows A…K are answered — **do not re-run
-them**. Two rows are open, neither needing a fresh save, and both are quicker in
-the German session you already have (any language will do for the journal check):
+Install **export 1.0.33**. The harness is **unchanged at 1.0.23** — if it is
+already installed, leave it alone. Nothing here needs a fresh save, and rows
+L…P are a single German session: click the things, look, write **one line per
+row**. Paste the log only where a row says so. Row Q is last and optional.
 
 | # | What to do | What to write down |
 |---|---|---|
-| L | Click **`QE24: Extras-Quest annehmen`** in the start menu, wait two seconds, then look in the quest journal. | The quest **`QE24 Extras-Prüfung`** is in the journal. This is the one that did nothing in the last run (our bug: we claimed by our own id, and `Quest.claim` needs the game's own name for the quest — r207 sends that now). If it is still not there, the log line `[quest-editor] extras: claiming quest QESdk024ExtrasQa` says whether we sent the right name. |
-| M | Click **`QE24: Handbuchseite öffnen`** and, whether or not it lands on a page, paste the log lines. | Expected, and **not** a failure: the handbook opens on its own landing page. That is the finding of the last run (the page title is not the id the game wants — Q15 to the developers). I only need to see that the new log line is there: `opening the handbook at article "…" - the game lands on its own landing page (see Q15)`. |
+| L | Click **`QE24: Extras-Quest annehmen`**, wait two seconds, open the quest journal. | Is the quest **`QE24 Extras-Prüfung`** in it? If not, the log line `[quest-editor] extras: claiming quest QESdk024ExtrasQa` — that tells me whether we sent the right name. |
+| M | Click **`QE24: Handbuchseite öffnen`**. | **Expected, not a failure:** the handbook opens on its own landing page rather than a page. I only need the log line `opening the handbook at article "…" - the game lands on its own landing page (see Q15)`. |
+| N | Right-click a **file** and click **`QE24: diese Datei prüfen`**. | A toast — `Right-click on a file works (T-25a).` This one has never drawn anything: in the r204 run it was refused inside the click like the menu item, and the fix that made the menu entries work applies to right-click entries too. Nothing at all would be news. |
+| O | Right-click the **desktop** and click **`QE24: Desktop-Aktion`**. | Same, for the desktop target: `Right-click on the desktop works (T-25b).` |
+| P | Look at the start-menu entry **`QE24: schick mir einen Brief`** — do not click it, just look. | Does the entry show a small **purple square** before its label? That entry is the first thing the editor has ever put in the `icon` field, so "yes, a square" means the field works as a picture pasted into it, and "no, and no error" means I should take the field back out until we know what the game wants there. |
+| Q | **(optional, last)** Switch the game to **Français** (any language the pack has no words for), reload the save, look at the start menu. | Do the labels show **English** words (`QE24: extras check`) — the fallback working — or raw `{{tr.…}}` tokens, which would mean a French player sees gibberish? Then switch back to German. |
 
 **Two things not to test here, because the pack cannot do them:**
 
@@ -230,6 +234,7 @@ the German session you already have (any language will do for the journal check)
 
 | Export | Editor build | Result |
 |---|---|---|
+| 1.0.33 | 2026-09-19.r207 | **One batch, six rows.** No runtime change: the mail entry grew an **icon** (a small purple square as a data URL) so the editor's `icon` field can be judged in game, since nothing has ever exercised it. Rows L…Q are the rest of the open questions — the claim fix (L), the handbook's honest log line (M), the two right-click actions, which have never drawn anything (N/O), the icon (P) and the language fallback (Q). |
 | 1.0.32 | 2026-09-19.r207 | **The claim action claims by the game's own name for the quest.** Row I of the r206 run found the click doing nothing: the action sent the editor's document id, which `Quest.claim` does not know, and the game says nothing about an id it does not recognise. The compiler now resolves the author's pick to the quest's name at export (`QESdk024ExtrasQa` here), which is what the harness command and the unclaim node have always used. Nothing else changed except the handbook's log line, which now says the game lands on its own landing page (Q15). |
 | 1.0.31 | 2026-09-19.r206 | **A click no longer does its own work.** From a click every gated call is refused (Q14), so the action is handed to the engine (`Scheduler.schedule`, kind `qe/<mod id>/click`) and runs in its callback, where the mod has a name and the translation table is back. Three new start-menu entries — claim the extras quest, send a mail, open a handbook page — so every action kind can be clicked in game. |
 | 1.0.30 | 2026-09-19.r205 | **The refusal is explained, not guessed at.** When the game refuses a message from a click, the runtime now logs that the manifest is not the problem (the message the game prints sends authors to a file that is already correct) and points at Q14. Nothing else changed in the compiled content. |

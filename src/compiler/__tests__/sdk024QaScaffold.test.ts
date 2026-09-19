@@ -263,11 +263,15 @@ describe("r179 raw harness — the Twotter probe", () => {
            silently left disabled (behaviour: sdk024QaHarness.test.ts). r199 adds
            `qe24 extras` - Stage A of the cheap wins, probing Menu.addItem,
            Desktop.addWidget, ContextMenu.register and Localization, none of which
-           has any prior art here (same test file drives it). */
-        expect(manifest.version).toBe("1.0.20");
+           has any prior art here (same test file drives it). r203 adds the
+           `extras` ALIAS: Stage B put the extras into the editor export, so the
+           alias claims the new QA quest to show a translated Title - the surfaces
+           themselves need no quest at all, they are there from load. */
+        expect(manifest.version).toBe("1.0.21");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
+        expect(code).toContain('alias: "extras"');
     });
 
     it("audits the round's handles, and calls a present-and-undefined bio by name", () => {
@@ -743,11 +747,14 @@ describe("r181 raw harness — starting a quest on demand", () => {
         const tools = toolsFor(sdk);
         tools.getArgs = () => ["run", "clear"];
         runCommand(tools);
-        /* Every quest the launcher knows, including the two probe quests. */
+        /* Every quest the launcher knows, including the two probe quests and
+           r203's extras QA quest (which exists only to show a translated Title,
+           so `run clear` has to shed it like any other). */
         expect(sdk.__unclaimed).toEqual([
             "QESdk024TimerQa",
             "QESdk024TimerCalQa",
             "QESdk024WaitMonthQa",
+            "QESdk024ExtrasQa",
             "QE24SurfaceProbe",
             "QE24TwotterProbe",
             "QESdk024TwotterQa",

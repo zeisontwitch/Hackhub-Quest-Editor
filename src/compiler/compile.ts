@@ -12,7 +12,8 @@
  * (runtimeSource.ts) that walks each quest graph at runtime.
  */
 import type { ProjectDocument } from "@/schema/project";
-import { extrasAreEmpty, translationsAreEmpty, type DesktopWidgetDoc } from "@/schema/extras";
+import { extrasAreEmpty, translationsAreEmpty } from "@/schema/extras";
+import { widgetHtml, widgetPath, widgetPayload } from "./widgetHtml";
 import type { ToolPack } from "@/toolpacks/schema";
 import { warnTargetMatching } from "@/compiler/targetWarnings";
 import { TWOTTER_HANDLE_PATTERN } from "@/schema/twotter";
@@ -119,7 +120,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-18.r202";
+export const EDITOR_BUILD = "2026-09-19.r203";
 
 /** Warning severity (r153): info = good to know, warn = could cause issues,
     error = will break or strand the player. */
@@ -139,43 +140,6 @@ export interface CompiledFile {
     content: string;
     /** Content is base64 (binary asset) rather than plain text. */
     base64?: boolean;
-}
-
-/**
- * A desktop widget's HTML, as it ships in the pack.
- *
- * A widget is a website page that happens to be an iframe on the desktop, and
- * it is authored with the same editor — so this only has to make the file safe
- * to live on its own: the size the game was told, a visible frame while the
- * author is working on it, and the author's markup inside. When the author
- * writes a whole document, it is passed through untouched.
- */
-function widgetHtml(w: DesktopWidgetDoc): string {
-    const body = (w.html ?? "").trim();
-    if (/^\s*<!doctype|^\s*<html/i.test(body)) return body + (body.endsWith("\n") ? "" : "\n");
-    return [
-        "<!doctype html>",
-        '<html lang="en">',
-        "<head>",
-        '<meta charset="utf-8" />',
-        `<title>${(w.name || w.id).replace(/[<>&]/g, "")}</title>`,
-        "<style>",
-        "  html, body { margin: 0; height: 100%; }",
-        "  body {",
-        "    box-sizing: border-box;",
-        "    font: 14px/1.4 system-ui, sans-serif;",
-        "    color: #e8e8f0;",
-        "    background: #16161d;",
-        "    padding: 10px 12px;",
-        "  }",
-        "</style>",
-        "</head>",
-        "<body>",
-        body || '<p style="opacity:.6">This widget is empty.</p>',
-        "</body>",
-        "</html>",
-        "",
-    ].join("\n");
 }
 
 /** Turn an embedded data-URL image into a zip-ready binary file entry. */
@@ -772,15 +736,7 @@ function buildModJs(project: ProjectDocument, planningBlock: string): string {
         ? null
         : {
               menuItems: project.extras.menuItems ?? [],
-              widgets: (project.extras.widgets ?? []).map((w) => ({
-                  id: w.id,
-                  src: `widgets/${w.id}.html`,
-                  width: w.width,
-                  height: w.height,
-                  x: w.x,
-                  y: w.y,
-                  transparent: w.transparent,
-              })),
+              widgets: (project.extras.widgets ?? []).map(widgetPayload),
               contextItems: project.extras.contextItems ?? [],
           };
     const translations = translationsAreEmpty(project.translations) ? null : project.translations;
@@ -1002,10 +958,7 @@ export function compileProject(project: ProjectDocument, packs: ToolPack[] = [])
             ...(iconAsset ? [iconAsset.file] : []),
             ...(coverAsset ? [coverAsset.file] : []),
             /* One file per desktop widget — the path the registration names. */
-            ...(project.extras?.widgets ?? []).map((w) => ({
-                path: `widgets/${w.id}.html`,
-                content: widgetHtml(w),
-            })),
+            ...(project.extras?.widgets ?? []).map((w) => ({ path: widgetPath(w.id), content: widgetHtml(w) })),
         ],
     };
 }

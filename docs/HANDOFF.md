@@ -1,3 +1,48 @@
+# Handoff — r203
+
+**Stage B of the cheap wins is built — and it is waiting on five rows in game, not
+on more code.** Pack extras and localization exist end to end: schema, compiler,
+runtime, and a dialog with four surfaces. Nothing about the *editor* side is
+unverified by tests; what is unverified is how the game draws what the editor
+emits, which is exactly what T-23…T-27 are for.
+
+**What to run** (rows in `reference/sdk-0.24-qa/editor-export/README.md`, open
+banner in `STATUS.md`): install **export 1.0.28** — the **whole `mod/` folder**,
+`widgets/` included — then, in order: look at the start menu's bottom strip and
+click the entry (T-23), look at the desktop widget at 40,40 for a real background
+(T-24), right-click a file and the desktop (T-25a/b), switch the language to
+German and look at all three again (T-26), then `qe24 run extras` for the quest
+whose Title is a translation token (T-27). **Do not run `qe24 extras off`** — it
+removes the harness's own probe items, not the export's, so it only wastes the run.
+
+**Three things the build settled, each with a fence:**
+
+- **The fragile case is real.** A quest's Title (and Description) is read at
+  registration, so `{{tr.…}}` in those two is resolved *before* the class is handed
+  over — and only those two, so `{{data.…}}` keeps working everywhere else. Menu
+  and right-click labels are the same shape and get the same treatment; an action's
+  message waits for the click, which is later and may legitimately differ.
+- **A widget's text is a static file.** The game loads it as a document, so
+  `{{tr.…}}` is not filled inside widget HTML. The row notes say so rather than
+  letting an author find out in game.
+- **`__QE.safe` turns null into `""`.** The `{{tr.…}}` branch needed a genuine
+  "no translation" so it could show the key instead of a blank; it uses its own
+  try/catch. (Caught by the test that asserts the key is shown on a build with no
+  Localization at all.)
+
+**Tests:** `extras.test.ts` (21, compiles and boots the real mod against a stub)
+and `extrasDialog.test.tsx` (9, jsdom) — 30 new, the suite at 1,760 across 88 files. **14 mutations were falsified** — the first
+attempt at the "no `section` control" guard survived on an empty panel, so that
+assertion now runs with a full form on screen.
+
+**Still owed after the rows:** a manual page for the feature (the editor's own docs
+should not describe a surface as working before a tester has seen it in game).
+
+Versions: `EDITOR_BUILD` **r203**, export **1.0.28** (carries the extras), harness
+**1.0.21** (adds the `extras` alias).
+
+---
+
 # Handoff — r202
 
 **The pack-extras probe is closed: all four APIs work in 1.3.1.** Zeis's third

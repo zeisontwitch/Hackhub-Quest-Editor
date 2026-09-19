@@ -339,6 +339,12 @@ var QA_QUESTS = [
         what: "waits 1 in-game minute (the schedule path), then holds Wait 1 month (the scheduleAt path) - read it with qe24 timers.",
     },
     {
+        alias: "extras",
+        name: "QESdk024ExtrasQa",
+        title: "{{tr.qe24.quest.title}}",
+        what: "the editor export's own pack extras (r203): claim it only to see the translated Title - the menu entry, the widget and the right-click entries are there from load, with no quest needed.",
+    },
+    {
         alias: "probe",
         name: "QE24SurfaceProbe",
         title: "QE24 SDK surface probe",

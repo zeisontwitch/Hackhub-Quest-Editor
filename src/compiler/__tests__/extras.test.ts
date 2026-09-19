@@ -22,6 +22,7 @@
 import { describe, expect, it } from "vitest";
 import { compileProject } from "@/compiler/compile";
 import { createProject, type ProjectDocument } from "@/schema/project";
+import { nodeTypeDef } from "@/schema/registry";
 import { GAME_LANGUAGE_CODES, type ExtraAction } from "@/schema/extras";
 
 /* ── stub SDK ─────────────────────────────────────── */
@@ -36,6 +37,8 @@ interface ExtrasStub {
     /** The quest classes as the game receives them — the only place the Title
      *  the game reads at registration can be looked at. */
     quests: { new (): { Title: string; Description: string } }[];
+    /** Same list, typed loosely for the test that drives a quest instance. */
+    questClasses: { new (): unknown }[];
     sdk: Record<string, unknown>;
 }
 
@@ -91,7 +94,7 @@ function extrasSdk(): ExtrasStub {
             open: (id: string, category?: string) => calls.push(`handbook:${id}${category ? `|${category}` : ""}`),
         },
     };
-    return { calls, menu, widgets, context, translations, registeredAt, quests, sdk };
+    return { calls, menu, widgets, context, translations, registeredAt, quests, questClasses: quests, sdk };
 }
 
 function runMod(modJs: string, sdk: unknown) {
@@ -112,6 +115,22 @@ function boot(project: ProjectDocument) {
 }
 
 /* ── project fixtures ─────────────────────────────── */
+
+let seq = 0;
+/** A node built from the registry, the way the editor's own tests build them. */
+function node(type: Parameters<typeof nodeTypeDef>[0], patch: Record<string, unknown> = {}) {
+    const data = { ...(nodeTypeDef(type).create() as object), ...patch };
+    return { id: `n${++seq}`, type, position: { x: 0, y: 0 }, data } as unknown as { id: string };
+}
+
+const flow = (source: string, target: string) => ({
+    id: `e-${source}-${target}`,
+    source,
+    sourceHandle: "out",
+    target,
+    targetHandle: "in",
+    kind: "flow",
+});
 
 /** A complete action record — authors only ever fill the fields their chosen
  *  action kind uses, so the fixtures read the same way through this helper. */
@@ -324,6 +343,24 @@ describe("localization (r203)", () => {
         expect(b.translations[1]!.strings["menu.flashlight"]).toBe("Taschenlampe");
     });
 
+    it("leaves the quest flow's own token filling intact", () => {
+        /* The extras share the token scope with the quest flow, and that reach
+           is easy to get wrong: tokenScope lives in the runtime's IIFE, so a
+           bare call from the quest-side helper is a ReferenceError that breaks
+           EVERY token in every quest. This drives one quest node end to end —
+           the r203 gates caught the real thing, this keeps it caught here. */
+        const project = extrasProject();
+        const quest = project.quests[0];
+        quest.autoStart = false;
+        const entry = node("entry.start");
+        const notify = node("fx.notify", { message: "Hello {{player.username}}", variant: "notify", tone: "info" });
+        quest.graph = { nodes: [entry, notify], edges: [flow(entry.id, notify.id)] } as never;
+        const b = boot(project);
+        const instance = new (b.questClasses[0]!)() as { OnStart: () => void };
+        instance.OnStart();
+        expect(b.calls).toContain("notify:Hello player1");
+    });
+
     it("registers translations BEFORE the quests, so a title can be read at registration", () => {
         const b = boot(extrasProject());
         /* The game reads a quest's Title while registering it (SDK :4062), so
@@ -331,14 +368,18 @@ describe("localization (r203)", () => {
         expect(b.registeredAt[0]).toBe("quest:en,de");
     });
 
-    it("resolves {{tr.key}} in any field through the game's own translation table", () => {
+    it("translates a menu label at registration, because the game reads it there", () => {
         const b = boot(extrasProject());
-        const item = b.menu.find((m) => m.id === "flashlight")!;
-        expect(item.label).toBe("{{tr.menu.flashlight}}");
-        /* The token is filled where the author typed it, not at registration
-           time — the label above is registered verbatim and the runtime fills
-           it when the game asks. */
+        /* The author typed {{tr.menu.flashlight}}; the game was handed the
+           words. A label the game reads once cannot be filled later. */
+        expect(b.menu.find((m) => m.id === "flashlight")!.label).toBe("Flashlight");
+        expect(b.context.find((c) => c.id === "inspect-file")!.label).toBe("Inspect this file");
+    });
+
+    it("ships the token, not a baked translation, so the pack carries every language", () => {
+        const b = boot(extrasProject());
         expect(b.modJs).toContain("{{tr.menu.flashlight}}");
+        expect(b.translations.map((t) => t.language)).toEqual(["en", "de"]);
     });
 
     it("translates a quest's Title, which the game reads at registration", () => {

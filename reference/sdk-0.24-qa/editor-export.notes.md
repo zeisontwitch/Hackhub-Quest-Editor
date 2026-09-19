@@ -26,13 +26,47 @@ Two quests auto-start on load:
 | S-02 | Save and reload before Timer B (2 in-game hours) is due. | **Timer B fired** appears after the reload: the job survived the save. |
 | S-03 | Complete or abandon the quest first, then let Timer B's time pass. | Timer B never fires. The console logs `timer missed` when the job comes due while the quest is not active. |
 
-In-game console lines are the ones to quote in a report: `timer node … armed for …`,
+The lines to quote in a report are the ones in the log file
+(`%APPDATA%/Roaming/hackhub/log`, search it for `quest-editor`): `timer node … armed for …`,
 `timer … fired`, `timer missed: quest …`, `cancelled N pending timer(s)`.
+
+### Pack extras — T-23…T-27 (export 1.0.28, editor build r203)
+
+**Install**: copy the whole `mod/` folder of this export, exactly as it is — the
+`widgets/` folder inside it is part of the widget, and a copy without it shows an
+empty box. Then load a save.
+
+**Order matters**: look at everything first. Nothing here is removed by a command —
+the extras belong to the export and stay until the mod is switched off in the Mods
+list and the game is launched again. In particular:
+
+> **Do NOT run `qe24 extras off` for these rows.** That command removes the HARNESS's
+> own probe items, not the export's. Run it and the five things below are still
+> exactly where they were, so it only costs you a run.
+
+| Row | What to do | Green means |
+|---|---|---|
+| T-23 | Open the start menu and look along the **bottom strip**, below the app list. Then click the entry. | `QE24: extras check` is there, and clicking it shows the notice `The pack's own menu entry works (T-23).` — the English words come from the pack's translation table, not from a baked string. |
+| T-24 | Look at the desktop, upper left, at 40,40. | A 320×180 box with its **own dark background all the way to its edges**, reading `QE24 extras widget`. That is the new default: the editor sends "not see-through" unless the author turns the switch on. A box with no background at all would mean the switch arrived as see-through. |
+| T-25a | Right-click a file (any file on the desktop or in a folder). | `QE24: inspect this file` is in the menu; clicking it shows `Right-click on a file works (T-25a).` |
+| T-25b | Right-click an empty part of the desktop. | `QE24: desktop action` is in the menu; clicking it shows `Right-click on the desktop works (T-25b).` |
+| T-26 | Switch the game's language to **German** (Deutsch), then look at the start menu and right-click on a file and on the desktop. Switch back to English afterwards. | The labels and the notices are German: `QE24: Extras-Prüfung`, `QE24: diese Datei prüfen`, `QE24: Desktop-Aktion`, `Der eigene Menüeintrag des Packs funktioniert (T-23).` In English they are English again. A label showing `{{tr.…}}` itself means the translation did not arrive. |
+| T-27 | `qe24 run extras` (or claim `QESdk024ExtrasQa` by hand), then read the journal entry's title. | The title is `QE24 Extras-Prüfung` in German and `QE24 extras QA` in English. **This is the row that matters most**: a quest's title is read while the quest is registered, so it is the one text an author cannot fix after the fact. |
+
+**Two things not to test here, because the pack cannot do them:**
+
+- The widget's own text is a plain file — `{{tr.…}}` is NOT filled inside it. Only
+  the pack's fields (labels, messages, quest titles) go through the translation
+  table. Write the widget's words in whatever language you want it to show.
+- The start-menu strip is the only place menu entries appear. The editor never
+  sends a "top" or "bottom" choice, because the game ignored that field in the
+  r200/r201 probe — entries land in the bottom strip.
 
 ## Export history
 
 | Export | Editor build | Result |
 |---|---|---|
+| 1.0.28 | 2026-09-19.r203 | **The pack extras, from the editor.** One start-menu entry, one opaque desktop widget (`widgets/qe24-extras-widget.html`), two right-click entries, and a translation table with English + German — plus a new quest, `QESdk024ExtrasQa` (alias `extras`), whose **Title is `{{tr.qe24.quest.title}}`**: it is the row for the one field the game reads at registration. Nothing auto-starts; the extras surfaces are there from load. |
 | 1.0.27 | 2026-09-18.r202 | **Stamp only** — the round closed the pack-extras probe (all four APIs green) and starts Stage B. The compiled quests are unchanged. |
 | 1.0.26 | 2026-09-18.r201 | **Stamp only** — the round is the second pack-extras probe (three menu items, two widgets); the compiled quests are unchanged. |
 | 1.0.25 | 2026-09-18.r200 | **Stamp only** — the round is the harness's pack-extras probe (Stage A of the cheap wins); the compiled quests are unchanged. |

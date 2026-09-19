@@ -1273,7 +1273,12 @@ function __qeRegisterProject(sdk, PROJECT) {
                permission, and the exception escaped OnStart so the quest never
                started. A value the author never mentioned must not be able to
                do that. */
-            var base = tokenScope();
+            /* __QE.tokenScope(), not a bare call: tokenScope lives in the IIFE
+               above, and this function is a sibling of it, not a child. A bare
+               call threw "tokenScope is not defined" on EVERY quest node that
+               filled a token - which is how the r203 gates caught it (208 tests
+               in compile.test.ts). */
+            var base = __QE.tokenScope();
             base.data = d;
             base.Data = d;
             if (extra) { for (var k in extra) base[k] = extra[k]; }
@@ -3320,7 +3325,11 @@ function __qeRegisterProject(sdk, PROJECT) {
         (extras.menuItems || []).forEach(function (item) {
             if (!sdk.Menu || !sdk.Menu.addItem) return;
             __QE.safe(function () {
-                var def = { id: item.id, label: item.label, onClick: extraAction(item.action) };
+                /* The LABEL is read when the item is registered, exactly like
+                   a quest's Title - so a {{tr.…}} in it has to be resolved here.
+                   The action's own text waits until the click, which is later
+                   and may legitimately differ. */
+                var def = { id: item.id, label: __QE.fillTranslations(item.label), onClick: extraAction(item.action) };
                 if (item.icon) def.icon = item.icon;
                 sdk.Menu.addItem(def);
             });
@@ -3328,20 +3337,20 @@ function __qeRegisterProject(sdk, PROJECT) {
         (extras.widgets || []).forEach(function (w) {
             if (!sdk.Desktop || !sdk.Desktop.addWidget) return;
             __QE.safe(function () {
-                sdk.Desktop.addWidget({
-                    id: w.id,
-                    src: w.src,
-                    width: w.width,
-                    height: w.height,
-                    position: { x: w.x, y: w.y },
-                    transparent: !!w.transparent,
-                });
+                /* Spread the record the compiler built, then add the two fields
+                   the SDK wants in another shape (the position pair and an
+                   always-explicit transparency flag). */
+                var def = {};
+                for (var k in w) def[k] = w[k];
+                def.position = { x: w.x, y: w.y };
+                def.transparent = !!w.transparent;
+                sdk.Desktop.addWidget(def);
             });
         });
         (extras.contextItems || []).forEach(function (item) {
             if (!sdk.ContextMenu || !sdk.ContextMenu.register) return;
             __QE.safe(function () {
-                var def = { id: item.id, label: item.label, target: item.target, onClick: extraAction(item.action) };
+                var def = { id: item.id, label: __QE.fillTranslations(item.label), target: item.target, onClick: extraAction(item.action) };
                 if (item.icon) def.icon = item.icon;
                 sdk.ContextMenu.register(def);
             });

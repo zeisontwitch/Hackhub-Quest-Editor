@@ -236,10 +236,17 @@ export const ProjectSchema = z
         websites: z.array(WebsiteSchema).default([]),
         /** Twotter characters, shared by every quest in the mod (r185). */
         twotterAccounts: z.array(TwotterAccountSchema).default([]),
-        /** Start-menu items, desktop widgets and right-click items (r203). */
-        extras: ExtrasSchema.default({} as never),
-        /** Translations for `{{tr.…}}` tokens (r203). */
-        translations: TranslationsSchema.default({} as never),
+        /**
+         * Start-menu items, desktop widgets and right-click items (r203).
+         *
+         * The default is written out in full rather than as `{}`: zod hands a
+         * default back WITHOUT parsing it, so `{}` would leave the three arrays
+         * undefined on a fresh project while a project read back from a file
+         * had them — and the save-file round-trip test compares the two.
+         */
+        extras: ExtrasSchema.default({ menuItems: [], widgets: [], contextItems: [] } as never),
+        /** Translations for `{{tr.…}}` tokens (r203). The same full-default rule. */
+        translations: TranslationsSchema.default({ languages: ["en"], strings: {} } as never),
         editor: EditorStateSchema.default({} as never),
     })
     /* Every valid project ships at least one quest (`.min(1)` above), so a parse

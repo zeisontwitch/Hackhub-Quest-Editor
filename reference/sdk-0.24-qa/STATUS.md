@@ -1,13 +1,22 @@
-# QE24 QA status (2026-09-18)
+# QE24 QA status (2026-09-19)
 
-One page, so nobody re-runs a finished check. **Two Twotter rows are open**
-(T-15b the uninstall, and the abandon half of T-11b) after a second pass on
-2026-09-19 confirmed completion, the shared account and the account cleanup all
-behave. Everything else on this page is closed, answered or deliberately
-shelved. One row (S-10,
-the short-month clamp) is shelved by the author's decision rather than passed,
-and is marked as such. A future round that needs an in-game check adds a *new*
-row here and a new harness version — never a re-run of the ones below.
+**OPEN: the pack-extras rows T-23…T-27** (Stage B of the cheap wins). They are run
+against the **editor export 1.0.28**, not the harness: the export now carries a
+start-menu entry, an opaque desktop widget, two right-click entries and an
+English + German translation table of its own. Rows and the run order are in
+`editor-export/README.md` (the "Pack extras" section). Two warnings that cost a
+run if missed: copy the export's **whole `mod/` folder** (its `widgets/` folder is
+the widget), and **do not run `qe24 extras off`** — that removes the harness's own
+probe items, never the export's. Harness **1.0.21** adds the `extras` alias for
+T-27 only.
+
+Everything below this line is closed.
+
+One page, so nobody re-runs a finished check. Below the banner, every round is
+closed, answered or deliberately shelved (S-10, the short-month clamp, is shelved
+by the author's decision rather than passed, and is marked as such). A future
+round that needs an in-game check adds a *new* row here and a new harness version
+— never a re-run of the ones below.
 
 ## Settled: the Twotter editor rows, first run — 2026-09-18 (game 1.3.1, build 25388883)
 

@@ -163,8 +163,8 @@ function runHarness(
 
 describe("the harness's export check", () => {
     it("says the export is loaded, with its version, when the marker is there", () => {
-        const { lines } = runHarness(["run", "tw1"], { marker: "1.0.20 (2026-09-18.r193)" });
-        expect(lines.some((l) => /Editor export: loaded \(v1\.0\.20/.test(l))).toBe(true);
+        const { lines } = runHarness(["run", "tw1"], { marker: "1.0.21 (2026-09-19.r203)" });
+        expect(lines.some((l) => /Editor export: loaded \(v1\.0\.21/.test(l))).toBe(true);
         // …and it still does the thing it was asked to do.
         expect(lines.some((l) => /Claimed QESdk024TwotterQa/.test(l))).toBe(true);
     });
@@ -190,7 +190,7 @@ describe("the harness's export check", () => {
     });
 
     it("prints the same line from `qe24 twotter audit` — the row that reads the save", () => {
-        const { lines } = runHarness(["twotter", "audit"], { marker: "1.0.20 (2026-09-18.r193)" });
+        const { lines } = runHarness(["twotter", "audit"], { marker: "1.0.21 (2026-09-19.r203)" });
         expect(lines.some((l) => /Editor export: loaded/.test(l))).toBe(true);
     });
 });

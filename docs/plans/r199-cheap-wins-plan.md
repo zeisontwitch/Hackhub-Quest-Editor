@@ -1,5 +1,26 @@
 # r199: the cheap wins — pack extras and localization
 
+> **Stage B built, 2026-09-19 (r203). Awaiting the in-game rows T-23…T-27.** The
+> editor has the four surfaces (`src/editor/extras/ExtrasDialog.tsx`), the schema
+> (`src/schema/extras.ts`), the emitter and the runtime halves. Two things the
+> build settled that the plan could only flag:
+>
+> - **The fragile case the plan named is real and is handled.** A quest's Title
+>   (and Description) is read *at registration*, so `{{tr.…}}` in those two is
+>   resolved by the runtime before the class is handed over — and only those two,
+>   so `{{data.…}}` keeps working everywhere else. **Menu and right-click labels
+>   are the same shape** and get the same treatment; an action's message waits for
+>   the click, which is later and may legitimately differ.
+> - **A widget's own text is a static file.** The game loads it as an iframe
+>   document, so `{{tr.…}}` is *not* filled inside widget HTML, and the row notes
+>   say so rather than letting an author discover it in game.
+>
+> Rows T-23…T-27 (run against **export 1.0.28**, harness **1.0.21**) are in
+> `reference/sdk-0.24-qa/editor-export/README.md`; the open banner is at the top of
+> `STATUS.md`. What is still owed after the rows: a manual page for the feature —
+> the editor's own docs should not describe a surface as working before a tester
+> has seen it in game.
+
 > **Stage A complete, 2026-09-19 (r200, r201). All four APIs work.** Start-menu
 > items appear in the bottom strip of the start menu (**and the declared
 > `section` has no visible effect — so §4's menu list will not offer it**);

@@ -16,6 +16,7 @@ import {
 } from "./common";
 import { DialogBranchSchema, NodeSchema } from "./nodes";
 import { EdgeSchema } from "./edges";
+import { ExtrasSchema, TranslationsSchema } from "./extras";
 import { STARTER_PAGE } from "@/templates/pages";
 
 /* ── Mod ─────────────────────────────────────────────────────────────────── */
@@ -235,6 +236,10 @@ export const ProjectSchema = z
         websites: z.array(WebsiteSchema).default([]),
         /** Twotter characters, shared by every quest in the mod (r185). */
         twotterAccounts: z.array(TwotterAccountSchema).default([]),
+        /** Start-menu items, desktop widgets and right-click items (r203). */
+        extras: ExtrasSchema.default({} as never),
+        /** Translations for `{{tr.…}}` tokens (r203). */
+        translations: TranslationsSchema.default({} as never),
         editor: EditorStateSchema.default({} as never),
     })
     /* Every valid project ships at least one quest (`.min(1)` above), so a parse

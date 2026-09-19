@@ -118,6 +118,16 @@ export interface EditorStore {
     updatePage: (websiteId: string, pageId: string, patch: Partial<WebPageDoc>) => void;
     removePage: (websiteId: string, pageId: string) => void;
 
+    /* pack extras + translations (r203) — mod level, like the websites */
+    addExtra: (list: "menuItems" | "widgets" | "contextItems", item: never) => void;
+    updateExtra: (list: "menuItems" | "widgets" | "contextItems", id: string, patch: Record<string, unknown>) => void;
+    removeExtra: (list: "menuItems" | "widgets" | "contextItems", id: string) => void;
+    setTranslation: (language: string, key: string, value: string) => void;
+    addTranslationLanguage: (language: string) => void;
+    removeTranslationLanguage: (language: string) => void;
+    addTranslationKey: (key: string) => void;
+    removeTranslationKey: (key: string) => void;
+
     /* ui */
     select: (selection: Selection) => void;
     setUi: (patch: Partial<UiState>) => void;
@@ -336,6 +346,75 @@ export const useEditor = create<EditorStore>()((set, get) => {
             mutate((project) => {
                 const account = project.twotterAccounts.find((a) => a.id === id);
                 if (account) Object.assign(account, patch);
+            }),
+
+        /* Pack extras (r203). One set of actions for the three lists, because
+           they differ only in which array they land in; the panel keeps the
+           forms apart. */
+        addExtra: (list, item) =>
+            mutate((project) => {
+                project.extras = project.extras ?? { menuItems: [], widgets: [], contextItems: [] };
+                (project.extras[list] as unknown[]).push(item);
+            }),
+
+        updateExtra: (list, id, patch) =>
+            mutate((project) => {
+                const found = (project.extras?.[list] ?? []).find((i) => i.id === id);
+                if (found) Object.assign(found, patch);
+            }),
+
+        removeExtra: (list, id) =>
+            mutate((project) => {
+                const extras = project.extras;
+                if (!extras) return;
+                extras[list] = (extras[list] as { id: string }[]).filter((i) => i.id !== id) as never;
+            }),
+
+        /* Translations. The language list and the key set are shared by every
+           language (the game falls back to English for anything a language has
+           not filled in), so adding or removing a language or a key touches
+           every row at once — that is what keeps the table consistent. */
+        setTranslation: (language, key, value) =>
+            mutate((project) => {
+                const t = project.translations ?? { languages: ["en"], strings: {} };
+                t.strings[language] = t.strings[language] ?? {};
+                t.strings[language][key] = value;
+                project.translations = t;
+            }),
+
+        addTranslationLanguage: (language) =>
+            mutate((project) => {
+                const t = project.translations ?? { languages: ["en"], strings: {} };
+                if (!t.languages.includes(language)) t.languages.push(language);
+                t.strings[language] = t.strings[language] ?? {};
+                project.translations = t;
+            }),
+
+        removeTranslationLanguage: (language) =>
+            mutate((project) => {
+                const t = project.translations;
+                if (!t) return;
+                t.languages = t.languages.filter((l) => l !== language);
+                delete t.strings[language];
+                project.translations = t;
+            }),
+
+        addTranslationKey: (key) =>
+            mutate((project) => {
+                const t = project.translations ?? { languages: ["en"], strings: {} };
+                for (const language of t.languages) {
+                    t.strings[language] = t.strings[language] ?? {};
+                    if (!(key in t.strings[language])) t.strings[language][key] = "";
+                }
+                project.translations = t;
+            }),
+
+        removeTranslationKey: (key) =>
+            mutate((project) => {
+                const t = project.translations;
+                if (!t) return;
+                for (const language of Object.keys(t.strings)) delete t.strings[language][key];
+                project.translations = t;
             }),
 
         /* websites — the builder dialog writes through these */

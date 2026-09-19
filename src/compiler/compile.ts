@@ -12,6 +12,7 @@
  * (runtimeSource.ts) that walks each quest graph at runtime.
  */
 import type { ProjectDocument } from "@/schema/project";
+import { extrasAreEmpty, translationsAreEmpty, type DesktopWidgetDoc } from "@/schema/extras";
 import type { ToolPack } from "@/toolpacks/schema";
 import { warnTargetMatching } from "@/compiler/targetWarnings";
 import { TWOTTER_HANDLE_PATTERN } from "@/schema/twotter";
@@ -138,6 +139,43 @@ export interface CompiledFile {
     content: string;
     /** Content is base64 (binary asset) rather than plain text. */
     base64?: boolean;
+}
+
+/**
+ * A desktop widget's HTML, as it ships in the pack.
+ *
+ * A widget is a website page that happens to be an iframe on the desktop, and
+ * it is authored with the same editor — so this only has to make the file safe
+ * to live on its own: the size the game was told, a visible frame while the
+ * author is working on it, and the author's markup inside. When the author
+ * writes a whole document, it is passed through untouched.
+ */
+function widgetHtml(w: DesktopWidgetDoc): string {
+    const body = (w.html ?? "").trim();
+    if (/^\s*<!doctype|^\s*<html/i.test(body)) return body + (body.endsWith("\n") ? "" : "\n");
+    return [
+        "<!doctype html>",
+        '<html lang="en">',
+        "<head>",
+        '<meta charset="utf-8" />',
+        `<title>${(w.name || w.id).replace(/[<>&]/g, "")}</title>`,
+        "<style>",
+        "  html, body { margin: 0; height: 100%; }",
+        "  body {",
+        "    box-sizing: border-box;",
+        "    font: 14px/1.4 system-ui, sans-serif;",
+        "    color: #e8e8f0;",
+        "    background: #16161d;",
+        "    padding: 10px 12px;",
+        "  }",
+        "</style>",
+        "</head>",
+        "<body>",
+        body || '<p style="opacity:.6">This widget is empty.</p>',
+        "</body>",
+        "</html>",
+        "",
+    ].join("\n");
 }
 
 /** Turn an embedded data-URL image into a zip-ready binary file entry. */
@@ -727,6 +765,25 @@ export function computeWarnings(project: ProjectDocument, packs: ToolPack[] = []
 /* ── Compile ───────────────────────────────────────────────────────────── */
 
 function buildModJs(project: ProjectDocument, planningBlock: string): string {
+    /* The runtime gets everything except the markup: a widget's HTML ships as
+       its own file and the registration points at that path (verified in game —
+       a mod-relative path resolves; r201 probe). */
+    const extras = extrasAreEmpty(project.extras)
+        ? null
+        : {
+              menuItems: project.extras.menuItems ?? [],
+              widgets: (project.extras.widgets ?? []).map((w) => ({
+                  id: w.id,
+                  src: `widgets/${w.id}.html`,
+                  width: w.width,
+                  height: w.height,
+                  x: w.x,
+                  y: w.y,
+                  transparent: w.transparent,
+              })),
+              contextItems: project.extras.contextItems ?? [],
+          };
+    const translations = translationsAreEmpty(project.translations) ? null : project.translations;
     const PROJECT = {
         mod: project.mod,
         quests: project.quests.map((q) => ({
@@ -758,6 +815,11 @@ function buildModJs(project: ProjectDocument, planningBlock: string): string {
            which is the one the engine fills incompletely. The fence tests hold
            that line. */
         twotterAccounts: project.twotterAccounts,
+        /* Pack extras (r203) and translations. Emitted ONLY when the pack uses
+           them, so a project without them produces exactly the same mod.js as
+           before — the rule this compiler has followed since r84. */
+        ...(extras ? { extras } : {}),
+        ...(translations ? { translations } : {}),
     };
 
     return [
@@ -840,6 +902,19 @@ export function compileProject(project: ProjectDocument, packs: ToolPack[] = [])
     for (const { result } of seeded) for (const id of result.absorbed) absorbed.add(id);
 
     const permissions = computePermissions(working);
+    /* Pack extras (r203): the four surfaces are UI, and a mail action needs the
+       mail permission. The r200/r201 probe declared ui (plus the harness's own
+       network/events/mail/shell) and all four worked; `ui` alone is the honest
+       mapping for the surfaces themselves. */
+    const extrasForPerms = project.extras;
+    if (!extrasAreEmpty(extrasForPerms)) {
+        if (!permissions.includes("ui")) permissions.push("ui");
+        const actions = [
+            ...(extrasForPerms.menuItems ?? []).map((m) => m.action),
+            ...(extrasForPerms.contextItems ?? []).map((c) => c.action),
+        ];
+        if (actions.some((a) => a.kind === "mail") && !permissions.includes("mail")) permissions.push("mail");
+    }
     const warningDetails = computeWarningDetails(working, packs);
     const warnings = warningDetails.map((w) => w.text);
 
@@ -926,6 +1001,11 @@ export function compileProject(project: ProjectDocument, packs: ToolPack[] = [])
             { path: "tsconfig.json", content: JSON.stringify(tsconfig, null, 2) + "\n" },
             ...(iconAsset ? [iconAsset.file] : []),
             ...(coverAsset ? [coverAsset.file] : []),
+            /* One file per desktop widget — the path the registration names. */
+            ...(project.extras?.widgets ?? []).map((w) => ({
+                path: `widgets/${w.id}.html`,
+                content: widgetHtml(w),
+            })),
         ],
     };
 }

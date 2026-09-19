@@ -7,6 +7,26 @@
  */
 export const RUNTIME_SOURCE = String.raw`
 var __QE = (function () {
+    /* The token scope for anything OUTSIDE a quest (r203): pack extras are
+       registered at mod level, so they have no quest Data. The getters are the
+       same lazy ones the quest scope uses - computed only if a token asks, and
+       never allowed to throw, because an eager SDK call once cost a mod its
+       whole quest (see dataScope). */
+    function tokenScope() {
+        return {
+            player: {
+                get ip() { return __QE.safe(function () { return sdk.Network && sdk.Network.getPlayerIp ? sdk.Network.getPlayerIp() : ""; }); },
+                get email() { return __QE.safe(function () { return sdk.Mail && sdk.Mail.getPlayerEmail ? sdk.Mail.getPlayerEmail() : ""; }); },
+                get username() { return __QE.safe(function () { return sdk.Shell && sdk.Shell.getUsername ? sdk.Shell.getUsername() : ""; }); },
+            },
+            random: {
+                get password() { return __QE.safe(function () { return sdk.Random && sdk.Random.password ? sdk.Random.password() : ""; }); },
+                get ip() { return __QE.safe(function () { return sdk.Network && sdk.Network.randomIp ? sdk.Network.randomIp() : ""; }); },
+                get username() { return __QE.safe(function () { return sdk.Random && sdk.Random.username ? sdk.Random.username() : ""; }); },
+            },
+        };
+    }
+
     function getPath(obj, path) {
         return String(path).split(".").reduce(function (acc, k) {
             return acc == null ? acc : acc[k];
@@ -14,7 +34,28 @@ var __QE = (function () {
     }
     function fill(tpl, scope) {
         return String(tpl).replace(/\{\{([^}]+)\}\}/g, function (_m, p) {
-            var v = getPath(scope, p.trim());
+            var key = p.trim();
+            /* {{tr.some.key}} - translated text, wherever the author typed it.
+               The SDK's t() falls back to English, then to the key itself, so a
+               missing line is visible on screen instead of silently blank; if
+               the build has no Localization at all, showing the key is still
+               more honest than showing nothing. */
+            if (key.indexOf("tr.") === 0) {
+                var tkey = key.slice(3);
+                /* NOT __QE.safe here: it turns null into "", which would erase
+                   the difference between "no translation" and "empty text" and
+                   leave a blank on screen. A failure has to stay a failure so
+                   the key can be shown instead. */
+                var out = null;
+                try {
+                    out = sdk.Localization && sdk.Localization.t ? sdk.Localization.t(tkey) : null;
+                } catch (eTr) {
+                    out = null;
+                }
+                if (out == null || out === "") return tkey;
+                return String(out);
+            }
+            var v = getPath(scope, key);
             return v == null ? "" : String(v);
         });
     }
@@ -294,7 +335,7 @@ var __QE = (function () {
         });
         return JSON.parse(fill(json, scope));
     }
-    return { getPath: getPath, fill: fill, packText: packText, packFill: packFill, htmlToText: htmlToText, matchAll: matchAll, matchInput: matchInput, matchPrompt: matchPrompt, sleep: sleep, seq: seq, describe: describe, wait: wait, ageStringFromDate: ageStringFromDate, safe: safe, log: log };
+    return { getPath: getPath, fill: fill, tokenScope: tokenScope, packText: packText, packFill: packFill, htmlToText: htmlToText, matchAll: matchAll, matchInput: matchInput, matchPrompt: matchPrompt, sleep: sleep, seq: seq, describe: describe, wait: wait, ageStringFromDate: ageStringFromDate, safe: safe, log: log };
 })();
 
 function __qeRegisterProject(sdk, PROJECT) {
@@ -1214,20 +1255,9 @@ function __qeRegisterProject(sdk, PROJECT) {
                permission, and the exception escaped OnStart so the quest never
                started. A value the author never mentioned must not be able to
                do that. */
-            var base = {
-                data: d,
-                Data: d,
-                player: {
-                    get ip() { return __QE.safe(function () { return sdk.Network && sdk.Network.getPlayerIp ? sdk.Network.getPlayerIp() : ""; }); },
-                    get email() { return __QE.safe(function () { return sdk.Mail && sdk.Mail.getPlayerEmail ? sdk.Mail.getPlayerEmail() : ""; }); },
-                    get username() { return __QE.safe(function () { return sdk.Shell && sdk.Shell.getUsername ? sdk.Shell.getUsername() : ""; }); },
-                },
-                random: {
-                    get password() { return __QE.safe(function () { return sdk.Random && sdk.Random.password ? sdk.Random.password() : ""; }); },
-                    get ip() { return __QE.safe(function () { return sdk.Network && sdk.Network.randomIp ? sdk.Network.randomIp() : ""; }); },
-                    get username() { return __QE.safe(function () { return sdk.Random && sdk.Random.username ? sdk.Random.username() : ""; }); },
-                },
-            };
+            var base = tokenScope();
+            base.data = d;
+            base.Data = d;
             if (extra) { for (var k in extra) base[k] = extra[k]; }
             return base;
         }
@@ -3196,6 +3226,117 @@ function __qeRegisterProject(sdk, PROJECT) {
         sdk.RegisterWebsite(cls);
     }
 
+    /* ── pack extras (r203) ──────────────────────────────────────────────
+       The things a pack puts outside its own quests: start-menu items, desktop
+       widgets and right-click items, plus the click actions behind them.
+
+       All four surfaces were verified in game before any of this was authored
+       (r200/r201 probe). Two findings are baked into what follows:
+
+       - Menu.addItem renders items in the bottom strip of the start menu, and
+         the SDK's declared "section" field has NO visible effect - so nothing
+         here passes one.
+       - Desktop.addWidget's "transparent" defaults to TRUE in the SDK, which is
+         why the first probe drew bare text with no background. The editor's own
+         default is opaque, and the flag is always sent explicitly so the
+         behaviour never depends on a default again.
+
+       Every registration is guarded and every click is wrapped: a pack whose
+       extras misbehave must not be able to stop its quests from loading. */
+
+    function extraScope() { return __QE.tokenScope(); }
+
+    function extraText(text) {
+        return __QE.fill(text || "", extraScope());
+    }
+
+    function extraAction(action) {
+        var a = action || {};
+        if (a.kind === "claim") {
+            return function () {
+                if (!sdk.Quest || !sdk.Quest.claim) return;
+                __QE.log("extras: claiming quest " + a.questId);
+                __QE.safe(function () { sdk.Quest.claim(a.questId); });
+            };
+        }
+        if (a.kind === "mail") {
+            return function () {
+                if (!sdk.Mail || !sdk.Mail.send) return;
+                var mail = {
+                    subject: extraText(a.mailSubject),
+                    content: __QE.htmlToText(extraText(a.mailContent)),
+                };
+                if (a.mailFrom) mail.from = extraText(a.mailFrom);
+                var to = __QE.safe(function () { return sdk.Mail.getPlayerEmail ? sdk.Mail.getPlayerEmail() : ""; });
+                if (to) mail.to = to;
+                __QE.log("extras: sending mail \"" + mail.subject + "\"");
+                __QE.safe(function () { sdk.Mail.send(mail); });
+            };
+        }
+        if (a.kind === "handbook") {
+            return function () {
+                if (!sdk.Handbook || !sdk.Handbook.open) return;
+                __QE.log("extras: opening handbook article " + a.handbookId);
+                __QE.safe(function () {
+                    if (a.handbookCategory) sdk.Handbook.open(a.handbookId, a.handbookCategory);
+                    else sdk.Handbook.open(a.handbookId);
+                });
+            };
+        }
+        /* notify, and the safe default for anything unrecognised: say something
+           rather than doing nothing at all. */
+        return function () {
+            var text = extraText(a.text) || "This item does nothing yet.";
+            if (sdk.UI && sdk.UI.notify) __QE.safe(function () { sdk.UI.notify(text); });
+            else __QE.log("extras: notify \"" + text + "\"");
+        };
+    }
+
+    function registerExtras() {
+        var extras = PROJECT.extras;
+        if (!extras) return;
+        (extras.menuItems || []).forEach(function (item) {
+            if (!sdk.Menu || !sdk.Menu.addItem) return;
+            __QE.safe(function () {
+                var def = { id: item.id, label: item.label, onClick: extraAction(item.action) };
+                if (item.icon) def.icon = item.icon;
+                sdk.Menu.addItem(def);
+            });
+        });
+        (extras.widgets || []).forEach(function (w) {
+            if (!sdk.Desktop || !sdk.Desktop.addWidget) return;
+            __QE.safe(function () {
+                sdk.Desktop.addWidget({
+                    id: w.id,
+                    src: w.src,
+                    width: w.width,
+                    height: w.height,
+                    position: { x: w.x, y: w.y },
+                    transparent: !!w.transparent,
+                });
+            });
+        });
+        (extras.contextItems || []).forEach(function (item) {
+            if (!sdk.ContextMenu || !sdk.ContextMenu.register) return;
+            __QE.safe(function () {
+                var def = { id: item.id, label: item.label, target: item.target, onClick: extraAction(item.action) };
+                if (item.icon) def.icon = item.icon;
+                sdk.ContextMenu.register(def);
+            });
+        });
+    }
+
+    /* Translations go in FIRST, before any quest is registered: a quest's Title
+       is read at registration (the SDK says so), so a translated title has to
+       already exist by the time registerQuest runs. */
+    (function registerTranslations() {
+        var t = PROJECT.translations;
+        if (!t || !sdk.Localization || !sdk.Localization.register) return;
+        Object.keys(t.strings || {}).forEach(function (language) {
+            __QE.safe(function () { sdk.Localization.register(language, t.strings[language]); });
+        });
+    })();
+
     (PROJECT.quests || []).forEach(registerQuest);
 
     /* Websites are registered after the quests, so anything a quest adds to a
@@ -3203,6 +3344,11 @@ function __qeRegisterProject(sdk, PROJECT) {
     (PROJECT.websites || []).forEach(function (w) {
         registerWebsite(w, []);
     });
+    /* Pack extras are registered after the websites, for the same reason the
+       websites come after the quests: everything that wants to add to them has
+       already run. */
+    registerExtras();
+
     /* The mod package entry point. Every piece of content is registered by the
        quest, website and command classes above, so this class has almost
        nothing to do - except say, in the game's own log, that it loaded.

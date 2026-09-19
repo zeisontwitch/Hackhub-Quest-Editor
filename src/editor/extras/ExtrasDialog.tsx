@@ -62,7 +62,7 @@ const ACTION_KINDS = [
     { value: "notify", label: "Show a message" },
     { value: "claim", label: "Start a quest" },
     { value: "mail", label: "Send a mail" },
-    { value: "handbook", label: "Open a handbook page" },
+    { value: "handbook", label: "Open the handbook" },
 ] as const;
 
 /** Short "what it does" words for the list rows. */
@@ -167,7 +167,7 @@ function ActionFields({
                 <>
                     <FieldShell
                         label="Page"
-                        hint="These are the pages the editor knows the names of. Type anything else if you need a page that is not listed."
+                        hint="The page to open. In game 1.3.1 the handbook opens on its own landing page: reaching a particular page is not possible until the page names the game uses are known."
                     >
                         <TextInput
                             ariaLabel="Page"

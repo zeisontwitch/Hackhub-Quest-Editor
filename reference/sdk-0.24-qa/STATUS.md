@@ -1,33 +1,27 @@
 # QE24 QA status (2026-09-19)
 
-**OPEN: rows I, J, K** — click the four new start-menu entries in German, then
-paste the log lines for one of them. Install **export 1.0.31**; the harness is
-unchanged at **1.0.23**.
+**OPEN: rows L and M** (export **1.0.32**, harness unchanged at **1.0.23**).
+Everything else is answered. **L** re-clicks the claim entry, which did nothing
+in the last run because of our bug — `Quest.claim` takes the game's own name for
+the quest, not the editor's id, and the game is silent about an id it does not
+know (r207 sends the name now). **M** re-clicks the handbook entry, which opens
+the handbook at its own landing page rather than the article — a **Q15** for the
+developers, not a regression, and the only thing to check is the new log line.
 
-**The click mystery is solved.** Row H's probe report, from the game:
+**Run 4 (r206 build) in one paragraph:** the deferred click path works — the log
+shows `clicked` → `handed … to the engine (job click-4)` → `the engine called
+back for …` → the action running, in German, with the sentence (`Der eigene
+Menüeintrag des Packs funktioniert. (T-23)`) rather than the raw token that a
+click handler logs. Mail delivered. Claim did nothing (our bug, above). The
+handbook opened at its landing page (Q15).
 
-```
-SharedVariables.set (no permission) - WORKED
-UI.notify (ui permission) - refused: [ContentSDK] Mod "null" tried to use UI.notify without "ui" permission. ...
-UI.toast (ui permission) - refused: [ContentSDK] Mod "null" tried to use UI.toast without "ui" permission. ...
-Mail.send (mail permission) - refused: [ContentSDK] Mod "null" tried to use Mail.send without "mail" permission. ...
-Quest.claim (the claim action) - refused: [ContentSDK] Mod "null" tried to use Quest.claim without "events" permission. ...
-Scheduler.schedule (defer to the engine) - WORKED
-DEFERRED UI.toast (from a scheduler job) - WORKED
-DEFERRED UI.notify (from a scheduler job) - WORKED
-deferred job fired: yes
-```
+**Earlier rounds:** rows A…H answered. The click refusal was `Mod "null"` — a
+menu or right-click handler has no mod identity, so every permission-gated call
+from one is refused (`UI.notify`, `UI.toast`, `Mail.send`, `Quest.claim` all
+measured); the same calls from a 1 ms `Scheduler` job all work, which is what
+r206 does with every click action. **`UI.notify` and `UI.toast` both draw.**
+German labels, quest titles and messages translate correctly. Row G green.
 
-From a click, **every** gated call is refused — `Quest.claim` included — and the
-same calls from a 1 ms `Scheduler` job all work. That is the workaround the editor
-now uses: a click writes its log line, hands the action to the engine, and the
-action runs in the callback. Q14 stays open for the developers; this is our side
-of it.
-
-**Row G green** — German start-menu and right-click labels
-(`QE24: Extras-Prüfung`, `QE24: diese Datei prüfen`, `QE24: Desktop-Aktion`).
-
-**The r204 run, in full:**
 Everything below this line is closed.
 
 One page, so nobody re-runs a finished check. Below the banner, every round is

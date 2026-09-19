@@ -75,7 +75,11 @@ export const ExtraActionSchema = z.object({
     kind: z.enum(EXTRA_ACTION_KINDS).default("notify"),
     /** notify: the toast text (tokens work). */
     text: z.string().default(""),
-    /** claim: the quest to start, by id — the same call the harness makes. */
+    /** claim: the quest to start, by this project's own id. The compiler turns
+     *  it into the NAME the game knows the quest by, because `Quest.claim` takes
+     *  that and silently does nothing with an id it does not recognise
+     *  (measured in game 2026-09-19). */
+
     questId: z.string().default(""),
     /** mail: the fields `Mail.send` takes, plus a sender line. */
     mailFrom: z.string().default(""),

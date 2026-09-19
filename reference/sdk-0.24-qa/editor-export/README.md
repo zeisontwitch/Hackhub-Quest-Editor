@@ -206,18 +206,52 @@ in German, without any change to the project file.
 Q14 stays open for the developers: this is a workaround for the pack's own
 actions, not a fix for the game.
 
-### Fourth run — install and order
+### What the fourth run found (2026-09-19) — three answers, one of them a bug of ours
 
-Install **export 1.0.31**. The harness is **unchanged at 1.0.23** — if it is
-already installed, leave it alone. Rows A…H are answered — **do not re-run
-them**. Three rows are open, none needing a fresh save, and all three need the
-game in German (row G already left it that way):
+**The deferred click path works.** Row J's log, verbatim:
+
+```
+[quest-editor] extras: menu item "qe24-menu-handbook" clicked (language de)
+[quest-editor] extras: handed menu item "qe24-menu-handbook" to the engine (job click-4) - a click has no mod identity, so the work runs in the engine's callback instead
+[quest-editor] extras: the engine called back for menu item "qe24-menu-handbook" (language de) - running it here, where the mod has a name
+[quest-editor] extras: opening handbook article Port Forwarding: Start Here
+```
+
+Exactly the order the fix promises, in German, with the engine's callback doing
+the work. **J green, K green** — the toast read *Der eigene Menüeintrag des
+Packs funktioniert. (T-23)*, the sentence rather than the raw token, which is the
+translation table being reachable again from the callback.
+
+**Mail green.** `schick mir einen Brief` delivered a letter.
+
+**Claim did nothing — and that was our bug, not the game's.** Row I's second
+entry produced no journal entry and no popup. The action was claiming by the
+editor's own document id (`qe-x1`); `Quest.claim` takes the **name the game knows
+the quest by** (`QESdk024ExtrasQa`), which is what the harness has always used and
+what the runtime's own "unclaim a quest" node uses. The game does not say a word
+about an id it does not recognise — so the click looked dead. **Fixed in r207**:
+the compiler resolves the author's pick to the engine's name at export, the
+runtime logs `claiming quest <name>`, and an action whose quest is gone says
+so instead of doing nothing.
+
+**Handbook opened, but at its landing page** — not the article. The id we send is
+the page *title*, which was a guess, and the guess is now disproved. Nothing in
+the build accepts or rejects it: the call succeeds, the handbook opens at the
+top, no error anywhere. Filed as **Q15** (what are the article ids, or at least
+say when one is unknown), and the editor no longer pretends the page is reached —
+the log, the node's help text and the picker all say what really happens.
+
+### Fifth run — install and order
+
+Install **export 1.0.32**. The harness is **unchanged at 1.0.23** — if it is
+already installed, leave it alone. Rows A…K are answered — **do not re-run
+them**. Two rows are open, neither needing a fresh save, and both are quicker in
+the German session you already have (any language will do for the journal check):
 
 | # | What to do | What to write down |
 |---|---|---|
-| I | In the **German** session you already have: click each of the four `QE24: …` start-menu entries, one at a time, and give each two seconds before the next. They are, in order: **Extras-Prüfung**, **Extras-Quest annehmen**, **schick mir einen Brief**, **Handbuchseite öffnen**. | Four separate things: a toast with a full German sentence; the quest `QE24 Extras-Prüfung` appearing in the journal; a letter arriving in the mail app (from `QE24 QA`, subject *Ein Brief aus dem Pack*); and the handbook opening on **Port Forwarding: Start Here**. Say which of the four worked and which did not — one line each is enough. |
-| J | Then look at the log (`%APPDATA%/Roaming/hackhub/log`, search `[quest-editor] extras:`) and paste the lines for **one** of those clicks. | The order proves the fix: `clicked` → `handed … to the engine (job click-1)` → `the engine called back for … running it here` → `said "…" via UI.toast`. If the callback line is missing, the engine never fired the job and the whole approach is wrong — I need to know that before anything else. |
-| K | Just say what the **toast** said when you clicked `Extras-Prüfung`. | The **sentence** (`Der eigene Menüeintrag des Packs funktioniert (T-23).`), not `qe24.menu.message`. That is the translation table being visible again from the engine's callback. |
+| L | Click **`QE24: Extras-Quest annehmen`** in the start menu, wait two seconds, then look in the quest journal. | The quest **`QE24 Extras-Prüfung`** is in the journal. This is the one that did nothing in the last run (our bug: we claimed by our own id, and `Quest.claim` needs the game's own name for the quest — r207 sends that now). If it is still not there, the log line `[quest-editor] extras: claiming quest QESdk024ExtrasQa` says whether we sent the right name. |
+| M | Click **`QE24: Handbuchseite öffnen`** and, whether or not it lands on a page, paste the log lines. | Expected, and **not** a failure: the handbook opens on its own landing page. That is the finding of the last run (the page title is not the id the game wants — Q15 to the developers). I only need to see that the new log line is there: `opening the handbook at article "…" - the game lands on its own landing page (see Q15)`. |
 
 **Two things not to test here, because the pack cannot do them:**
 
@@ -232,6 +266,7 @@ game in German (row G already left it that way):
 
 | Export | Editor build | Result |
 |---|---|---|
+| 1.0.32 | 2026-09-19.r207 | **The claim action claims by the game's own name for the quest.** Row I of the r206 run found the click doing nothing: the action sent the editor's document id, which `Quest.claim` does not know, and the game says nothing about an id it does not recognise. The compiler now resolves the author's pick to the quest's name at export (`QESdk024ExtrasQa` here), which is what the harness command and the unclaim node have always used. Nothing else changed except the handbook's log line, which now says the game lands on its own landing page (Q15). |
 | 1.0.31 | 2026-09-19.r206 | **A click no longer does its own work.** From a click every gated call is refused (Q14), so the action is handed to the engine (`Scheduler.schedule`, kind `qe/<mod id>/click`) and runs in its callback, where the mod has a name and the translation table is back. Three new start-menu entries — claim the extras quest, send a mail, open a handbook page — so every action kind can be clicked in game. |
 | 1.0.30 | 2026-09-19.r205 | **The refusal is explained, not guessed at.** When the game refuses a message from a click, the runtime now logs that the manifest is not the problem (the message the game prints sends authors to a file that is already correct) and points at Q14. Nothing else changed in the compiled content. |
 | 1.0.29 | 2026-09-19.r204 | **The click is now visible in the log, and the labels follow a language change.** Every extras click writes a line before it does anything, and the line after it names the API that showed the message — because the r203 run could not tell a dead click from a message API that draws nothing. Messages now go out through `UI.toast` first (the one every notification QA has ever seen) with `UI.notify` as the fallback. `Localization.onLanguageChange` re-registers the menu and right-click labels when the player switches language, so the words follow without a reload; a widget's own file cannot, and is left alone. |

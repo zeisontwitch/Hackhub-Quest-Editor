@@ -1,6 +1,6 @@
 {
   "generatedBy": "scripts/extract-manual-inventory.mjs",
-  "editorBuild": "2026-09-19.r206",
+  "editorBuild": "2026-09-19.r207",
   "sdkVersion": "0.24.0",
   "counts": {
     "nodeTypes": 40,
@@ -2745,7 +2745,7 @@
           "kind": "handbookArticle",
           "key": "articleId",
           "label": "Article",
-          "hint": "The in-game article the player lands on. Pick a known page, or type any article id."
+          "hint": "The page to open. In game 1.3.1 this opens the handbook on its own landing page: reaching a particular page is not possible until the page names the game uses are known (see the manual)."
         },
         {
           "depth": 0,

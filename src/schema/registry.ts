@@ -1246,7 +1246,7 @@ export const NODE_TYPES_REGISTRY: Record<NodeType, NodeTypeDef> = {
         ...io,
         hook: "onStart",
         fields: [
-            { kind: "handbookArticle", key: "articleId", hint: "The in-game article the player lands on. Pick a known page, or type any article id.", label: "Article" },
+            { kind: "handbookArticle", key: "articleId", hint: "The page to open. In game 1.3.1 this opens the handbook on its own landing page: reaching a particular page is not possible until the page names the game uses are known (see the manual).", label: "Article" },
             { kind: "text", key: "category", hint: "The handbook section the article sits under.", label: "Category" },
         ],
         create: () => seed(HandbookNodeDataSchema),

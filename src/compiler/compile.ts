@@ -120,7 +120,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-19.r206";
+export const EDITOR_BUILD = "2026-09-19.r207";
 
 /** Warning severity (r153): info = good to know, warn = could cause issues,
     error = will break or strand the player. */
@@ -728,17 +728,39 @@ export function computeWarnings(project: ProjectDocument, packs: ToolPack[] = []
 
 /* ── Compile ───────────────────────────────────────────────────────────── */
 
+/**
+ * The name the ENGINE knows a quest by — `Quest.claim` takes this, not the
+ * editor's own document id. Measured in game 2026-09-19 (row I): a claim action
+ * that sent the id claimed nothing at all and said nothing about it, on a build
+ * where the same call with the name works. The runtime's "unclaim a quest" node
+ * has always used the name (`qd.name`); this brings the click action in line.
+ */
+function questNameOf(project: ProjectDocument, id: string): string {
+    const quest = project.quests.find((q) => q.id === id);
+    return quest ? String(quest.name ?? "") : "";
+}
+
+/** The extras record as the runtime receives it: a claim action is resolved to
+ *  the engine's quest name here, where the project is still in reach. */
+function extrasPayload(project: ProjectDocument) {
+    const withClaimNames = <T extends { action: { kind: string; questId: string } }>(items: T[]) =>
+        items.map((item) =>
+            item.action.kind === "claim"
+                ? { ...item, action: { ...item.action, questName: questNameOf(project, item.action.questId) } }
+                : item,
+        );
+    return {
+        menuItems: withClaimNames(project.extras.menuItems ?? []),
+        widgets: (project.extras.widgets ?? []).map(widgetPayload),
+        contextItems: withClaimNames(project.extras.contextItems ?? []),
+    };
+}
+
 function buildModJs(project: ProjectDocument, planningBlock: string): string {
     /* The runtime gets everything except the markup: a widget's HTML ships as
        its own file and the registration points at that path (verified in game —
        a mod-relative path resolves; r201 probe). */
-    const extras = extrasAreEmpty(project.extras)
-        ? null
-        : {
-              menuItems: project.extras.menuItems ?? [],
-              widgets: (project.extras.widgets ?? []).map(widgetPayload),
-              contextItems: project.extras.contextItems ?? [],
-          };
+    const extras = extrasAreEmpty(project.extras) ? null : extrasPayload(project);
     const translations = translationsAreEmpty(project.translations) ? null : project.translations;
     const PROJECT = {
         mod: project.mod,

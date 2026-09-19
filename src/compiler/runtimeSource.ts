@@ -2249,6 +2249,10 @@ function __qeRegisterProject(sdk, PROJECT) {
                     if (sdk.Handbook && sdk.Handbook.open) {
                         var articleId = __QE.fill(d.articleId || "", scope).trim();
                         if (articleId) {
+                            /* Same finding as the click action (2026-09-19): the
+                               call opens the handbook but lands on its landing
+                               page, because the article ids are not published. */
+                            __QE.log("handbook: asked for article \"" + articleId + "\" - the game lands on its own landing page (see Q15)");
                             var articleCat = __QE.fill(d.category || "", scope).trim();
                             if (articleCat) sdk.Handbook.open(articleId, articleCat);
                             else sdk.Handbook.open(articleId);
@@ -3397,8 +3401,17 @@ function __qeRegisterProject(sdk, PROJECT) {
                     __QE.log("extras: no Quest.claim in this build - the click did nothing");
                     return;
                 }
-                __QE.log("extras: claiming quest " + a.questId);
-                __QE.safe(function () { sdk.Quest.claim(a.questId); });
+                /* The NAME the engine knows the quest by, which the compiler
+                   resolves from the author's pick. The editor's own document id
+                   goes nowhere: sending it claimed nothing at all, silently, in
+                   game on 2026-09-19 - while the same call with the name works
+                   (and is what the unclaim node has always used). */
+                if (!a.questName) {
+                    __QE.log("extras: nothing to claim - the quest this item pointed at is not in this pack (id \"" + a.questId + "\")");
+                    return;
+                }
+                __QE.log("extras: claiming quest " + a.questName);
+                __QE.safe(function () { sdk.Quest.claim(a.questName); });
             };
         }
         if (a.kind === "mail") {
@@ -3424,7 +3437,12 @@ function __qeRegisterProject(sdk, PROJECT) {
                     __QE.log("extras: no Handbook.open in this build - the click did nothing");
                     return;
                 }
-                __QE.log("extras: opening handbook article " + a.handbookId);
+                /* Measured 2026-09-19: the game takes the call and opens the
+                   HANDBOOK, but lands on its own landing page - the article id
+                   that would deep-link is not published anywhere we can see, and
+                   the title is not it. The log says what was asked for, so a
+                   tester is not left wondering whether the click missed. */
+                __QE.log("extras: opening the handbook at article \"" + a.handbookId + "\" - the game lands on its own landing page (see Q15)");
                 __QE.safe(function () {
                     if (a.handbookCategory) sdk.Handbook.open(a.handbookId, a.handbookCategory);
                     else sdk.Handbook.open(a.handbookId);

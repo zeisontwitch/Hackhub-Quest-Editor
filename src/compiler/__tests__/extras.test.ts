@@ -259,6 +259,9 @@ function act(patch: Partial<ExtraAction>): ExtraAction {
  *  to a different approved action. */
 function extrasProject(): ProjectDocument {
     const project = createProject();
+    /* The engine's quest name is what `Quest.claim` takes (r207), so the
+       fixture gives its quest one - the editor generates these in the schema. */
+    project.quests[0]!.name = "FirstQuest";
     project.extras.menuItems = [
         {
             id: "flashlight",
@@ -422,12 +425,34 @@ describe("pack extras — click actions (r203)", () => {
         expect(b.calls).toContain("toast:Hello player1!:info");
     });
 
-    it("claim: starts the named quest through the SDK", () => {
+    it("claim: starts the quest by the NAME the engine knows it by, not by the editor's id", () => {
+        /* Measured in game 2026-09-19 (row I): the id claimed nothing at all and
+           said nothing about it, on a build where the same call with the name
+           works. The compiler resolves the author's pick to the name. */
         const project = extrasProject();
         const b = boot(project);
         click(b, "menu", "flashlight");
         b.fireJobs();
-        expect(b.calls).toContain(`claim:${project.quests[0].id}`);
+        expect(b.calls).toContain(`claim:${project.quests[0].name}`);
+        expect(b.calls.some((c) => c.includes(project.quests[0].id))).toBe(false);
+        /* And the name is what ships, so the runtime is never the one guessing. */
+        expect(b.modJs).toContain(`\"questName\":\"${project.quests[0].name}\"`);
+    });
+
+    it("claim: says so instead of doing nothing when the picked quest is gone", () => {
+        const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+        try {
+            const project = extrasProject();
+            project.extras.menuItems[0]!.action = act({ kind: "claim", questId: "no-such-quest" });
+            const b = boot(project);
+            click(b, "menu", "flashlight");
+            b.fireJobs();
+            expect(b.calls.some((c) => c.startsWith("claim:"))).toBe(false);
+            const lines = spy.mock.calls.map((c) => String(c[0])).join("\n");
+            expect(lines).toContain("nothing to claim - the quest this item pointed at is not in this pack");
+        } finally {
+            spy.mockRestore();
+        }
     });
 
     it("mail: sends through Mail.send with the player's address, tokens filled", () => {
@@ -442,6 +467,23 @@ describe("pack extras — click actions (r203)", () => {
         click(b, "menu", "readup");
         b.fireJobs();
         expect(b.calls).toContain("handbook:getting-started|basics");
+    });
+
+    it("handbook: says out loud that the game lands on its own landing page", () => {
+        /* Measured 2026-09-19 (row I): Handbook.open(title) opens the handbook
+           and stops at the landing page. The article id that would deep-link is
+           not published anywhere we can see (Q15), so the log must not imply the
+           article was reached. */
+        const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+        try {
+            const b = boot(extrasProject());
+            click(b, "menu", "readup");
+            b.fireJobs();
+            const lines = spy.mock.calls.map((c) => String(c[0])).join("\n");
+            expect(lines).toContain("the game lands on its own landing page (see Q15)");
+        } finally {
+            spy.mockRestore();
+        }
     });
 
     it("a right-click action works the same way as a menu one", () => {

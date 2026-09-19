@@ -1,3 +1,42 @@
+# Handoff — r207
+
+**The click path works — the log proves the whole round trip** (`clicked` →
+`handed … to the engine (job click-4)` → `the engine called back for …` → the
+action running), the toast came out as the German sentence rather than the raw
+token, and mail delivered. Then two findings, one ours and one the game's.
+
+**Ours: the claim action sent the wrong string.** `Quest.claim` takes the **name
+the game knows the quest by** (`QESdk024ExtrasQa`) — what the harness command has
+always used, and what the runtime's own unclaim node uses — not the editor's
+document id (`qe-x1`). The game answers an unrecognised id by doing nothing at
+all, so the click looked dead. r207 resolves the author's pick to the name at
+export (`questNameOf` in `compile.ts`, emitted as `questName`), the runtime logs
+`claiming quest <name>`, and an action whose quest is gone logs `nothing to claim`
+instead of silence. Falsified both ways: sending the id again, or dropping the
+guard, turns the matching fence red.
+
+**The game's: `Handbook.open` does not deep-link.** Clicking the handbook entry
+opened the handbook **on its own landing page** — the page title was our guess at
+the id, and the guess is disproved. No error from the build, nothing in the log.
+Filed as **Q15**; the editor no longer claims the page is reached (runtime log,
+`Open handbook` node's help text, and the picker's note all say what happens).
+
+**Two rows open** (export **1.0.32**, harness **1.0.23**): **L** re-clicks the
+claim entry and looks in the journal; **M** re-clicks the handbook entry and
+pastes the (new) log lines. Both are already covered above — they exist to
+confirm the fix in game, not to discover anything.
+
+**Owed next: the manual page for pack extras.** The plan is explicit that the
+editor's docs must not describe a surface as working before a tester has seen it;
+with rows I/J/K/L green, the four actions have been seen, and the page should
+document the two gotchas too (a widget's HTML is a static file, so `{{tr.…}}`
+does not reach inside it; the handbook action lands on the landing page until the
+game publishes its article ids).
+
+Versions: `EDITOR_BUILD` **r207**, export **1.0.32**, harness **1.0.23**.
+
+---
+
 # Handoff — r206
 
 **Row H decided the round, and it is good news.** The probe, in game:

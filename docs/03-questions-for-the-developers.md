@@ -524,3 +524,44 @@ click line first (so a click that never arrived is distinguishable from one whos
 call was refused), then the hand-over to the engine and the callback — and prints
 an explanation when it sees this refusal, because the game's own message sends an
 author to a manifest that is already correct.
+
+## 15. `Handbook.open(id)` opens the handbook but never reaches the article — what are the article ids?
+
+**Found in game** 2026-09-19, on 1.3.1 / Content SDK 0.24, from a pack's own
+start-menu action (editor build r206, export 1.0.31).
+
+A menu entry was wired to "handbook" with the page **Port Forwarding: Start
+Here** — one of five titles Zeis had verified searchable in the in-game handbook,
+and our working guess was that the id is the title verbatim. Clicking it:
+
+```
+[quest-editor] extras: the engine called back for menu item "qe24-menu-handbook" (language de) - running it here, where the mod has a name
+[quest-editor] extras: opening handbook article Port Forwarding: Start Here
+```
+
+...and the handbook **opened, on its own landing page**. No error, nothing in the
+log, no article. So `Handbook.open` works and the call is accepted, but the id
+above does not address that page — and, as far as we can tell, nothing in the
+build tells us what would.
+
+**Why it hurts.** "Open the manual for this pack" is the natural action for a
+tutorial or a walkthrough entry, and our `Open handbook` node has been promising
+"jump to an in-game article" since it was built. An author can type any string
+they like and every one of them behaves identically — the handbook opens at the
+top. We cannot even tell "wrong id" from "the id was right and the deep link
+needs something else".
+
+**What we would like**, any one of these:
+
+- **the list of article ids** (or the rule that generates them — a slug, an index,
+  a title in a specific language, …), even as a note in the SDK docs;
+- or an **error or a return value** from `Handbook.open` when the id is unknown,
+  so a pack can tell the player the page could not be opened instead of silently
+  showing the landing page;
+- or, if deep links are not meant to be public, say so, and we will drop the
+  picker from the editor and describe the node as "opens the handbook".
+
+**Our side meanwhile:** the editor no longer claims the page is reached. The
+runtime logs what was asked for and that the game lands on its landing page, the
+`Open handbook` node's field says the same in its help text, and the picker's
+note records this measurement.

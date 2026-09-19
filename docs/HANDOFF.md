@@ -1,3 +1,37 @@
+# Handoff — r190
+
+**The "Graph paper" grid was not graph paper.** Zeis spotted it while testing
+something else: it rendered exactly like "Squares". It stacks two of the
+library's own background layers (fine lines everywhere, a heavier line every
+fifth), and both were left with the **same pattern id** — the library builds each
+pattern's id from the flow instance, and its type docs state the requirement:
+*"When multiple backgrounds are present on the page, each one should have a unique
+id."* With one id for two patterns, every `fill="url(#…)"` resolved to the first
+pattern in the document, so the heavy fifth-lines were never drawn. Each layer now
+has its own `id`, and the fence asserts the two pattern ids differ **and** that
+each `<rect>` paints from its own — jsdom cannot resolve a `url()` reference, but
+it can see a duplicated id, which is the whole bug. Falsified: reverting the ids
+reports `both layers share the pattern id pattern-1`.
+
+**And question 11 got its missing piece.** Zeis tried the other uninstall route:
+disabling a mod in the game's Mods list makes the game itself say *"Mod changes
+detected. Restart the game to apply updates."* So a user-initiated disable is
+**queued, not applied in-session** — the SDK's own example for
+`OnModPackageUnloaded` ("e.g. disabled by user") does not describe a mid-session
+unload either. The one moment that hook could still run is the **shutdown** after
+the queued disable, while the mod is still installed. **T-15c** now measures
+exactly that, with two pieces of evidence: the mod's own console line
+(`unloading: removing the Twotter accounts this mod declared`) and the audit of
+the handle after the reload. A line plus a surviving account means the hook ran
+after the save was written; no line at all means the documented cleanup path never
+runs for a disabled mod, and question 11 becomes a bug report rather than a
+request.
+
+Versions: `EDITOR_BUILD` **r190**, QA export **1.0.18** (compiled quest content
+unchanged — the build stamp moved), harness **1.0.16**.
+
+---
+
 # Handoff — r189
 
 Two greens, one honest limitation, and the wording Zeis asked for on his

@@ -71,6 +71,31 @@ describe("the canvas grid mounts", () => {
         expect(document.querySelectorAll('[data-testid="rf__background"]').length).toBe(2);
     });
 
+    /**
+     * r189. The two stacked layers used to be the SAME layer as far as the
+     * browser was concerned: the library names each pattern `pattern-<flow id>`
+     * plus whatever `id` prop it is given, and its own type docs say "when
+     * multiple backgrounds are present on the page, each one should have a
+     * unique id". Without ids both patterns carried one id, every
+     * `fill="url(#…)"` resolved to the first pattern in the document, and graph
+     * paper drew exactly like plain squares — Zeis's report. jsdom cannot
+     * resolve a url() reference, but it can see a duplicated id, which is the
+     * whole bug.
+     */
+    it("graph paper's two layers have their own pattern ids", async () => {
+        setCanvasGrid({ enabled: true, style: "graph" });
+        await renderCanvas();
+        const ids = [...document.querySelectorAll('[data-testid="rf__background"] pattern')].map((p) => p.id);
+        expect(ids).toHaveLength(2);
+        expect(new Set(ids).size, `both layers share the pattern id ${ids[0]}`).toBe(2);
+        // …and each layer paints from its own pattern, not from the other's.
+        const fills = [...document.querySelectorAll('[data-testid="rf__background"] rect')].map((r) =>
+            (r.getAttribute("fill") ?? "").replace(/^url\(#|\)$/g, ""),
+        );
+        expect(fills).toEqual(ids);
+        expect(fills[0]).not.toBe(fills[1]);
+    });
+
     it("draws dots at a visible size — the r147 fix for sub-pixel ink", async () => {
         setCanvasGrid({ enabled: true, style: "dots" });
         await renderCanvas();

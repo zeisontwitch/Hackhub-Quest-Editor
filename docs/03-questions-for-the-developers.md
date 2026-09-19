@@ -263,6 +263,25 @@ by user)"*, and a mod that was deleted while the game was closed is never loaded
 so no code of ours can run at any point in that sequence. (The same sentence
 appears on `Mail.remove`, so mail a mod sends has the same tail.)
 
+**An in-game disable does not help either (2026-09-19).** Trying the other route
+— disabling the mod from inside the game's Mods list — produces the game's own
+prompt: *"Mod changes detected. Restart the game to apply updates."* So a
+user-initiated disable is **queued, not applied in-session**, and the hook's
+documented example (*"e.g. disabled by user"*) therefore does not describe a
+mid-session unload either. The one moment the hook could still run is the
+**shutdown** that follows the queued disable, because the mod is still installed
+while the game is closing; whether it does is being measured now (T-15c: the
+mod's own console line, `unloading: removing the Twotter accounts this mod
+declared`, plus an audit of the handle after the reload). Two outcomes, and they
+are different reports:
+
+- **the line appears** → the hook works and the docs are only loosely worded; the
+  unreachable case is a mod deleted from disk while the game is closed;
+- **no line** → the cleanup path the SDK's own documentation names for a
+  user-initiated disable does not run at all, and the only case that ever cleans
+  up is a quest ending. That is a stronger finding than this question currently
+  claims, and it would be a bug report rather than a feature request.
+
 **Question.** Should a mod's own data be cleaned up when the game notices its
 package is gone — e.g. at save load, drop the mod-declared accounts and posts
 whose owning package is no longer installed, the way the quests are dropped? As

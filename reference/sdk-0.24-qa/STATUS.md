@@ -78,7 +78,7 @@ reach the game. A **feature request for a picture field is filed** in
 — the day the API accepts one, the field comes back and the change is one line.
 **Until then: put the clue in the tweet's text, or in a file the player opens.**
 
-## Open: T-11b (abandon half), T-15c — r189, editor export 1.0.17
+## Open: T-11b (abandon half), T-15c — r190, editor export 1.0.18
 
 Two rows could not be answered by the r185 build (one was unreachable, one had
 nothing to remove) and one is a re-check after a fix. **T-11b and T-12b are now
@@ -89,7 +89,7 @@ T-11b are still open.** The mods:
 
 | Mod | Where | Version |
 | --- | --- | --- |
-| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.17** |
+| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.18** |
 | Raw harness (commands) | `reference/sdk-0.24-qa/mod/` | **1.0.16** |
 
 Nothing auto-starts. Claim with `qe24 run tw1` / `qe24 run tw2` / `qe24 run tw3`;
@@ -103,7 +103,8 @@ Twotter.Post ever fire?)* (tw3).
 | ~~**T-11b**~~ | **Green 2026-09-19 (first half).** Fresh save, `qe24 run tw1`: both objectives ticked, the Complete button appeared and **removed the account and every tweet**. *Still open:* the **abandon** half — claim tw1 again on a clean save and abandon it instead of completing; the tweets and the account must both go (that was the r185 failure). |
 | ~~**T-12b**~~ | **Green 2026-09-19.** tw2 claimed and completed after tw1: both objectives ticked, and its completion **removed the account and its tweets** — the shared-account rule holds in the order that mattered. |
 | ~~**T-15b**~~ uninstall (mod removed outside the game) | **Red 2026-09-19, and the row was wrong, not the mod.** Zeis ran tw1 to completion, saved, quit, removed `editor_export` from disk and relaunched: the **quest** was gone (the game drops an uninstalled mod's quests) but `@qe24_editor` and **all its tweets were still in the save and in search**. The SDK documents exactly this — *"Accounts your mod adds live in the player's save and are not removed when the mod is uninstalled, so clean up in `OnModPackageUnloaded`"* — and a mod removed while the game is closed never loads, so the hook can never run. **The cleanup is not broken; the scenario is outside any mod's reach.** Filed as question 11 in [`docs/03-questions-for-the-developers.md`](../../docs/03-questions-for-the-developers.md). |
-| **T-15c** uninstall, the reachable way | Fresh save, install editor export **1.0.17** + the harness. `qe24 run tw1` (the accounts are created), confirm with `qe24 twotter audit`, **stay in the game**, then disable/uninstall the **editor export** in the game's Mods list (SDK: `OnModPackageUnloaded` is *"called when the mod is being unloaded (e.g. disabled by user)"*). | `@qe24_editor` must read `not on this save` in `qe24 twotter audit`, and the handle must leave Twotter search, **without** a restart. If disabling in-game still leaves it, that is a real finding — the hook would not be firing. |
+| **T-15c** uninstall, the way the game allows it | Fresh save. Install editor export **1.0.18** + the harness, `qe24 run tw1` (the accounts are created), confirm with `qe24 twotter audit`. Then disable the **editor export** in the game's Mods list — the game answers *"Mod changes detected. Restart the game to apply updates."* — so quit normally and relaunch, load the save, and run `qe24 twotter audit` again. | **Two things, and both are needed.** (1) In the console, did the line **`unloading: removing the Twotter accounts this mod declared`** appear (before or during the quit)? That is the unload hook running. (2) After the reload, is `@qe24_editor` `not on this save`? A line **and** the account still there means the hook ran after the save was written; **no line at all** means the cleanup path the SDK names for a disabled mod never runs — which makes question 11 a bug report rather than a request. |
+| **T-15d** disk deletion (already answered) | — | Leave the export installed and *quit*, so the hook gets its chance there too. If `@qe24_editor` is then gone but T-15b's disk-deletion route still leaves it, the difference between "quit while installed" and "deleted while closed" is the whole finding. Only run this if T-15c is ambiguous. |
 | ~~**T-08b**~~ the authored pictures | **Green 2026-09-19.** "Banner is bright violet, profile is amber" — both authored pictures really do reach the game, which settles the r185 wrinkle the dark blue banner left open. |
 
 | ~~**E-01**~~ editor-only | **Green 2026-09-19** (screenshot included in the round). Asked for two changes, both built in r189: the blank picture areas now **say the game draws its own** (banner caption + both pickers' tooltips), and a blank **display name** is nudged the way a broken handle is. The panel also states what the game fills in and what it does not — see question 10's neighbour, [§11](../../docs/03-questions-for-the-developers.md), and the note below. |

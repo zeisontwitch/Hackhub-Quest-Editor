@@ -1,3 +1,39 @@
+# Handoff — r195
+
+**T-15c is GREEN, and the promise now has exact edges.** Zeis disabled the export
+in the game's Mods list, accepted *"Restart the game to apply updates."*, quit,
+and relaunched. While the game was starting up — **before any save was loaded** —
+the log carried both lines:
+
+```
+[quest-editor] unloading: removing the Twotter accounts this mod declared
+[quest-editor] twotter: removeUser(qe-tw-account) -> true (mod unloaded)
+```
+
+Loading the save afterwards and running `qe24 twotter audit`: `@qe24_editor` is
+gone, handle and posts. So `OnModPackageUnloaded` fires when the game applies the
+queued disable, and the removal persists — the SDK's advice is followable through
+the Mods list.
+
+Two neighbours, for the record: a **plain quit** runs no hook at all (measured in
+r194 — no `unloading:` line, account survives; nothing needs cleaning in that
+sequence, so it is not a defect), and a mod **deleted from disk while the game is
+closed** can never run any code of ours, so its accounts stay. That last one is
+the only leak, and the game already knows how to handle the equivalent for quests
+(`[PruneOrphanQuests] Dropping "QESdk024TwotterQa" …: no installed content defines
+it`) — question 11 now asks, narrowly, for the same sweep over mod-created
+accounts.
+
+**The round is nearly closed.** The only open row left is the **abandon half of
+T-11b**. T-15d is dropped (nothing left for it to distinguish — the account was
+gone), T-15b stays red by design, and the audit command has no dependants once the
+last row runs.
+
+Versions: `EDITOR_BUILD` **r195**, export **1.0.22** (comments only again — the
+field build for the last row is unchanged in behaviour), harness **1.0.18**.
+
+---
+
 # Handoff — r194
 
 **Zeis ran the full T-15c protocol with everything captured, and it closes one

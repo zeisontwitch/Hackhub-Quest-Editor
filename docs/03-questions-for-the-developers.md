@@ -289,19 +289,27 @@ The game knows which package defined a quest and drops it when that package is
 gone, so the machinery to sweep a missing mod's data exists; it simply does not
 cover what the mod created through `createUser`.
 
-**Still open: the disable path.** Disabling the mod in the Mods list queues the
-change (*"Restart the game to apply updates"*), and the game applies it at some
-later point; if any moment calls `OnModPackageUnloaded`, it is that one. It is
-being measured now (T-15c). If it does not run there either, then the cleanup the
-SDK names for a user-initiated disable is unreachable in every sequence we can
-construct — and this question is a bug report rather than a feature request.
+**Measured 2026-09-19, second half: the disable path works.** Disabling the mod
+in the Mods list queues the change (*"Restart the game to apply updates"*), and
+the game applies it while starting up — before any save is loaded. That is when
+`OnModPackageUnloaded` fires: the log carries *"unloading: removing the Twotter
+accounts this mod declared"* and *"twotter: removeUser(qe-tw-account) -> true
+(mod unloaded)"*, and after loading the save the handle is gone from
+`getUserByUsername`. So the SDK's advice **is** followable through the Mods list,
+and a player who disables a mod before deleting it leaves a clean save.
+
+That narrows this question to the one case left: a mod **deleted from disk while
+the game is closed**. Its code can never run, so nothing of ours can remove what
+it created — and the contrast with the game's own behaviour is the point: the game
+drops that mod's quests at load (*"[PruneOrphanQuests] Dropping …: no installed
+content defines it"*) but leaves its accounts and their posts in the feed.
 
 **Question.** Should a mod's own data be cleaned up when the game notices its
 package is gone — e.g. at save load, drop the mod-declared accounts and posts
 whose owning package is no longer installed, the way the quests are dropped? As
-a mod author I cannot reach that moment: the only hook I have runs while I am
-still loaded, and by then the player either completed the story (our account is
-removed, verified) or uninstalled us, which is the case we cannot see.
+a mod author I cannot reach that moment: my hook runs while I am still loaded, and
+by then the player either completed the story (verified), disabled us (verified —
+see above) or deleted us from disk, which is the case no code of mine can see.
 
 **Why it matters.** A player who uninstalls a mod mid-story keeps that mod's fake
 people in their social feed forever, next to their real in-game contacts, with

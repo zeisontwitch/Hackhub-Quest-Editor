@@ -327,14 +327,14 @@ Twotter probe's, which is where the tester already looks:
 | **T-14** | A pre-r31 draft opens with its tweets intact (the migration fixture). |
 | ~~**T-15b**~~ | **Red 2026-09-19 — the row was wrong, not the mod.** Uninstalling by deleting the mod from disk leaves the account and its tweets in the save: the SDK documents that accounts a mod adds are *"not removed when the mod is uninstalled"*, and a mod deleted while the game is closed never loads, so `OnModPackageUnloaded` cannot run. Question 11 filed. |
 | ~~**T-00**~~ | **The precondition every row now states (r193):** the editor export must be **enabled** in the Mods list. The game can keep a mod disabled across a newer version, a folder deletion and a fresh save (question 13) — a silent no-load that cost two sessions. `qe24 run …` and `qe24 twotter audit` now print `Editor export: loaded (v…)` or `NOT LOADED in this session`. |
-| **T-15c** | **Half red 2026-09-19.** The plain-quit variant was run and the hook never fired: no `unloading:` line in a session that loaded the export, started tw1 and created `@qe24_editor`, and the account was still on the save next launch (the game pruned the orphaned *quest* record by itself — `[PruneOrphanQuests] …: no installed content defines it`). **What is left is the disable variant**, the one configuration not yet measured: run tw1, **disable the export in the Mods list**, accept *"Restart the game to apply updates"*, quit to desktop, search that session's log and the next one for `[quest-editor]` (`unloading: removing the Twotter accounts this mod declared`), then relaunch and audit. Line + account gone ⇒ the disable path works and only disk deletion is unreachable; line + account there ⇒ `removeUser` did not stick (T-15d); **no line anywhere ⇒ Q11 becomes a bug report.** |
+| ~~**T-15c**~~ | **Green 2026-09-19.** Disable the export in the game's Mods list, accept *"Restart the game to apply updates."*, quit, relaunch: the game unloads the package while starting up (before any save is loaded), the log carries `unloading: removing the Twotter accounts this mod declared` and `twotter: removeUser(qe-tw-account) -> true (mod unloaded)`, and `@qe24_editor` is **gone** from the save afterwards. The plain-quit variant runs no hook at all (nothing to clean), and a mod deleted from disk can never run our code — the boundary of the promise. |
 | ~~**E-01**~~ | **Green 2026-09-19** (screenshot). Two follow-ups, both built in r189: the blank picture areas now say the game draws its own, and a blank display name is nudged. |
 | ~~**T-08b**~~ | **Green 2026-09-19** — "banner is bright violet, profile is amber". The r185 banner wrinkle is closed. |
 
 **These rows are runnable now** — the fixtures, the quests and the command all
 exist, and every step is written out in
 [`STATUS.md`](../../reference/sdk-0.24-qa/STATUS.md) *Open: the Twotter editor
-rows*: which mod (editor export **1.0.21**, beside raw harness **1.0.18**), the
+rows*: which mod (editor export **1.0.22**, beside raw harness **1.0.18**), the
 account (`qe24_editor`), the commands (`qe24 run tw1`, `qe24 run tw2`,
 `qe24 twotter audit`, `qe24 run clear`) and what to report per row. The QA
 project carries the pair of quests that share the account (T-12), the five-tweet
@@ -375,7 +375,7 @@ avatar/banner sizes, how it spells an age the engine computed itself, and
 whether the timeline flood is pleasant. jsdom cannot see any of it — those are
 T-08/T-09's "paste what you see" lines, handed to you.
 
-Stamp: `EDITOR_BUILD r194`, QA export **1.0.21**, harness mod **1.0.18** (1.0.13
+Stamp: `EDITOR_BUILD r195`, QA export **1.0.22**, harness mod **1.0.18** (1.0.13
 was P-01's, 1.0.14 the first editor-row run and 1.0.15 the r186 fixes — every one
 of them handed to Zeis and run, so each round of fixes is a new version rather
 than a quiet edit of a build he has already tested. r187 changed only the

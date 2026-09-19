@@ -306,3 +306,35 @@ the story ends"*, so completing or abandoning the last quest that uses an accoun
 removes it and its posts — verified in game (T-11b, T-12b, both green). The leak
 needs a player to uninstall the mod with a quest still open, which is the case
 nobody can clean up after.
+
+---
+
+## 12. `Quest.claim()` returns nothing, and a quest's state cannot be read back
+
+**What we hit.** Our QA harness starts a quest belonging to another mod with
+`Quest.claim("QESdk024TwotterQa")` — that is the documented way, and it is how a
+tester claims one row's quest without five of them running at once. In SDK 0.24
+the declaration is:
+
+```ts
+static claim(quest: string | typeof Quest): void;
+static unclaim(quest: string | typeof Quest): void;
+```
+
+`void`. There is no return value, no `isClaimed`/`getState`, and no list of quests
+to compare against. So when the named quest was **not registered in that session**
+— the owning mod was disabled in the Mods list — the call did nothing, silently:
+no exception, no log line, and our harness printed "Claimed …" because a call that
+does not throw looked like success. A tester then spent a session looking for a
+profile that could never appear.
+
+**Question.** Could `claim` / `unclaim` return a boolean (or throw a named error)
+when the quest is unknown, or could the namespace expose a way to read a quest's
+state — `QuestState` (`unclaimed | claimed | completed`), or even
+`Quest.isClaimed(name): boolean`? Anything a caller can check would do.
+
+**Why it matters beyond QA tooling.** A mod that starts another mod's quest — a
+campaign pack claiming a chapter, a trigger chaining stories — has no way to know
+whether its chain actually started, so a broken dependency fails silently and the
+player just sees nothing happen. With a boolean we can log it; with a state read
+we can also avoid claiming a quest that is already running.

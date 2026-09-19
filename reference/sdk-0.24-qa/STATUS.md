@@ -90,7 +90,7 @@ T-11b are still open.** The mods:
 | Mod | Where | Version |
 | --- | --- | --- |
 | Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.19** |
-| Raw harness (commands) | `reference/sdk-0.24-qa/mod/` | **1.0.16** |
+| Raw harness (commands) | `reference/sdk-0.24-qa/mod/` | **1.0.17** |
 
 Nothing auto-starts. Claim with `qe24 run tw1` / `qe24 run tw2` / `qe24 run tw3`;
 shed anything an older build left claimed with `qe24 run clear`. If a claim is
@@ -281,12 +281,37 @@ the mod's list. Fixed in r182 (the handler drops a job the moment it fires), and
 guarded by a test that asserts the cancel call names the pending job and not the
 fired one.
 
-**Reading the log:** the mod's lines all start with `[quest-editor]` — in the
-`HACKHUB LOG FILE` (the paste with the `====` headers). The cancel line was in the
-paste the whole time; the checklist never said where to look, so it now does. Its
-**location on disk is still not written down anywhere in this repo** — every note
-says "the game log" and stops there. Whoever next runs a row: tell us where that
-file lives and it goes in here.
+**Reading the log:** the mod's lines all start with `[quest-editor]`. The file
+is `%APPDATA%/Roaming/hackhub/log` on Windows (saves are `…/hackhub/saves`) —
+the path was told to us on 2026-09-19 and is now in this folder's README. The
+cancel line for S-03 was in a pasted log for an hour before we noticed it,
+because the checklist never said where to look; now it does.
+
+### If a row's quest starts but its account never appears
+
+Seen on 2026-09-19 with T-15c's prep: `qe24 run tw1` printed "Claimed
+QESdk024TwotterQa", the journal was empty of it, and
+`qe24 twotter audit` read `@qe24_editor: not on this save`. **The quest creates
+its account at quest start**, so an account that is not there means the quest
+never started — and `Quest.claim()` returns nothing in SDK 0.24, so the harness
+cannot tell a refusal from a success (question 12). Three checks, in order:
+
+1. **Is the journal entry there?** No entry ⇒ the claim did nothing. The export
+   must be **enabled** in the game's Mods list; a mod toggled off there is only
+   applied after a restart, and a disabled mod's quests are not in the game.
+2. **Is the export loaded at all?** The log's load banner —
+   `[quest-editor] QE SDK 0.24 Editor QA Scaffold v1.0.xx loaded (editor build …)`
+   — proves the runtime is in the session. No banner ⇒ it is not enabled.
+3. **Did the node run?** With the banner present, `[quest-editor] twotter: created
+   @qe24_editor (qe-tw-account) for quest …` is the line. Its absence (with no
+   other `twotter:` line) means the quest's start hook never ran.
+   `twotter: no Twotter API in this game build` and
+   `twotter: creating @… failed (the story continues): …` are the other two
+   possible lines, and each names its own cause.
+
+If an older build left the quest claimed, `qe24 run clear` first — and if the
+claim still does nothing on a clean save with the export enabled, that is a bug
+report with the log lines attached.
 
 ### S-11 answered in part: `NEXT EVENT` shows the game's own job
 

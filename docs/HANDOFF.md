@@ -1,3 +1,34 @@
+# Handoff — r192
+
+**Zeis reported `qe24 run tw1` producing no profile, and the first job was to
+find out whether we broke it. We did not.** The committed QA export was compiled
+and booted against the recording stub SDK, with tw1's own `OnStart()` called the
+way the engine calls it: `createUser:qe24_editor` → `addUser:qe-tw-account` →
+five `postTweet`s. The export's runtime is intact — so the account was missing
+because **the quest never started**, not because the node failed.
+
+**Why the tooling could not tell him that, which is the real defect.** `Quest.claim`
+returns `void` in SDK 0.24: no boolean, no state readback, no quest list. Our
+harness wrapped the call and printed "Claimed QESdk024TwotterQa" whenever it did
+not *throw* — which a no-op claim also does. A disabled or missing owning mod
+therefore produced the worst kind of wrong answer: confident, specific, and
+false. `qe24 run` now says what it can prove ("this line cannot prove the quest
+started — check the journal entry"), the Twotter aliases point straight at
+`qe24 twotter audit` and the `[quest-editor]` log lines, and **question 12** asks
+the developers for a boolean or a state read so the next tool does not have to
+guess.
+
+**Where the log actually is** — asked and answered at last, after rounds of docs
+saying "the game log" and stopping there: `%APPDATA%/Roaming/hackhub/log`, saves
+at `…/hackhub/saves`. It is in the QA README, with the three checks that turn "no
+profile" into a named cause (journal entry present? load banner present? `twotter:
+created @…` present?).
+
+Harness **1.0.17** (message text only; `node --check` clean). The export and the
+editor are untouched this round.
+
+---
+
 # Handoff — r191
 
 **A wording failure of ours, not a tooling gap.** T-15c asked Zeis to check "the

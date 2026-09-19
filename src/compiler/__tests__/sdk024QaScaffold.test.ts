@@ -253,8 +253,11 @@ describe("r179 raw harness — the Twotter probe", () => {
            checks); r186 added the launcher entry for the T-13 canary quest,
            and r187's change is the editor's picture field — the harness itself
            only moved version so the tester's build and this one cannot be
-           confused. */
-        expect(manifest.version).toBe("1.0.16");
+           confused. r192 makes `qe24 run` stop promising more than it can prove:
+           `Quest.claim()` returns void, so the command now says that a missing
+           journal entry means the claim did nothing, and the Twotter aliases
+           point at `qe24 twotter audit` and the log's [quest-editor] lines. */
+        expect(manifest.version).toBe("1.0.17");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");

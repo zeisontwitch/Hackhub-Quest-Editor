@@ -439,7 +439,25 @@ function runQaQuest(tools, alias) {
     }
     tools.println("Claimed " + entry.name + " - look for \"" + entry.title + "\" in the journal.");
     tools.println("If it is not there, this build may refuse cross-mod claims: claim that title yourself.");
+    /* r192. `Quest.claim()` returns void - there is no "did it work" and no way
+       to read a quest's state back (see question 12) - so this line cannot
+       promise the quest started. It printed "Claimed" for a quest whose owning
+       mod was disabled, where the claim silently did nothing, and a tester spent
+       a session chasing a missing profile that was never going to appear. Say
+       what the command can and cannot prove, every time. */
+    tools.println("Note: Quest.claim() returns nothing in this build, so this line cannot prove the");
+    tools.println("quest started - check the journal entry above. No entry means the claim did");
+    tools.println("nothing (the owning mod is disabled or missing).");
     tools.println("Started: " + entry.what);
+    if (alias === "tw1" || alias === "tw2" || alias === "tw3") {
+        tools.println("");
+        tools.println("Twotter rows: run `qe24 twotter audit` straight away - these quests create their");
+        tools.println("account at quest start, so @qe24_editor should be on the save immediately.");
+        tools.println("If it is not: the quest did not start. Check the editor export is ENABLED in the");
+        tools.println("Mods list, then `qe24 run clear` and claim again on a clean save. The game log's");
+        tools.println("[quest-editor] lines say which of those it was: the load banner proves the mod");
+        tools.println("loaded, and `twotter: created @...` proves the node ran.");
+    }
     if (alias === "cal" || alias === "wait" || alias === "timer") {
         tools.println("");
         tools.println("Give it a second, then run:  qe24 timers");

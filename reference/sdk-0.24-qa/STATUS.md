@@ -78,43 +78,35 @@ reach the game. A **feature request for a picture field is filed** in
 — the day the API accepts one, the field comes back and the change is one line.
 **Until then: put the clue in the tweet's text, or in a file the player opens.**
 
-## OPEN: pack extras probe, second run — three readings (r201, harness 1.0.20)
+## CLOSED: pack extras probe (r200/r201) — every reading green
 
-**First run results (2026-09-19, `QE24-TestResults-Extras.md` + two screenshots):**
+**The four APIs a pack needs to exist outside its own quests all work in 1.3.1.**
+Evidence: `QE24-TestResults-Extras.md` plus three screenshots on the QA-filedump
+branch; the last one shows the three menu items and both widgets at once.
 
-| Row | Result |
-| --- | --- |
-| **T-16** `Menu.addItem` | **RED.** Registered (`Menu.getItems()` reported it) and nothing appeared in the start menu — no item in `All Applications`, none in the apps grid. |
-| **T-17** `Desktop.addWidget` | **GREEN with a wrinkle.** The widget rendered — a mod's own HTML file, pointed at by a mod-relative path, in a desktop iframe. But it drew its **text without its background**: that is `transparent: true`, the SDK's default, which we did not override. So the magenta never showed. |
-| **T-18** `ContextMenu.register` | **GREEN for `target: "file"`** — "QE24: inspect this file" appears at the bottom of a text file's right-click menu. The `desktop` target was not re-checked. |
-| **T-19** `Localization` | **GREEN.** `t("qe24.hello")` returned the translation, `{{who}}` was substituted, and a missing key echoed its own name. **The game offers 30 languages**: ar, bg, cs, da, de, el, en, es-ES, es, fi, fr, hu, id, it, ja-JP, ko-KR, nl, no, pl, pt-BR, pt, ro, ru, sv, th, tr, uk, vi, zh-Hant-TW, zh. |
-
-**This round needs one more look, and it must be looked at while `on` is still
-active.** (The first run ran `off` before looking — our instruction's fault, not
-the tester's; the harness now prints "DO NOT run `qe24 extras off` yet".)
-
-```
-qe24 extras on      # 3 menu items + 2 widgets + 2 right-click items + 2 languages
-```
-
-| Row | Do this | Report |
+| Row | Reading | What it means for the editor |
 | --- | --- | --- |
-| **T-20** the three menu items | With `on` active, open the **start menu**. Look at `All Applications` **and** the **Downloads** tab. Then right-click the start button itself, and the **"Zeis [ZF]"** row at the bottom of the menu. | Any of **"QE24 menu no section"**, **"QE24 menu top"**, **"QE24 menu bottom"**? If they appear: where, and which section spelling put them there? If nothing appears anywhere, `Menu.addItem` is not wired up in this build and we file it. |
-| **T-21** the two widgets and the transparency switch | Look at the desktop top-left: **two** widgets, opaque at 40,40 and `transparent: true` at 400,40, same HTML. | Is the left one solid magenta and the right one see-through? Do the dashed frames measure about **320x180** (the left frame should be the size of a postcard on a 1920-wide screen)? Which of the two does the game put *on top* if they overlap? |
-| **T-22** the `desktop` right-click target | Right-click **empty desktop** space (not a file). | Is there a **"QE24: desktop action"** entry? |
+| **T-16/20** `Menu.addItem` | **Green.** The items appear in the strip at the **bottom of the start menu**, above the Applications/Downloads footer. Three were registered in the second run — labelled `QE24 menu top`, `QE24 menu no section`, `QE24 menu bottom` — and all three appeared, in registration order. **The declared `section: "top" \| "bottom"` has no visible effect in this build**, so the editor will not offer it as a choice (recorded here rather than shipped as a control that does nothing). | Start-menu items are authorable: label + icon + one click action. |
+| **T-17/21** `Desktop.addWidget` | **Green, both ways.** Two widgets, same HTML: the one registered with `transparent: false` drew **solid magenta**; the one with `transparent: true` drew its text with **no background** — which is the SDK's **default** and the reason the first run's widget looked like bare text. Position (40,40) and size (320x180) were both honoured. | Widgets are authorable — and the transparent switch must be a visible control, defaulted to **opaque**. |
+| **T-18/22** `ContextMenu.register` | **Green for both targets.** "QE24: inspect this file" on a file, "QE24: desktop action" on empty desktop space. | Right-click items are authorable, with the four targets the interface declares. |
+| **T-19** `Localization` | **Green.** `t()` translated, `{{who}}` substituted, a missing key echoed its own name. **The game offers 30 languages** (ar, bg, cs, da, de, el, en, es-ES, es, fi, fr, hu, id, it, ja-JP, ko-KR, nl, no, pl, pt-BR, pt, ro, ru, sv, th, tr, uk, vi, zh-Hant-TW, zh). | The Languages table offers exactly those codes. |
 
-Then `qe24 extras off` and paste the terminal output of both commands (the harness
-prints what the game reports before and after).
+**Note on the first run's menu reading:** it reported nothing in the start menu
+with one item registered, and the second run with three items showed them all. The
+likely explanation is where they render — a strip at the very bottom of the menu,
+below the app grid, which is easy to miss when looking for an app icon. Nothing in
+the API behaved differently between the runs.
 
-| Mod | Where | Version |
-| --- | --- | --- |
-| Raw harness (commands) | `reference/sdk-0.24-qa/mod/` | **1.0.20** |
+**One process fix from the first run:** the tester was told to run `on`, `lang`,
+`off` and look afterwards, so everything was unregistered by the time he looked.
+The harness now prints "DO NOT run `qe24 extras off` yet" at registration time and
+the row text puts the look before the cleanup.
 
-**Copy the whole `mod` folder** — `mod/widgets/qe24-widget.html` is what
-`Desktop.addWidget` renders, and it changed this round (it now carries a dashed
-frame so its size is readable in a screenshot).
+Stage B — the editor's **Pack extras** dialog and **localization** — is the next
+build; the plan is [`docs/plans/r199-cheap-wins-plan.md`](../../docs/plans/r199-cheap-wins-plan.md),
+now with these readings folded in.
 
-## CLOSED 2026-09-19 — round r185 (Twotter), editor export 1.0.26, harness 1.0.20
+## CLOSED 2026-09-19 — round r185 (Twotter), editor export 1.0.27, harness 1.0.20
 
 > **Before any row: is the editor export actually ENABLED?** On 2026-09-19 two
 > sessions were wasted because the game had kept the export **disabled** from an
@@ -137,7 +129,7 @@ design. No row is waiting for a tester. The mods:
 
 | Mod | Where | Version |
 | --- | --- | --- |
-| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.26** |
+| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.27** |
 | Raw harness (commands) | `reference/sdk-0.24-qa/mod/` | **1.0.18** |
 
 Nothing auto-starts. Claim with `qe24 run tw1` / `qe24 run tw2` / `qe24 run tw3`;

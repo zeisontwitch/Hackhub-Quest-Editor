@@ -1,3 +1,36 @@
+# Handoff — r202
+
+**The pack-extras probe is closed: all four APIs work in 1.3.1.** Zeis's third
+screenshot shows the three start-menu items and both widgets at once, and he
+confirmed the desktop right-click entry in words. Readings, now in STATUS.md:
+
+- **`Menu.addItem`** — items appear in the **bottom strip of the start menu**.
+  All three appeared (registration order). The declared `section: "top"|"bottom"`
+  has **no visible effect** in this build, so the editor will not offer it.
+  (The first run's "nothing there" was almost certainly where the strip sits —
+  below the app grid — rather than the API.)
+- **`Desktop.addWidget`** — position and size honoured; `transparent: false`
+  gives the solid background, `transparent: true` (the SDK **default**) draws
+  text only. Stage B's widget form therefore needs that switch visible and
+  defaulted to opaque.
+- **`ContextMenu.register`** — both `file` and `desktop` targets work.
+- **`Localization`** — translates, substitutes `{{placeholders}}`, echoes a
+  missing key. **30 languages** offered, now the editor's list.
+
+Stage A cost three runs, and the only real waste was mine: the instructions had
+`off` before "then look". The harness now says "DO NOT run `qe24 extras off` yet".
+
+**Next: Stage B** — the Pack extras dialog (start-menu items, desktop widgets
+with the website builder's page editor, right-click items) and localization
+(the Languages table + a `{{tr.…}}` token resolved by the existing filler). All
+four click actions are approved: notify, claim a quest, send mail, open a
+Handbook page.
+
+Versions: `EDITOR_BUILD` **r202**, export **1.0.27** (stamp only), harness
+**1.0.20** (unchanged — it already carries the probe).
+
+---
+
 # Handoff — r201
 
 **The first pack-extras run answered three of four questions, and the answers are

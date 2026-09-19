@@ -1,5 +1,16 @@
 # r199: the cheap wins — pack extras and localization
 
+> **Stage A complete, 2026-09-19 (r200, r201). All four APIs work.** Start-menu
+> items appear in the bottom strip of the start menu (**and the declared
+> `section` has no visible effect — so §4's menu list will not offer it**);
+> desktop widgets render a mod's own HTML from a mod-relative path with position
+> and size honoured (**and `transparent` defaults to true, so that switch is a
+> visible control defaulted to opaque**); right-click items work on both `file`
+> and `desktop` targets; localization translates, substitutes placeholders and
+> echoes missing keys, with **30 languages** to offer. Stage B is now a build with
+> no open questions. Full readings:
+> [`STATUS.md`](../../reference/sdk-0.24-qa/STATUS.md).
+
 > **Stage A results, 2026-09-19 (r200, then r201).** Widgets, right-click items
 > and localization all work in game; the start-menu item did not appear and is
 > being re-probed with all three section spellings. Two findings already shape

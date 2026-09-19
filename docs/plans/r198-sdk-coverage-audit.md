@@ -39,6 +39,14 @@ bug; each is simply not built in the editor yet.
 
 | # | SDK surface | What an author could do with it | Notes |
 | --- | --- | --- | --- |
+> **Probe result, 2026-09-19 (r200/r201): all four are answerable in this build.**
+> Menu items appear (bottom strip; `section` has no visible effect), desktop
+> widgets render a mod's own HTML (position and size honoured, `transparent`
+> defaults to true), right-click items work for `file` and `desktop`, and
+> localization translates with **30 languages** offered. So entries #2 and #3
+> below stop being "not exposed" as soon as Stage B lands; the audit's remaining
+> list is unchanged otherwise.
+
 > **Probe status, 2026-09-19 (r200/r201).** Two of the entries below are now
 > field-tested, and the first probe changed the order: **#2's desktop widgets and
 > right-click items WORK** (a widget renders a mod's own HTML from a mod-relative

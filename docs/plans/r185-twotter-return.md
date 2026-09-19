@@ -342,7 +342,7 @@ Twotter probe's, which is where the tester already looks:
 **These rows are runnable now** — the fixtures, the quests and the command all
 exist, and every step is written out in
 [`STATUS.md`](../../reference/sdk-0.24-qa/STATUS.md) *Open: the Twotter editor
-rows*: which mod (editor export **1.0.23**, beside raw harness **1.0.18**), the
+rows*: which mod (editor export **1.0.24**, beside raw harness **1.0.18**), the
 account (`qe24_editor`), the commands (`qe24 run tw1`, `qe24 run tw2`,
 `qe24 twotter audit`, `qe24 run clear`) and what to report per row. The QA
 project carries the pair of quests that share the account (T-12), the five-tweet
@@ -394,7 +394,7 @@ avatar/banner sizes, how it spells an age the engine computed itself, and
 whether the timeline flood is pleasant. jsdom cannot see any of it — those are
 T-08/T-09's "paste what you see" lines, handed to you.
 
-Stamp: `EDITOR_BUILD r196`, QA export **1.0.23**, harness mod **1.0.18** (1.0.13
+Stamp: `EDITOR_BUILD r198`, QA export **1.0.24**, harness mod **1.0.18** (1.0.13
 was P-01's, 1.0.14 the first editor-row run and 1.0.15 the r186 fixes — every one
 of them handed to Zeis and run, so each round of fixes is a new version rather
 than a quiet edit of a build he has already tested. r187 changed only the

@@ -78,7 +78,7 @@ reach the game. A **feature request for a picture field is filed** in
 — the day the API accepts one, the field comes back and the change is one line.
 **Until then: put the clue in the tweet's text, or in a file the player opens.**
 
-## CLOSED 2026-09-19 — round r185 (Twotter), editor export 1.0.23, harness 1.0.18
+## CLOSED 2026-09-19 — round r185 (Twotter), editor export 1.0.24, harness 1.0.18
 
 > **Before any row: is the editor export actually ENABLED?** On 2026-09-19 two
 > sessions were wasted because the game had kept the export **disabled** from an
@@ -101,7 +101,7 @@ design. No row is waiting for a tester. The mods:
 
 | Mod | Where | Version |
 | --- | --- | --- |
-| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.23** |
+| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.24** |
 | Raw harness (commands) | `reference/sdk-0.24-qa/mod/` | **1.0.18** |
 
 Nothing auto-starts. Claim with `qe24 run tw1` / `qe24 run tw2` / `qe24 run tw3`;

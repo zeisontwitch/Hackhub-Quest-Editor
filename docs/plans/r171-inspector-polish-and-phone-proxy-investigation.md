@@ -95,3 +95,20 @@ npm run build
 ```
 
 Also run: `git diff --check`.
+
+---
+
+## Closed 2026-09-19 — the phone-proxy investigation is dropped
+
+Zeis asked the modder who reported it (xu): the "phone proxy" they meant is a
+**phone conversation between two NPCs, staged to look as if the player is
+listening in** — a presentation trick, not a second call path. Nothing in the
+SDK needed to be missing for it, and this document's own findings already said
+so: quest calls are `Quest.Dialog` trees, a line may name **any** speaker, and
+the player's participation is optional. The Dialogue node's call mode therefore
+already authors the scene; the only thing untested is how the game frames it on
+screen (a call to the player vs a scene the player watches), which is a one-run
+check if a quest ever depends on the framing.
+
+No SDK request follows from this. The roadmap row is removed and the editor keeps
+its existing call authoring.

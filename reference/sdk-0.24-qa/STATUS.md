@@ -1,25 +1,57 @@
 # QE24 QA status (2026-09-19)
 
-**NOTHING OPEN.** Row Q was the last one: six rows in one session, six greens.
-The pack extras are verified in game end to end — start-menu entries (a picture
-and four jobs), a desktop widget with its own background, right-click entries on
-a file and on the desktop, translated words including the fallback to English for
-a language the pack has no words for, and every click action actually doing its
-job through the engine's callback.
+**ONE OPEN BATCH: the mail rows M-01…M-10** (r209, raw harness **1.0.24**,
+`qe24 mail …`). SDK 0.24 declares `Mail.remove(id)` and `replyable` on
+`MailDefinition`, and the probe measures all of it: the id `send` returns, how
+`remove` behaves, whether a Reply button draws on the direct path (M-04) and on
+the quest path the editor ships (M-06), what a reply's raw `Mail.Sent` payload
+carries — the declared interface has **no `repliedTo`**, so whatever the log
+shows decides whether a quest can match a reply at all (M-05) — cleanup at
+quest end (M-07) and through the disable-then-restart unload hook (M-08), the
+residual `moment` warning look (M-09, clean save with no mods first), and
+`Mail.sendBounce` (M-10). Steps below and in the harness's own `qe24 mail`
+guide. One session, one batch (the r207 rule); install the raw harness `mod/`
+folder only — the editor export is untouched this round.
 
-**Two things belong to the developers, not to us:** **Q14** (a click handler has
-no mod identity, so every permission-guarded call from one is refused — the
-editor works around it by handing the action to the engine) and **Q15**
-(`Handbook.open` opens the handbook on its own front page whatever id it is
-given). Both are in `docs/03-questions-for-the-developers.md`.
+Everything else is closed. **Two things belong to the developers, not to us:**
+**Q14** (a click handler has no mod identity, so every permission-guarded call
+from one is refused — the editor works around it by handing the action to the
+engine) and **Q15** (`Handbook.open` opens the handbook on its own front page
+whatever id it is given). Both are in
+`docs/03-questions-for-the-developers.md`.
 
-Everything below this line is closed.
+Below the M-rows banner, every earlier round is closed, answered or
+deliberately shelved (S-10, the short-month clamp, is shelved by the author's
+decision rather than passed, and is marked as such). A future round that needs
+an in-game check adds a *new* row here and a new harness version — never a
+re-run of the ones below.
 
-One page, so nobody re-runs a finished check. Below the banner, every round is
-closed, answered or deliberately shelved (S-10, the short-month clamp, is shelved
-by the author's decision rather than passed, and is marked as such). A future
-round that needs an in-game check adds a *new* row here and a new harness version
-— never a re-run of the ones below.
+## Open: the mail rows (r209) — harness 1.0.24, `qe24 mail …`
+
+Nothing auto-starts. The two rows that need the probe quest start it with
+`qe24 run mail`. Batch order matters where it is marked. `qe24 mail` alone
+prints the group's guide.
+
+| Row | Do | Green reads |
+| --- | --- | --- |
+| **M-09 first** (it needs a clean save) | Before installing anything: open Twotter and a browser on a **save with no mods**, then check the game log. After the session's rows: check the log again. | With no mods: any `moment` RFC2822 warning is the game's own content (T-09b said so). After the mail rows: **no** new warning from anything the probe sent — closes the stale mail attribution for good. |
+| **M-01** id shape | `qe24 mail send` — read the printed id, open GoMail. Then save → quit → reload → `qe24 mail audit`. | `send` returned a non-null id; GoMail shows the mail **with the same id**; the id survived the reload. |
+| **M-02** remove basics | `qe24 mail remove last`, then the same command again, then `qe24 mail remove qe-nope`. | First **true** and the mail leaves GoMail; second **false**; unknown id **false**. |
+| **M-03** remove while unread | `qe24 mail send`, then `qe24 mail remove last` **immediately** (before opening GoMail), then save → quit → reload → `qe24 mail audit`. | The mail never gets read and is still withdrawn, and the removal persisted in the save. (BUG 10 taught us delivery is queued — a queued mail is the real case.) |
+| **M-04** replyable, direct path | `qe24 mail send replyable`; open it in GoMail. | A **Reply button draws** under a mail sent by direct `Mail.send({ replyable: true })` — the path the editor runtime avoids on a stale assumption. |
+| **M-05** the reply payload | `qe24 mail watch on` **first**; click Reply on the M-04 mail; type anything; send; then `qe24 mail watch off`. | The log line `[qe24] Mail.Sent payload: { … }` pasted whole. The question: does it carry **`repliedTo`**, and is it the original's id? The declared payload has no such field — whatever appears is undeclared. |
+| **M-06** replyable, quest path | `qe24 run mail` — the quest's OnStart sends its replyable `Mails[0]` via `this.sendMail(0)`; open it in GoMail. (Watch stays on from M-05; reply to **this** mail.) | Reply button draws on the **Quest.sendMail** path too, and the reply ticked the quest objective. |
+| **M-07** cleanup at quest end | `qe24 mail cleanup on`; complete (or abandon) the mail quest; `qe24 mail audit`; check GoMail. | The log's `[qe24] mail QA … mail sweep:` lines remove the session ids **and** the quest mail (sendMail returns no id — found by subject); afterwards no probe mails remain, and the story mail in the inbox was untouched. |
+| **M-08** cleanup at unload | `qe24 mail send` once more (so a probe mail exists on the save); save; quit; **disable the harness in the Mods list**; restart; load the save; open GoMail and the new game log. | The log's top carries `[qe24] unload mail sweep:` lines; the probe mails are gone from GoMail; the story mail survived. (Only the disable-then-restart path can fire the hook — T-15c.) |
+| **M-10** bounce | `qe24 mail bounce`; open GoMail. | A mailer-daemon bounce for `qe24-missing@nonexistent-corp.test` is in the inbox. |
+
+Honest-notes: `qe24 mail unload` prints what the always-armed sweep will do and
+why it cannot be a per-session switch (a flag cannot live across the restart
+the hook needs). The sweeps match only subjects starting with
+`QE24 mail probe` — nothing else in anyone's inbox starts with that, and the
+sweep logs every call, so a wrong removal would name itself in the paste.
+
+
 
 ## Settled: the Twotter editor rows, first run — 2026-09-18 (game 1.3.1, build 25388883)
 

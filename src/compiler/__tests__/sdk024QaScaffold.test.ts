@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { compileProject } from "../compile";
 import { parseProjectFile } from "@/templates/share";
@@ -17,6 +17,7 @@ import { parseProjectFile } from "@/templates/share";
 interface Harness {
     quests: (new () => Record<string, unknown>)[];
     command: new () => { Run: (tools: unknown) => unknown };
+    bootstrap?: new () => { OnModPackageUnloaded: () => void };
 }
 
 /** Loads mod.js with `require` answered from the given stub. */
@@ -123,6 +124,16 @@ function harnessSdk(options: { jobs?: StubJob[]; now?: number } = {}) {
     const claimed: string[] = [];
     const unclaimed: string[] = [];
     const now = () => options.now ?? 1_760_000_000_000;
+    /* r209: the mail probe drives a real inbox-shaped stub, so `remove`'s
+       boolean and `getInbox`'s aftermath read like the engine's. */
+    const mailInbox = new Map<string, Record<string, unknown>>();
+    let mailNextId = 0;
+    const mailSent: { def: Record<string, unknown>; id: string }[] = [];
+    const mailRemoved: string[] = [];
+    const mailBounces: unknown[] = [];
+    /* r209: `qe24 mail watch` subscribes the GLOBAL event bus, so the stub
+       records subscriptions and hands back a real unsubscribe. */
+    const globalEvents: { name: string; fn: (payload: unknown) => void }[] = [];
 
     class Quest {
         Name = "";
@@ -150,6 +161,11 @@ function harnessSdk(options: { jobs?: StubJob[]; now?: number } = {}) {
         __mails: mails,
         __claimed: claimed,
         __unclaimed: unclaimed,
+        mailInbox,
+        mailSent,
+        mailRemoved,
+        mailBounces,
+        globalEvents,
         /* `...twotter` brings `Twotter` and the raw maps the assertions read. */
         ...twotter,
         Quest,
@@ -180,7 +196,9 @@ function harnessSdk(options: { jobs?: StubJob[]; now?: number } = {}) {
         RegisterCommand: () => (c: never) => {
             registered.command = c as never;
         },
-        RegisterModPackage: () => {},
+        RegisterModPackage: (b: Harness["bootstrap"]) => {
+            registered.bootstrap = b;
+        },
         RegisterWebsite: () => {},
         SaveStorage: { get: () => undefined, set: () => {}, remove: () => {} },
         Scheduler: {
@@ -203,7 +221,42 @@ function harnessSdk(options: { jobs?: StubJob[]; now?: number } = {}) {
         },
         Network: {},
         UI: { toast: () => {} },
-        Events: { on: () => {} },
+        Events: {
+            on: (name: string, fn: (payload: unknown) => void) => {
+                globalEvents.push({ name, fn });
+                return () => {
+                    const i = globalEvents.findIndex((e) => e.name === name && e.fn === fn);
+                    if (i >= 0) globalEvents.splice(i, 1);
+                };
+            },
+        },
+        Mail: {
+            /* 0.24's contract: `send` returns the created id (or null), `remove`
+               returns false when no mail has that id, `getInbox` lists MailInfo
+               shapes with the id a sweep can match. */
+            send: (def: Record<string, unknown>) => {
+                if (!def || typeof def.subject !== "string") return null;
+                const id = `qe-mail-${++mailNextId}`;
+                mailInbox.set(id, {
+                    id,
+                    from: def.from ?? "unknown@unknown.test",
+                    to: "player@player.test",
+                    subject: def.subject,
+                    read: false,
+                    sentAt: 0,
+                });
+                mailSent.push({ def, id });
+                return id;
+            },
+            remove: (id: string) => {
+                mailRemoved.push(id);
+                return mailInbox.delete(id);
+            },
+            getInbox: () => [...mailInbox.values()],
+            sendBounce: (failedRecipient: string, opts?: unknown) => {
+                mailBounces.push({ failedRecipient, opts });
+            },
+        },
     };
     return sdk;
 }
@@ -277,14 +330,23 @@ describe("r179 raw harness — the Twotter probe", () => {
            export's quest-context UI.notify worked in the same session. So the
            permission check cannot name the mod from a click handler, and the
            probe asks which channels a click still has, and whether handing the
-           work to the engine (a scheduler job) brings the identity back. */
-        expect(manifest.version).toBe("1.0.23");
+           work to the engine (a scheduler job) brings the identity back. r209
+           adds the `qe24 mail` group and the QESdk024MailQa quest: SDK 0.24
+           declares Mail.remove(id) and replyable on MailDefinition, but the
+           promised `repliedTo` field is absent from the DECLARED Mail.Sent
+           payload, the editor's runtime avoids the direct replyable path on a
+           stale no-flag assumption, and the collect-ids-remove-on-unload
+           prescription is unmeasured - rows M-01..M-10 in STATUS.md. */
+        expect(manifest.version).toBe("1.0.24");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
         expect(code).toContain('alias: "extras"');
         expect(code).toContain('verb === "say"');
         expect(code).toContain('sub === "clickprobe"');
+        expect(code).toContain('sub === "mail"');
+        expect(code).toContain('alias: "mail"');
+        expect(code).toContain("sdk.RegisterQuest(QE24MailQa);");
     });
 
     it("audits the round's handles, and calls a present-and-undefined bio by name", () => {
@@ -776,6 +838,7 @@ describe("r181 raw harness — starting a quest on demand", () => {
             "QESdk024TwotterQa",
             "QESdk024TwotterShareQa",
             "QESdk024TwotterPostEventQa",
+            "QESdk024MailQa",
             "QESdk024EditorQa",
         ]);
         expect(tools.text()).toContain("Unclaimed:");
@@ -806,5 +869,243 @@ describe("r181 raw harness — starting a quest on demand", () => {
         expect(code).not.toContain("AutoStart = true");
         /* And the launcher is the sanctioned way in. */
         expect(code).toContain("qe24 run <alias>");
+    });
+});
+
+describe("r209 raw harness — the mail probe", () => {
+    it("sends a direct probe mail, prints its id, and audit reads it back from the inbox (M-01)", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["mail", "send"];
+        runCommand(tools);
+        expect(sdk.mailSent).toHaveLength(1);
+        expect(sdk.mailSent[0].def.replyable).toBe(false);
+        expect(sdk.mailSent[0].def.subject).toMatch(/^QE24 mail probe/);
+        const id = sdk.mailSent[0].id;
+        expect(tools.text()).toContain(`id: ${id}`);
+        /* Audit cross-references the session id against the inbox. */
+        tools.getArgs = () => ["mail", "audit"];
+        runCommand(tools);
+        expect(tools.text()).toContain(`id ${id} (QE24 mail probe (plain)): still in the inbox`);
+    });
+
+    it("marks the replyable flavour, so M-04 exercises the direct replyable path (M-04)", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["mail", "send", "replyable"];
+        runCommand(tools);
+        expect(sdk.mailSent).toHaveLength(1);
+        expect(sdk.mailSent[0].def.replyable).toBe(true);
+        expect(tools.text()).toContain("replyable: true");
+    });
+
+    it("removes the last session id and reports remove() honestly, true then false (M-02)", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["mail", "send"];
+        runCommand(tools);
+        const id = sdk.mailSent[0].id;
+        tools.getArgs = () => ["mail", "remove", "last"];
+        runCommand(tools);
+        expect(sdk.mailRemoved).toEqual([id]);
+        expect(tools.text()).toContain(`Mail.remove(${id}) -> true`);
+        /* Second call: the id is gone now, and the command must say false. */
+        tools.getArgs = () => ["mail", "send"];
+        runCommand(tools);
+        const secondId = sdk.mailSent[1].id;
+        sdk.mailInbox.delete(secondId);
+        tools.lines.length = 0;
+        tools.getArgs = () => ["mail", "remove", "last"];
+        runCommand(tools);
+        expect(tools.text()).toContain(`Mail.remove(${secondId}) -> false`);
+        /* An unknown raw id reads the same honest false. */
+        tools.lines.length = 0;
+        tools.getArgs = () => ["mail", "remove", "qe-nope"];
+        runCommand(tools);
+        expect(tools.text()).toContain("Mail.remove(qe-nope) -> false");
+    });
+
+    it("watches Mail.Sent raw and stops on watch off (M-05)", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+        try {
+            const tools = toolsFor(sdk);
+            tools.getArgs = () => ["mail", "watch", "on"];
+            runCommand(tools);
+            expect(tools.text()).toContain("Mail.Sent watcher ON");
+            expect(sdk.globalEvents).toHaveLength(1);
+            expect(sdk.globalEvents[0].name).toBe("Mail.Sent");
+            /* The watcher's whole point: the payload is logged RAW, so an
+               undeclared `repliedTo` would appear even though the declared
+               interface has no such field. */
+            sdk.globalEvents[0].fn({ id: "m1", subject: "s", repliedTo: "m0" });
+            expect(logSpy).toHaveBeenCalledWith(
+                expect.stringContaining('"repliedTo":"m0"'),
+            );
+            tools.getArgs = () => ["mail", "watch", "off"];
+            runCommand(tools);
+            expect(sdk.globalEvents).toHaveLength(0);
+            logSpy.mockClear();
+            sdk.globalEvents.push({ name: "Mail.Sent", fn: () => {} });
+            /* The removed watcher's fn is gone; firing the re-registered one is
+               not the harness's business — but nothing of the harness's is left
+               subscribed. */
+            expect(sdk.globalEvents).toHaveLength(1);
+        } finally {
+            logSpy.mockRestore();
+        }
+    });
+
+    it("bounces a nonexistent address (M-10)", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["mail", "bounce"];
+        runCommand(tools);
+        expect(sdk.mailBounces).toHaveLength(1);
+        expect(sdk.mailBounces[0]).toMatchObject({ failedRecipient: "qe24-missing@nonexistent-corp.test" });
+        expect(tools.text()).toContain("Mail.sendBounce called");
+    });
+
+    it("the mail quest ships a replyable Mails[0], never auto-starts, sends it at OnStart, and ticks only on a reply to its own from (M-06)", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const C = sdk.__registered.quests.find(
+            (q) => new q().Name === "QESdk024MailQa",
+        );
+        expect(C).toBeDefined();
+        const quest = new (C as new () => {
+            Name: string;
+            AutoStart: boolean;
+            Mails: { title: string; replyable?: boolean }[];
+            OnStart: () => void;
+            OnObjectivesStart: () => void;
+            OnComplete: () => void;
+        })() as never as {
+            Name: string;
+            AutoStart: boolean;
+            Mails: { title: string; replyable?: boolean }[];
+            OnStart: () => void;
+            OnObjectivesStart: () => void;
+            OnComplete: () => void;
+        };
+        expect(quest.AutoStart).toBe(false);
+        expect(quest.Mails).toHaveLength(1);
+        expect(quest.Mails[0].replyable).toBe(true);
+        quest.OnStart();
+        /* The stub records `sendMail` against the quest's Name. */
+        expect(sdk.__mails).toContain("QESdk024MailQa");
+        /* A reply to the quest's own from ticks; any other Mail.Sent does not. */
+        quest.OnObjectivesStart();
+        const hook = sdk.__hooks.at(-1);
+        expect(hook?.name).toBe("Mail.Sent");
+        (hook?.fn as (m: unknown) => void)({ to: "qe24-quest@qe24.test", subject: "Re: x" });
+        expect(sdk.__completed).toContain("quest-reply-seen");
+        (hook?.fn as (m: unknown) => void)({ to: "someone-else@else.test", subject: "Re: x" });
+        expect(sdk.__completed).toHaveLength(1);
+    });
+
+    it("an armed cleanup sweeps ids and subject-matched mails at quest end; a disarmed one leaves them (M-07)", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["mail", "cleanup", "on"];
+        runCommand(tools);
+        tools.getArgs = () => ["mail", "send"];
+        runCommand(tools);
+        const directId = sdk.mailSent[0].id;
+        /* The quest-path mail: sendMail returns no id, so the sweep must find it
+           by its marker subject in the inbox. */
+        sdk.mailInbox.set("qm-1", {
+            id: "qm-1",
+            from: "qe24-quest@qe24.test",
+            to: "player@player.test",
+            subject: "QE24 mail probe (quest replyable)",
+            read: false,
+            sentAt: 0,
+        });
+        sdk.mailInbox.set("foreign-1", {
+            id: "foreign-1",
+            from: "npc@game.test",
+            to: "player@player.test",
+            subject: "A story mail the sweep must never touch",
+            read: false,
+            sentAt: 0,
+        });
+        const C = sdk.__registered.quests.find((q) => new q().Name === "QESdk024MailQa");
+        const quest = new (C as new () => { OnComplete: () => void })();
+        const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+        try {
+            quest.OnComplete();
+            expect(sdk.mailRemoved).toContain(directId);
+            expect(sdk.mailRemoved).toContain("qm-1");
+            expect(sdk.mailRemoved).not.toContain("foreign-1");
+            expect(sdk.mailInbox.has("foreign-1")).toBe(true);
+            expect(sdk.mailInbox.has(directId)).toBe(false);
+            expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("mail QA OnComplete mail sweep"));
+        } finally {
+            logSpy.mockRestore();
+        }
+        /* Disarmed, the same hook leaves everything alone. */
+        tools.getArgs = () => ["mail", "cleanup", "off"];
+        runCommand(tools);
+        tools.getArgs = () => ["mail", "send"];
+        runCommand(tools);
+        const secondId = sdk.mailSent[1].id;
+        sdk.mailRemoved.length = 0;
+        quest.OnComplete();
+        expect(sdk.mailRemoved).toEqual([]);
+        expect(sdk.mailInbox.has(secondId)).toBe(true);
+    });
+
+    it("the unload sweep removes probe mails by subject and nothing else, from a fresh session (M-08)", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        /* A FRESH session: no mail sent, no ids remembered — which is exactly
+           the state the unload hook runs in after the disable-then-restart. */
+        expect(sdk.mailSent).toHaveLength(0);
+        sdk.mailInbox.set("old-1", {
+            id: "old-1",
+            from: "qe24-direct@qe24.test",
+            to: "player@player.test",
+            subject: "QE24 mail probe (plain)",
+            read: true,
+            sentAt: 42,
+        });
+        sdk.mailInbox.set("foreign-2", {
+            id: "foreign-2",
+            from: "npc@game.test",
+            to: "player@player.test",
+            subject: "A story mail the sweep must never touch",
+            read: true,
+            sentAt: 43,
+        });
+        const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+        try {
+            const B = sdk.__registered.bootstrap;
+            expect(B).toBeDefined();
+            new (B as new () => { OnModPackageUnloaded: () => void })().OnModPackageUnloaded();
+            expect(sdk.mailRemoved).toContain("old-1");
+            expect(sdk.mailRemoved).not.toContain("foreign-2");
+            expect(sdk.mailInbox.has("old-1")).toBe(false);
+            expect(sdk.mailInbox.has("foreign-2")).toBe(true);
+        } finally {
+            logSpy.mockRestore();
+        }
+    });
+
+    it("the launcher lists the mail alias with post-claim guidance", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["run", "mail"];
+        runCommand(tools);
+        expect(sdk.__claimed).toEqual(["QESdk024MailQa"]);
+        expect(tools.text()).toContain("qe24 mail watch on");
+        expect(tools.text()).toContain("qe24 mail cleanup on");
     });
 });

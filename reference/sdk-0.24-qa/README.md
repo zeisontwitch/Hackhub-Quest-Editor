@@ -20,6 +20,11 @@ QA quest is claimed on demand with the harness command `qe24 run` — `qe24 run`
 lists them, `qe24 run <alias>` starts one, `qe24 run clear` removes quests an
 older build left behind.
 
+**The open rows are the mail batch (r209)** — `STATUS.md` has the table
+(M-01…M-10); the harness's own `qe24 mail` guide prints the same commands
+in game. One session, raw harness **1.0.24** only; the editor export is
+untouched this round.
+
 The Twotter probe came back **green on the API path** (2026-09-18, build
 25388883): search survives the record shape that used to crash the game, and
 accounts can be removed again. The probe's results, the first editor-row run and the four rows
@@ -42,7 +47,7 @@ theirs back in r180, which is this file's neighbour.
 | [`QE24-TestResults-Twotter.md`](QE24-TestResults-Twotter.md) | Zeis's **r185 editor-row run** (game 1.3.1) with the game log — the transcript that answered T-08…T-14, found the two runtime bugs, and left T-11b/T-12b/T-15b/T-09c open. | Evidence, newest |
 | [`QE24-TestResults - Timer-Rows.md`](QE24-TestResults%20-%20Timer-Rows.md) | Zeis's first Timer-row transcript, including the `qe24 timers` pastes that answered ten rows at once. | Evidence |
 | [`QE24-TestResults-Timer_Rows_2.md`](QE24-TestResults-Timer_Rows_2.md) | Zeis's second Timer run: the S-03 cancel log, the clock panel reading, and the two fixtures that exposed the editor bug. | Evidence |
-| `mod/` | The raw in-game harness, mod **1.0.19**. **`qe24 run`** starts a quest on demand (nothing auto-starts any more) and now lists **`tw1`** / **`tw2`** / **`tw3`**, the editor export's Twotter quests; **`qe24 timers`** prints every pending Scheduler job with the in-game moment it will fire; **`qe24 twotter backdate`** (P-01a) and **`qe24 twotter order`** (P-01b) are answered; **`qe24 twotter audit`** (r185) lists the round's handles and flags the r31 poison shape, which is how T-10/T-11/T-12 are read. `qe24 twotter` (r179) keeps its results. | Tool |
+| `mod/` | The raw in-game harness, mod **1.0.24**. **`qe24 run`** starts a quest on demand (nothing auto-starts any more) and lists **`tw1`** / **`tw2`** / **`tw3`**, the editor export's Twotter quests, and **`mail`**, the r209 mail QA quest; **`qe24 timers`** prints every pending Scheduler job with the in-game moment it will fire; **`qe24 mail send/audit/remove/watch/cleanup/unload/bounce`** is the r209 mail probe (rows M-01…M-10 in `STATUS.md`); **`qe24 twotter backdate`** (P-01a) and **`qe24 twotter order`** (P-01b) are answered; **`qe24 twotter audit`** (r185) lists the round's handles and flags the r31 poison shape, which is how T-10/T-11/T-12 are read. `qe24 twotter` (r179) keeps its results. | Tool |
 | `projects/sdk-0.24-ingame-qa.project.json` | The editor-importable project the export is built from: seven quests, **none auto-starting**, plus the mod-level Twotter account `qe24_editor` the T-08…T-13 rows read. | Source of truth for the export |
 | `projects/fixture-*.project.json` | Three tiny legacy drafts, opened in the editor, no game needed: S-12's pre-r176 `after` project, S-15's r176-era amount/unit one, and **T-14's r30 Twotter draft** (quest-level accounts, one node per tweet, four time spellings). | Fixtures, run by hand |
 **Where things live on the tester's machine** (Zeis, 2026-09-19 — the answer to
@@ -59,7 +64,7 @@ reads `HACKHUB LOG FILE`, with `====` separators between entries. Everything thi
 mod writes starts with `[quest-editor]`, so searching that one word in the newest
 file gives the load banner, the quest lines and any cleanup in order.
 
-| `editor-export/` | The installable export (mod **1.0.25**, editor build `2026-09-18.r200`; seven quests, **none auto-starting** — see `qe24 run`). This is the mod under test for the open Twotter rows (T-15b, and the abandon half of T-11b); install it beside the raw harness. | **Generated** — never edit by hand |
+| `editor-export/` | The installable export (mod **1.0.35**, editor build `2026-09-19.r209`; eight quests, **none auto-starting** — see `qe24 run`). Stamp-only this round: the r209 work is all in the raw harness. Install it beside the raw harness when a row says so. | **Generated** — never edit by hand |
 | `editor-export.notes.md` | Hand-written notes the generator appends to the export README. | — |
 
 Regenerate the export with `npm run gen:qa-export`. The guard test

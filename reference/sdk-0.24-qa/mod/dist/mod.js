@@ -27,6 +27,15 @@ var TWOTTER_BAD_ID = "qe24-bad-record";
 var TWOTTER_DECLARED_ID = "qe24-declared-user";
 var TWOTTER_TWEET_ID = "qe24-probe-tweet";
 var sessionHookRegistered = false;
+/* Mail probe (r209): every probe subject carries this marker, which is what
+   makes subject-matched sweeps safe - the sweep only ever removes mails with
+   this exact prefix, and nothing else in a tester's inbox starts with it. */
+var MAIL_MARKER = "QE24 mail probe";
+var MAIL_DIRECT_FROM = "qe24-direct@qe24.test";
+var MAIL_QUEST_FROM = "qe24-quest@qe24.test";
+/* Session state only: it dies with the game session, which is exactly why the
+   unload sweep matches subjects instead of remembered ids (see mailUnloadInfo). */
+var MAIL_STATE = { sent: [], unsubscribe: null, cleanup: false };
 
 function log(message) {
     try { console.log("[qe24] " + message); } catch (_e) {}
@@ -375,6 +384,12 @@ var QA_QUESTS = [
         what: "the canary, alone: claim it, open a Twotter post, and see whether its single objective ticks by itself (r185 says no). Nothing has to be finished here.",
     },
     {
+        alias: "mail",
+        name: "QESdk024MailQa",
+        title: "QE24 mail QA (replyable + cleanup rows M-06/M-07)",
+        what: "sends its replyable Mails[0] through this.sendMail(0) at start (M-06: does the Reply button draw on the quest path?), and its end hook sweeps the probe mails once `qe24 mail cleanup on` is armed (M-07).",
+    },
+    {
         alias: "surface",
         name: "QESdk024EditorQa",
         title: "QE SDK 0.24 editor QA",
@@ -469,6 +484,13 @@ function runQaQuest(tools, alias) {
         tools.println("");
         tools.println("Give it a second, then run:  qe24 timers");
         tools.println("That prints every pending job with the moment it will fire - you do not wait for it.");
+    }
+    if (alias === "mail") {
+        tools.println("");
+        tools.println("Mail rows: run `qe24 mail watch on` BEFORE replying (M-05 reads the raw reply");
+        tools.println("payload from the game log), and `qe24 mail cleanup on` BEFORE completing or");
+        tools.println("abandoning this quest (M-07). `qe24 mail audit` reads the aftermath; the");
+        tools.println("direct-path rows need no quest at all: qe24 mail send [plain|replyable].");
     }
 }
 
@@ -987,6 +1009,10 @@ function printGuide(tools) {
     tools.println("  a start-menu click still have, now that UI calls from one are refused?");
     tools.println("Pack extras probe (r199): qe24 extras on / off / lang - does this build show start-menu");
     tools.println("  items, desktop widgets and right-click entries, and does Localization.t translate? Rows T-16..T-19.");
+    tools.println("");
+    tools.println("Mail probe (r209): qe24 mail send [plain|replyable] / remove last / audit / watch on /");
+    tools.println("  cleanup on / unload / bounce - SDK 0.24's Mail.remove, replyable and sendBounce.");
+    tools.println("  Rows M-01..M-10 in STATUS.md; the quest-path half is qe24 run mail.");
     tools.println("Safety: if a browser/curl request seems stuck after an intercept test, open another terminal and run qe24 intercept off.");
 }
 
@@ -997,6 +1023,7 @@ function printNextSteps(tools) {
     tools.println("  qe24 run timer           the delay rows (S-01/S-02/S-03)");
     tools.println("  qe24 run cal             the calendar rows (S-05/S-06/S-07/S-13)");
     tools.println("  qe24 run wait            Wait in months (S-09/S-14)");
+    tools.println("  qe24 run mail            the mail rows (M-06 quest replyable, M-07 cleanup)");
     tools.println("  qe24 run clear           clear quests an older build left claimed");
     tools.println("");
     tools.println("Then read what it armed instead of waiting for it:  qe24 timers");
@@ -1802,6 +1829,277 @@ function extrasProbe(tools, verb) {
     extrasGuide(tools);
 }
 
+/* ── mail probe (r209) ────────────────────────────────────────────────────
+ * SDK 0.24 declares Mail.remove(id): boolean and replyable on MailDefinition
+ * (and on QuestMailDefinition). Three claims need in-game evidence before the
+ * editor can author any of it: the reply's promised `repliedTo` field is
+ * absent from the DECLARED Mail.Sent payload; the editor's runtime still
+ * avoids the direct replyable path on a stale no-flag assumption; and the
+ * collect-ids-remove-on-unload prescription is unmeasured. Rows M-01..M-10
+ * live in reference/sdk-0.24-qa/STATUS.md. */
+
+function mailGuide(tools) {
+    tools.println("qe24 mail - the SDK 0.24 mail probe (rows M-01..M-10, STATUS.md)");
+    tools.println("");
+    tools.println("  qe24 mail send [plain|replyable]  one direct Mail.send (M-01 id shape; M-04 replyable)");
+    tools.println("  qe24 mail remove last|<id>        Mail.remove by session id or raw id (M-02/M-03)");
+    tools.println("  qe24 mail audit                   session ids vs the inbox, plus every probe-subject mail (M-03/M-07/M-08)");
+    tools.println("  qe24 mail watch on|off            log every Mail.Sent payload RAW to the game log (M-05: repliedTo?)");
+    tools.println("  qe24 mail cleanup on|off          arm the probe quest's end hook to sweep the probe mails (M-07)");
+    tools.println("  qe24 mail unload                  what the always-armed unload sweep will remove (M-08)");
+    tools.println("  qe24 mail bounce                  Mail.sendBounce for a nonexistent address (M-10)");
+    tools.println("");
+    tools.println("The quest-path row is qe24 run mail: its OnStart sends a replyable Mails[0]");
+    tools.println("through this.sendMail(0), the path the editor ships today (M-06).");
+    tools.println("Every probe mail's subject starts with \"" + MAIL_MARKER + "\" - the sweeps match that");
+    tools.println("prefix and nothing else, so a tester's own mail is never touched.");
+}
+
+function mailSend(tools, flavour) {
+    if (!sdk.Mail || !sdk.Mail.send) { tools.printError("Mail.send unavailable in this build"); return; }
+    var replyable = flavour === "replyable";
+    var subject = MAIL_MARKER + (replyable ? " (replyable)" : " (plain)");
+    var id = safe("Mail.send(" + subject + ")", function () {
+        return sdk.Mail.send({
+            from: MAIL_DIRECT_FROM,
+            subject: subject,
+            content: "Direct Mail.send probe (r209). " + (replyable ? "A Reply button under this mail is row M-04's green." : "Plain probe mail for the id-shape row M-01."),
+            replyable: replyable,
+        });
+    }, null);
+    if (id == null) {
+        tools.println("Mail.send returned null (or threw - the game log says which). That is the");
+        tools.println("\"could not be sent\" answer, and it is a result: paste it against M-01.");
+        return;
+    }
+    MAIL_STATE.sent.push({ id: id, subject: subject });
+    tools.println("Mail.send -> id: " + id);
+    tools.println("  subject: " + subject);
+    tools.println("  from: " + MAIL_DIRECT_FROM + "   replyable: " + replyable);
+    tools.println("Open GoMail: the mail should be there carrying the SAME id (M-01), and with");
+    tools.println("save -> quit -> reload -> qe24 mail audit the id should survive (M-01's second half).");
+    if (replyable) {
+        tools.println("A Reply button under this mail is M-04's green. Run `qe24 mail watch on` BEFORE");
+        tools.println("clicking it, so the reply's raw payload lands in the game log (M-05).");
+    } else {
+        tools.println("Then: qe24 mail remove last  (M-02), or remove it while still unread for M-03.");
+    }
+}
+
+function mailRemove(tools, what) {
+    if (!sdk.Mail || !sdk.Mail.remove) { tools.printError("Mail.remove unavailable in this build"); return; }
+    var id = what === "last"
+        ? (MAIL_STATE.sent.length ? MAIL_STATE.sent[MAIL_STATE.sent.length - 1].id : null)
+        : what;
+    if (!id) {
+        tools.printError("No session id to remove. Send one first (qe24 mail send), or name it: qe24 mail remove <id>");
+        return;
+    }
+    var ok = safe("Mail.remove(" + id + ")", function () { return sdk.Mail.remove(id); }, null);
+    tools.println("Mail.remove(" + id + ") -> " + ok);
+    tools.println("true = withdrawn, false = no mail has that id. Open GoMail and confirm it is gone,");
+    tools.println("then save -> quit -> reload -> qe24 mail audit to check the removal persisted (M-03).");
+}
+
+function mailAudit(tools) {
+    tools.println("QE24 mail audit - session sends: " + MAIL_STATE.sent.length +
+        ", watcher: " + (MAIL_STATE.unsubscribe ? "ON" : "off") +
+        ", cleanup: " + (MAIL_STATE.cleanup ? "ARMED" : "off"));
+    if (!sdk.Mail || !sdk.Mail.getInbox) {
+        tools.println("Mail.getInbox unavailable in this build - the audit can only list session ids.");
+        for (var i = 0; i < MAIL_STATE.sent.length; i++) tools.println("  id " + MAIL_STATE.sent[i].id + " (" + MAIL_STATE.sent[i].subject + ")");
+        return;
+    }
+    var inbox = safe("Mail.getInbox", function () { return sdk.Mail.getInbox(); }, null);
+    if (inbox == null) {
+        tools.println("Mail.getInbox threw or returned nothing readable - paste that as the result.");
+        return;
+    }
+    tools.println("Inbox entries visible to getInbox: " + inbox.length);
+    for (var s = 0; s < MAIL_STATE.sent.length; s++) {
+        var entry = MAIL_STATE.sent[s];
+        var found = null;
+        for (var j = 0; j < inbox.length; j++) {
+            if (inbox[j] && inbox[j].id === entry.id) found = inbox[j];
+        }
+        tools.println("  id " + entry.id + " (" + entry.subject + "): " + (found ? "still in the inbox" : "GONE (removed, or never reached the inbox)"));
+    }
+    var mine = [];
+    for (var k = 0; k < inbox.length; k++) {
+        if (inbox[k] && typeof inbox[k].subject === "string" && inbox[k].subject.indexOf(MAIL_MARKER) === 0) mine.push(inbox[k]);
+    }
+    tools.println("Probe mails in the inbox by subject: " + mine.length);
+    for (var m = 0; m < mine.length; m++) {
+        tools.println("  id " + mine[m].id + "  from " + mine[m].from + "  to " + mine[m].to + "  subject " + mine[m].subject);
+    }
+    if (!mine.length && MAIL_STATE.sent.length) {
+        tools.println("No probe subjects in the inbox. If GoMail also shows none, the removal rows are green;");
+        tools.println("if GoMail still shows one, it never reached getInbox - that difference is a result.");
+    }
+    tools.println("Read this after the reload halves of M-01/M-03 and after M-07's quest end.");
+}
+
+function mailWatch(tools, mode) {
+    if (mode === "off") {
+        if (!MAIL_STATE.unsubscribe) { tools.println("No Mail.Sent watcher running."); return; }
+        safe("unsubscribe Mail.Sent", MAIL_STATE.unsubscribe, undefined);
+        MAIL_STATE.unsubscribe = null;
+        tools.println("Mail.Sent watcher OFF - replies are no longer logged.");
+        return;
+    }
+    if (!sdk.Events || !sdk.Events.on) { tools.printError("Events.on unavailable in this build"); return; }
+    if (MAIL_STATE.unsubscribe) { tools.println("Watcher already on. qe24 mail watch off retires it."); return; }
+    MAIL_STATE.unsubscribe = sdk.Events.on("Mail.Sent", function (data) {
+        var raw = null;
+        try { raw = JSON.stringify(data); } catch (e) { raw = String(data); }
+        log("Mail.Sent payload: " + raw);
+    });
+    tools.println("Mail.Sent watcher ON - every mail the player sends is logged RAW to the game log.");
+    tools.println("Now reply to a replyable probe mail in GoMail (M-05). The line to paste starts with:");
+    tools.println("  [qe24] Mail.Sent payload: { ... }");
+    tools.println("The whole question: does the payload carry \"repliedTo\", and is it the original");
+    tools.println("mail's id? The DECLARED payload has no such field, so whatever appears here is");
+    tools.println("undeclared - and it decides whether a quest can match a reply at all.");
+}
+
+function mailCleanupArm(tools, mode) {
+    if (mode === "off") {
+        MAIL_STATE.cleanup = false;
+        tools.println("Cleanup DISARMED - the probe quest's end hook will leave the mails alone.");
+        return;
+    }
+    MAIL_STATE.cleanup = true;
+    tools.println("Cleanup ARMED - when the mail QA quest ends (complete OR abandon), its hook removes");
+    tools.println("every session id Mail.send returned AND every inbox mail whose subject starts with");
+    tools.println("\"" + MAIL_MARKER + "\" (the sendMail path returns no id, so its mail is found by subject).");
+    tools.println("Each removal is logged as [qe24] mail sweep: ... - that log is M-07's evidence.");
+    tools.println("Then: qe24 run mail (if not already running), do the reply, and complete or abandon");
+    tools.println("the quest. Afterwards: qe24 mail audit, and GoMail should show no probe mails.");
+}
+
+function mailUnloadInfo(tools) {
+    tools.println("The unload sweep is ALWAYS armed - it cannot be switched off per session, because");
+    tools.println("a flag cannot live across the restart that OnModPackageUnloaded needs (the hook");
+    tools.println("fires at the NEXT game start, before any save loads - T-15c). It removes exactly");
+    tools.println("the inbox mails whose subject starts with \"" + MAIL_MARKER + "\", and logs each");
+    tools.println("removal as [qe24] mail sweep: ...");
+    tools.println("M-08: run the mail rows, save, disable THIS mod in the Mods list, restart the game,");
+    tools.println("load the save and open GoMail - the probe mails should be gone, with the sweep");
+    tools.println("lines at the top of the new game log. Same hook semantics as the Twotter cleanup.");
+}
+
+function mailBounce(tools) {
+    if (!sdk.Mail || !sdk.Mail.sendBounce) { tools.printError("Mail.sendBounce unavailable in this build"); return; }
+    safe("Mail.sendBounce", function () { sdk.Mail.sendBounce("qe24-missing@nonexistent-corp.test"); }, undefined);
+    tools.println("Mail.sendBounce called for qe24-missing@nonexistent-corp.test (M-10).");
+    tools.println("Open GoMail: a mailer-daemon bounce should be in the inbox. Nothing there means");
+    tools.println("sendBounce does not draw in this build - paste that as the result.");
+}
+
+/* One sweep, two callers: the armed quest-end hook (M-07) and the always-armed
+   unload hook (M-08). Session ids first (they exist only in the same session),
+   then a subject match over the inbox, which is what survives a restart. */
+function mailSweep(label) {
+    if (!sdk.Mail || !sdk.Mail.remove) { log(label + " mail sweep: no Mail.remove in this build - nothing swept"); return; }
+    var removed = 0;
+    for (var i = 0; i < MAIL_STATE.sent.length; i++) {
+        /* Function-scoped copy: `var id` inside a callback would be the same
+           binding for every iteration under ES5. */
+        var id = MAIL_STATE.sent[i].id;
+        var ok = (function (mid) {
+            return safe("Mail.remove(" + mid + ")", function () { return sdk.Mail.remove(mid); }, false);
+        })(id);
+        log(label + " mail sweep: remove id " + id + " -> " + ok);
+        if (ok) removed++;
+    }
+    MAIL_STATE.sent = [];
+    var inbox = safe("Mail.getInbox", function () { return sdk.Mail.getInbox(); }, null);
+    if (inbox && inbox.length) {
+        for (var j = 0; j < inbox.length; j++) {
+            var m = inbox[j];
+            if (m && typeof m.subject === "string" && m.subject.indexOf(MAIL_MARKER) === 0 && m.id != null) {
+                var mid2 = m.id;
+                var ok2 = (function (mid) {
+                    return safe("Mail.remove(" + mid + ")", function () { return sdk.Mail.remove(mid); }, false);
+                })(mid2);
+                log(label + " mail sweep: remove id " + mid2 + " (" + m.subject + ") -> " + ok2);
+                if (ok2) removed++;
+            }
+        }
+    }
+    log(label + " mail sweep finished: " + removed + " probe mail(s) removed");
+}
+
+function mailProbe(tools, verb, arg) {
+    if (verb === "send") { mailSend(tools, arg); return; }
+    if (verb === "remove") { mailRemove(tools, arg || "last"); return; }
+    if (verb === "audit") { mailAudit(tools); return; }
+    if (verb === "watch") { mailWatch(tools, arg || "on"); return; }
+    if (verb === "cleanup") { mailCleanupArm(tools, arg || "on"); return; }
+    if (verb === "unload") { mailUnloadInfo(tools); return; }
+    if (verb === "bounce") { mailBounce(tools); return; }
+    mailGuide(tools);
+}
+
+/* The quest-path half of the probe: Mails[] sent through this.sendMail(index)
+   is the path the editor ships for replyable mail, and sendMail returns VOID -
+   no id - so its mails can only be cleaned up by matching the inbox, which is
+   exactly what the armed sweep (M-07) exercises. */
+class QE24MailQa extends sdk.Quest {
+    constructor() {
+        super();
+        this.Name = "QESdk024MailQa";
+        this.Title = "QE24 mail QA (replyable + cleanup rows M-06/M-07)";
+        this.Description = "Claim with qe24 run mail. Its OnStart sends a replyable Mails[0] through this.sendMail(0). Reply to it for M-05/M-06, then complete or abandon the quest for M-07 (arm qe24 mail cleanup on first).";
+        this.Group = "sandbox";
+        this.AutoStart = false;
+        this.AutoComplete = false;
+        this.HasCompleteButton = true;
+        this.Abandonable = true;
+        this.Rewards = { money: 1, xp: 1 };
+        /* QuestMailDefinition carries `title`, not `subject` - whether the
+           engine's sendMail path turns that into a real inbox mail the sweep
+           can find is one of the readings this quest settles (M-07). */
+        this.Mails = [
+            {
+                title: MAIL_MARKER + " (quest replyable)",
+                content: "Sent by this.sendMail(0) at quest start (M-06). A Reply button under this mail is the row's green - run `qe24 mail watch on` first, then reply anything: the reply's raw payload decides whether a quest can match a reply at all (M-05).",
+                replyable: true,
+            },
+        ];
+        this.Objectives = [
+            { name: "quest-reply-seen", description: "Open this quest's probe mail in GoMail (a Reply button under it is M-06's green) and reply anything. Ticks on Mail.Sent to qe24-quest@qe24.test." },
+            { name: "cleanup-seen", description: "Run qe24 mail cleanup on, then complete or abandon this quest. Reminder only: the [qe24] mail sweep lines in the game log are M-07's evidence." },
+        ];
+    }
+    CreateData() { return {}; }
+    OnStart() {
+        log("mail QA quest started - sending Mails[0] via this.sendMail(0) (M-06)");
+        var self = this;
+        safe("this.sendMail(0)", function () { self.sendMail(0, MAIL_QUEST_FROM); }, undefined);
+    }
+    OnObjectivesStart() {
+        var self = this;
+        /* A reply's `to` is the original mail's `from`. The direct-path probes
+           send from a different address, so only a reply to THIS quest's mail
+           ticks the objective. */
+        this.Events.on("Mail.Sent", function (m) {
+            if (m && m.to === MAIL_QUEST_FROM) {
+                log("mail QA: reply observed (subject " + (m && m.subject) + ") - completing quest-reply-seen");
+                completeObjectiveSafe(self, "quest-reply-seen");
+            }
+        });
+    }
+    OnComplete() {
+        log("mail QA OnComplete fired");
+        if (MAIL_STATE.cleanup) mailSweep("mail QA OnComplete");
+    }
+    OnAbandon() {
+        log("mail QA OnAbandon fired");
+        if (MAIL_STATE.cleanup) mailSweep("mail QA OnAbandon");
+    }
+}
+
 class QE24Command extends sdk.Command {
     constructor() {
         super();
@@ -1809,7 +2107,7 @@ class QE24Command extends sdk.Command {
         this.Description = "SDK 0.24 QA harness commands";
         this.Autocomplete = [
             { label: "qe24", type: "STRING" },
-            { label: "guide|next|run|status|history|clock|timers|extras|twotter|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
+            { label: "guide|next|run|status|history|clock|timers|extras|mail|twotter|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
         ];
     }
     async Run(tools) {
@@ -1848,7 +2146,7 @@ class QE24Command extends sdk.Command {
             tools.println("Connected Wi-Fi is QE24 target: " + (connectedMatchesTarget ? "yes" : "no"));
             if (targetWifi && currentWifi && !connectedMatchesTarget) tools.println("Note: if the game UI says QE24 is connected, paste this mismatch before we unhide Wi-Fi.");
             tools.println("Tip: run qe24 next if the 6/6 surface objective quest is already done, qe24 intercept for proxy-test steps, or qe24 history for HTTP/collab evidence.");
-            tools.println("Commands: qe24 guide · qe24 next · qe24 run [timer|cal|wait|probe|twotter|tw1|tw2|tw3|surface|clear] · qe24 status · qe24 history · qe24 clock · qe24 timers · qe24 twotter [seed|bad|update|post|backdate|order|audit|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
+            tools.println("Commands: qe24 guide · qe24 next · qe24 run [timer|cal|wait|probe|twotter|tw1|tw2|tw3|mail|surface|clear] · qe24 status · qe24 history · qe24 clock · qe24 timers · qe24 twotter [seed|bad|update|post|backdate|order|audit|cleanup] · qe24 http-fetch · qe24 schedule 1 · qe24 collab · qe24 intercept on|off|queue|forward|drop · qe24 claim complete|button|retire|unclaim|phone-auto|phone-direct · qe24 complete · qe24 button-ready · qe24 retire · qe24 unclaim · qe24 phone-auto · qe24 phone-direct · qe24 reset");
             return;
         }
         if (sub === "history") {
@@ -1875,6 +2173,10 @@ class QE24Command extends sdk.Command {
         }
         if (sub === "extras") {
             extrasProbe(tools, args[1] || "guide");
+            return;
+        }
+        if (sub === "mail") {
+            mailProbe(tools, args[1] || "guide", args[2]);
             return;
         }
         if (sub === "twotter") {
@@ -2044,6 +2346,12 @@ class QE24Bootstrap extends sdk.Bootstrap {
                 log("unload removeUser(" + ids[i] + ") -> " + sdk.Twotter.removeUser(ids[i]));
             }
         });
+        /* The mail sweep is the dev-prescribed cleanup pattern (BUG 9's answer,
+           now in the SDK declarations): collect what you sent and remove it in
+           OnModPackageUnloaded. Always armed, subject-gated to this harness's
+           marker prefix - a flag cannot live across the restart the hook needs
+           (T-15c), and the same shape is how the Twotter cleanup ships. */
+        safe("mail sweep on unload", function () { mailSweep("unload"); });
     }
 }
 
@@ -2055,6 +2363,7 @@ sdk.RegisterQuest(QE24UnclaimTarget);
 sdk.RegisterQuest(QE24PhoneOnEndAutoCompleteProbe);
 sdk.RegisterQuest(QE24PhoneOnEndDirectCompleteProbe);
 sdk.RegisterQuest(QE24TwotterProbe);
+sdk.RegisterQuest(QE24MailQa);
 if (typeof sdk.RegisterCommand === "function") {
     sdk.RegisterCommand({ default: true, scope: "local" })(QE24Command);
 }

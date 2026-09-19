@@ -1,3 +1,66 @@
+# Handoff — r209
+
+**The mail probe is built and waiting on one batched session.** Plan:
+[`plans/r209-mail-qa-plan.md`](plans/r209-mail-qa-plan.md) (approved, with
+`Mail.sendBounce` added as row **M-10**). SDK 0.24 declares
+`Mail.remove(id): boolean` and `replyable` on `MailDefinition` — BUG 9's answer,
+in the declarations — but three claims need in-game evidence before the editor
+authors any of it, and reading found all three:
+
+1. **`repliedTo` is promised but undeclared.** `MailDefinition.replyable`'s doc
+   comment says the reply raises `Mail.Sent` *with a `repliedTo` field* — and
+   `MailEvent`, the declared payload, has no such field. M-05 logs the raw
+   payload (`qe24 mail watch on`), and its answer decides whether a quest can
+   match a reply to its own mail at all; if it cannot, that is a docs/03
+   developer question before any authoring round.
+2. **The editor's replyable path stands on a stale assumption.**
+   `runtimeSource.ts` still routes replyable mail through `Quest.sendMail`
+   "because `MailDefinition` has no replyable", and `compile.ts`'s author
+   warning calls that "the only path that carries a reply flag" — both stale
+   against 0.24. Nothing changed yet on purpose: M-04 (direct
+   `Mail.send({ replyable: true })`) and M-06 (`this.sendMail(0)`) decide which
+   path actually draws the Reply button, and the authoring round follows.
+3. **The cleanup prescription is unmeasured.** Remove-before-ever-read (M-03 —
+   delivery is queued, per BUG 10), removal persisting across a reload (M-01's
+   second half, M-03), the quest-end sweep (M-07) and the
+   disable-then-restart unload hook (M-08, T-15c semantics).
+
+**What shipped — raw harness 1.0.24 only.** A `qe24 mail` group (`send
+[plain|replyable]`, `audit`, `remove last|<id>`, `watch on|off`, `cleanup
+on|off`, `unload`, `bounce`), the on-demand quest `QESdk024MailQa` (`qe24 run
+mail` — replyable `Mails[0]` through `this.sendMail(0)`, reply objective,
+cleanup hook on complete **and** abandon), and an always-armed, subject-gated
+mail sweep in `OnModPackageUnloaded` (the dev-prescribed BUG 9 pattern, same
+shape as the shipped Twotter cleanup; it cannot be a per-session switch because
+a flag cannot live across the restart the hook needs — `qe24 mail unload`
+prints that). Every sweep matches only subjects starting with `QE24 mail probe`
+and logs each `remove` call, so the paste itself is the evidence.
+
+**M-09 rides the batch** (Zeis's ask): the `moment` RFC2822 roadmap row's mail
+attribution was stale — the dev's BUG 10 answer blames Twotter/Kisscord
+`Date.toString()` in mod content, and T-09b saw the only 1.3.1 warning come
+from a game tweet. The row is corrected in the README; one clean-save look
+closes it with evidence.
+
+**Process scars from this round, worth keeping:** two of six batched
+`edit_file` calls to `mod.js` silently lost their writes (the r150 lesson
+again) — caught by grep-verification after each batch, re-applied serially;
+and one fuzzy match duplicated the file tail, caught by `node --check`. The
+rule stands: **serial edits only on the harness, verify with grep +
+`node --check` after every batch.** All nine new guards were falsified by
+revert (version pin, dispatch, replyable flag, watch-off unsubscribe, the
+sweep's subject gate, the cleanup flag, the launcher entry, the audit readback,
+the unload call).
+
+**Nothing else changed in the editor** — the export moved 1.0.34 → **1.0.35**
+and the manual's stamps swept to r209 purely so the installed evidence cannot
+disagree with the editor.
+
+Versions: `EDITOR_BUILD` **r209**, export **1.0.35** (stamp only), harness
+**1.0.24**. Tests: 1,793 across 88 files (+9).
+
+---
+
 # Handoff — r208
 
 **The pack extras are done and verified in game.** Six batched rows, six greens:

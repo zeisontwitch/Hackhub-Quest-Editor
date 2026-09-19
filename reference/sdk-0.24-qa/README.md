@@ -59,7 +59,7 @@ reads `HACKHUB LOG FILE`, with `====` separators between entries. Everything thi
 mod writes starts with `[quest-editor]`, so searching that one word in the newest
 file gives the load banner, the quest lines and any cleanup in order.
 
-| `editor-export/` | The installable export (mod **1.0.22**, editor build `2026-09-18.r195`; seven quests, **none auto-starting** — see `qe24 run`). This is the mod under test for the open Twotter rows (T-15b, and the abandon half of T-11b); install it beside the raw harness. | **Generated** — never edit by hand |
+| `editor-export/` | The installable export (mod **1.0.23**, editor build `2026-09-18.r196`; seven quests, **none auto-starting** — see `qe24 run`). This is the mod under test for the open Twotter rows (T-15b, and the abandon half of T-11b); install it beside the raw harness. | **Generated** — never edit by hand |
 | `editor-export.notes.md` | Hand-written notes the generator appends to the export README. | — |
 
 Regenerate the export with `npm run gen:qa-export`. The guard test

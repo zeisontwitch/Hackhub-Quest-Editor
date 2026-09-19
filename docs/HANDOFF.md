@@ -1,3 +1,52 @@
+# Handoff — r196
+
+**The Twotter round is closed, every row green or resolved.** The last two landed
+on 2026-09-19.
+
+**T-11b, abandon half — the failure the round opened on.** r185 lost this row: an
+abandon removed the tweets but kept the account, because "live quest" counted a
+quest that had never started. Re-run on a clean save, tw1 claimed and abandoned
+from the journal:
+
+```
+OnAbandon: starting
+cleanup starting (abandon): 5 item(s) to undo
+twotter: removeUser(qe-tw-account) -> true (the last quest that needs it ended)
+cleanup: tweet qe-...-post-4 ... removed        (then 3, 2, 1, 0)
+cleanup finished
+OnAbandon: finished, handing back to the game
+```
+
+`qe24 twotter audit` after the reload: **not on this save.** Note the order — the
+account goes first and `removeUser` takes its posts with it, so the per-tweet
+cleanup finds nothing left; that is why both appear. `keep` never fired.
+
+**T-15c — the uninstall promise, measured in both directions.** Disabling the
+export in the game's Mods list makes the game apply the change at the next start,
+before any save is loaded, and that is when `OnModPackageUnloaded` fires:
+`removeUser(qe-tw-account) -> true (mod unloaded)`, account gone from the save
+afterwards. A plain quit runs no hook at all (nothing to clean), and a mod deleted
+from disk while the game is closed can never run mod code — the one leak, filed
+narrowly as question 11.
+
+**The round's two developer questions:** §11 (sweep mod-created accounts the way
+the game already sweeps their quests: `[PruneOrphanQuests] Dropping …: no
+installed content defines it`) and §13 (a mod disabled in the Mods list stays
+disabled across a new version, a folder deletion and a fresh save — the silent
+no-load that cost two sessions before r193's readout named it).
+
+**The audit command:** it retires with the round. It stays in the harness — no
+dependants, the harness never ships, and a future SDK round touching Twotter will
+want it — but no row needs it until a Twotter row returns.
+
+**Nothing is waiting for Zeis.** The open list is empty; the next round starts
+from whatever he asks for next.
+
+Versions: `EDITOR_BUILD` **r196**, export **1.0.23** (stamp only), harness
+**1.0.18**.
+
+---
+
 # Handoff — r195
 
 **T-15c is GREEN, and the promise now has exact edges.** Zeis disabled the export

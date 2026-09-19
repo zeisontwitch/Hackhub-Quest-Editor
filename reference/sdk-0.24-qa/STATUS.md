@@ -78,7 +78,7 @@ reach the game. A **feature request for a picture field is filed** in
 — the day the API accepts one, the field comes back and the change is one line.
 **Until then: put the clue in the tweet's text, or in a file the player opens.**
 
-## Open: T-11b (abandon half) only — r195, editor export 1.0.22
+## CLOSED 2026-09-19 — round r185 (Twotter), editor export 1.0.23, harness 1.0.18
 
 > **Before any row: is the editor export actually ENABLED?** On 2026-09-19 two
 > sessions were wasted because the game had kept the export **disabled** from an
@@ -95,12 +95,13 @@ Two rows could not be answered by the r185 build (one was unreachable, one had
 nothing to remove) and one is a re-check after a fix. **T-11b and T-12b are now
 answered green** — Zeis ran them on a fresh save (claim tw1, both objectives
 tick, Complete removed the account and its tweets; then tw2 claimed and
-completed, which removed them again). **Only the abandon half of T-11b is still
-open** — T-15c came back green (below), and T-15b is red by design. The mods:
+completed, which removed them again). **The round is closed** — the abandon half
+of T-11b came back green last (below), T-15c is green and T-15b stays red by
+design. No row is waiting for a tester. The mods:
 
 | Mod | Where | Version |
 | --- | --- | --- |
-| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.22** |
+| Editor export (under test) | `reference/sdk-0.24-qa/editor-export/` | **1.0.23** |
 | Raw harness (commands) | `reference/sdk-0.24-qa/mod/` | **1.0.18** |
 
 Nothing auto-starts. Claim with `qe24 run tw1` / `qe24 run tw2` / `qe24 run tw3`;
@@ -108,6 +109,26 @@ shed anything an older build left claimed with `qe24 run clear`. If a claim is
 refused, the journal titles are *Twotter QA (T-08/T-09/T-10/T-11/T-13)* (tw1),
 *Twotter QA (T-12: two quests, one account)* (tw2) and *Twotter QA (T-13: does
 Twotter.Post ever fire?)* (tw3).
+
+### Measured 2026-09-19: T-11b abandon — GREEN (the row that started the round)
+
+The failure this round opened on: in r185 an **abandon** removed the tweets but
+kept the account, because "live quest" counted a quest that had never started.
+Re-run on a clean save, tw1 claimed and then **abandoned from the journal**:
+
+```
+[quest-editor] OnAbandon: starting
+[quest-editor] cleanup starting (abandon): 5 item(s) to undo
+[quest-editor] twotter: removeUser(qe-tw-account) -> true (the last quest that needs it ended)
+[quest-editor] cleanup: tweet qe-...-post-4 ... removed      (and 3, 2, 1, 0)
+[quest-editor] cleanup finished
+[quest-editor] OnAbandon: finished, handing back to the game
+```
+
+`qe24 twotter audit` after the reload: **`@qe24_editor` is not on this save.**
+The account went *first* — `removeUser` takes its posts with it — and the
+per-tweet cleanup then found nothing left to do, which is why both lines appear.
+`keep` never fired. **The r185 failure is closed.**
 
 ### Measured 2026-09-19: T-15c GREEN — the accounts go when the game unloads a disabled mod
 
@@ -144,7 +165,7 @@ accounts. Question 11 asks for that sweep.
 
 | Row | Do this | Report |
 | --- | --- | --- |
-| ~~**T-11b**~~ | **Green 2026-09-19 (first half).** Fresh save, `qe24 run tw1`: both objectives ticked, the Complete button appeared and **removed the account and every tweet**. *Still open:* the **abandon** half — claim tw1 again on a clean save and abandon it instead of completing; the tweets and the account must both go (that was the r185 failure). |
+| ~~**T-11b**~~ | **Green 2026-09-19, both halves.** *Complete:* both objectives ticked, the button appeared, and the account plus every tweet went. *Abandon:* `OnAbandon` → `cleanup starting (abandon): 5 item(s) to undo` → **`removeUser(qe-tw-account) -> true (the last quest that needs it ended)`** → the four remaining tweets swept → `cleanup finished`; `qe24 twotter audit` after the reload reads **`not on this save`**. The r185 failure — the account kept on an abandon — is closed. |
 | ~~**T-12b**~~ | **Green 2026-09-19.** tw2 claimed and completed after tw1: both objectives ticked, and its completion **removed the account and its tweets** — the shared-account rule holds in the order that mattered. |
 | ~~**T-15b**~~ uninstall (mod removed outside the game) | **Red 2026-09-19, and the row was wrong, not the mod.** Zeis ran tw1 to completion, saved, quit, removed `editor_export` from disk and relaunched: the **quest** was gone (the game drops an uninstalled mod's quests) but `@qe24_editor` and **all its tweets were still in the save and in search**. The SDK documents exactly this — *"Accounts your mod adds live in the player's save and are not removed when the mod is uninstalled, so clean up in `OnModPackageUnloaded`"* — and a mod removed while the game is closed never loads, so the hook can never run. **The cleanup is not broken; the scenario is outside any mod's reach.** Filed as question 11 in [`docs/03-questions-for-the-developers.md`](../../docs/03-questions-for-the-developers.md). |
 | ~~**T-15c**~~ uninstall the way the game applies it | **Green 2026-09-19.** Disable the export in the game's Mods list, accept *"Restart the game to apply updates."*, quit to desktop, relaunch. The game unloads the package while starting up — before any save is loaded — and that session's log carries **`unloading: removing the Twotter accounts this mod declared`** and **`twotter: removeUser(qe-tw-account) -> true (mod unloaded)`**. Loading the save afterwards, `qe24 twotter audit` reads **`@qe24_editor: not on this save`**. Evidence: `QE24-TestResults-Twotter-6.md`. | **The promise holds for the disable route** — the accounts and their posts go with the mod. What still leaks is the mod deleted from disk while the game is closed (T-15b), which no mod code can reach; question 11 covers it. |

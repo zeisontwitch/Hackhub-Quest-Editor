@@ -321,7 +321,7 @@ Twotter probe's, which is where the tester already looks:
 | **T-08** | An authored account appears in search with the authored bio, avatar, banner and follower counts. |
 | **T-09** | A **series** reads as lived-in: the ages are the ones authored, the order is the game's (**newest at the top**, ties in list order), the picture is on the right tweet, and the log has **no** moment.js line (the old blemish). |
 | **T-10** | Save, quit, reload mid-story: no duplicate account, no duplicate tweets, and an edited bio arrives. |
-| **T-11** | Complete and abandon: our accounts and posts are gone, the handles leave search, and search still works. |
+| ~~**T-11**~~ | **Green 2026-09-19, both halves (as T-11b).** *Complete:* the button appeared and removed the account and every tweet. *Abandon:* `OnAbandon` → `cleanup starting (abandon): 5 item(s) to undo` → `twotter: removeUser(qe-tw-account) -> true (the last quest that needs it ended)` → the tweets swept; `qe24 twotter audit` after the reload reads `not on this save`. The r185 failure — an abandon that kept the account — is closed. The r185 fail itself was two of our bugs ("live" counted unstarted quests; the ensure-at-start hook was a no-op), both fixed in r186. |
 | **T-12** | Two quests share one account: finishing the first leaves it alone while the second is live; finishing the second removes it. *(your rule, verified)* |
 | **T-13** | A **When event** trigger on `Twotter.PostSeen` fires when the player opens our account's post; `Twotter.Post` is recorded as firing or not (expected: not). |
 | **T-14** | A pre-r31 draft opens with its tweets intact (the migration fixture). |
@@ -331,10 +331,18 @@ Twotter probe's, which is where the tester already looks:
 | ~~**E-01**~~ | **Green 2026-09-19** (screenshot). Two follow-ups, both built in r189: the blank picture areas now say the game draws its own, and a blank display name is nudged. |
 | ~~**T-08b**~~ | **Green 2026-09-19** — "banner is bright violet, profile is amber". The r185 banner wrinkle is closed. |
 
+> **Round closed 2026-09-19.** Every row above is green or resolved: T-08/T-09/T-10/T-11/T-12/T-13/T-14 green,
+> T-08b and E-01 green, T-15b red by design (a mod deleted from disk — no mod code can run; question 11, narrowed),
+> T-15c green (the game unloads a disabled mod at the next start and the accounts go with it), T-15d dropped.
+> Two questions to the developers came out of it — §11 (sweep mod-created accounts the way quests are swept) and
+> §13 (a disabled mod stays disabled across a new version, a folder deletion and a fresh save). Evidence:
+> `QE24-TestResults-Twotter-*.md` on the QA-filedump branch. `qe24 twotter audit` retires with the round — see
+> the note under the table.
+
 **These rows are runnable now** — the fixtures, the quests and the command all
 exist, and every step is written out in
 [`STATUS.md`](../../reference/sdk-0.24-qa/STATUS.md) *Open: the Twotter editor
-rows*: which mod (editor export **1.0.22**, beside raw harness **1.0.18**), the
+rows*: which mod (editor export **1.0.23**, beside raw harness **1.0.18**), the
 account (`qe24_editor`), the commands (`qe24 run tw1`, `qe24 run tw2`,
 `qe24 twotter audit`, `qe24 run clear`) and what to report per row. The QA
 project carries the pair of quests that share the account (T-12), the five-tweet
@@ -351,6 +359,16 @@ it audits the handles this QA round creates: the harness's own three plus the
 export's `qe24_editor`. The probe could only test the one record we planted; the
 audit is what a tester reads after a completion to say whether the account
 really left, and it is what the T-10/T-11/T-12 rows report.
+
+**The audit's fate, decided with the round's close (2026-09-19).** It was built
+for these rows, and it earned its keep — it is what turned "the profile never
+appeared" into two separate causes (a disabled mod, then question 13) and what
+confirmed the account's departure on every completion and abandon. But it is a
+**read-only diagnostic with a hard-coded handle list**, and after this round it
+has no dependants: nothing in the editor or the export reads it. So the command
+stays in the harness (it costs nothing, the harness never ships to players, and a
+future SDK round that touches Twotter will want it again), the round's *rows*
+retire with the round, and nobody needs to run it unless a Twotter row returns.
 
 ## 9. Scope, stages, and what could slip
 
@@ -375,7 +393,7 @@ avatar/banner sizes, how it spells an age the engine computed itself, and
 whether the timeline flood is pleasant. jsdom cannot see any of it — those are
 T-08/T-09's "paste what you see" lines, handed to you.
 
-Stamp: `EDITOR_BUILD r195`, QA export **1.0.22**, harness mod **1.0.18** (1.0.13
+Stamp: `EDITOR_BUILD r196`, QA export **1.0.23**, harness mod **1.0.18** (1.0.13
 was P-01's, 1.0.14 the first editor-row run and 1.0.15 the r186 fixes — every one
 of them handed to Zeis and run, so each round of fixes is a new version rather
 than a quiet edit of a build he has already tested. r187 changed only the

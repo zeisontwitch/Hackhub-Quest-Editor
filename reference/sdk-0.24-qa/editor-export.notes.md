@@ -123,16 +123,65 @@ menu, which unloads the save and the mod with it. The live re-registration code
 stays (it is what the SDK documents, and it costs nothing), but the row has to be
 run the way the game actually works: **switch, then reload, then look** — row G.
 
-### Third run — install and order
+### What the third run found (2026-09-19) — the click has to be handed to the engine
 
-Install **export 1.0.30** and **harness 1.0.23** (both folders, whole). Rows A…F
-are answered — **do not re-run them**. Only two rows are open, and neither needs a
-fresh save:
+**G — green.** German session, save reloaded, and the start menu and both
+right-click menus read `QE24: Extras-Prüfung`, `QE24: diese Datei prüfen`,
+`QE24: Desktop-Aktion`. Nothing showed a raw `{{tr.…}}` token, so the translation
+table is there before the labels are handed over.
+
+**H — the answer the round was waiting for.** The probe's report, verbatim:
+
+```
+click arrived
+SharedVariables.set (no permission) - WORKED
+UI.notify (ui permission) - refused: [ContentSDK] Mod "null" tried to use UI.notify without "ui" permission. ...
+UI.toast (ui permission) - refused: [ContentSDK] Mod "null" tried to use UI.toast without "ui" permission. ...
+Mail.send (mail permission) - refused: [ContentSDK] Mod "null" tried to use Mail.send without "mail" permission. ...
+Quest.claim (the claim action) - refused: [ContentSDK] Mod "null" tried to use Quest.claim without "events" permission. ...
+Scheduler.schedule (defer to the engine) - WORKED
+DEFERRED UI.toast (from a scheduler job) - WORKED
+DEFERRED UI.notify (from a scheduler job) - WORKED
+deferred job fired: yes
+```
+
+Read together: from a click, **every** gated call is refused — including
+`Quest.claim`, which the editor's claim action needs — while the same calls made
+from a one-millisecond `Scheduler` job all work. So the engine can hand the mod's
+identity back, and the fix is to stop doing the work in the click at all.
+
+**The editor's runtime does exactly that now** (r206): a click writes its log line,
+hands the action to the engine (`Scheduler.schedule`, kind
+`qe/<mod id>/click`), and the action runs in the engine's callback a moment later.
+The log says so in both halves:
+
+```
+[quest-editor] extras: menu item "qe24-menu-extras" clicked (language en)
+[quest-editor] extras: handed menu item "qe24-menu-extras" to the engine (job click-1) ...
+[quest-editor] extras: the engine called back for menu item "qe24-menu-extras" (language en) - running it here, where the mod has a name
+[quest-editor] extras: said "Der eigene Menüeintrag des Packs funktioniert (T-23)." via UI.toast
+```
+
+The last line is the other half of the r205 mystery: the click logged the raw key
+(`qe24.menu.message`) because a click cannot see the mod's translation table
+either. From the callback the sentence is back — visible in the line above,
+in German, without any change to the project file.
+
+Q14 stays open for the developers: this is a workaround for the pack's own
+actions, not a fix for the game.
+
+### Fourth run — install and order
+
+Install **export 1.0.31**. The harness is **unchanged at 1.0.23** — if it is
+already installed, leave it alone. Rows A…H are answered — **do not re-run
+them**. Three rows are open, none needing a fresh save, and all three need the
+game in German (row G already left it that way):
 
 | # | What to do | What to write down |
 |---|---|---|
-| G | Set the game's language to **German**, then load the save and look at the start menu and the two right-click menus. | The labels are `QE24: Extras-Prüfung`, `QE24: diese Datei prüfen`, `QE24: Desktop-Aktion`. A label showing `{{tr.…}}` itself would mean the translation table never arrived. |
-| H | Run `qe24 clickprobe on`, click **`QE24: click probe`** in the start menu, wait three seconds, then run `qe24 clickprobe report` and paste what it prints. Watch the screen the whole time. | Which channels a click still has. The direct attempts should be refused (that is the Q14 finding); the two lines starting **DEFERRED** are the question — if they worked, a toast appears a second after your click *after* the refusal lines, and the editor can route all four click actions through the engine. |
+| I | In the **German** session you already have: click each of the four `QE24: …` start-menu entries, one at a time, and give each two seconds before the next. They are, in order: **Extras-Prüfung**, **Extras-Quest annehmen**, **schick mir einen Brief**, **Handbuchseite öffnen**. | Four separate things: a toast with a full German sentence; the quest `QE24 Extras-Prüfung` appearing in the journal; a letter arriving in the mail app (from `QE24 QA`, subject *Ein Brief aus dem Pack*); and the handbook opening on **Port Forwarding: Start Here**. Say which of the four worked and which did not — one line each is enough. |
+| J | Then look at the log (`%APPDATA%/Roaming/hackhub/log`, search `[quest-editor] extras:`) and paste the lines for **one** of those clicks. | The order proves the fix: `clicked` → `handed … to the engine (job click-1)` → `the engine called back for … running it here` → `said "…" via UI.toast`. If the callback line is missing, the engine never fired the job and the whole approach is wrong — I need to know that before anything else. |
+| K | The Japanese/Korean-style question is answered by the toast text, so just say what the toast said on the first entry (`Extras-Prüfung`). | The **sentence** (`Der eigene Menüeintrag des Packs funktioniert (T-23).`), not `qe24.menu.message`. That is the translation table being visible again from the engine's callback. |
 
 Two things still not to test, because the pack cannot do them:
 
@@ -149,6 +198,7 @@ Two things still not to test, because the pack cannot do them:
 
 | Export | Editor build | Result |
 |---|---|---|
+| 1.0.31 | 2026-09-19.r206 | **A click no longer does its own work.** From a click every gated call is refused (Q14), so the action is handed to the engine (`Scheduler.schedule`, kind `qe/<mod id>/click`) and runs in its callback, where the mod has a name and the translation table is back. Three new start-menu entries — claim the extras quest, send a mail, open a handbook page — so every action kind can be clicked in game. |
 | 1.0.30 | 2026-09-19.r205 | **The refusal is explained, not guessed at.** When the game refuses a message from a click, the runtime now logs that the manifest is not the problem (the message the game prints sends authors to a file that is already correct) and points at Q14. Nothing else changed in the compiled content. |
 | 1.0.29 | 2026-09-19.r204 | **The click is now visible in the log, and the labels follow a language change.** Every extras click writes a line before it does anything, and the line after it names the API that showed the message — because the r203 run could not tell a dead click from a message API that draws nothing. Messages now go out through `UI.toast` first (the one every notification QA has ever seen) with `UI.notify` as the fallback. `Localization.onLanguageChange` re-registers the menu and right-click labels when the player switches language, so the words follow without a reload; a widget's own file cannot, and is left alone. |
 | 1.0.28 | 2026-09-19.r203 | **The pack extras, from the editor.** One start-menu entry, one opaque desktop widget (`widgets/qe24-extras-widget.html`), two right-click entries, and a translation table with English + German — plus a new quest, `QESdk024ExtrasQa` (alias `extras`), whose **Title is `{{tr.qe24.quest.title}}`**: it is the row for the one field the game reads at registration. Nothing auto-starts; the extras surfaces are there from load. |

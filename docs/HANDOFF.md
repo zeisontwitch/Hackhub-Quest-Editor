@@ -1,3 +1,55 @@
+# Handoff — r206
+
+**Row H decided the round, and it is good news.** The probe, in game:
+
+```
+SharedVariables.set (no permission) - WORKED
+UI.notify / UI.toast / Mail.send / Quest.claim - refused: [ContentSDK] Mod "null" ...
+Scheduler.schedule (defer to the engine) - WORKED
+DEFERRED UI.toast (from a scheduler job) - WORKED
+DEFERRED UI.notify (from a scheduler job) - WORKED
+```
+
+Every gated call from a click is refused — `Quest.claim` included — and the same
+calls from a one-millisecond `Scheduler` job all work. **So the workaround is
+real and the editor now uses it** (r206): a click writes its log line, hands the
+action to the engine, and the action runs in the engine's callback. The kind is
+`qe/<mod id>/click` because the SDK's kind registry is shared across packs; the
+job id travels in the payload and the action is kept in a table, so a job that
+fires finds its own action. A build with no `Scheduler`, or a `schedule` that
+throws, falls back to running in the click (r204 behaviour) and says so.
+
+**The r205 mystery is solved with it.** The click logged the raw key
+(`qe24.menu.message`) where the sentence should be: a click handler cannot see the
+mod's own translation table either, and the callback gets it back. The log now
+shows the German sentence from the callback with no change to the project file.
+
+**Row G green** — German labels in the start menu and both right-click menus, no
+raw tokens.
+
+**Three rows open** (export **1.0.31**; harness unchanged at 1.0.23), all in
+German, all on the four new start-menu entries:
+
+- **I** — click each of `QE24: Extras-Prüfung`, `Extras-Quest annehmen`,
+  `schick mir einen Brief`, `Handbuchseite öffnen`: a German sentence, the quest
+  in the journal, a letter, the handbook page. The claim and handbook entries are
+  also the first in-game proof that a *click* can start a quest and that
+  `Handbook.open(title)` accepts the title as the id.
+- **J** — paste the log lines for one click: `clicked` → `handed … to the engine`
+  → `the engine called back for …` → `said "…" via UI.toast`. A missing callback
+  line would mean the engine never fires our jobs, which would sink this whole
+  approach.
+- **K** — the toast says the sentence, not `qe24.menu.message`.
+
+**Q14 is still open for the developers** — sensible fix, and this is only our
+side of it. **Owed next: the manual page for pack extras** (the plan says the
+editor's docs must not call a surface working before a tester has seen it; after
+row I, the four actions have been seen).
+
+Versions: `EDITOR_BUILD` **r206**, export **1.0.31**, harness **1.0.23**.
+
+---
+
 # Handoff — r205
 
 **The second run found the real bug, and it is bigger than the extras.** Zeis

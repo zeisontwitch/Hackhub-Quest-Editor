@@ -1,30 +1,33 @@
 # QE24 QA status (2026-09-19)
 
-**OPEN: two rows — G (labels in German) and H (the click-context probe).** Rows
-A…F are answered. Install **export 1.0.30** + **harness 1.0.23**, both folders
-whole; the rows are in `editor-export/README.md` ("Third run").
+**OPEN: rows I, J, K** — click the four new start-menu entries in German, then
+paste the log lines for one of them. Install **export 1.0.31**; the harness is
+unchanged at **1.0.23**.
+
+**The click mystery is solved.** Row H's probe report, from the game:
+
+```
+SharedVariables.set (no permission) - WORKED
+UI.notify (ui permission) - refused: [ContentSDK] Mod "null" tried to use UI.notify without "ui" permission. ...
+UI.toast (ui permission) - refused: [ContentSDK] Mod "null" tried to use UI.toast without "ui" permission. ...
+Mail.send (mail permission) - refused: [ContentSDK] Mod "null" tried to use Mail.send without "mail" permission. ...
+Quest.claim (the claim action) - refused: [ContentSDK] Mod "null" tried to use Quest.claim without "events" permission. ...
+Scheduler.schedule (defer to the engine) - WORKED
+DEFERRED UI.toast (from a scheduler job) - WORKED
+DEFERRED UI.notify (from a scheduler job) - WORKED
+deferred job fired: yes
+```
+
+From a click, **every** gated call is refused — `Quest.claim` included — and the
+same calls from a 1 ms `Scheduler` job all work. That is the workaround the editor
+now uses: a click writes its log line, hands the action to the engine, and the
+action runs in the callback. Q14 stays open for the developers; this is our side
+of it.
+
+**Row G green** — German start-menu and right-click labels
+(`QE24: Extras-Prüfung`, `QE24: diese Datei prüfen`, `QE24: Desktop-Aktion`).
 
 **The r204 run, in full:**
-
-| Row | Verdict |
-| --- | --- |
-| A — `qe24 extras say notify` / `say toast` | **Both draw.** *System Notification - qe24 notify marker* and *Info - QE24 toast marker*. So `UI.notify` works, and the editor's default Notify variant is not silent. |
-| B — click the start-menu entry | **Nothing appeared** — and the log says why (see below). The entry is there and the click reaches the pack. |
-| C — click both right-click entries | Same: the click lands, the message is refused. |
-| D — the log | The decisive evidence: `[quest-editor] extras: menu item "…" clicked (language en)` → `[ContentSDK] Mod "null" tried to use UI.toast without "ui" permission. Add "ui" to the permissions array in your manifest.json.` |
-| E — switch language live | **Not possible as written.** Languages can only be changed from the main menu, which unloads the mod. Rewritten as row **G** (switch, reload, look). |
-| F — German, load, `qe24 run extras` | **Green.** A German notification and a German quest title: the one text read at registration is translated correctly. |
-
-**The finding: a mod's click handlers have no mod identity, so every
-permission-gated call from one is refused.** The refusal names the mod as `null`,
-and in the *same session* that export's quest-context `UI.notify` worked while its
-click-context `UI.notify` was refused — so this is not a missing permission
-(the manifest lists `ui`; so does the harness's, which shows both popups from a
-command). Written up as **Q14** in `docs/03-questions-for-the-developers.md`.
-Row **H** (`qe24 clickprobe on|report|off`) tries every channel from one click and
-then a deferred `Scheduler` job, which is the candidate fix if the engine's
-callback carries the identity back.
-
 Everything below this line is closed.
 
 One page, so nobody re-runs a finished check. Below the banner, every round is

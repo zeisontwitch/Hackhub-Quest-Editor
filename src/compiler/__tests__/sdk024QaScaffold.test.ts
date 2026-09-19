@@ -646,8 +646,11 @@ describe("r166 SDK 0.24 in-game QA scaffold", () => {
 
         const output = compileProject(parsed.project);
         const mod = output.files.find((file) => file.path === "dist/mod.js")?.content ?? "";
-        /* One beat registration per quest; both quest ids reach the Scheduler. */
-        expect(mod.split("Scheduler.register").length).toBe(3);
+        /* Exactly one beat handler is registered, whatever else the runtime
+           registers (r206 added a second kind of its own, the extras click
+           callback) - and the timer jobs that the quests arm are counted by the
+           schedule calls, not by this. */
+        expect(mod.split("Scheduler.register(BEAT_KIND").length - 1).toBe(1);
         expect(mod).toContain('"id":"' + beatQuest!.id + '"');
         expect(mod).toContain("timer missed");
         /* The mod-unique kind is composed at runtime (mod id is data), but

@@ -3332,16 +3332,67 @@ function __qeRegisterProject(sdk, PROJECT) {
         return msg.indexOf("permission") !== -1 && msg.indexOf("Mod \"null\"") !== -1;
     }
 
-    function extraAction(action, what, id) {
-        var a = action || {};
-        /* The first line of every handler. If the log has no line for a click,
-           the game never called us - which is a different bug from ours. */
-        function clicked() {
-            __QE.log("extras: " + what + " \"" + id + "\" clicked (language " + extraLanguage() + ")");
+    /* ── the click-context fix (r206) ─────────────────────────────────────
+       A menu or right-click handler runs with NO mod identity: the permission
+       check reads the calling mod as "null" and refuses every gated call, and
+       the mod's own translation table is invisible from there too (r205, Q14).
+       Measured in game 2026-09-19 with the click probe: from one click,
+       UI.toast, UI.notify, Mail.send and Quest.claim were all refused while
+       SharedVariables.set worked - and the SAME two UI calls made from a 1 ms
+       Scheduler job drew normally. So the engine can give the identity back.
+
+       A click therefore no longer does its own work. It says what was clicked,
+       hands the action to the engine, and the engine calls us back a moment
+       later, where the action runs exactly as before - with the mod's name on
+       it and the translation table in reach again.
+
+       The kind carries the mod id: the SDK's kind registry is SHARED by every
+       installed pack, so two packs using "click" would answer each other's jobs
+       (the same rule the timer follows). The job id travels in the payload as
+       well as into schedule, so a fired job can be matched to its action; the
+       action itself stays in this table, because a payload may be written down
+       and a function cannot go in one. */
+    var CLICK_KIND = "qe/" + String((PROJECT && PROJECT.mod && (PROJECT.mod.id || PROJECT.mod.name)) || "editor-mod") + "/click";
+    var clickJobs = {};
+    var clickJobSeq = 0;
+
+    function clickJobHandler(payload) {
+        var p = payload || {};
+        var work = clickJobs[p.jobId];
+        if (!work) {
+            __QE.log("extras: a click job fired but its action was already gone (" + p.jobId + ")");
+            return;
         }
+        delete clickJobs[p.jobId];
+        __QE.log("extras: the engine called back for " + p.what + " \"" + p.id + "\" (language " + extraLanguage() + ") - running it here, where the mod has a name");
+        __QE.safe(work);
+    }
+
+    /* Hand the work to the engine. False when this build has no Scheduler, or
+       when handing it over throws - the caller then runs it inside the click,
+       which is what r204 did and which a gated call will be refused for. */
+    function clickDefer(work, what, id) {
+        if (!sdk.Scheduler || !sdk.Scheduler.schedule) return false;
+        clickJobSeq++;
+        var jobId = "click-" + clickJobSeq;
+        clickJobs[jobId] = work;
+        try {
+            sdk.Scheduler.schedule(CLICK_KIND, { jobId: jobId, what: what, id: id }, { ms: 1 }, jobId);
+        } catch (e) {
+            delete clickJobs[jobId];
+            __QE.log("extras: could not hand the click to the engine: " + (e && e.message ? e.message : e));
+            return false;
+        }
+        __QE.log("extras: handed " + what + " \"" + id + "\" to the engine (job " + jobId + ") - a click has no mod identity, so the work runs in the engine's callback instead");
+        return true;
+    }
+
+    /* What a click DOES, per kind - unchanged from r203 apart from who calls it.
+       Every body is run by the engine's job; none of them may assume the click
+       is still on the stack. */
+    function extraWork(a) {
         if (a.kind === "claim") {
             return function () {
-                clicked();
                 if (!sdk.Quest || !sdk.Quest.claim) {
                     __QE.log("extras: no Quest.claim in this build - the click did nothing");
                     return;
@@ -3352,7 +3403,6 @@ function __qeRegisterProject(sdk, PROJECT) {
         }
         if (a.kind === "mail") {
             return function () {
-                clicked();
                 if (!sdk.Mail || !sdk.Mail.send) {
                     __QE.log("extras: no Mail.send in this build - the click did nothing");
                     return;
@@ -3370,7 +3420,6 @@ function __qeRegisterProject(sdk, PROJECT) {
         }
         if (a.kind === "handbook") {
             return function () {
-                clicked();
                 if (!sdk.Handbook || !sdk.Handbook.open) {
                     __QE.log("extras: no Handbook.open in this build - the click did nothing");
                     return;
@@ -3385,10 +3434,25 @@ function __qeRegisterProject(sdk, PROJECT) {
         /* notify, and the safe default for anything unrecognised: say something
            rather than doing nothing at all. */
         return function () {
-            clicked();
             var text = extraText(a.text) || "This item does nothing yet.";
             var how = extraSay(text);
             __QE.log("extras: said \"" + text + "\" via " + how);
+        };
+    }
+
+    /* The handler the game clicks. Its whole job is to record the click and put
+       the work where the engine will run it with the mod's identity on. */
+    function extraAction(action, what, id) {
+        /* First line of every handler, and the reason it is first: if the log
+           has no click line for a click the player made, the game never called
+           us - which is a different bug from anything below it. */
+        __QE.log("extras: registering " + what + " \"" + id + "\" (language " + extraLanguage() + ")");
+        var work = extraWork(action || {});
+        return function () {
+            __QE.log("extras: " + what + " \"" + id + "\" clicked (language " + extraLanguage() + ")");
+            if (clickDefer(work, what, id)) return;
+            __QE.log("extras: no Scheduler in this build, so the action runs inside the click - a gated call here will be refused (see Q14)");
+            work();
         };
     }
 
@@ -3397,6 +3461,13 @@ function __qeRegisterProject(sdk, PROJECT) {
     function registerExtras(again) {
         var extras = PROJECT.extras;
         if (!extras) return;
+        /* The job handler has to be in place before anything can click, and it
+           is registered on every load (the SDK's registry is shared and a kind
+           that is not registered eats its jobs). Registering a kind twice is a
+           no-op, which is what makes the language-change pass harmless. */
+        if (sdk.Scheduler && sdk.Scheduler.register) {
+            __QE.safe(function () { sdk.Scheduler.register(CLICK_KIND, clickJobHandler); });
+        }
         var nMenu = 0;
         var nWidgets = 0;
         var nCtx = 0;

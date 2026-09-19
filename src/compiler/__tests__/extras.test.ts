@@ -14,7 +14,9 @@
  *
  * Plus the standing compile rules: a project that uses none of this emits no
  * extras, no translations and no widget files at all (the r84 rule), and every
- * click action does what the label promises.
+ * click action does what the label promises — from the engine's callback, not
+ * from inside the click (r206: a click handler has no mod identity, so every
+ * gated call made in one is refused; see Q14).
  *
  * Technique: compile the real project → run the real mod.js against a stub SDK
  * → call the handlers the game would call (same approach as twotter.test.ts).
@@ -35,6 +37,10 @@ interface ExtrasStub {
     translations: { language: string; strings: Record<string, string> }[];
     registeredAt: string[];
     removed: { menu: string[]; widgets: string[]; context: string[] };
+    /** Jobs the mod has handed to the engine and that have not fired yet. */
+    jobs: { kind: string; payload: Record<string, unknown>; id: string }[];
+    /** Play the engine: run every pending job, in the order it was scheduled. */
+    fireJobs: () => void;
     /** Set the language the stub reports, the way the game's settings would. */
     setLanguage: (code: string) => void;
     /** Fire the game's language-change hook, if the mod subscribed to it. */
@@ -56,6 +62,8 @@ function extrasSdk(): ExtrasStub {
     const registeredAt: string[] = [];
     const quests: { new (): { Title: string; Description: string } }[] = [];
     const removed = { menu: [] as string[], widgets: [] as string[], context: [] as string[] };
+    const jobs: { kind: string; payload: Record<string, unknown>; id: string }[] = [];
+    const jobHandlers = new Map<string, (payload: unknown, job: { id: string }) => void>();
     let language = "en";
     const languageListeners: ((code: string) => void)[] = [];
 
@@ -85,7 +93,24 @@ function extrasSdk(): ExtrasStub {
         },
         Bank: {},
         Time: { now: () => 0, scale: () => 60, isRunning: () => true },
-        Scheduler: { register: () => {}, schedule: () => "job", scheduleAt: () => "job", cancel: () => {}, cancelKind: () => {}, list: () => [], remaining: () => null },
+        /* A queue, not a stub: what the engine does with a job (call the
+           handler back later, with the mod's identity on) is the whole point of
+           the r206 fix, so the tests have to be able to make it happen. */
+        Scheduler: {
+            register: (kind: string, fn: (payload: unknown, job: { id: string }) => void) => {
+                jobHandlers.set(kind, fn);
+            },
+            schedule: (kind: string, payload: Record<string, unknown>, _delay?: unknown, id?: string) => {
+                const jobId = String(id ?? `job-${jobs.length + 1}`);
+                jobs.push({ kind, payload, id: jobId });
+                return jobId;
+            },
+            scheduleAt: () => "job",
+            cancel: () => {},
+            cancelKind: () => {},
+            list: () => [],
+            remaining: () => null,
+        },
         SharedVariables: { get: () => undefined, set: () => {}, remove: () => {}, getAll: () => ({}) },
         Menu: {
             addItem: (item: Record<string, unknown>) => {
@@ -145,6 +170,17 @@ function extrasSdk(): ExtrasStub {
             open: (id: string, category?: string) => calls.push(`handbook:${id}${category ? `|${category}` : ""}`),
         },
     };
+    function fireJobs() {
+        let n = 0;
+        while (jobs.length) {
+            const job = jobs.shift()!;
+            const handler = jobHandlers.get(job.kind);
+            if (!handler) throw new Error(`a job was scheduled on a kind nobody registered: ${job.kind}`);
+            handler(job.payload, { id: job.id });
+            if (++n > 20) throw new Error("the jobs kept scheduling more jobs");
+        }
+    }
+
     return {
         calls,
         menu,
@@ -162,6 +198,8 @@ function extrasSdk(): ExtrasStub {
         },
         quests,
         questClasses: quests,
+        jobs,
+        fireJobs,
         sdk,
     };
 }
@@ -366,13 +404,17 @@ const click_ = (list: Record<string, unknown>[], id: string) => {
     (item.onClick as () => void)();
 };
 
-describe("pack extras — click actions (r203)", () => {
-    /** Click the item the way the game would: through its own handler. */
+/** Click the item the way the game would: through its own handler, which now
+ *  only hands the work to the engine — `fireJobs()` is what plays the engine
+ *  back, so a test that expects the action to have happened must call it. */
 const click = (b: ReturnType<typeof boot>, which: "menu" | "context", id: string) => click_(b[which], id);
+
+describe("pack extras — click actions (r203)", () => {
 
     it("notify: fills both {{tr.key}} and the player tokens, then tells the player", () => {
         const b = boot(extrasProject());
         click(b, "menu", "hello");
+        b.fireJobs();
         /* "{{tr.greet}} {{player.username}}!" -> the game's translation table
            supplies one half and the SDK the other. It goes out as a TOAST: that
            is the one this project has watched work in game (every notification
@@ -384,24 +426,28 @@ const click = (b: ReturnType<typeof boot>, which: "menu" | "context", id: string
         const project = extrasProject();
         const b = boot(project);
         click(b, "menu", "flashlight");
+        b.fireJobs();
         expect(b.calls).toContain(`claim:${project.quests[0].id}`);
     });
 
     it("mail: sends through Mail.send with the player's address, tokens filled", () => {
         const b = boot(extrasProject());
         click(b, "menu", "write");
+        b.fireJobs();
         expect(b.calls).toContain("mail:A letter|Hi player1|player@hackhub.local");
     });
 
     it("handbook: opens the named article, with its category when given", () => {
         const b = boot(extrasProject());
         click(b, "menu", "readup");
+        b.fireJobs();
         expect(b.calls).toContain("handbook:getting-started|basics");
     });
 
     it("a right-click action works the same way as a menu one", () => {
         const b = boot(extrasProject());
         click(b, "context", "desktop-note");
+        b.fireJobs();
         expect(b.calls).toContain("toast:Nice desktop.:info");
     });
 
@@ -410,11 +456,17 @@ const click = (b: ReturnType<typeof boot>, which: "menu" | "context", id: string
         try {
             const b = boot(extrasProject());
             click(b, "menu", "hello");
+            /* The click line is written by the CLICK, before the engine is even
+               asked: a click that shows nothing could be the game not calling us
+               at all, or our own message API being silent. Only a line that is
+               already there can tell those apart. */
+            const afterClick = spy.mock.calls.map((c) => String(c[0]));
+            expect(afterClick.some((l) => l.includes('extras: menu item "hello" clicked (language en)'))).toBe(true);
+            expect(afterClick.some((l) => l.includes("handed menu item \"hello\" to the engine"))).toBe(true);
+            expect(afterClick.some((l) => l.includes("extras: said"))).toBe(false);
+            b.fireJobs();
             const lines = spy.mock.calls.map((c) => String(c[0]));
-            /* The r204 finding: a click that shows nothing could be the game not
-               calling us at all, or our own message API being silent. The log
-               has to say which. */
-            expect(lines.some((l) => l.includes('extras: menu item "hello" clicked (language en)'))).toBe(true);
+            expect(lines.some((l) => l.includes("the engine called back for menu item \"hello\""))).toBe(true);
             expect(lines.some((l) => l.includes('extras: said "Hello player1!" via UI.toast'))).toBe(true);
         } finally {
             spy.mockRestore();
@@ -427,6 +479,7 @@ const click = (b: ReturnType<typeof boot>, which: "menu" | "context", id: string
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         delete (b.sdk as any).UI.toast;
         click(b, "menu", "hello");
+        b.fireJobs();
         /* UI.notify is declared by the SDK and has never been observed working;
            if it is silent, the log line still proves the click arrived. */
         expect(b.calls).toContain("notify:Hello player1!");
@@ -455,6 +508,7 @@ const click = (b: ReturnType<typeof boot>, which: "menu" | "context", id: string
             ui.toast = refusal;
             ui.notify = refusal;
             click_(b.menu, "hello");
+            b.fireJobs();
             const lines = spy.mock.calls.map((c) => String(c[0])).join("\n");
             expect(lines).toContain("the game refused a message from a MENU CLICK");
             expect(lines).toContain("not a missing permission in your manifest");
@@ -477,6 +531,82 @@ const click = (b: ReturnType<typeof boot>, which: "menu" | "context", id: string
         } finally {
             spy.mockRestore();
         }
+    });
+});
+
+describe("a click hands its work to the engine (r206)", () => {
+    it("does the work in the engine's callback, not inside the click", () => {
+        /* The r205 probe, in game on 1.3.1: from a menu click, UI.toast,
+           UI.notify, Mail.send and Quest.claim were ALL refused (the permission
+           check reads the calling mod as "null"), while the same two UI calls
+           made from a 1 ms Scheduler job worked. So the action must not run in
+           the click - and it must not be lost either. */
+        const b = boot(extrasProject());
+        click(b, "menu", "hello");
+        expect(b.jobs).toHaveLength(1);
+        expect(b.calls).toEqual([]);
+        b.fireJobs();
+        expect(b.calls).toContain("toast:Hello player1!:info");
+    });
+
+    it("names the job kind after the mod, because the SDK's kind registry is shared", () => {
+        /* Two packs registering the same kind answer each other's jobs (the
+           timer rule). The id has to be in there. */
+        const project = extrasProject();
+        const b = boot(project);
+        click(b, "menu", "hello");
+        const kind = b.jobs[0]!.kind;
+        expect(kind.startsWith("qe/")).toBe(true);
+        expect(kind).toContain(String(project.mod.id || project.mod.name));
+        /* ...and the id in the payload is the id schedule was given, so a fired
+           job can be matched back to the action it belongs to. */
+        expect(String(b.jobs[0]!.payload.jobId)).toBe(b.jobs[0]!.id);
+    });
+
+    it("gives every click its own job, so two clicks never share an action", () => {
+        const b = boot(extrasProject());
+        click(b, "menu", "hello");
+        click(b, "context", "desktop-note");
+        expect(b.jobs).toHaveLength(2);
+        b.fireJobs();
+        expect(b.calls).toContain("toast:Hello player1!:info");
+        expect(b.calls).toContain("toast:Nice desktop.:info");
+    });
+
+    it("runs the action inside the click when the build has no Scheduler, and says so", () => {
+        const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+        try {
+            const b = boot(extrasProject());
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            delete (b.sdk as any).Scheduler;
+            click(b, "menu", "hello");
+            expect(b.calls).toContain("toast:Hello player1!:info");
+            const lines = spy.mock.calls.map((c) => String(c[0])).join("\n");
+            expect(lines).toContain("no Scheduler in this build");
+            expect(lines).toContain("Q14");
+        } finally {
+            spy.mockRestore();
+        }
+    });
+
+    it("falls back to the click when handing the job over fails", () => {
+        const b = boot(extrasProject());
+        (b.sdk as { Scheduler: { schedule: unknown } }).Scheduler.schedule = () => {
+            throw new Error("no scheduler today");
+        };
+        click(b, "menu", "hello");
+        expect(b.calls).toContain("toast:Hello player1!:info");
+    });
+
+    it("finds the mod's translations again in the job, which the click could not", () => {
+        /* In game the click logged the raw key where the sentence should be -
+           a click handler cannot see the mod's own translation table either
+           (Q14). The job runs with the identity back, so the sentence is there. */
+        const b = boot(extrasProject());
+        click(b, "menu", "hello");
+        b.fireJobs();
+        expect(b.calls).toContain("toast:Hello player1!:info");
+        expect(b.calls.some((c) => c.includes("greet"))).toBe(false);
     });
 });
 
@@ -577,6 +707,7 @@ describe("localization (r203)", () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         delete (b.sdk as any).Localization;
         click_(b.menu, "hello");
+        b.fireJobs();
         /* Better the key on screen than an empty notification: a missing
            language must never silently blank a pack's text. */
         expect(b.calls.some((c) => c.startsWith("toast:greet "))).toBe(true);

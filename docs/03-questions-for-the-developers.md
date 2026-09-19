@@ -487,11 +487,40 @@ the engine calls back later.
   instead of "add `ui` to your manifest.json", which sends the reader to a file
   that is already correct.
 
-**Our side, until then.** The editor's runtime logs the click before doing
-anything, names the API it tried, and prints an explanation when it sees this
-refusal (that the manifest is not the problem and quest notifications are
-unaffected). A QA harness probe (`qe24 clickprobe on|report|off`) tries every
-channel from one click — `SharedVariables` (ungated), `UI.notify`, `UI.toast`,
-`Mail.send`, `Quest.claim` — and then whether handing the work to a
-`Scheduler.schedule` job gets the mod's identity back, so we know whether the
-editor's four click actions can be made to work by deferring.
+**We measured the workaround, and it works — this is what a pack has to do
+today.** Our QA harness ran one click that tried every channel, and then the same
+UI calls from a `Scheduler.schedule(..., { ms: 1 })` job. Verbatim from the game:
+
+```
+click arrived
+SharedVariables.set (no permission) - WORKED
+UI.notify (ui permission) - refused: [ContentSDK] Mod "null" tried to use UI.notify without "ui" permission. ...
+UI.toast (ui permission) - refused: [ContentSDK] Mod "null" tried to use UI.toast without "ui" permission. ...
+Mail.send (mail permission) - refused: [ContentSDK] Mod "null" tried to use Mail.send without "mail" permission. ...
+Quest.claim (the claim action) - refused: [ContentSDK] Mod "null" tried to use Quest.claim without "events" permission. ...
+Scheduler.schedule (defer to the engine) - WORKED
+DEFERRED UI.toast (from a scheduler job) - WORKED
+DEFERRED UI.notify (from a scheduler job) - WORKED
+deferred job fired: yes
+```
+
+Two things follow, and both matter to us more than the permission check itself:
+
+1. **A scheduler job runs with the mod's identity**, so any gated work can be
+   moved there. Our runtime now does that: a click writes its log line, hands the
+   action to the engine (kind `qe/<mod id>/click`), and the action runs in the
+   callback a millisecond later. Without that, none of a pack's own menu or
+   right-click actions could do anything that a permission guards.
+2. **The translation table is unreachable from a click too**, and comes back in
+   the callback. The click handler logged the *key* (`qe24.menu.message`) where
+   the sentence should have been, in a session whose language was `en` and with
+   that key registered in both `en` and `de`; the identical lookup at
+   registration time resolves fine (labels and quest titles translate). From the
+   scheduler callback the sentence is back. So it is not only the permission
+   check: **nothing mod-scoped is reachable from a click handler.**
+
+**Our side, meanwhile.** The runtime says all of this out loud in the log — the
+click line first (so a click that never arrived is distinguishable from one whose
+call was refused), then the hand-over to the engine and the callback — and prints
+an explanation when it sees this refusal, because the game's own message sends an
+author to a manifest that is already correct.

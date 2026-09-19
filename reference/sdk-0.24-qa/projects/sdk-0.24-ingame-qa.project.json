@@ -4,7 +4,7 @@
   "mod": {
     "id": "qe-sdk-024-editor-qa",
     "name": "QE SDK 0.24 Editor QA Scaffold",
-    "version": "1.0.30",
+    "version": "1.0.31",
     "author": "HackHub Quest Editor",
     "description": "Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, the Timer node delay and calendar modes, the Twotter node (accounts, backdated series, cleanup), and the pack extras (start-menu entry, desktop widget, right-click entries, translated words). Nothing auto-starts - claim one quest at a time with the harness command qe24 run - so a tester sees one row's noise, not five.",
     "tags": [
@@ -1929,6 +1929,51 @@
           "handbookId": "",
           "handbookCategory": ""
         }
+      },
+      {
+        "id": "qe24-menu-claim",
+        "label": "{{tr.qe24.menu.claim}}",
+        "icon": "",
+        "action": {
+          "kind": "claim",
+          "text": "",
+          "questId": "qe-x1",
+          "mailFrom": "",
+          "mailSubject": "",
+          "mailContent": "",
+          "handbookId": "",
+          "handbookCategory": ""
+        }
+      },
+      {
+        "id": "qe24-menu-mail",
+        "label": "{{tr.qe24.menu.mail}}",
+        "icon": "",
+        "action": {
+          "kind": "mail",
+          "text": "",
+          "questId": "",
+          "mailFrom": "{{tr.qe24.mail.from}}",
+          "mailSubject": "{{tr.qe24.mail.subject}}",
+          "mailContent": "<p>{{tr.qe24.mail.body}}</p>",
+          "handbookId": "",
+          "handbookCategory": ""
+        }
+      },
+      {
+        "id": "qe24-menu-handbook",
+        "label": "{{tr.qe24.menu.handbook}}",
+        "icon": "",
+        "action": {
+          "kind": "handbook",
+          "text": "",
+          "questId": "",
+          "mailFrom": "",
+          "mailSubject": "",
+          "mailContent": "",
+          "handbookId": "Port Forwarding: Start Here",
+          "handbookCategory": ""
+        }
       }
     ],
     "widgets": [
@@ -1990,7 +2035,13 @@
         "qe24.ctx.file": "QE24: inspect this file",
         "qe24.ctx.desktop": "QE24: desktop action",
         "qe24.quest.title": "QE24 extras QA",
-        "qe24.quest.note": "The extras QA quest started (T-27)."
+        "qe24.quest.note": "The extras QA quest started (T-27).",
+        "qe24.menu.claim": "QE24: claim the extras quest",
+        "qe24.menu.mail": "QE24: send me a letter",
+        "qe24.menu.handbook": "QE24: open the handbook page",
+        "qe24.mail.from": "QE24 QA",
+        "qe24.mail.subject": "A letter from the pack",
+        "qe24.mail.body": "If this arrived, a click can send mail."
       },
       "de": {
         "qe24.menu.label": "QE24: Extras-Prüfung",
@@ -1998,7 +2049,13 @@
         "qe24.ctx.file": "QE24: diese Datei prüfen",
         "qe24.ctx.desktop": "QE24: Desktop-Aktion",
         "qe24.quest.title": "QE24 Extras-Prüfung",
-        "qe24.quest.note": "Die Extras-Prüfquest wurde gestartet (T-27)."
+        "qe24.quest.note": "Die Extras-Prüfquest wurde gestartet (T-27).",
+        "qe24.menu.claim": "QE24: Extras-Quest annehmen",
+        "qe24.menu.mail": "QE24: schick mir einen Brief",
+        "qe24.menu.handbook": "QE24: Handbuchseite öffnen",
+        "qe24.mail.from": "QE24 QA",
+        "qe24.mail.subject": "Ein Brief aus dem Pack",
+        "qe24.mail.body": "Wenn dieser Brief angekommen ist, kann ein Klick Post verschicken."
       }
     }
   }

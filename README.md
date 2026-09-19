@@ -36,7 +36,7 @@ Only relevant to coders, if you just want to use the tool you can ignore this.
 
 ```bash
 npm run typecheck    # tsc --noEmit
-npm test             # 1,766 tests (vitest)
+npm test             # 1,768 tests (vitest)
 npm run build        # typecheck + vite build → dist/
 ```
 
@@ -178,7 +178,7 @@ Older **Done recently** rows are archived at
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-19.r204`: **1,766 tests** across 88
+Counted from the code at build `2026-09-19.r205`: **1,768 tests** across 88
 files, **40 node types** in 10 categories (all palette-visible), **160 editable
 fields** and **76 sockets** (counted in the manual), **13 templates**
 (11 playable + 2 reference sheets), **99 game events**, against

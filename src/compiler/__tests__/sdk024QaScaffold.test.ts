@@ -131,6 +131,13 @@ function harnessSdk(options: { jobs?: StubJob[]; now?: number } = {}) {
     const mailSent: { def: Record<string, unknown>; id: string }[] = [];
     const mailRemoved: string[] = [];
     const mailBounces: unknown[] = [];
+    /* r210: the retired extras' registration removers, recorded per call. */
+    const menuAdded: string[] = [];
+    const menuRemoved: string[] = [];
+    const widgetsAdded: string[] = [];
+    const widgetsRemoved: string[] = [];
+    const ctxAdded: string[] = [];
+    const ctxRemoved: string[] = [];
     /* r209: `qe24 mail watch` subscribes the GLOBAL event bus, so the stub
        records subscriptions and hands back a real unsubscribe. */
     const globalEvents: { name: string; fn: (payload: unknown) => void }[] = [];
@@ -166,6 +173,12 @@ function harnessSdk(options: { jobs?: StubJob[]; now?: number } = {}) {
         mailRemoved,
         mailBounces,
         globalEvents,
+        menuAdded,
+        menuRemoved,
+        widgetsAdded,
+        widgetsRemoved,
+        ctxAdded,
+        ctxRemoved,
         /* `...twotter` brings `Twotter` and the raw maps the assertions read. */
         ...twotter,
         Quest,
@@ -221,6 +234,23 @@ function harnessSdk(options: { jobs?: StubJob[]; now?: number } = {}) {
         },
         Network: {},
         UI: { toast: () => {} },
+        /* r210: `qe24 extras cleanup` hands every retired registration id to
+           these three removers; the recording arrays are what the test reads. */
+        Menu: {
+            addItem: (item: { id: string }) => menuAdded.push(item.id),
+            removeItem: (id: string) => menuRemoved.push(id),
+            getItems: () => [],
+        },
+        Desktop: {
+            addWidget: (w: { id: string }) => widgetsAdded.push(w.id),
+            removeWidget: (id: string) => widgetsRemoved.push(id),
+            getWidgets: () => [],
+        },
+        ContextMenu: {
+            register: (item: { id: string }) => ctxAdded.push(item.id),
+            unregister: (id: string) => ctxRemoved.push(id),
+            getItems: () => [],
+        },
         Events: {
             on: (name: string, fn: (payload: unknown) => void) => {
                 globalEvents.push({ name, fn });
@@ -336,17 +366,27 @@ describe("r179 raw harness — the Twotter probe", () => {
            promised `repliedTo` field is absent from the DECLARED Mail.Sent
            payload, the editor's runtime avoids the direct replyable path on a
            stale no-flag assumption, and the collect-ids-remove-on-unload
-           prescription is unmeasured - rows M-01..M-10 in STATUS.md. */
-        expect(manifest.version).toBe("1.0.24");
+           prescription is unmeasured - rows M-01..M-10 in STATUS.md. r210: the
+           rows RAN (results in QE24-TestResults-Mail.md) - the sweep matches
+           getInbox by FROM (1.3.1 entries carry no subject), the quest fixture
+           lost its untickable reminder objective (the r185 lesson), and the
+           pack-extras and click probes are retired: their surfaces lingered on
+           a tester's desktop and start menu, so `qe24 extras cleanup` now
+           removes every QE24 registration id the project ever used, and the
+           QA export ships no extras data any more. */
+        expect(manifest.version).toBe("1.0.25");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
-        expect(code).toContain('alias: "extras"');
-        expect(code).toContain('verb === "say"');
-        expect(code).toContain('sub === "clickprobe"');
         expect(code).toContain('sub === "mail"');
         expect(code).toContain('alias: "mail"');
         expect(code).toContain("sdk.RegisterQuest(QE24MailQa);");
+        /* The retired probes' leftovers are cleanable, and the probes' verbs
+           are gone. */
+        expect(code).toContain('verb === "cleanup"');
+        expect(code).toContain('"qe24-menu-extras"');
+        expect(code).not.toContain('sub === "clickprobe"');
+        expect(code).not.toContain("function extrasOn");
     });
 
     it("audits the round's handles, and calls a present-and-undefined bio by name", () => {
@@ -825,14 +865,11 @@ describe("r181 raw harness — starting a quest on demand", () => {
         const tools = toolsFor(sdk);
         tools.getArgs = () => ["run", "clear"];
         runCommand(tools);
-        /* Every quest the launcher knows, including the two probe quests and
-           r203's extras QA quest (which exists only to show a translated Title,
-           so `run clear` has to shed it like any other). */
+        /* Every quest the launcher knows, including the two probe quests. */
         expect(sdk.__unclaimed).toEqual([
             "QESdk024TimerQa",
             "QESdk024TimerCalQa",
             "QESdk024WaitMonthQa",
-            "QESdk024ExtrasQa",
             "QE24SurfaceProbe",
             "QE24TwotterProbe",
             "QESdk024TwotterQa",
@@ -884,10 +921,14 @@ describe("r209 raw harness — the mail probe", () => {
         expect(sdk.mailSent[0].def.subject).toMatch(/^QE24 mail probe/);
         const id = sdk.mailSent[0].id;
         expect(tools.text()).toContain(`id: ${id}`);
-        /* Audit cross-references the session id against the inbox. */
+        /* Audit cross-references the session id against the inbox and prints one
+           raw entry — the evidence line that says which fields getInbox fills
+           (M-07: 1.3.1's entries carried no subject). */
         tools.getArgs = () => ["mail", "audit"];
         runCommand(tools);
         expect(tools.text()).toContain(`id ${id} (QE24 mail probe (plain)): still in the inbox`);
+        expect(tools.text()).toContain("First inbox entry, raw:");
+        expect(tools.text()).toContain('"subject":"QE24 mail probe (plain)"');
     });
 
     it("marks the replyable flavour, so M-04 exercises the direct replyable path (M-04)", () => {
@@ -982,6 +1023,7 @@ describe("r209 raw harness — the mail probe", () => {
             Name: string;
             AutoStart: boolean;
             Mails: { title: string; replyable?: boolean }[];
+            Objectives: { name: string; description: string }[];
             OnStart: () => void;
             OnObjectivesStart: () => void;
             OnComplete: () => void;
@@ -989,6 +1031,7 @@ describe("r209 raw harness — the mail probe", () => {
             Name: string;
             AutoStart: boolean;
             Mails: { title: string; replyable?: boolean }[];
+            Objectives: { name: string; description: string }[];
             OnStart: () => void;
             OnObjectivesStart: () => void;
             OnComplete: () => void;
@@ -996,6 +1039,11 @@ describe("r209 raw harness — the mail probe", () => {
         expect(quest.AutoStart).toBe(false);
         expect(quest.Mails).toHaveLength(1);
         expect(quest.Mails[0].replyable).toBe(true);
+        /* Exactly ONE objective (r210): r209's second objective was a
+           never-tickable reminder, which hid the Complete button and forced the
+           tester to abandon — the same trap r185's canary objective set. The
+           reply objective ticks, the button appears, M-07 can complete. */
+        expect(quest.Objectives).toHaveLength(1);
         quest.OnStart();
         /* The stub records `sendMail` against the quest's Name. */
         expect(sdk.__mails).toContain("QESdk024MailQa");
@@ -1009,7 +1057,7 @@ describe("r209 raw harness — the mail probe", () => {
         expect(sdk.__completed).toHaveLength(1);
     });
 
-    it("an armed cleanup sweeps ids and subject-matched mails at quest end; a disarmed one leaves them (M-07)", () => {
+    it("an armed cleanup sweeps ids and FROM-matched mails at quest end; a disarmed one leaves them (M-07, M-07's game finding)", () => {
         const sdk = harnessSdk();
         loadHarness(sdk);
         const tools = toolsFor(sdk);
@@ -1018,13 +1066,14 @@ describe("r209 raw harness — the mail probe", () => {
         tools.getArgs = () => ["mail", "send"];
         runCommand(tools);
         const directId = sdk.mailSent[0].id;
-        /* The quest-path mail: sendMail returns no id, so the sweep must find it
-           by its marker subject in the inbox. */
+        /* The quest-path mail: sendMail returns no id, and 1.3.1's getInbox
+           entries carry NO subject (M-07's measurement) — so this entry has a
+           non-marker subject and is swept by its FROM address alone. */
         sdk.mailInbox.set("qm-1", {
             id: "qm-1",
             from: "qe24-quest@qe24.test",
             to: "player@player.test",
-            subject: "QE24 mail probe (quest replyable)",
+            subject: "(Reply)",
             read: false,
             sentAt: 0,
         });
@@ -1107,5 +1156,49 @@ describe("r209 raw harness — the mail probe", () => {
         expect(sdk.__claimed).toEqual(["QESdk024MailQa"]);
         expect(tools.text()).toContain("qe24 mail watch on");
         expect(tools.text()).toContain("qe24 mail cleanup on");
+    });
+});
+
+describe("r210 raw harness — the retired probes' cleanup", () => {
+    it("hands every QE24 registration id this project ever used to the removers, and reports the aftermath", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        tools.getArgs = () => ["extras", "cleanup"];
+        runCommand(tools);
+        const text = tools.text();
+        /* Both origins: the raw probe's own ids and the QA export's surfaces
+           (whose widget id is the same `qe24-extras-widget`). */
+        for (const id of [
+            "qe24-extras-menu-none", "qe24-extras-menu-top", "qe24-extras-menu-bottom",
+            "qe24-extras-widget", "qe24-extras-widget-ghost",
+            "qe24-extras-file", "qe24-extras-desktop",
+            "qe24-clickprobe-menu",
+            "qe24-menu-extras", "qe24-menu-claim", "qe24-menu-mail", "qe24-menu-handbook",
+            "qe24-ctx-file", "qe24-ctx-desktop",
+        ]) {
+            expect(sdk.menuRemoved).toContain(id);
+            expect(sdk.widgetsRemoved).toContain(id);
+            expect(sdk.ctxRemoved).toContain(id);
+        }
+        expect(text).toContain("after cleanup");
+        /* The bundles cannot be unregistered — the command says so instead of
+           pretending. */
+        expect(text).toContain("no unregister");
+    });
+
+    it("says the probes are retired instead of registering anything", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        for (const verb of [[], ["on"], ["lang"], ["say", "toast"]]) {
+            tools.lines.length = 0;
+            tools.getArgs = () => ["extras", ...verb];
+            runCommand(tools);
+            expect(tools.text()).toContain("retired");
+        }
+        expect(sdk.menuAdded).toEqual([]);
+        expect(sdk.widgetsAdded).toEqual([]);
+        expect(sdk.ctxAdded).toEqual([]);
     });
 });

@@ -1,57 +1,109 @@
-# QE24 QA status (2026-09-19)
+# QE24 QA status (2026-09-20)
 
-**ONE OPEN BATCH: the mail rows M-01…M-10** (r209, raw harness **1.0.24**,
-`qe24 mail …`). SDK 0.24 declares `Mail.remove(id)` and `replyable` on
-`MailDefinition`, and the probe measures all of it: the id `send` returns, how
-`remove` behaves, whether a Reply button draws on the direct path (M-04) and on
-the quest path the editor ships (M-06), what a reply's raw `Mail.Sent` payload
-carries — the declared interface has **no `repliedTo`**, so whatever the log
-shows decides whether a quest can match a reply at all (M-05) — cleanup at
-quest end (M-07) and through the disable-then-restart unload hook (M-08), the
-residual `moment` warning look (M-09, clean save with no mods first), and
-`Mail.sendBounce` (M-10). Steps below and in the harness's own `qe24 mail`
-guide. One session, one batch (the r207 rule); install the raw harness `mod/`
-folder only — the editor export is untouched this round.
+**NOTHING OPEN.** The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
+harness 1.0.24) and are closed — transcript:
+[`QE24-TestResults-Mail.md`](QE24-TestResults-Mail.md). Ten rows, every one
+answered; three real findings came out of it:
 
-Everything else is closed. **Two things belong to the developers, not to us:**
-**Q14** (a click handler has no mod identity, so every permission-guarded call
-from one is refused — the editor works around it by handing the action to the
-engine) and **Q15** (`Handbook.open` opens the handbook on its own front page
-whatever id it is given). Both are in
-`docs/03-questions-for-the-developers.md`.
+- **A reply carries no `repliedTo`.** The raw payload (M-05):
+  `{"id":"…","from":"bkelso@gomail.com","to":"qe24-direct@qe24.test","subject":"(Reply)","content":"asdf","sentAt":…}`.
+  `MailDefinition.replyable`'s doc comment promises a `repliedTo` field naming
+  the original mail; the engine does not send it. What a quest CAN match on is
+  **`to` — the original mail's `from`** (proven: the mail quest's own objective
+  ticked on exactly that, M-06). Filed as docs/03 §16.
+- **`getInbox()` entries carry no `subject`** (M-01/M-07: 27–30 entries, ids
+  readable, zero subjects). The first sweep matched by subject and never fired;
+  the sweep now matches the probe's **from** addresses. Filed as docs/03 §17.
+- **The unload hook has no mod identity either** (M-08): the
+  disable-then-restart path fired `OnModPackageUnloaded` correctly — and every
+  permission-gated call from it was refused with `Mod "null"` (`Mail.remove`,
+  `Mail.getInbox`, `Http.*`), while the un-gated `Twotter.removeUser` ran. So
+  the dev-prescribed collect-ids-remove-on-unload pattern is **unreachable on
+  1.3.1** for mail; quest-end cleanup **works** (M-07: the OnAbandon sweep
+  removed the replyable mail, `-> true`). Filed as an amendment to docs/03 §14.
 
-Below the M-rows banner, every earlier round is closed, answered or
-deliberately shelved (S-10, the short-month clamp, is shelved by the author's
-decision rather than passed, and is marked as such). A future round that needs
-an in-game check adds a *new* row here and a new harness version — never a
-re-run of the ones below.
+Row verdicts: **M-01 green** (id `8SaLAMoEmk`, same id via getInbox; wrinkle:
+the mail arrives pre-read) · **M-02 green** (`true` → `false` → `false`) ·
+**M-03 green** (removed while never read, and the removal survived
+save → quit → reload) · **M-04 green** (Reply button draws on the direct
+`Mail.send({ replyable: true })` path — the editor runtime's stale assumption
+is disproved) · **M-05 green** (payload above; subject of a reply is the
+constant `(Reply)`) · **M-06 green** (Reply button draws on the
+`this.sendMail(0)` path too; the reply objective ticked) · **M-07 red, our
+fixture** (the reminder-only objective hid the Complete button — the r185
+canary lesson, repeated; fixed in r210 — and the subject sweep was dead, see
+above) · **M-08 red, the game's** (unload refusals, docs/03 §14) ·
+**M-10 green** (a real mailer-daemon bounce drew, 550 reply quoted).
+**M-09** is folded into the Twotter section below: the `moment` warning fired
+on a **clean save with no mods** — the game's own content, never ours, never
+mail.
 
-## Open: the mail rows (r209) — harness 1.0.24, `qe24 mail …`
+**Retired with the round:** the raw harness's pack-extras and click probes
+(r199–r205; their surfaces lingered on the tester's desktop and start menu).
+`qe24 extras cleanup` (harness **1.0.25**) removes every QE24 menu, widget and
+right-click id the project ever used, and the QA export (1.0.36) ships **no
+extras data** any more — the pack-extras *feature* stays in the editor, only
+the QA project's instance of it is gone. **What Zeis should do once:** run
+`qe24 extras cleanup` (from the installed `reference/sdk-0.24-qa/mod/`
+folder's harness), then replace the old editor export folder with the 1.0.36
+one — after that the desktop and start menu carry no QE24 surfaces, and
+nothing re-registers them on load.
 
-Nothing auto-starts. The two rows that need the probe quest start it with
-`qe24 run mail`. Batch order matters where it is marked. `qe24 mail` alone
-prints the group's guide.
+Everything below this line is closed. **Two things belong to the developers,
+not to us:** **Q14** (now covering click handlers *and* the unload hook) and
+**Q15** (`Handbook.open` deep links) — both in
+`docs/03-questions-for-the-developers.md`, alongside the new **§16** (`repliedTo`)
+and **§17** (inbox subjects).
 
-| Row | Do | Green reads |
+One page, so nobody re-runs a finished check. Every round is closed, answered
+or deliberately shelved (S-10, the short-month clamp, is shelved by the
+author's decision rather than passed, and is marked as such). A future round
+that needs an in-game check adds a *new* row here and a new harness version —
+never a re-run of the ones below.
+
+## Settled: the moment.js warning is the game's own content — M-09, closed
+
+Zeis's M-09 run (2026-09-20): **clean save, every mod removed**, opened Twotter
+and a profile — the log carries the RFC2822 deprecation warning with
+`_i: Wed Sep 09 2026 12:32:30 GMT+0200`, the same game-tweet stamp T-09b
+identified in the r185 session. With no editor mod installed, there is no
+"with a quest-editor mod installed" left to test: **the warning is the game's
+own content on 1.3.1**, and nothing a mod sends changes it. The dev's BUG 10
+answer ([docs/07](../../docs/07-dev-response-mod-sdk-bug-report-response.md))
+said these were "all ISO now" — either that fix is not in 1.3.1 or it does not
+cover the game's own tweets. Not actionable from a mod; the README roadmap row
+is closed.
+
+## Closed 2026-09-20: the mail rows (r209 ran them) — harness 1.0.24, `qe24 mail …`
+
+The rows below ran in one batched session in this exact order (M-09 first, on a
+clean save). Full transcript, every line: [`QE24-TestResults-Mail.md`](QE24-TestResults-Mail.md).
+The fixture fixes this run forced are listed after the table.
+
+| Row | Verdict | Evidence (from the transcript) |
 | --- | --- | --- |
-| **M-09 first** (it needs a clean save) | Before installing anything: open Twotter and a browser on a **save with no mods**, then check the game log. After the session's rows: check the log again. | With no mods: any `moment` RFC2822 warning is the game's own content (T-09b said so). After the mail rows: **no** new warning from anything the probe sent — closes the stale mail attribution for good. |
-| **M-01** id shape | `qe24 mail send` — read the printed id, open GoMail. Then save → quit → reload → `qe24 mail audit`. | `send` returned a non-null id; GoMail shows the mail **with the same id**; the id survived the reload. |
-| **M-02** remove basics | `qe24 mail remove last`, then the same command again, then `qe24 mail remove qe-nope`. | First **true** and the mail leaves GoMail; second **false**; unknown id **false**. |
-| **M-03** remove while unread | `qe24 mail send`, then `qe24 mail remove last` **immediately** (before opening GoMail), then save → quit → reload → `qe24 mail audit`. | The mail never gets read and is still withdrawn, and the removal persisted in the save. (BUG 10 taught us delivery is queued — a queued mail is the real case.) |
-| **M-04** replyable, direct path | `qe24 mail send replyable`; open it in GoMail. | A **Reply button draws** under a mail sent by direct `Mail.send({ replyable: true })` — the path the editor runtime avoids on a stale assumption. |
-| **M-05** the reply payload | `qe24 mail watch on` **first**; click Reply on the M-04 mail; type anything; send; then `qe24 mail watch off`. | The log line `[qe24] Mail.Sent payload: { … }` pasted whole. The question: does it carry **`repliedTo`**, and is it the original's id? The declared payload has no such field — whatever appears is undeclared. |
-| **M-06** replyable, quest path | `qe24 run mail` — the quest's OnStart sends its replyable `Mails[0]` via `this.sendMail(0)`; open it in GoMail. (Watch stays on from M-05; reply to **this** mail.) | Reply button draws on the **Quest.sendMail** path too, and the reply ticked the quest objective. |
-| **M-07** cleanup at quest end | `qe24 mail cleanup on`; complete (or abandon) the mail quest; `qe24 mail audit`; check GoMail. | The log's `[qe24] mail QA … mail sweep:` lines remove the session ids **and** the quest mail (sendMail returns no id — found by subject); afterwards no probe mails remain, and the story mail in the inbox was untouched. |
-| **M-08** cleanup at unload | `qe24 mail send` once more (so a probe mail exists on the save); save; quit; **disable the harness in the Mods list**; restart; load the save; open GoMail and the new game log. | The log's top carries `[qe24] unload mail sweep:` lines; the probe mails are gone from GoMail; the story mail survived. (Only the disable-then-restart path can fire the hook — T-15c.) |
-| **M-10** bounce | `qe24 mail bounce`; open GoMail. | A mailer-daemon bounce for `qe24-missing@nonexistent-corp.test` is in the inbox. |
+| **M-09 first** (clean save) | **green — decisive** | With **every mod removed**, opening Twotter and a profile still produced the RFC2822 warning, `_i: Wed Sep 09 2026 12:32:30` — the same game-tweet stamp T-09b identified. The warning is the game's own content on 1.3.1; nothing the probe sent added one. Closes the README roadmap row. (Session noise the paste also shows: `[Scheduler] Holding job "Queue.HandleQuestHackhubPosts"`, auth 429s.) |
+| **M-01** id shape | **green** | `send` returned id `8SaLAMoEmk`; getInbox shows the same id; it survived save → quit → reload. Wrinkle recorded: **the mail arrives already read** (`read: true` in the entry). |
+| **M-02** remove basics | **green** | `remove` → `true` and the mail leaves; again → `false`; junk id → `false`. Exactly the declared contract. |
+| **M-03** remove while unread | **green** | A just-sent (queued, never-opened) mail withdrew immediately, and the removal persisted across save → quit → reload. |
+| **M-04** replyable, direct path | **green** | The Reply button **draws** under the direct `Mail.send({ replyable: true })` mail. The runtime's stale "no flag on the direct path" assumption is disproved. |
+| **M-05** the reply payload | **green — decisive** | `Mail.Sent payload: {"id":"d5eRUBLmJ6","from":"bkelso@gomail.com","to":"qe24-direct@qe24.test","subject":"(Reply)","content":"asdf","sentAt":1789902205922}` — **no `repliedTo`**, subject is the constant `(Reply)`, and `to` is the original's `from`. A reply is matchable only by `to`. → docs/03 §16. |
+| **M-06** replyable, quest path | **green** | The Reply button draws on the `this.sendMail(0)` path too, and the quest's reply objective ticked — on `to` = the quest mail's `from`, exactly the M-05 rule. |
+| **M-07** cleanup at quest end | **half-red, our fixture** | The sweep **ran** (`Mail.remove(id) -> true`) but removed nothing: it matched subjects and getInbox carries **no subjects** (27–30 entries scanned, zero matches) — now fixed to match the probe **from** addresses. The Complete button never appeared either: r209's second objective (`cleanup-seen`) had no trigger — dropped; the quest has one tickable objective again (the r185 canary lesson). The OnAbandon sweep **did** work (`-> true`), proving quest-end cleanup itself is sound. |
+| **M-08** cleanup at unload | **red — the game's, decisive** | The disable-then-restart hook **fired** (T-15c semantics confirmed) and every gated call from it was refused: `Mail.remove` → `Mod "null" tried to use Mail.remove without "mail" permission`, same for `Mail.getInbox` and `Http.*`; the un-gated `Twotter.removeUser` ran (`-> false`, honest). The dev-prescribed BUG 9 unload pattern is **unreachable on 1.3.1**. → docs/03 §14 amendment. In-session (quest-end) cleanup is what the editor authors. |
+| **M-10** bounce | **green** | A mailer-daemon bounce drew for `qe24-missing@nonexistent-corp.test`, quoting the server's `550 5.1.1` reply. |
 
-Honest-notes: `qe24 mail unload` prints what the always-armed sweep will do and
-why it cannot be a per-session switch (a flag cannot live across the restart
-the hook needs). The sweeps match only subjects starting with
-`QE24 mail probe` — nothing else in anyone's inbox starts with that, and the
-sweep logs every call, so a wrong removal would name itself in the paste.
+Session extras worth keeping: the export's registration is the only extras
+re-registrar (it registered the surfaces twice through `onLanguageChange ×2` —
+moot, the export now ships none); the export marker reports
+`uses API v1 (current: v2). Running in compatibility mode.` — harmless, noted.
 
-
+**Fixture fixes forced by this run (harness 1.0.25, r210):** sweeps/audit/
+cleanup-arm match the probe **from** addresses (`MAIL_PROBE_FROMS`), never
+subjects; the audit prints one raw inbox entry so the next session can re-check
+which fields 1.3.1 fills; the mail quest carries exactly one tickable
+objective; the watch-on hint tells the tester `qe24 mail watch off` is fine to
+leave on. The r199–r205 probes are retired this round — see the banner.
 
 ## Settled: the Twotter editor rows, first run — 2026-09-18 (game 1.3.1, build 25388883)
 

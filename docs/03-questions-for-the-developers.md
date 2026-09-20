@@ -525,6 +525,30 @@ call was refused), then the hand-over to the engine and the callback — and pri
 an explanation when it sees this refusal, because the game's own message sends an
 author to a manifest that is already correct.
 
+**Amendment, 2026-09-20 (game 1.3.1, harness 1.0.24): the same refusal fires
+from `OnModPackageUnloaded`.** Disabling the QA harness in the Mods list and
+restarting fired the unload hook correctly at game start — and every
+permission-gated call inside it was refused with the identical `Mod "null"`
+message, while the un-gated `Twotter.removeUser` executed fine (it had nothing
+to remove on that save, and said so honestly — `-> false`, not a refusal):
+
+```
+[qe24] mod unloading
+[qe24] intercept off failed: [ContentSDK] Mod "null" tried to use Http.setInterceptEnabled without "network" permission. ...
+[qe24] Http.unregisterHost failed: [ContentSDK] Mod "null" tried to use Http.unregisterHost without "network" permission. ...
+[qe24] Mail.remove(JSnUzFVzS0) failed: [ContentSDK] Mod "null" tried to use Mail.remove without "mail" permission. ...
+[qe24] Mail.getInbox failed: [ContentSDK] Mod "null" tried to use Mail.getInbox without "mail" permission. ...
+[qe24] unload removeUser(qe24-probe-user) -> false          <- un-gated: ran
+```
+
+That closes the loop on the SDK's own cleanup advice: `Mail.remove`'s
+declaration says a mod "should collect the ids it gets from `send` and remove
+them in `OnModPackageUnloaded`" — but the remove is refused there, so **the
+documented unload-cleanup pattern is unreachable on this build** for every
+gated namespace. Quest-end hooks are fine (measured in the same session: an
+`OnAbandon` sweep's `Mail.remove` returned `true`), so cleanup at quest end is
+what the editor authors; unload cleanup waits for this question.
+
 ## 15. `Handbook.open(id)` opens the handbook but never reaches the article — what are the article ids?
 
 **Found in game** 2026-09-19, on 1.3.1 / Content SDK 0.24, from a pack's own
@@ -565,3 +589,67 @@ needs something else".
 runtime logs what was asked for and that the game lands on its landing page, the
 `Open handbook` node's field says the same in its help text, and the picker's
 note records this measurement.
+
+## 16. `MailDefinition.replyable` documents a `repliedTo` field that the reply event does not carry
+
+**Found in game** 2026-09-20, on 1.3.1 / Content SDK 0.24, while measuring the
+mail rows (harness 1.0.24, transcript in
+[`reference/sdk-0.24-qa/QE24-TestResults-Mail.md`](../reference/sdk-0.24-qa/QE24-TestResults-Mail.md)).
+
+The SDK declares `MailDefinition.replyable` with: *"The player's reply raises
+`Mail.Sent` with a `repliedTo` field naming this mail, which is how a quest
+picks it up."* The reply **does** work and `Mail.Sent` **does** fire — this is
+the whole raw payload, logged verbatim:
+
+```json
+{"id":"d5eRUBLmJ6","from":"bkelso@gomail.com","to":"qe24-direct@qe24.test","subject":"(Reply)","content":"asdf","sentAt":1789902205922}
+```
+
+No `repliedTo`. The declared `MailEvent` interface has no such field either, so
+the doc comment and the interface disagree — and the runtime agrees with the
+interface. The reply's subject is the constant string `(Reply)`, so it carries
+no trace of which mail was answered either.
+
+**Why it matters.** Replying is the player speaking, so it is the natural
+quest beat — but a quest that listens for `Mail.Sent` hears **every** mail the
+player sends. Without `repliedTo`, the only discriminator is `to`: a reply
+arrives addressed to the **original mail's `from`**, which we verified by
+giving the probe mail a distinctive from address and ticking an objective on
+exactly that condition (it worked first try). So reply-driven quests are
+writable today by matching `to`, and our editor authors them that way — but
+every mail of a conversation then needs a unique from address, and a quest
+cannot tell a reply to mail A from a reply to mail B if both share one
+address.
+
+**What we would like**, any one of these:
+
+- the `repliedTo` field the declaration promises (naming the original mail's
+  id), and the `MailEvent` interface updated to declare it;
+- or the doc comment corrected, so tooling stops promising a field the engine
+  does not send;
+- or a `replyTo`/`inReplyTo` we can set ourselves on `MailDefinition`, so the
+  echo comes back through `metadata`.
+
+## 17. `Mail.getInbox()` entries carry no `subject`
+
+**Found in game** 2026-09-20, same session as §16.
+
+The SDK declares `MailInfo = { id, from, to, subject, read, sentAt }`. The
+probe sent a mail with the subject `QE24 mail probe (plain)`, then read the
+inbox: **27–30 entries**, the probe's mail was there and findable **by `id`**
+— but a scan over the entries for that subject found **zero**. The same held
+after a save/reload. So `id` (and the fields the harness prints) are filled,
+but `subject` is not, on this build.
+
+**Why it matters.** Subject-matching is the natural way to find "the mail my
+mod sent" when the send path returns no id (`Quest.sendMail(index)` returns
+`void`, which is how quest `Mails[]` go out). A mod that wants to withdraw a
+mail it sent through the quest path has no handle but the fields `getInbox`
+returns — and on 1.3.1 the subject half of that contract is missing. (The
+mod's own `from` address works as a discriminator and is what we now match on;
+whether `from`/`to` are reliably filled is measured next session — the harness
+prints one raw entry per audit from now on.)
+
+**What we would like:** `getInbox()` entries filled as declared (or the
+declaration narrowed to what the engine actually returns). A working `subject`
+would also let a mod show honest "mail still in the inbox?" checks.

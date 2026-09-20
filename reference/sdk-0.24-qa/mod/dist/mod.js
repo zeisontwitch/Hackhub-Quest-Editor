@@ -33,6 +33,13 @@ var sessionHookRegistered = false;
 var MAIL_MARKER = "QE24 mail probe";
 var MAIL_DIRECT_FROM = "qe24-direct@qe24.test";
 var MAIL_QUEST_FROM = "qe24-quest@qe24.test";
+/* M-07 (game 1.3.1, Zeis's run): getInbox() entries carry NO subject, so the
+   original subject match could never fire. The FROM addresses are what this
+   probe controls on both paths - Mail.send's `from` and this.sendMail(0, from) -
+   so the sweeps match these instead. Whether getInbox fills `from` is not
+   measured yet; `qe24 mail audit` prints one raw entry so the next look settles
+   it (mailAudit). */
+var MAIL_PROBE_FROMS = [MAIL_DIRECT_FROM, MAIL_QUEST_FROM];
 /* Session state only: it dies with the game session, which is exactly why the
    unload sweep matches subjects instead of remembered ids (see mailUnloadInfo). */
 var MAIL_STATE = { sent: [], unsubscribe: null, cleanup: false };
@@ -346,12 +353,6 @@ var QA_QUESTS = [
         name: "QESdk024WaitMonthQa",
         title: "Timer QA (Wait in months: S-14, S-09)",
         what: "waits 1 in-game minute (the schedule path), then holds Wait 1 month (the scheduleAt path) - read it with qe24 timers.",
-    },
-    {
-        alias: "extras",
-        name: "QESdk024ExtrasQa",
-        title: "QE24 extras QA (its title is translated - T-27)",
-        what: "the editor export's own pack extras (r203): claim it only to see the translated Title - the menu entry, the widget and the right-click entries are there from load, with no quest needed.",
     },
     {
         alias: "probe",
@@ -1005,10 +1006,11 @@ function printGuide(tools) {
     tools.println("Timer rows: checklist in reference/sdk-0.24-qa/TIMER-ROWS.md, results in STATUS.md.");
     tools.println("Most rows are read from qe24 timers instead of waited for.");
     tools.println("");
-    tools.println("Click context probe (r205): qe24 clickprobe on / report / off - which channels does");
-    tools.println("  a start-menu click still have, now that UI calls from one are refused?");
-    tools.println("Pack extras probe (r199): qe24 extras on / off / lang - does this build show start-menu");
-    tools.println("  items, desktop widgets and right-click entries, and does Localization.t translate? Rows T-16..T-19.");
+    tools.println("Mail probe (r209/r210): qe24 mail send [plain|replyable] / remove last / audit / watch on /");
+    tools.println("  cleanup on / unload / bounce - rows M-01..M-10, results in STATUS.md.");
+    tools.println("Retired probes: the pack-extras probe and the click probe are done (their rows are");
+    tools.println("  answered in STATUS.md). `qe24 extras cleanup` removes every QE24 start-menu entry,");
+    tools.println("  desktop widget and right-click item an older build left on this save.");
     tools.println("");
     tools.println("Mail probe (r209): qe24 mail send [plain|replyable] / remove last / audit / watch on /");
     tools.println("  cleanup on / unload / bounce - SDK 0.24's Mail.remove, replyable and sendBounce.");
@@ -1475,358 +1477,63 @@ function extrasReport(tools, label) {
     tools.println("  right-click desktop:   " + extrasList(desktopItems, "ContextMenu.getItems(desktop)"));
 }
 
-function extrasGuide(tools) {
-    tools.println("Pack extras probe (r199): can a pack put things outside its own quests?");
-    tools.println("");
-    tools.println("First run (r200) answered: widgets work and render a mod's own HTML, right-click");
-    tools.println("  items work on files, and Localization.t() translates - 30 languages listed.");
-    tools.println("  Two things came back empty: nothing appeared in the start menu, and the widget");
-    tools.println("  drew its text without its background (that is what transparent: true does).");
-    tools.println("  This round registers THREE menu items (one per section spelling) and TWO widgets");
-    tools.println("  (opaque and transparent) so a single look separates the possibilities.");
-    tools.println("");
-    tools.println("  qe24 extras on    register a start-menu item, a desktop widget, two right-click");
-    tools.println("                    entries (on a file and on the desktop) and two language bundles");
-    tools.println("  qe24 extras lang  what this build says about language, and what t() returns");
-    tools.println("  qe24 extras say notify|toast   does each of the two UI calls draw anything? (r204)");
-    tools.println("  qe24 extras off   unregister all of it again");
-    tools.println("");
-    tools.println("Rows T-16..T-19 in reference/sdk-0.24-qa/STATUS.md, one per API. What to look at:");
-    tools.println("  T-16 menu:     is there a \"QE24 Extras\" entry at the BOTTOM of the start menu,");
-    tools.println("                 and does clicking it show a toast?");
-    tools.println("  T-17 widget:   does a magenta 320x180 widget appear on the desktop (it names its");
-    tools.println("                 own size and id), and does `qe24 extras off` remove it?");
-    tools.println("  T-18 menu-2:   right-click a file, then the empty desktop - is there a QE24 entry in each?");
-    tools.println("  T-19 language: paste the whole output of `qe24 extras lang`.");
-    tools.println("");
-    tools.println("If something never appears, the game log is the evidence: search it for [qe24] or extras.");
-}
+/* The extras probe (r199-r205) retired with its rows: T-16..T-19 answered
+   (r200/r202), `say` answered (r205), and the surfaces were verified for real
+   through the editor export's own pack-extras feature (r203-r208). What the
+   probe left behind on a tester's save - a desktop widget, start-menu items,
+   right-click entries and click-probe leftovers - is what `qe24 extras cleanup`
+   is for: it removes every QE24 registration id this project ever used, from
+   the raw probe AND from the QA export (whose extras data was removed in r210). */
+var RETIRED_EXTRAS_IDS = [
+    /* the raw probe (r200-r204) */
+    "qe24-extras-menu-none", "qe24-extras-menu-top", "qe24-extras-menu-bottom",
+    "qe24-extras-widget", "qe24-extras-widget-ghost",
+    "qe24-extras-file", "qe24-extras-desktop",
+    /* the click probe's start-menu item (r205) */
+    "qe24-clickprobe-menu",
+    /* the QA export's pack-extras surfaces (r203-r208) */
+    "qe24-menu-extras", "qe24-menu-claim", "qe24-menu-mail", "qe24-menu-handbook",
+    "qe24-ctx-file", "qe24-ctx-desktop",
+];
 
-function extrasOn(tools) {
-    var done = [];
-    var absent = [];
-    /* Three items, one per section spelling the interface declares, because the
-       first run's single "bottom" item never appeared and there is no way to
-       tell from one sample whether the section, the label or the API itself is
-       the problem. r201. */
-    safe("Menu.addItem", function () {
-        if (!sdk.Menu || !sdk.Menu.addItem) { absent.push("Menu.addItem"); return; }
-        var sections = [null, "top", "bottom"];
-        for (var i = 0; i < sections.length; i++) {
-            var item = {
-                id: EXTRAS_MENU_IDS[i],
-                label: "QE24 menu " + (sections[i] || "no section"),
-                onClick: function () { toast("QE24: the start-menu item was clicked", "info"); log("extras: menu item clicked"); },
-            };
-            if (sections[i]) item.section = sections[i];
-            sdk.Menu.addItem(item);
-        }
-        done.push("3 start-menu items (no section, top, bottom)");
-    });
-    safe("Desktop.addWidget", function () {
-        if (!sdk.Desktop || !sdk.Desktop.addWidget) { absent.push("Desktop.addWidget"); return; }
-        /* Two widgets, same HTML, same size, different transparency: the first
-           run's widget rendered its text but not its background, which is what
-           transparent: true (the SDK default, which we did not override) does.
-           Side by side is the only way to read that off one screenshot. r201. */
-        sdk.Desktop.addWidget({
-            id: EXTRAS_WIDGET_ID,
-            src: EXTRAS_WIDGET_SRC,
-            width: 320,
-            height: 180,
-            position: { x: 40, y: 40 },
-            transparent: false,
-        });
-        sdk.Desktop.addWidget({
-            id: EXTRAS_WIDGET_GHOST_ID,
-            src: EXTRAS_WIDGET_SRC,
-            width: 320,
-            height: 180,
-            position: { x: 400, y: 40 },
-            transparent: true,
-        });
-        done.push("2 desktop widgets (opaque at 40,40; transparent at 400,40) from " + EXTRAS_WIDGET_SRC);
-    });
-    safe("ContextMenu.register", function () {
-        if (!sdk.ContextMenu || !sdk.ContextMenu.register) { absent.push("ContextMenu.register"); return; }
-        sdk.ContextMenu.register({
-            id: EXTRAS_FILE_ITEM_ID,
-            label: "QE24: inspect this file",
-            target: "file",
-            onClick: function (context) {
-                toast("QE24: right-clicked " + ((context && (context.name || context.id)) || "a file"), "info");
-                log("extras: file item clicked");
-            },
-        });
-        sdk.ContextMenu.register({
-            id: EXTRAS_DESKTOP_ITEM_ID,
-            label: "QE24: desktop action",
-            target: "desktop",
-            onClick: function () { toast("QE24: right-clicked the desktop", "info"); log("extras: desktop item clicked"); },
-        });
-        done.push("right-click items (target file and target desktop)");
-    });
-    safe("Localization.register", function () {
-        if (!sdk.Localization || !sdk.Localization.register) { absent.push("Localization.register"); return; }
-        sdk.Localization.register("en", EXTRAS_STRINGS.en);
-        sdk.Localization.register("de", EXTRAS_STRINGS.de);
-        done.push("language bundles (en, de)");
-    });
-    if (done.length) tools.println("Registered: " + done.join("; ") + ".");
-    if (absent.length) tools.println("NOT IN THIS BUILD: " + absent.join(", ") + ".");
-    extrasReport(tools, "registered");
-    tools.println("");
-    tools.println("DO NOT run `qe24 extras off` yet - everything below has to still be registered while");
-    tools.println("you look at it. When you are done looking, run `qe24 extras off`.");
-    tools.println("Now look, in this order:");
-    tools.println("  1. the desktop, top-left: you asked for TWO widgets side by side (opaque at 40,40, see-through");
-    tools.println("     at 400,40) - are both there, is the left one solid magenta, is the right one see-through,");
-    tools.println("     and do the dashed frames measure about 320x180?");
-    tools.println("  2. the start menu: three entries ('QE24 menu no section', 'QE24 menu top', 'QE24 menu bottom').");
-    tools.println("     Open it, click 'All Applications', and try the 'Downloads' tab too. If you still see none,");
-    tools.println("     try right-clicking the start button and the 'Zeis' row at the bottom of the menu.");
-    tools.println("  3. right-click a file, then right-click empty desktop space: QE24 entries on both?");
-    tools.println("  4. `qe24 extras lang`, and paste that block too.");
-}
-
-function extrasOff(tools) {
+function extrasCleanup(tools) {
+    var removed = [];
     safe("Menu.removeItem", function () {
-        if (sdk.Menu && sdk.Menu.removeItem) {
-            for (var i = 0; i < EXTRAS_MENU_IDS.length; i++) sdk.Menu.removeItem(EXTRAS_MENU_IDS[i]);
-        }
+        if (!sdk.Menu || !sdk.Menu.removeItem) return;
+        for (var i = 0; i < RETIRED_EXTRAS_IDS.length; i++) sdk.Menu.removeItem(RETIRED_EXTRAS_IDS[i]);
+        removed.push("start-menu items");
     });
     safe("Desktop.removeWidget", function () {
-        if (sdk.Desktop && sdk.Desktop.removeWidget) {
-            sdk.Desktop.removeWidget(EXTRAS_WIDGET_ID);
-            sdk.Desktop.removeWidget(EXTRAS_WIDGET_GHOST_ID);
-        }
+        if (!sdk.Desktop || !sdk.Desktop.removeWidget) return;
+        for (var w = 0; w < RETIRED_EXTRAS_IDS.length; w++) sdk.Desktop.removeWidget(RETIRED_EXTRAS_IDS[w]);
+        removed.push("desktop widgets");
     });
     safe("ContextMenu.unregister", function () {
-        if (sdk.ContextMenu && sdk.ContextMenu.unregister) {
-            sdk.ContextMenu.unregister(EXTRAS_FILE_ITEM_ID);
-            sdk.ContextMenu.unregister(EXTRAS_DESKTOP_ITEM_ID);
-        }
+        if (!sdk.ContextMenu || !sdk.ContextMenu.unregister) return;
+        for (var c = 0; c < RETIRED_EXTRAS_IDS.length; c++) sdk.ContextMenu.unregister(RETIRED_EXTRAS_IDS[c]);
+        removed.push("right-click items");
     });
-    tools.println("Unregistered the QE24 extras. The language bundles stay - the SDK has no");
-    tools.println("unregister for them, and a handful of strings is harmless.");
-    extrasReport(tools, "after off");
-    tools.println("What matters: the start-menu entry, the widget and both right-click entries are gone.");
-}
-
-function extrasLang(tools) {
-    tools.println("QE24 extras lang - Localization in this build:");
-    if (!sdk.Localization || !sdk.Localization.t) {
-        tools.println("  Localization.t is NOT in this build, so no pack can translate anything yet.");
-        return;
-    }
-    tools.println("  language():                 " + safe("Localization.language", function () { return sdk.Localization.language(); }, "(unavailable)"));
-    var langs = safe("Localization.languages", function () { return sdk.Localization.languages(); }, null);
-    tools.println("  languages():                " + (Array.isArray(langs) ? langs.join(", ") : "(unavailable)"));
-    /* Register here too, so `qe24 extras lang` alone is a complete reading:
-       a tester who runs only this command must still see a real translation. */
-    var registered = "no";
-    safe("Localization.register", function () {
-        if (!sdk.Localization || !sdk.Localization.register) return;
-        sdk.Localization.register("en", EXTRAS_STRINGS.en);
-        sdk.Localization.register("de", EXTRAS_STRINGS.de);
-        registered = "yes";
-    });
-    tools.println("  we registered:              " + registered + " (en, de; keys " + EXTRAS_HELLO_KEY + " and " + EXTRAS_VARS_KEY + ")");
-    tools.println("  t(\"" + EXTRAS_HELLO_KEY + "\"): " + safe("Localization.t", function () { return sdk.Localization.t(EXTRAS_HELLO_KEY); }, "(threw)"));
-    tools.println("  t(\"" + EXTRAS_VARS_KEY + "\", {who: \"QE24\"}): " + safe("Localization.t", function () { return sdk.Localization.t(EXTRAS_VARS_KEY, { who: "QE24" }); }, "(threw)"));
-    tools.println("  t(\"qe24.absent\"): " + safe("Localization.t", function () { return sdk.Localization.t("qe24.absent"); }, "(threw)"));
-    tools.println("Reading: a translated line proves t() resolves; a missing key echoing its own name is");
-    tools.println("the SDK's documented fallback, and a blank line there would be worth filing.");
-    tools.println("");
-    tools.println("r204: the line above shows the language the GAME reports. If the game is set to");
-    tools.println("German and language() still says en, no pack can translate anything on this build -");
-    tools.println("that is worth reporting with the whole output of this command.");
-}
-
-/* r204. Every notification QA has ever SEEN in this game came from a toast.
-   UI.notify is declared by the SDK (and used by the editor's Notify node in its
-   default variant), but nothing has ever been reported appearing because of it -
-   and the r203 pack-extras run is the first time a mod has asked a player to
-   notice one. One command per call, so a single look says which one renders:
-   run one, look, run the other, look. */
-function extrasSay(tools, which) {
-    var text = "QE24 " + which + " marker";
-    if (which !== "notify" && which !== "toast") {
-        tools.println("qe24 extras say notify   call UI.notify and say so in the log");
-        tools.println("qe24 extras say toast    call UI.toast and say so in the log");
-        tools.println("Run ONE, look at the screen, then run the other. Whichever draws");
-        tools.println("something tells us what the editor's own notifications can rely on.");
-        return;
-    }
-    if (!sdk.UI || !sdk.UI[which]) {
-        tools.println("UI." + which + " is NOT in this build - nothing was called.");
-        return;
-    }
-    var how = "not called";
-    safe("UI." + which, function () {
-        if (which === "toast") sdk.UI.toast(text, "info");
-        else sdk.UI.notify(text);
-        how = "called";
-    });
-    log("extras say " + which + ": " + how);
-    tools.println("UI." + which + '(\"' + text + '\")' + " was " + how + ".");
-    tools.println("  NOTIFY is the popup the SDK documents; TOAST is the one this project has seen.");
-    tools.println("  Look at the screen now: did \"" + text + "\" appear? Quote it either way -");
-    tools.println("  a call that draws nothing is a finding, not a dead end.");
-}
-
-/* ── the click-context probe (r205) ────────────────────────────────────────
-
-   The r204 run answered the question it was built for, and the answer was not
-   the one either hypothesis expected:
-
-     [quest-editor] extras: menu item "qe24-menu-extras" clicked (language en)
-     [quest-editor] extras: UI.toast threw: [ContentSDK] Mod "null" tried to use
-       UI.toast without "ui" permission. ...
-
-   The click DOES reach a pack. What it does not reach is the permission check's
-   idea of WHICH MOD IS CALLING: from a quest or a command there is a current mod,
-   from a click handler the SDK reads it as "null" and refuses every gated call.
-   The same export, in the same session, showed a UI.notify from a quest context
-   (row F) without complaint - so the manifest is not the problem; the context is.
-
-   What a pack can still do from a click is the part that decides whether the
-   editor's four click actions are usable at all, so this probe tries every
-   channel once and records what each one said. */
-
-var CLICKPROBE_KIND = "qe24-clickprobe";
-var CLICKPROBE_JOB = "qe24-clickprobe-job";
-var CLICKPROBE_MENU_ID = "qe24-clickprobe-menu";
-var clickProbeLog = [];
-var clickProbeJobFired = false;
-
-function clickProbeRecord(line) {
-    clickProbeLog.push(line);
-    log("clickprobe: " + line);
-}
-
-function clickProbeAttempt(label, fn) {
-    try {
-        fn();
-        clickProbeRecord(label + " - WORKED");
-        return true;
-    } catch (e) {
-        clickProbeRecord(label + " - refused: " + ((e && e.message) ? e.message : e));
-        return false;
-    }
-}
-
-function clickProbeHandler() {
-    clickProbeLog = [];
-    clickProbeRecord("click arrived");
-    /* 1. No permission at all: if even this failed, the click would have no
-          access to its own mod's state, which would be a different bug. */
-    clickProbeAttempt("SharedVariables.set (no permission)", function () {
-        sdk.SharedVariables.set("qe.clickprobe.touch", "yes");
-    });
-    /* 2/3. The two UI calls the editor's message action needs. */
-    clickProbeAttempt("UI.notify (ui permission)", function () { sdk.UI.notify("QE24 clickprobe: direct notify"); });
-    clickProbeAttempt("UI.toast (ui permission)", function () { sdk.UI.toast("QE24 clickprobe: direct toast", "info"); });
-    /* 4. Mail, which the editor's mail action needs. */
-    clickProbeAttempt("Mail.send (mail permission)", function () {
-        sdk.Mail.send({ subject: "QE24 clickprobe mail", content: "If this arrived, mail works from a click." });
-    });
-    /* 5. Starting a quest, the editor's claim action. */
-    clickProbeAttempt("Quest.claim (the claim action)", function () { sdk.Quest.claim("QE24SurfaceProbe"); });
-    /* 6. The candidate workaround: hand the work to the engine, which calls the
-          job back with a mod that the permission check can name. */
-    clickProbeAttempt("Scheduler.schedule (defer to the engine)", function () {
-        sdk.Scheduler.schedule(CLICKPROBE_KIND, {}, { ms: 1 }, CLICKPROBE_JOB);
-    });
-}
-
-function clickProbeJob() {
-    clickProbeJobFired = true;
-    clickProbeAttempt("DEFERRED UI.toast (from a scheduler job)", function () {
-        sdk.UI.toast("QE24 clickprobe: the DEFERRED toast works", "info");
-    });
-    clickProbeAttempt("DEFERRED UI.notify (from a scheduler job)", function () {
-        sdk.UI.notify("QE24 clickprobe: the DEFERRED notify works");
-    });
-}
-
-function clickProbeRegister() {
-    safe("Scheduler.register", function () {
-        if (sdk.Scheduler && sdk.Scheduler.register) sdk.Scheduler.register(CLICKPROBE_KIND, clickProbeJob);
-    });
-}
-
-function clickProbe(tools, verb) {
-    if (verb === "on") {
-        clickProbeLog = [];
-        clickProbeJobFired = false;
-        /* Register the job kind here as well as at load: the probe has to work
-           in a session where it was turned on later, and `register` on the same
-           kind twice is a no-op by the SDK's own description. */
-        clickProbeRegister();
-        safe("clickprobe Menu.addItem", function () {
-            if (sdk.Menu && sdk.Menu.removeItem) sdk.Menu.removeItem(CLICKPROBE_MENU_ID);
-        });
-        var ok = false;
-        safe("clickprobe Menu.addItem", function () {
-            sdk.Menu.addItem({
-                id: CLICKPROBE_MENU_ID,
-                label: "QE24: click probe",
-                onClick: clickProbeHandler,
-            });
-            ok = true;
-        });
-        tools.println("Click probe registered: " + (ok ? "yes" : "NO - Menu.addItem is missing"));
-        tools.println("Now, IN THIS ORDER:");
-        tools.println("  1. open the start menu and click \"QE24: click probe\"");
-        tools.println("  2. wait two seconds (the deferred attempt fires about a second later)");
-        tools.println("  3. come back here and run: qe24 clickprobe report");
-        tools.println("Look at the screen too, and say what appeared: the direct attempt should");
-        tools.println("be refused (that is the r204 finding), and the deferred one is the question.");
-        return;
-    }
-    if (verb === "report") {
-        tools.println("QE24 click probe - what happened when the item was clicked:");
-        if (clickProbeLog.length === 0) {
-            tools.println("  Nothing recorded. Either the item was never clicked, or it was clicked");
-            tools.println("  in a session where the menu item was not registered. Run `qe24 clickprobe on`");
-            tools.println("  first, click it, then run this again.");
-            return;
-        }
-        for (var i = 0; i < clickProbeLog.length; i++) tools.println("  " + clickProbeLog[i]);
-        tools.println("  deferred job fired: " + (clickProbeJobFired ? "yes" : "NOT YET (wait a second and report again)"));
-        tools.println("");
-        tools.println("How to read it: every line that says WORKED is a channel the editor's own");
-        tools.println("menu items can use. The REFUSED lines name the mod as \"null\" - that is the");
-        tools.println("permission check not being able to tell which mod clicked, not a missing");
-        tools.println("permission (this mod's manifest lists ui and mail). If the DEFERRED lines");
-        tools.println("worked, the editor can route a click through the engine and keep all four of");
-        tools.println("its click actions.");
-        return;
-    }
-    if (verb === "off") {
-        safe("clickprobe Menu.removeItem", function () {
-            if (sdk.Menu && sdk.Menu.removeItem) sdk.Menu.removeItem(CLICKPROBE_MENU_ID);
-        });
-        tools.println("Click probe removed.");
-        return;
-    }
-    tools.println("qe24 clickprobe on      register \"QE24: click probe\" in the start menu (r205)");
-    tools.println("qe24 clickprobe report  what each channel said when it was clicked");
-    tools.println("qe24 clickprobe off     take the item away again");
-    tools.println("");
-    tools.println("Why: r204's run showed a menu click reaching the pack and then being refused -");
-    tools.println("  [ContentSDK] Mod \"null\" tried to use UI.toast without \"ui\" permission.");
-    tools.println("This probe finds which channels a click CAN use, and whether handing the work");
-    tools.println("to the engine (a scheduler job) gets the mod's identity back.");
+    tools.println("QE24 extras cleanup - every QE24 menu id, widget id and right-click id this");
+    tools.println("project ever used was handed to removeItem/removeWidget/unregister" +
+        (removed.length ? " (" + removed.join(", ") + " APIs present)" : " (none of those APIs are in this build)"));
+    tools.println("The language bundles stay: the SDK declares no unregister for them, and a");
+    tools.println("handful of strings is harmless.");
+    extrasReport(tools, "after cleanup");
+    tools.println("If the QA export is still installed, it re-registers its own surfaces at load -");
+    tools.println("replace it with the current export (r210 or newer ships none) or disable it.");
 }
 
 function extrasProbe(tools, verb) {
-    if (verb === "on") { extrasOn(tools); return; }
-    if (verb === "off") { extrasOff(tools); return; }
-    if (verb === "lang") { extrasLang(tools); return; }
-    if (verb === "say") { extrasSay(tools, tools.getArgs()[2]); return; }
-    extrasGuide(tools);
+    if (verb === "cleanup") { extrasCleanup(tools); return; }
+    tools.println("The pack-extras probe and the click probe are retired - their rows are answered");
+    tools.println("in reference/sdk-0.24-qa/STATUS.md (T-16..T-19, the say rows, the click probe).");
+    tools.println("");
+    tools.println("  qe24 extras cleanup   remove every QE24 start-menu entry, desktop widget and");
+    tools.println("                        right-click item an older build left on this save");
+    tools.println("");
+    tools.println("Run cleanup once if your desktop still shows an old QE24 widget or your start");
+    tools.println("menu still lists QE24 entries from the r200-r208 rounds. If the QA export is");
+    tools.println("still installed, replace it with the current one - it ships no extras any more.");
 }
 
 /* ── mail probe (r209) ────────────────────────────────────────────────────
@@ -1926,14 +1633,23 @@ function mailAudit(tools) {
     }
     var mine = [];
     for (var k = 0; k < inbox.length; k++) {
-        if (inbox[k] && typeof inbox[k].subject === "string" && inbox[k].subject.indexOf(MAIL_MARKER) === 0) mine.push(inbox[k]);
+        if (inbox[k] && typeof inbox[k].from === "string" && MAIL_PROBE_FROMS.indexOf(inbox[k].from) >= 0) mine.push(inbox[k]);
     }
-    tools.println("Probe mails in the inbox by subject: " + mine.length);
+    tools.println("Probe mails in the inbox by from address: " + mine.length);
     for (var m = 0; m < mine.length; m++) {
         tools.println("  id " + mine[m].id + "  from " + mine[m].from + "  to " + mine[m].to + "  subject " + mine[m].subject);
     }
+    /* M-07 evidence, one line: what getInbox actually fills. The SDK declares
+       { id, from, to, subject, read, sentAt }, but 1.3.1's entries carried no
+       subject at all - this line settles, from a real session, which fields a
+       sweep can rely on. */
+    if (inbox.length) {
+        var raw = null;
+        try { raw = JSON.stringify(inbox[0]); } catch (e) { raw = String(inbox[0]); }
+        tools.println("First inbox entry, raw: " + raw);
+    }
     if (!mine.length && MAIL_STATE.sent.length) {
-        tools.println("No probe subjects in the inbox. If GoMail also shows none, the removal rows are green;");
+        tools.println("No probe from-addresses in the inbox. If GoMail also shows none, the removal rows are green;");
         tools.println("if GoMail still shows one, it never reached getInbox - that difference is a result.");
     }
     tools.println("Read this after the reload halves of M-01/M-03 and after M-07's quest end.");
@@ -1960,6 +1676,8 @@ function mailWatch(tools, mode) {
     tools.println("The whole question: does the payload carry \"repliedTo\", and is it the original");
     tools.println("mail's id? The DECLARED payload has no such field, so whatever appears here is");
     tools.println("undeclared - and it decides whether a quest can match a reply at all.");
+    tools.println("Once the line is pasted, `qe24 mail watch off` is fine - the quest's own reply");
+    tools.println("objective does not need the watcher (it listens for its own from address).");
 }
 
 function mailCleanupArm(tools, mode) {
@@ -1970,8 +1688,8 @@ function mailCleanupArm(tools, mode) {
     }
     MAIL_STATE.cleanup = true;
     tools.println("Cleanup ARMED - when the mail QA quest ends (complete OR abandon), its hook removes");
-    tools.println("every session id Mail.send returned AND every inbox mail whose subject starts with");
-    tools.println("\"" + MAIL_MARKER + "\" (the sendMail path returns no id, so its mail is found by subject).");
+    tools.println("every session id Mail.send returned AND every inbox mail sent FROM one of the probe");
+    tools.println("addresses (" + MAIL_DIRECT_FROM + " / " + MAIL_QUEST_FROM + ") - getInbox entries carry no subject in this build (M-07), so the subject match could never fire.");
     tools.println("Each removal is logged as [qe24] mail sweep: ... - that log is M-07's evidence.");
     tools.println("Then: qe24 run mail (if not already running), do the reply, and complete or abandon");
     tools.println("the quest. Afterwards: qe24 mail audit, and GoMail should show no probe mails.");
@@ -2017,12 +1735,15 @@ function mailSweep(label) {
     if (inbox && inbox.length) {
         for (var j = 0; j < inbox.length; j++) {
             var m = inbox[j];
-            if (m && typeof m.subject === "string" && m.subject.indexOf(MAIL_MARKER) === 0 && m.id != null) {
+            /* From-match, not subject: M-07 measured that getInbox entries carry
+               no subject in 1.3.1, so the quest mail (sendMail returns no id)
+               survived the first sweep. Only the probe's own addresses match. */
+            if (m && typeof m.from === "string" && MAIL_PROBE_FROMS.indexOf(m.from) >= 0 && m.id != null) {
                 var mid2 = m.id;
                 var ok2 = (function (mid) {
                     return safe("Mail.remove(" + mid + ")", function () { return sdk.Mail.remove(mid); }, false);
                 })(mid2);
-                log(label + " mail sweep: remove id " + mid2 + " (" + m.subject + ") -> " + ok2);
+                log(label + " mail sweep: remove id " + mid2 + " (from " + m.from + ") -> " + ok2);
                 if (ok2) removed++;
             }
         }
@@ -2050,7 +1771,7 @@ class QE24MailQa extends sdk.Quest {
         super();
         this.Name = "QESdk024MailQa";
         this.Title = "QE24 mail QA (replyable + cleanup rows M-06/M-07)";
-        this.Description = "Claim with qe24 run mail. Its OnStart sends a replyable Mails[0] through this.sendMail(0). Reply to it for M-05/M-06, then complete or abandon the quest for M-07 (arm qe24 mail cleanup on first).";
+        this.Description = "Claim with qe24 run mail. Its OnStart sends a replyable Mails[0] through this.sendMail(0). Reply to it for M-05/M-06 - that ticks the quest's only objective and the Complete button appears - then arm qe24 mail cleanup on and click Complete (or abandon) for M-07.";
         this.Group = "sandbox";
         this.AutoStart = false;
         this.AutoComplete = false;
@@ -2068,8 +1789,7 @@ class QE24MailQa extends sdk.Quest {
             },
         ];
         this.Objectives = [
-            { name: "quest-reply-seen", description: "Open this quest's probe mail in GoMail (a Reply button under it is M-06's green) and reply anything. Ticks on Mail.Sent to qe24-quest@qe24.test." },
-            { name: "cleanup-seen", description: "Run qe24 mail cleanup on, then complete or abandon this quest. Reminder only: the [qe24] mail sweep lines in the game log are M-07's evidence." },
+            { name: "quest-reply-seen", description: "Open this quest's probe mail in GoMail (a Reply button under it is M-06's green) and reply anything. Ticks on Mail.Sent to qe24-quest@qe24.test - then the Complete button appears for M-07." },
         ];
     }
     CreateData() { return {}; }
@@ -2163,12 +1883,6 @@ class QE24Command extends sdk.Command {
         }
         if (sub === "run") {
             runQaQuest(tools, args[1]);
-            return;
-        }
-        if (sub === "clickprobe") {
-            /* `qe24 clickprobe on` - the verb is the FIRST argument after the
-               subcommand, unlike `qe24 extras say toast` where it is the second. */
-            clickProbe(tools, tools.getArgs()[1]);
             return;
         }
         if (sub === "extras") {
@@ -2324,7 +2038,6 @@ class QE24Bootstrap extends sdk.Bootstrap {
         registerSessionHook();
         registerScheduler();
         registerHttp();
-        clickProbeRegister();
     }
     OnModPackageUnloaded() {
         log("mod unloading");

@@ -4,7 +4,7 @@
   "mod": {
     "id": "qe-sdk-024-editor-qa",
     "name": "QE SDK 0.24 Editor QA Scaffold",
-    "version": "1.0.35",
+    "version": "1.0.36",
     "author": "HackHub Quest Editor",
     "description": "Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, the Timer node delay and calendar modes, the Twotter node (accounts, backdated series, cleanup), and the pack extras (start-menu entry, desktop widget, right-click entries, translated words). Nothing auto-starts - claim one quest at a time with the harness command qe24 run - so a tester sees one row's noise, not five.",
     "tags": [
@@ -1782,60 +1782,6 @@
           }
         ]
       }
-    },
-    {
-      "id": "qe-x1",
-      "name": "QESdk024ExtrasQa",
-      "title": "{{tr.qe24.quest.title}}",
-      "description": "Pack extras QA: the menu entry, the desktop widget, the right-click entries and the translated words.",
-      "group": "sandbox",
-      "rewards": {},
-      "employer": {},
-      "autoStart": false,
-      "autoComplete": false,
-      "questsToComplete": [],
-      "abandonable": true,
-      "hasCompleteButton": true,
-      "hideObjectivesWhenDone": true,
-      "closingObjectiveText": "",
-      "dialog": [],
-      "dataKeys": [],
-      "graph": {
-        "nodes": [
-          {
-            "id": "qe-x1-start",
-            "type": "entry.start",
-            "position": {
-              "x": 0,
-              "y": 0
-            },
-            "data": {}
-          },
-          {
-            "id": "qe-x1-note",
-            "type": "fx.notify",
-            "position": {
-              "x": 320,
-              "y": 0
-            },
-            "data": {
-              "message": "{{tr.qe24.quest.note}}",
-              "variant": "notify",
-              "tone": "info"
-            }
-          }
-        ],
-        "edges": [
-          {
-            "id": "e-x1-1",
-            "source": "qe-x1-start",
-            "sourceHandle": "out",
-            "target": "qe-x1-note",
-            "targetHandle": "in",
-            "kind": "flow"
-          }
-        ]
-      }
     }
   ],
   "websites": [
@@ -1914,149 +1860,12 @@
     }
   ],
   "extras": {
-    "menuItems": [
-      {
-        "id": "qe24-menu-extras",
-        "label": "{{tr.qe24.menu.label}}",
-        "icon": "",
-        "action": {
-          "kind": "notify",
-          "text": "{{tr.qe24.menu.message}}",
-          "questId": "",
-          "mailFrom": "",
-          "mailSubject": "",
-          "mailContent": "",
-          "handbookId": "",
-          "handbookCategory": ""
-        }
-      },
-      {
-        "id": "qe24-menu-claim",
-        "label": "{{tr.qe24.menu.claim}}",
-        "icon": "",
-        "action": {
-          "kind": "claim",
-          "text": "",
-          "questId": "qe-x1",
-          "mailFrom": "",
-          "mailSubject": "",
-          "mailContent": "",
-          "handbookId": "",
-          "handbookCategory": ""
-        }
-      },
-      {
-        "id": "qe24-menu-mail",
-        "label": "{{tr.qe24.menu.mail}}",
-        "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAAAFklEQVR4nGNYpfGfJMQwqmFUw/DVAADfudEQUL3SCgAAAABJRU5ErkJggg==",
-        "action": {
-          "kind": "mail",
-          "text": "",
-          "questId": "",
-          "mailFrom": "{{tr.qe24.mail.from}}",
-          "mailSubject": "{{tr.qe24.mail.subject}}",
-          "mailContent": "<p>{{tr.qe24.mail.body}}</p>",
-          "handbookId": "",
-          "handbookCategory": ""
-        }
-      },
-      {
-        "id": "qe24-menu-handbook",
-        "label": "{{tr.qe24.menu.handbook}}",
-        "icon": "",
-        "action": {
-          "kind": "handbook",
-          "text": "",
-          "questId": "",
-          "mailFrom": "",
-          "mailSubject": "",
-          "mailContent": "",
-          "handbookId": "Port Forwarding: Start Here",
-          "handbookCategory": ""
-        }
-      }
-    ],
-    "widgets": [
-      {
-        "id": "qe24-extras-widget",
-        "name": "QE24 extras widget",
-        "width": 320,
-        "height": 180,
-        "x": 40,
-        "y": 40,
-        "transparent": false,
-        "html": "<p><b>QE24 extras widget</b></p><p>If this box has a dark background all the way to its edges, the \"See-through\" switch was off when it was exported — which is what the new widget does by default.</p>"
-      }
-    ],
-    "contextItems": [
-      {
-        "id": "qe24-ctx-file",
-        "label": "{{tr.qe24.ctx.file}}",
-        "icon": "",
-        "target": "file",
-        "action": {
-          "kind": "notify",
-          "text": "Right-click on a file works (T-25a).",
-          "questId": "",
-          "mailFrom": "",
-          "mailSubject": "",
-          "mailContent": "",
-          "handbookId": "",
-          "handbookCategory": ""
-        }
-      },
-      {
-        "id": "qe24-ctx-desktop",
-        "label": "{{tr.qe24.ctx.desktop}}",
-        "icon": "",
-        "target": "desktop",
-        "action": {
-          "kind": "notify",
-          "text": "Right-click on the desktop works (T-25b).",
-          "questId": "",
-          "mailFrom": "",
-          "mailSubject": "",
-          "mailContent": "",
-          "handbookId": "",
-          "handbookCategory": ""
-        }
-      }
-    ]
+    "menuItems": [],
+    "widgets": [],
+    "contextItems": []
   },
   "translations": {
-    "languages": [
-      "en",
-      "de"
-    ],
-    "strings": {
-      "en": {
-        "qe24.menu.label": "QE24: extras check",
-        "qe24.menu.message": "The pack's own menu entry works (T-23).",
-        "qe24.ctx.file": "QE24: inspect this file",
-        "qe24.ctx.desktop": "QE24: desktop action",
-        "qe24.quest.title": "QE24 extras QA",
-        "qe24.quest.note": "The extras QA quest started (T-27).",
-        "qe24.menu.claim": "QE24: claim the extras quest",
-        "qe24.menu.mail": "QE24: send me a letter",
-        "qe24.menu.handbook": "QE24: open the handbook page",
-        "qe24.mail.from": "QE24 QA",
-        "qe24.mail.subject": "A letter from the pack",
-        "qe24.mail.body": "If this arrived, a click can send mail."
-      },
-      "de": {
-        "qe24.menu.label": "QE24: Extras-Prüfung",
-        "qe24.menu.message": "Der eigene Menüeintrag des Packs funktioniert (T-23).",
-        "qe24.ctx.file": "QE24: diese Datei prüfen",
-        "qe24.ctx.desktop": "QE24: Desktop-Aktion",
-        "qe24.quest.title": "QE24 Extras-Prüfung",
-        "qe24.quest.note": "Die Extras-Prüfquest wurde gestartet (T-27).",
-        "qe24.menu.claim": "QE24: Extras-Quest annehmen",
-        "qe24.menu.mail": "QE24: schick mir einen Brief",
-        "qe24.menu.handbook": "QE24: Handbuchseite öffnen",
-        "qe24.mail.from": "QE24 QA",
-        "qe24.mail.subject": "Ein Brief aus dem Pack",
-        "qe24.mail.body": "Wenn dieser Brief angekommen ist, kann ein Klick Post verschicken."
-      }
-    }
+    "languages": [],
+    "strings": {}
   }
 }

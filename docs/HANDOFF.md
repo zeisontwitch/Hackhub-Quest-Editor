@@ -1,3 +1,62 @@
+# Handoff — r210
+
+**The mail rows ran; all ten are answered, and three findings went to the
+developers.** The session transcript is in the repo now:
+[`reference/sdk-0.24-qa/QE24-TestResults-Mail.md`](../reference/sdk-0.24-qa/QE24-TestResults-Mail.md),
+verbatim from the test dump. The verdicts, compressed (full versions at the top
+of [`../reference/sdk-0.24-qa/STATUS.md`](../reference/sdk-0.24-qa/STATUS.md)):
+
+- **The Reply button draws on both paths.** Direct `Mail.send({ replyable:
+  true })` (M-04) and the quest path the editor ships, `this.sendMail(0)`
+  (M-06). The runtime's "no replyable flag" assumption is disproved — but note
+  the direct path is the only one that returns an **id**, which is the cleanup
+  handle.
+- **A reply carries no `repliedTo`.** Raw payload: `{"id":"d5eRUBLmJ6","from":
+  "bkelso@gomail.com","to":"qe24-direct@qe24.test","subject":"(Reply)",
+  "content":"asdf","sentAt":1789902205922}`. The reply is matchable only by
+  **`to` = the original's `from`** (the mail quest's objective ticked on
+  exactly that). Filed as docs/03 **§16**.
+- **`getInbox()` entries have no `subject`** on 1.3.1 (M-01/M-07: ids fine,
+  subjects absent). The r209 sweep matched by subject and never fired — it now
+  matches the probe's **from** addresses. Filed as docs/03 **§17**.
+- **Unload cleanup is refused** (M-08): `OnModPackageUnloaded` fires correctly
+  at the next game start, but every gated call from it is refused
+  `Mod "null"` (`Mail.remove`, `Mail.getInbox`, `Http.*`), while un-gated
+  `Twotter.removeUser` ran. The SDK's own unload-cleanup advice is unreachable
+  on 1.3.1 — quest-end cleanup **works** (`OnAbandon` sweep, `-> true`),
+  so that is what the editor authors. docs/03 **§14** amended (dated).
+- M-02/M-03: `remove` returns `true`/`false`, works on a never-read mail, and
+  the removal survives save → quit → reload. M-10: `sendBounce` draws a real
+  mailer-daemon bounce (550 quoted). M-09: the `moment` warning fires on a
+  **clean save with no mods** — the game's own tweets, never mod mail; the
+  README roadmap row is closed.
+
+**The r199–r205 probes are retired** (Zeis's ask — their black widget and
+start-menu entries were still on his desktop). Harness **1.0.25**: the
+clickprobe and the extras on/off/lang/say verbs are excised;
+`qe24 extras cleanup` sweeps all **14** QE24 registration ids the project ever
+used (two origins: the raw probes' own ids and the QA export's surfaces);
+`qe24 extras <anything else>` prints a retired notice; the widget file is
+deleted. The QA export is **1.0.36**: its project data carries **no extras and
+no translations** and no `QESdk024ExtrasQa` quest — a runtime registration pass
+reads empty arrays and adds nothing. **Zeis should run `qe24 extras cleanup`
+once and replace the old export folder**; then the desktop is clean.
+
+**The probe's own fixture took two fixes the run exposed:** the quest now has
+exactly **one** objective (r209's untickable reminder hid the Complete button —
+the r185 canary lesson again), and every sweep matches by from, never subject.
+Tests updated throughout: the scaffold pins 1.0.25/from-matching/single
+objective/the retired verbs, the harness test lost its pack-extras describe
+(13 tests) and gained the cleanup pair; five mutations falsified. Full gates
+green: 1,786 tests / 88 files, typecheck, build.
+
+**Next:** the mail **authoring** round (README In-progress #1) — plan first, as
+always. The design facts it starts from are the M-answers above. The stale
+editor spots to revisit: `runtimeSource.ts`'s replyable routing (~:1367–1401)
+and `compile.ts`'s warning (:531–536).
+
+---
+
 # Handoff — r209
 
 **The mail probe is built and waiting on one batched session.** Plan:

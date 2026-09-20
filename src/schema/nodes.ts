@@ -344,6 +344,14 @@ export const MailNodeDataSchema = z.object({
     /** Plain text or HTML — the SDK renders it as HTML. */
     content: z.string().default(""),
     replyable: z.boolean().default(false),
+    /**
+     * Remove this mail from the player's inbox when the quest ends
+     * (completed or abandoned). Works because the direct send path returns
+     * the mail's id (M-02/M-03: remove is trustworthy and persists) and quest
+     * cleanup runs in-session (M-07); the unload hook is refused everything
+     * (M-08), so this is the only withdrawal there is.
+     */
+    withdrawOnQuestEnd: z.boolean().default(false),
     attachment: AttachmentSchema.optional(),
 });
 export type MailNodeData = z.infer<typeof MailNodeDataSchema>;
@@ -458,7 +466,7 @@ export const DialogueNodeDataSchema = z.object({
     kind: DialogueKindSchema.default("phone"),
     phone: CallNodeDataSchema.default({ branch: "default", startIndex: 0, continueMode: "onEnd" }),
     kisscord: KisscordNodeDataSchema.default({ contactId: "", messages: [] }),
-    mail: MailNodeDataSchema.default({ from: "", subject: "", content: "", replyable: false }),
+    mail: MailNodeDataSchema.default({ from: "", subject: "", content: "", replyable: false, withdrawOnQuestEnd: false }),
     weechat: WeeChatNodeDataSchema.default({ host: "", password: "", registerServer: true, messages: [] }),
     /**
      * Kisscord/WeeChat only: play the conversation when the story flow arrives

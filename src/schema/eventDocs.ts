@@ -116,7 +116,7 @@ export const EVENT_DOCS: Record<string, string> = {
     "Mail.MailboxOpened": "The player opens a mailbox. The payload describes one mail inside it, including sender, recipient, sent time and content.",
     "Mail.Read": "The player opens and reads a mail. Match the sender, the subject, or any word in it.",
     "Mail.Received": "A mail lands in the player's inbox — sent by the quest, an NPC, or another mod. Match the sender or subject.",
-    "Mail.Sent": "The player sends a mail. Match who it went to, or what it says.",
+    "Mail.Sent": "The player sends a mail. Match who it went to, or what it says. A player's reply to your mail arrives addressed to your mail's From address — it carries no reference to the mail it answered.",
 
     /* ── Social & chat ─────────────────────────────────────────────── */
     "Kisscord.FriendAdded": "Someone is added as a contact on Kisscord. It names who.",

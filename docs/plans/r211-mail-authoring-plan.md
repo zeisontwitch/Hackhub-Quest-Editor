@@ -1,6 +1,6 @@
 # r211 (plan) — mail authoring: the M-answers become editor features
 
-**Status: for review — nothing implemented yet.**
+**Status: approved and implemented in r211** (all three open questions resolved as recommended: flag default off, quest-path kept as throw-fallback, one export swap). One correction to the plan's guess: the editable-field count stays **160** — the mail branch is edited through its sim (`MailSim.tsx`), which the manual's field count does not enumerate.
 
 The mail rows ran and closed (r210; transcript
 [`../reference/sdk-0.24-qa/QE24-TestResults-Mail.md`](../../reference/sdk-0.24-qa/QE24-TestResults-Mail.md)).

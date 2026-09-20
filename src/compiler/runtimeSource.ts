@@ -731,9 +731,14 @@ function __qeRegisterProject(sdk, PROJECT) {
         var mailNodes = g.nodes.filter(function (n) { return n.type === "comms.dialogue" && n.data.kind === "mail"; });
         var mailIndex = {};
         var mailFrom = {};
+        /* r211: the withdraw-on-quest-end flags, kept out of the Mails array
+           on purpose — that array is handed to the engine as Quest.Mails, and
+           the flag is ours, not a QuestMailDefinition field. */
+        var mailWithdraw = {};
         mailNodes.forEach(function (n, i) {
             mailIndex[n.id] = i;
             if (n.data.mail.from) mailFrom[n.id] = n.data.mail.from;
+            if (n.data.mail.withdrawOnQuestEnd) mailWithdraw[n.id] = true;
         });
 
         var Mails = mailNodes.map(function (n) {
@@ -1120,6 +1125,14 @@ function __qeRegisterProject(sdk, PROJECT) {
                     }
                     if (item.kind === "firewall" && sdk.Network.removeFirewallRule) sdk.Network.removeFirewallRule(item.ip, item.port);
                     if (item.kind === "database" && sdk.Database && sdk.Database.remove) sdk.Database.remove(item.id);
+                    /* r211: the quest's withdrawn mails (M-02/M-03: remove is
+                       trustworthy and the removal persists; M-07: quest-end
+                       cleanup is the one timing that works - M-08 refused the
+                       unload hook everything gated). */
+                    if (item.kind === "mail" && sdk.Mail && sdk.Mail.remove) {
+                        var mr = sdk.Mail.remove(item.id);
+                        __QE.log("cleanup: Mail.remove(" + item.id + " \"" + (item.subject || "") + "\") -> " + mr);
+                    }
                     if (item.kind === "port") {
                         if (item.action === "open" && sdk.Network.closePort) sdk.Network.closePort(item.ip, item.port);
                         if (item.action === "close" && sdk.Network.openPort) sdk.Network.openPort(item.ip, item.port);
@@ -1371,41 +1384,22 @@ function __qeRegisterProject(sdk, PROJECT) {
 
             /* Which path can express what this mail needs?
 
-               Mail.send takes a MailDefinition: subject, content, from, to,
-               metadata, attachments — and NO replyable. Quest.sendMail sends
-               Quest.Mails[i], a QuestMailDefinition, which is the only shape
-               that carries a reply flag.
-
-               Mail.send stays the default because r37 measured it as the
-               reliable path. But a mail the author marked replyable cannot say
-               so through it, so that one mail goes the other way - provided the
-               engine has actually taken our Mails array, which is the same
-               check the fallback below makes. If it has not, send through
-               Mail.send anyway and say why: a mail that arrives without its
-               Reply button beats a mail that never arrives. */
-            var engineHasMail = !!(questRef && questRef.Mails && questRef.Mails[mi] &&
-                String(questRef.Mails[mi].title || "").length > 0);
+               The 2026-09-20 mail QA (M-04) disproved the old premise: a
+               Reply button draws on the DIRECT Mail.send path when the
+               definition carries replyable: true - and Mail.send returns the
+               mail's id, the handle quest-end withdrawal needs (M-02/M-03).
+               Quest.sendMail returns void (M-07), so it is demoted to the
+               throw-fallback below: still there, because it is the only
+               remaining path when Mail.send is missing or refuses, but never
+               the first choice. */
             var wantsReply = !!baseMail.replyable;
             var how = "";
+            var sentMailId = null;
 
-            if (wantsReply && engineHasMail && questRef.sendMail) {
-                try {
-                    questRef.sendMail(mi, from || undefined);
-                    how = "Quest.sendMail(" + mi + ") [replyable]";
-                } catch (eR) {
-                    __QE.log("Quest.sendMail(" + mi + ") threw while sending a replyable mail: " +
-                        (eR && eR.message ? eR.message : eR));
-                }
-            }
-            if (!how && wantsReply) {
-                __QE.log("mail \"" + subject + "\" is marked replyable, but the engine has no usable copy " +
-                    "to send that way - going out through Mail.send instead, which has no reply flag, " +
-                    "so no Reply button will appear.");
-            }
-
-            if (!how && sdk.Mail && sdk.Mail.send) {
+            if (sdk.Mail && sdk.Mail.send) {
                 var direct = { subject: subject, content: content };
                 if (from) direct.from = from;
+                if (wantsReply) direct.replyable = true;
                 var to = __QE.safe(function () { return sdk.Mail.getPlayerEmail ? sdk.Mail.getPlayerEmail() : ""; });
                 if (to) direct.to = to;
                 if (baseMail.attachment && baseMail.attachment.name) {
@@ -1415,14 +1409,10 @@ function __qeRegisterProject(sdk, PROJECT) {
                         data: baseMail.attachment.content || "",
                     }];
                 }
-                /* MailDefinition — what Mail.send takes — has no "replyable"
-                   field. Only QuestMailDefinition does, and that is the array
-                   the engine ignores on this build (r37). So a mail sent this
-                   way never gets a Reply button, whatever the author ticked.
-                   Say so once rather than leaving them looking for it. */
                 try {
-                    sdk.Mail.send(direct);
-                    how = "Mail.send";
+                    var directId = sdk.Mail.send(direct);
+                    if (directId != null && directId !== "") sentMailId = String(directId);
+                    how = wantsReply ? "Mail.send [replyable]" : "Mail.send";
                 } catch (e) {
                     __QE.log("Mail.send failed for \"" + subject + "\": " + (e && e.message ? e.message : e));
                 }
@@ -1464,6 +1454,18 @@ function __qeRegisterProject(sdk, PROJECT) {
                 return;
             }
             __QE.log("mail \"" + subject + "\" sent via " + how);
+
+            /* r211 withdraw-on-quest-end: armed only when the send returned an
+               id - the id IS the handle, and the fallback path returns none
+               (M-07). A flag without a handle says so honestly rather than
+               leaving the author wondering why the mail survived. */
+            if (mailWithdraw[node.id] && sentMailId != null) {
+                questCleanup.push({ kind: "mail", id: sentMailId, subject: subject });
+                __QE.log("mail \"" + subject + "\" will be withdrawn when the quest ends (id " + sentMailId + ")");
+            } else if (mailWithdraw[node.id]) {
+                __QE.log("mail \"" + subject + "\" is marked withdraw-on-quest-end, but this send returned " +
+                    "no id to remove - it will stay in the inbox.");
+            }
 
             /* Confirm it landed. This wait is a plain timer on purpose - the
                check must not be able to hang on the game's own clock, which is

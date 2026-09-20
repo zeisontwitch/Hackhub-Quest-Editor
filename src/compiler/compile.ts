@@ -120,7 +120,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-20.r210";
+export const EDITOR_BUILD = "2026-09-20.r211";
 
 /** Warning severity (r153): info = good to know, warn = could cause issues,
     error = will break or strand the player. */
@@ -528,14 +528,20 @@ function warnDialogue(project: ProjectDocument): CompilerWarning[] {
             if (n.type !== "comms.dialogue") continue;
             const d = n.data as {
                 kind: string;
-                mail?: { replyable?: boolean; subject?: string };
+                mail?: { replyable?: boolean; subject?: string; from?: string };
                 kisscord?: { messages?: { playerAction?: string }[] };
             };
             const mail = d.mail;
             if (d.kind === "mail" && mail?.replyable) {
-                warnings.push({ level: "info", text: 
-                    `${q.name}: “${mail.subject || "a mail"}” lets the player reply, so it is sent through Quest.sendMail — the only path that carries a reply flag. If the Reply button does not appear in game, turn the setting off and give the player a hackertyper reply page instead, which is the route the other templates use.`,
- });
+                if (!mail.from) {
+                    warnings.push({ level: "info", text:
+                        `${q.name}: “${mail.subject || "a mail"}” lets the player reply, but its From address is empty — a player's reply arrives addressed to your mail's From, so with no From there is nothing a trigger can match. Set a From, then trigger on Mail.Sent where “to” contains it.`,
+                    });
+                } else {
+                    warnings.push({ level: "info", text:
+                        `${q.name}: “${mail.subject || "a mail"}” lets the player reply. The mail goes out with its reply flag and the Reply button draws (proven in game, 2026-09-20). The player's reply arrives addressed to your From address “${mail.from}” — to react to it, trigger on the Mail.Sent event where “to” contains that address; a reply carries no reference to the mail it answers.`,
+                    });
+                }
             }
             if (d.kind === "phone" && q.dialog.some((b) => b.lines.some((l) => l.input))) {
                 warnings.push({ level: "info", text: 

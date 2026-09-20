@@ -1,3 +1,39 @@
+# Handoff — r211
+
+**The M-answers are editor features now.** Three changes, all evidence-pinned:
+
+1. **Replyable mail goes out direct.** `runtimeSource.ts` sends
+   `Mail.send({ …, replyable: true })` first — the path M-04 proved draws the
+   Reply button — and captures the returned **id**. `Quest.sendMail` (void,
+   M-07) is the throw-fallback only; the old "no Reply button will appear"
+   warning is gone with the assumption it repeated.
+2. **"Withdraw the mail when the quest ends"** — new toggle on the mail
+   branch (`withdrawOnQuestEnd`, default **off**: a story mail is content).
+   Armed at send time with the id, drained by the existing `questCleanup`
+   machinery at complete and abandon (M-07's proof), logging
+   `Mail.remove(<id> "<subject>") -> <bool>`. No id (fallback path) logs
+   honestly that the mail stays.
+3. **The guidance now teaches the real rule**: a reply is matchable only by
+   `to` = the mail's From address (M-05/M-06) — the compile warning names the
+   From and the `Mail.Sent`-on-`to` recipe, a second warning fires when
+   replyable is ticked with an empty From, and the `Mail.Sent` catalogue entry
+   and the node's toggle help carry the same sentence. No new trigger
+   machinery: the editor has authored `to`-contains conditions all along.
+
+QA export **1.0.37** regenerated (schema-only; the QA project data has no
+replyable mail node). Editor stamps → `2026-09-20.r211`. Field count stays
+**160** — the mail branch is edited through its sim, which the manual count
+does not enumerate. Five mutations falsified (direct flag, arming, drain case,
+warning recipe, ledger). 1,789 tests / 88 files green; typecheck + build clean.
+
+**For Zeis to playtest** (jsdom cannot see these):
+1. an editor-authored replyable mail draws its **Reply button**;
+2. replying fires a `Mail.Sent`-on-`to` trigger and ticks the objective;
+3. a withdrawn mail leaves the inbox at quest end — complete **and** abandon —
+   and stays gone after a reload (M-03 says it will).
+
+---
+
 # Handoff — r210
 
 **The mail rows ran; all ten are answered, and three findings went to the

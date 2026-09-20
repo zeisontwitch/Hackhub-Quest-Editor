@@ -2021,14 +2021,14 @@ describe("SDK effect calls", () => {
  * a build that has no Mail.send.
  */
 describe("a briefing mail that actually arrives", () => {
-    function mailProject(replyable = false) {
+    function mailProject(replyable = false, extraMail: Record<string, unknown> = {}) {
         const p = createProject();
         const q = p.quests[0];
         q.autoStart = true;
         const entry = node("entry.start");
         const mail = node("comms.dialogue", {
             kind: "mail",
-            mail: { from: "i.faber@ghostmail.io", subject: "One file", content: "<p>Get it done.</p>", replyable },
+            mail: { from: "i.faber@ghostmail.io", subject: "One file", content: "<p>Get it done.</p>", replyable, ...extraMail },
         });
         q.graph.nodes = [entry, mail];
         q.graph.edges = [edge(entry.id, mail.id, "flow")];
@@ -2041,16 +2041,24 @@ describe("a briefing mail that actually arrives", () => {
         sdk.Mail = {
             getInbox: () => inbox,
             getPlayerEmail: () => "player@gomail.com",
+            /* Returns the mail's id — what the 2026-09-20 QA measured and what
+               withdraw-on-quest-end needs as its handle. */
             send: (m: { subject: string; from?: string; to?: string }) => {
                 calls.push(`Mail.send:${m.subject}:${m.from}:${m.to}`);
-                inbox.push({ id: "d", subject: m.subject });
+                (sdk.Mail as any).lastSent = m;
+                inbox.push({ id: "mid-1", subject: m.subject });
+                return "mid-1";
+            },
+            remove: (id: string) => {
+                calls.push(`Mail.remove:${id}`);
+                return true;
             },
         };
         return { sdk, inbox };
     }
 
-    function modJs(replyable = false) {
-        return compileProject(mailProject(replyable)).files.find((f) => f.path === "dist/mod.js")!.content;
+    function modJs(replyable = false, extraMail: Record<string, unknown> = {}) {
+        return compileProject(mailProject(replyable, extraMail)).files.find((f) => f.path === "dist/mod.js")!.content;
     }
 
     it("keeps the mail's reply flag, which the engine needs to allow a reply", () => {
@@ -2060,11 +2068,12 @@ describe("a briefing mail that actually arrives", () => {
         expect(q.Mails[0]).toMatchObject({ title: "One file", replyable: true });
     });
 
-    it("sends a replyable mail the only way that can carry a reply flag", async () => {
-        /* MailDefinition (Mail.send) has no replyable field at all;
-           QuestMailDefinition (Quest.sendMail) is the only shape that does. A
-           mail the author marked replyable therefore has to take that path,
-           even though Mail.send is the default for everything else. */
+    it("sends a replyable mail DIRECT with its flag — the path the 2026-09-20 QA proved draws the button", async () => {
+        /* M-04 (2026-09-20): the Reply button draws on the direct Mail.send
+           path when the definition carries replyable: true — the old premise
+           ("only QuestMailDefinition carries the flag") is disproved, and
+           Mail.send is the only path that also RETURNS the id. Quest.sendMail
+           (void, M-07) waits below as the throw-fallback. */
         const calls: string[] = [];
         const { sdk } = engineWithMailSend(calls);
         runMod(modJs(true), sdk);
@@ -2072,25 +2081,92 @@ describe("a briefing mail that actually arrives", () => {
         q.sendMail = (i: number) => calls.push(`sendMail:${i}`);
         q.OnStart();
         await settle();
-        expect(calls).toContain("sendMail:0");
-        expect(calls.filter((c) => c.startsWith("Mail.send:"))).toEqual([]);
+        expect(calls.filter((c) => c.startsWith("Mail.send:"))).toHaveLength(1);
+        expect((sdk.Mail as any).lastSent.replyable).toBe(true);
+        expect(calls.filter((c) => c.startsWith("sendMail:"))).toEqual([]);
     });
 
-    it("falls back to Mail.send when the engine has no copy to reply to", async () => {
-        // Better a mail without its Reply button than no mail at all.
+    it("falls back to the quest path only when the direct send throws", async () => {
+        /* The r37-era order is reversed: Quest.sendMail is the safety net,
+           used when Mail.send is missing or refused — its void return means
+           the mail then has no id (which is why withdrawal disarms itself). */
         const calls: string[] = [];
         const { sdk } = engineWithMailSend(calls);
+        (sdk.Mail as any).send = () => {
+            throw new Error("refused");
+        };
         const said: string[] = [];
         const spy = vi.spyOn(console, "log").mockImplementation((m: unknown) => void said.push(String(m)));
         runMod(modJs(true), sdk);
         const q = new (registered0(sdk).quests[0])();
-        q.Mails = []; // the engine never took ours
         q.sendMail = (i: number) => calls.push(`sendMail:${i}`);
         q.OnStart();
         await settle();
         spy.mockRestore();
-        expect(calls.some((c) => c.startsWith("Mail.send:"))).toBe(true);
-        expect(said.join("\n")).toContain("no Reply button will appear");
+        expect(calls).toContain("sendMail:0");
+        expect(said.join("\n")).toContain("Mail.send failed");
+    });
+
+    it("withdraws a flagged mail at quest end — complete and abandon — and leaves it alone when the flag is off (r211)", async () => {
+        const calls: string[] = [];
+        const { sdk } = engineWithMailSend(calls);
+        runMod(modJs(false, { withdrawOnQuestEnd: true }), sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.OnStart();
+        await settle();
+        /* Armed at send time (the id is the handle), fired at quest end. */
+        expect(calls.filter((c) => c.startsWith("Mail.remove:"))).toEqual([]);
+        q.OnComplete();
+        expect(calls).toContain("Mail.remove:mid-1");
+        /* Abandon withdraws too — M-07 measured both hooks. (A fresh run:
+           the cleanup guard is once per quest closure.) */
+        calls.length = 0;
+        const { sdk: sdk3 } = engineWithMailSend(calls);
+        runMod(modJs(false, { withdrawOnQuestEnd: true }), sdk3);
+        const q2 = new (registered0(sdk3).quests[0])();
+        q2.OnStart();
+        await settle();
+        q2.OnAbandon?.();
+        expect(calls).toContain("Mail.remove:mid-1");
+        /* Default off: a story mail survives the quest. */
+        calls.length = 0;
+        const { sdk: sdk2 } = engineWithMailSend(calls);
+        runMod(modJs(false), sdk2);
+        const q3 = new (registered0(sdk2).quests[0])();
+        q3.OnStart();
+        await settle();
+        q3.OnComplete();
+        expect(calls.filter((c) => c.startsWith("Mail.remove:"))).toEqual([]);
+    });
+
+    it("says so honestly when a flagged mail has no id to remove", async () => {
+        /* The fallback path returns void (M-07): the flag cannot be honoured,
+           and the log must say that rather than go quiet. */
+        const calls: string[] = [];
+        const { sdk } = engineWithMailSend(calls);
+        (sdk.Mail as any).send = () => {
+            throw new Error("refused");
+        };
+        const said: string[] = [];
+        const spy = vi.spyOn(console, "log").mockImplementation((m: unknown) => void said.push(String(m)));
+        runMod(modJs(false, { withdrawOnQuestEnd: true }), sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.sendMail = (i: number) => calls.push(`sendMail:${i}`);
+        q.OnStart();
+        await settle();
+        spy.mockRestore();
+        expect(said.join("\n")).toContain("no id to remove");
+    });
+
+    it("warns when a replyable mail has no From — a reply can only be matched by to = that address", () => {
+        const p = mailProject(true, { from: "" });
+        const ws = compileProject(p).warnings;
+        expect(ws.some((w) => w.includes("From address is empty"))).toBe(true);
+        /* …and with a From present, the guidance names it. */
+        const ws2 = compileProject(mailProject(true)).warnings;
+        const note = ws2.find((w) => w.includes("lets the player reply"))!;
+        expect(note).toContain("i.faber@ghostmail.io");
+        expect(note).toContain("to");
     });
 
     it("sends through Mail.send, addressed from the sender to the player", async () => {

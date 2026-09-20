@@ -875,12 +875,11 @@ describe("every template that hides a machine behind a router teaches the way in
  *   r41 then showed the opposite: Mail.send was refused for want of
  *   permissions, the Quest.sendMail fallback fired, and the briefing arrived.
  *
- * So the path that carries `replyable` demonstrably delivers mail. Whether the
- * Reply button itself appears is untested — which is a reason to say so, not a
- * reason to remove the feature or to assert it cannot work.
- *
- * Templates still leave it off, because a hackertyper reply page is the proven
- * route and a template should ship the proven one.
+ * The 2026-09-20 mail QA settled the rest (M-04/M-05/M-06): the Reply button
+ * draws on the direct Mail.send path, and a reply is matchable — by
+ * `to` = the mail's From address; it carries no reference to the mail it
+ * answered. Templates still leave the flag off, because a hackertyper reply
+ * page is the proven route and a template should ship the proven one.
  */
 describe("replyable mail is offered honestly", () => {
     it("is off in every template, which uses the proven reply route instead", () => {
@@ -904,9 +903,11 @@ describe("replyable mail is offered honestly", () => {
         )!;
         (mail.data as { mail: { replyable: boolean } }).mail.replyable = true;
         const w = computeWarnings(p).join("\n");
-        // names the path taken, and the fallback if it does not work
-        expect(w).toContain("Quest.sendMail");
-        expect(w).toContain("hackertyper");
+        // names the proven fact (the button draws), and the one thing an author
+        // must get right: replies are matchable only by to = the From address
+        expect(w).toContain("Reply button draws");
+        expect(w).toContain("d.okonkwo@nullpost.io");
+        expect(w).toContain("Mail.Sent");
     });
 });
 

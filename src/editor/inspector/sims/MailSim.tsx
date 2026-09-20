@@ -70,9 +70,15 @@ export function MailScript({ value, onChange }: { value: MailNodeData; onChange:
                 </FieldShell>
                 <Toggle
                     label="The player can reply"
-                    hint="Adds a Reply button. Untested against the live game — if it does not appear, a hackertyper reply page is the proven way to take a written answer."
+                    hint="Adds a Reply button. Proven in game (the 2026-09-20 mail QA): the button draws on this direct send path, and the player's reply arrives addressed to your From address — trigger on the Mail.Sent event where “to” contains that address to react to it."
                     checked={value.replyable}
                     onChange={(replyable) => onChange({ replyable })}
+                />
+                <Toggle
+                    label="Withdraw the mail when the quest ends"
+                    hint="Removes this mail from the player's inbox when the quest is completed or abandoned. Off by default: a story mail is something the player may want to re-read. Needs no id from you — the send path records it."
+                    checked={value.withdrawOnQuestEnd}
+                    onChange={(withdrawOnQuestEnd) => onChange({ withdrawOnQuestEnd })}
                 />
                 <div className="rounded-md border border-line/70 bg-surface p-2">
                     <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-ink-3 uppercase">Attachment</p>

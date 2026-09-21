@@ -1147,6 +1147,22 @@ function __qeRegisterProject(sdk, PROJECT) {
         }
 
         var objectiveNodes = g.nodes.filter(function (n) { return n.type === "objective"; });
+        /* Objectives that carry a trigger event complete via that trigger -
+           the engine's declarative trigger and our own listener both check
+           the author's conditions. Flow reaching such an objective must not
+           tick it first, or the trigger never decides anything: r211's probe
+           put "reply to me" behind a Mail.Sent trigger, the flow stepped
+           into the objective right after the mails went out, and the
+           objective completed itself before the player could touch anything
+           (seen in the first playtest, 2026-09-20). */
+        var objectivesWithTriggers = {};
+        objectiveNodes.forEach(function (n) {
+            var has = g.edges.some(function (e) {
+                return e.kind === "condition" && e.target === n.id &&
+                    byId[e.source] && byId[e.source].type === "trigger.event";
+            });
+            if (has && n.data.name) objectivesWithTriggers[n.data.name] = true;
+        });
         var questRef = null;
         var needsTargetIp = g.nodes.some(function (n) {
             return (n.type === "world.network" || n.type === "world.wifi") && n.data.ipMode === "random";
@@ -2402,8 +2418,11 @@ function __qeRegisterProject(sdk, PROJECT) {
                 case "objective":
                     /* When the story flow reaches an objective, tick it off.
                        (Objectives with a trigger event complete via the SDK
-                       declarative trigger instead.) */
-                    if (d.name && questRef && questRef.completeObjective) questRef.completeObjective(d.name);
+                       declarative trigger instead - see objectivesWithTriggers
+                       above: a flow arrival must not pre-empt them.) */
+                    if (d.name && questRef && questRef.completeObjective && !objectivesWithTriggers[d.name]) {
+                        questRef.completeObjective(d.name);
+                    }
                     return next();
                 case "trigger.event":
                 case "entry.start":

@@ -7,8 +7,9 @@ trigger** matched by `to` = the mail's From (M-05/M-06), and a
 
 **Install (both folders matter):**
 
-- `reference/sdk-0.24-qa/editor-export/` → **1.0.38** — the probe quest lives
-  here. Replace whatever export folder is installed; this one also still ships
+- `reference/sdk-0.24-qa/editor-export/` → **1.0.39** — the probe quest lives
+  here. (1.0.38 is the build the first W-01 attempt exposed: see the history
+  line at the bottom.) Replace whatever export folder is installed; this one also still ships
   no extras, so it cannot re-create the old surfaces.
 - `reference/sdk-0.24-qa/mod/` → **1.0.26** — optional but convenient: its
   `qe24 run` launcher knows the probe (`qe24 run mailauth`). The 1.0.25
@@ -37,3 +38,15 @@ Paste the game log and a yes/no per row into
 `QE24-TestResults-MailAuthoring.md` on the QA-Filedump branch, same as the
 mail round. Rows W-01…W-05 are recorded as open in
 [`STATUS.md`](STATUS.md).
+
+## History
+
+- **2026-09-20, first W-01 attempt (export 1.0.38):** the objective completed
+  itself the moment the quest was accepted. Root cause was in the **editor's
+  compiled runtime**, not the probe or the save: the flow runner ticked every
+  objective the story flow stepped into, including ones that carry a trigger
+  event — so `reply → objective` (the natural wiring, and the Bad Attachment
+  template's own shape) pre-empted the Mail.Sent trigger. Fixed in r212
+  (runtime now skips flow-ticking for trigger-carrying objectives); the same
+  latent bug shadowed every template with a trigger objective reached by
+  flow. Export 1.0.39 carries the fix — start again from W-01.

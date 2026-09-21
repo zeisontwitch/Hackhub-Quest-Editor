@@ -1,6 +1,6 @@
 {
   "generatedBy": "scripts/extract-manual-inventory.mjs",
-  "editorBuild": "2026-09-20.r211",
+  "editorBuild": "2026-09-20.r212",
   "sdkVersion": "0.24.0",
   "counts": {
     "nodeTypes": 40,
@@ -1661,7 +1661,8 @@
           "from": "",
           "subject": "",
           "content": "",
-          "replyable": false
+          "replyable": false,
+          "withdrawOnQuestEnd": false
         },
         "weechat": {
           "host": "",

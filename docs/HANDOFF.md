@@ -1,3 +1,39 @@
+# Handoff — r212
+
+**The first W-01 attempt found a real editor bug, and it is fixed.** Zeis
+accepted the probe quest and its one objective completed itself instantly,
+before any mail could exist. Diagnosis against the compiled export (a stub
+engine replaying the exact artifact) pinned it in our runtime, not the probe
+and not his save:
+
+- The flow runner's `case "objective"` ticked **every** objective the story
+  flow stepped into — including objectives that carry a trigger event. The
+  probe wires `reply → objective` (the natural authoring shape, and the Bad
+  Attachment template's own wiring), so the objective pre-completed before
+  the Mail.Sent trigger could decide anything. The case's own comment even
+  said trigger objectives complete "via the SDK declarative trigger instead"
+  — the code just never checked.
+- **Fix (r212):** the runtime now computes `objectivesWithTriggers` and skips
+  flow-ticking for those; the trigger (engine declarative + our own
+  condition-checked listener, both verified attached) completes them. Plain
+  objectives keep their flow-tick. The same latent bug shadowed every
+  template with a trigger objective reached by flow (Bad Attachment, Byline,
+  Cold Call, Cold Storage) — all repaired by the one guard.
+- Falsified by removing the guard (regression test red), restored green. New
+  regression test replays the probe's exact shape: flow reaches the
+  objective, the quest's own echoed Mail.Sent does not match, a reply-shaped
+  event does.
+
+Export **1.0.39** (project version bump only; the runtime fix rides in it).
+Stamps → `2026-09-20.r212`. Gates: full suite green (see commit), typecheck,
+build.
+
+**Zeis: swap the export folder to 1.0.39 and start again from W-01** —
+[`../reference/sdk-0.24-qa/QE24-Playtest-MailAuthoring.md`](../reference/sdk-0.24-qa/QE24-Playtest-MailAuthoring.md)
+has a history note. Nothing else changed in the checklist.
+
+---
+
 # Handoff — r211
 
 **The M-answers are editor features now.** Three changes, all evidence-pinned:

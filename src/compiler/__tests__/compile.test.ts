@@ -2035,9 +2035,9 @@ describe("a briefing mail that actually arrives", () => {
         return p;
     }
 
-    function engineWithMailSend(calls: string[]) {
+    function engineWithMailSend(calls: string[], listeners: [string, (d: unknown) => void][] = []) {
         const inbox: { id: string; subject: string }[] = [];
-        const sdk = stubSdk(calls, []) as any;
+        const sdk = stubSdk(calls, listeners) as any;
         sdk.Mail = {
             getInbox: () => inbox,
             getPlayerEmail: () => "player@gomail.com",
@@ -2156,6 +2156,52 @@ describe("a briefing mail that actually arrives", () => {
         await settle();
         spy.mockRestore();
         expect(said.join("\n")).toContain("no id to remove");
+    });
+
+    it("does not tick a trigger objective when the flow reaches it — the event decides (r211 playtest)", async () => {
+        /* The probe quest's exact shape: entry → mail → objective, and the
+           objective carries a Mail.Sent trigger. r211's first playtest
+           completed the objective the moment the flow stepped into it —
+           before any reply existed — because the flow runner ticked every
+           objective it reached, trigger or not. The quest's own sends must
+           not decide a trigger objective; only a matching event may. */
+        const p = createProject();
+        const q = p.quests[0];
+        q.autoStart = true;
+        const entry = node("entry.start");
+        const mail = node("comms.dialogue", {
+            kind: "mail",
+            mail: { from: "qa-reply@qe24.test", subject: "reply to me", content: "c", replyable: true },
+        });
+        const obj = node("objective", { name: "send-a-reply", description: "reply to it" });
+        const trig = node("trigger.event", {
+            event: "Mail.Sent",
+            conditions: [{ id: "c1", join: "and", field: "to", op: "contains", value: "qa-reply@qe24.test" }],
+        });
+        q.graph.nodes = [entry, mail, obj, trig];
+        q.graph.edges = [
+            edge(entry.id, mail.id, "flow"),
+            edge(mail.id, obj.id, "flow"),
+            edge(trig.id, obj.id, "condition", "trigger", "trigger"),
+        ];
+        const calls: string[] = [];
+        const listeners: [string, (d: unknown) => void][] = [];
+        const { sdk } = engineWithMailSend(calls, listeners);
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const qi = new (registered0(sdk).quests[0])();
+        qi.OnStart();
+        await settle();
+        qi.OnObjectivesStart();
+        /* The flow reached the objective (the mail's Out wire) and did NOT tick it. */
+        expect(calls).not.toContain("complete:send-a-reply");
+        /* The quest's own outgoing mail, echoed back as a Mail.Sent: not a match. */
+        const onSent = listeners.find(([e]) => e === "Mail.Sent");
+        expect(onSent).toBeDefined();
+        onSent![1]({ id: "x", from: "qa-reply@qe24.test", to: "player@gomail.com", subject: "reply to me", content: "c", sentAt: 1 });
+        expect(calls).not.toContain("complete:send-a-reply");
+        /* A player reply — addressed to the mail's From — is the match. */
+        onSent![1]({ id: "y", from: "player@gomail.com", to: "qa-reply@qe24.test", subject: "(Reply)", content: "done", sentAt: 2 });
+        expect(calls).toContain("complete:send-a-reply");
     });
 
     it("warns when a replyable mail has no From — a reply can only be matched by to = that address", () => {

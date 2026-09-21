@@ -2230,12 +2230,15 @@ describe("a briefing mail that actually arrives", () => {
         expect(calls).toContain("Mail.send:One file:i.faber@ghostmail.io:player@gomail.com");
     });
 
-    it("hands the Hackhub post's avatars to the engine, and nothing when blank (r215)", () => {
+    it("hands the Hackhub post's avatars to the engine as asset FILES, and nothing when blank (r215)", () => {
         /* The schema carried authorAvatar (post + comments) since r166; the
-           runtime dropped it on the way to this.HackhubPost. The game draws
-           personas for blank fields, so blank must stay blank — but a set
-           avatar must reach the feed. */
+           runtime dropped it on the way to this.HackhubPost. And the r215
+           playtest exposed the second half: an avatar shipped as an inline
+           data-URI broke the game's feed (the post vanished, the player's own
+           avatar broke) - so the compiler now extracts every quest image to
+           an assets/ file and ships the path, exactly like mod icon/cover. */
         const p = mailProject();
+        p.quests[0].employer = { ...p.quests[0].employer, avatar: "data:image/png;base64,CCC" };
         p.quests[0].hackhubPost = {
             content: "Need a careful courier.",
             authorName: "M. Halloway",
@@ -2248,13 +2251,22 @@ describe("a briefing mail that actually arrives", () => {
         };
         const calls: string[] = [];
         const { sdk } = engineWithMailSend(calls);
-        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const files = compileProject(p).files;
+        runMod(files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        /* The images left the PROJECT as files... */
+        expect(files.map((f) => f.path)).toContain("assets/q1-post-avatar.png");
+        expect(files.map((f) => f.path)).toContain("assets/q2-comment0.png");
+        expect(files.map((f) => f.path)).toContain("assets/q0-employer.png");
+        expect(files.find((f) => f.path === "assets/q1-post-avatar.png")!.content).toBe("AAA");
+        /* ...and what the engine receives is the path, not a data-URI. */
         const q = new (registered0(sdk).quests[0])();
-        const hp = (q as unknown as { HackhubPost: { author: { name?: string; avatar?: string }; likes: number; comments: { author: { name?: string; avatar?: string } }[] } }).HackhubPost;
-        expect(hp.author).toEqual({ name: "M. Halloway", avatar: "data:image/png;base64,AAA" });
+        const eq = q as unknown as { Employer: { avatar?: string }; HackhubPost: { author: { name?: string; avatar?: string }; likes: number; comments: { author: { name?: string; avatar?: string } }[] } };
+        expect(eq.Employer.avatar).toBe("assets/q0-employer.png");
+        const hp = eq.HackhubPost;
+        expect(hp.author).toEqual({ name: "M. Halloway", avatar: "assets/q1-post-avatar.png" });
         expect(hp.likes).toBe(42);
-        expect(hp.comments[0].author).toEqual({ name: "Skeptical Dev", avatar: "data:image/png;base64,BBB" });
-        /* No name and no avatar → an EMPTY author, never a drawn "undefined". */
+        expect(hp.comments[0].author).toEqual({ name: "Skeptical Dev", avatar: "assets/q2-comment0.png" });
+        /* No name and no avatar -> an EMPTY author, never a drawn "undefined". */
         expect(hp.comments[1].author).toEqual({});
         /* Fully blank post: no author object at all, so the game generates. */
         const p2 = mailProject();
@@ -2263,6 +2275,25 @@ describe("a briefing mail that actually arrives", () => {
         runMod(compileProject(p2).files.find((f) => f.path === "dist/mod.js")!.content, sdk2);
         const q2 = new (registered0(sdk2).quests[0])() as unknown as { HackhubPost: Record<string, unknown> };
         expect(q2.HackhubPost.author).toBeUndefined();
+    });
+
+    it("treats a feed-post quest as good-to-know, not needs-attention (r215 playtest)", () => {
+        /* The deliberate discovery route shipped as a red error-level
+           warning - a correct setup looked broken in the export dialog. It is
+           info now; only a quest with NO way to start stays error. */
+        const posted = mailProject();
+        posted.quests[0].autoStart = false;
+        posted.quests[0].hackhubPost = { content: "job", comments: [] };
+        const ws = compileProject(posted).warningDetails;
+        const feedNote = ws.find((w) => w.text.includes("claims this one from its Hackhub feed post"))!;
+        expect(feedNote).toBeDefined();
+        expect(feedNote.level).toBe("info");
+        expect(ws.some((w) => w.level === "error")).toBe(false);
+        /* ...while a quest with no route at all stays red. */
+        const stranded = mailProject();
+        stranded.quests[0].autoStart = false;
+        const ws2 = compileProject(stranded).warningDetails;
+        expect(ws2.some((w) => w.level === "error" && w.text.includes("nothing can start this quest"))).toBe(true);
     });
 
     it("warns when a replyable mail has no From — a reply can only be matched by to = that address", () => {

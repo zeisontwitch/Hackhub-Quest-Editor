@@ -1,3 +1,42 @@
+# Handoff — r216
+
+**Zeis played the r215 round like a player, not a checklist — and it caught a
+real compiler bug before any row could run.** His export reached the game
+correctly (`hackhubPost`, author, a 228 KB data-URI avatar), but the feed
+never showed the post and his own player avatar broke: quest-level images
+shipped as inline data-URIs, which the game's feed cannot load. Mod icon and
+cover were always extracted to `assets/*.png`; the quest slots never were.
+
+**r216 fixes:**
+
+- **Quest images are asset files now** — employer avatar, feed-post avatar
+  and media, comment avatars, and the quest icon are extracted to
+  `assets/q<n>-<slot>.png` with mod-relative paths in PROJECT (the path shape
+  proven to resolve since r201). Verified against Zeis's own uploaded project:
+  the export now carries `assets/q0-post-avatar.png` and a path reference.
+- **The feed-post notice is info-level.** It painted the export dialog red
+  ("Needs attention") on a CORRECT setup — Zeis flagged it; only a quest with
+  no route at all stays error.
+- **His player's-eye UI notes, all in:** Journal group gained its blurb (a
+  regression against the every-field-explained rule); the comments list
+  gained one plus a "Leave blank for a generated name" placeholder; the
+  Hackhub block now lives **inside Behaviour**; the Employer section explains
+  itself and its unverified relationship to the post's poster — which is now
+  **H-06**, a measured row; the XP field says honestly that we have never
+  seen XP in the game UI (it is SDK-declared: `Rewards.xp`).
+
+Tests: the r215 avatar test re-pinned to asset paths (+ employer slot
+guarded — its guard was falsified), a new good-to-know-vs-needs-attention
+test; three mutations falsified (extraction off, level back to error,
+employer slot removed). Gates: full suite, typecheck, build — green.
+Stamps `2026-09-21.r216`.
+
+**Zeis retests from scratch** (rebuild the post, re-export, fresh save):
+[`../reference/sdk-0.24-qa/QE24-Playtest-HackhubPosting.md`](../reference/sdk-0.24-qa/QE24-Playtest-HackhubPosting.md)
+— H-01…H-05 as before, **H-06** employer-vs-poster, **H-07** the player card.
+
+---
+
 # Handoff — r215
 
 **The Hackhub feed is authorable, and the last mail bug is closed.** Zeis

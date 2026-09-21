@@ -120,7 +120,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-21.r215";
+export const EDITOR_BUILD = "2026-09-21.r216";
 
 /** Warning severity (r153): info = good to know, warn = could cause issues,
     error = will break or strand the player. */
@@ -315,8 +315,8 @@ export function packModsUsed(project: ProjectDocument): Map<string, string> {
 
 /* ── Warnings — split into focused helpers (F1, F2) ────────────────────── */
 
-function warnUnstartableQuests(project: ProjectDocument): string[] {
-    const warnings: string[] = [];
+function warnUnstartableQuests(project: ProjectDocument): CompilerWarning[] {
+    const warnings: CompilerWarning[] = [];
     const claimed = new Set<string>();
     for (const q of project.quests) {
         for (const n of q.graph.nodes) {
@@ -328,11 +328,16 @@ function warnUnstartableQuests(project: ProjectDocument): string[] {
     }
     for (const q of project.quests) {
         if (!q.autoStart && !claimed.has(q.name)) {
-            warnings.push(
-                q.hackhubPost
-                    ? `${q.title || q.name}: the player claims this one from its Hackhub feed post — nothing in it runs until they do. Turn on “Start automatically” in the quest's Behaviour settings if it should begin the moment the mod loads.`
-                    : `${q.title || q.name}: nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.`,
-            );
+            if (q.hackhubPost) {
+                /* Deliberate discovery route, not a defect — the r215 playtest
+                   flagged that painting it red made a correct setup look
+                   broken. Info keeps the yellow "Good to know" heading. */
+                warnings.push({ level: "info", text:
+                    `${q.title || q.name}: the player claims this one from its Hackhub feed post — nothing in it runs until they do. Turn on “Start automatically” in the quest's Behaviour settings if it should begin the moment the mod loads.` });
+            } else {
+                warnings.push({ level: "error", text:
+                    `${q.title || q.name}: nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.` });
+            }
         }
     }
     return warnings;
@@ -711,7 +716,7 @@ function warnTwotter(project: ProjectDocument): CompilerWarning[] {
 
 export function computeWarningDetails(project: ProjectDocument, packs: ToolPack[] = []): CompilerWarning[] {
     return [
-        ...tag("error", warnUnstartableQuests(project)),
+        ...warnUnstartableQuests(project),
         ...tag("warn", warnFirewallAndPort(project)),
         ...warnNetworkStructure(project),
         ...tag("error", warnToolResponse(project)),
@@ -912,6 +917,24 @@ export function compileProject(project: ProjectDocument, packs: ToolPack[] = [])
         }
     }
 
+    /* r215 playtest: quest-level images ship as asset FILES, never inline
+       data-URIs. Mod icon/cover were always extracted; the quest slots
+       (employer avatar, feed-post avatar and media, comment avatars, quest
+       icon) were not - a 228 KB data-URI avatar reached the game as a string
+       its feed could not load, and the playtest lost both the post and the
+       player's own avatar to it. Same treatment as icon/cover: a file in
+       assets/, a mod-relative path in PROJECT (a relative path is proven to
+       resolve - r201's widget file). */
+    const questAssetFiles: CompiledFile[] = [];
+    let assetSeq = 0;
+    const extractImage = (url: string | undefined, label: string): string | undefined => {
+        if (!url || !url.startsWith("data:image/")) return url;
+        const asset = imageAsset(url, `q${assetSeq++}-${label}`);
+        if (!asset) return url; /* some other data flavour - pass it through */
+        questAssetFiles.push(asset.file);
+        return asset.path;
+    };
+
     const compiledQuests = working.quests.map((q) => {
         const graph = {
             ...q.graph,
@@ -919,13 +942,35 @@ export function compileProject(project: ProjectDocument, packs: ToolPack[] = [])
             edges: q.graph.edges,
         };
         const { nodes, edges } = stripFurniture(graph.nodes, graph.edges);
-        return { q, graph: { ...graph, nodes, edges } };
+        const icon = extractImage(q.icon, "icon");
+        const employer = q.employer?.avatar
+            ? { ...q.employer, avatar: extractImage(q.employer.avatar, "employer") }
+            : q.employer;
+        let hackhubPost = q.hackhubPost;
+        if (hackhubPost && (hackhubPost.authorAvatar || hackhubPost.media || hackhubPost.comments?.some((c) => c.authorAvatar))) {
+            hackhubPost = {
+                ...hackhubPost,
+                authorAvatar: extractImage(hackhubPost.authorAvatar, "post-avatar"),
+                media: extractImage(hackhubPost.media, "post-media"),
+                comments: hackhubPost.comments?.map((c, ci) =>
+                    c.authorAvatar ? { ...c, authorAvatar: extractImage(c.authorAvatar, `comment${ci}`) } : c,
+                ),
+            };
+        }
+        const quest = {
+            ...q,
+            graph: { ...graph, nodes, edges },
+            icon,
+            employer,
+            hackhubPost,
+        };
+        return quest;
     });
 
     // Rebuild working with stripped graphs for the final payload
     const finalWorking: ProjectDocument = {
         ...working,
-        quests: compiledQuests.map(({ q, graph }) => ({ ...q, graph })),
+        quests: compiledQuests,
     };
 
     const planningBlock = planningComments(working.quests);
@@ -985,6 +1030,7 @@ export function compileProject(project: ProjectDocument, packs: ToolPack[] = [])
             { path: "tsconfig.json", content: JSON.stringify(tsconfig, null, 2) + "\n" },
             ...(iconAsset ? [iconAsset.file] : []),
             ...(coverAsset ? [coverAsset.file] : []),
+            ...questAssetFiles,
             /* One file per desktop widget — the path the registration names. */
             ...(project.extras?.widgets ?? []).map((w) => ({ path: widgetPath(w.id), content: widgetHtml(w) })),
         ],

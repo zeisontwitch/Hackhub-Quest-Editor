@@ -216,7 +216,10 @@ function QuestInspector() {
                     rows={3}
                 />
             </FieldShell>
-            <FieldShell label="Journal group">
+            <FieldShell
+                label="Journal group"
+                hint="Which folder of the player's journal this quest sits in. Two quests in the same group read as one story — give a sequel the group of its predecessor."
+            >
                 <SelectInput
                     ariaLabel="Journal group"
                     value={quest.group}
@@ -254,6 +257,11 @@ function QuestInspector() {
                     />
                 </div>
             </div>
+
+            <p className="px-3 pb-2 text-[10.5px] leading-snug text-ink-4">
+                XP is declared by the SDK, but we have never seen the game show XP anywhere —
+                money is the reward a player actually sees.
+            </p>
 
             <Section>Behaviour</Section>
             <Toggle
@@ -297,6 +305,11 @@ function QuestInspector() {
             </FieldShell>
 
             <Section>Employer</Section>
+            <p className="px-3 pb-1 text-[10.5px] leading-snug text-ink-4">
+                Who the quest is from — the journal shows them. A feed post's poster is set
+                separately under Behaviour; whether the game treats the two as the same person is
+                not verified yet.
+            </p>
             <FieldShell label="First name" hint="Left blank, the game generates an employer for you.">
                 <TextInputWithGenerate
                     ariaLabel="Employer first name"
@@ -343,7 +356,6 @@ function QuestInspector() {
                 ariaLabel="Employer avatar"
             />
 
-            <Section>Hackhub feed post</Section>
             <Toggle
                 label="Post this quest to the Hackhub feed"
                 hint="Puts the quest on the feed as a job the player can accept right there. Leave everything below blank and the game generates the poster's name and a drawn avatar — your quest then reads like any other post on the board. Quests accepted from the feed complete from the post itself, not the journal."
@@ -394,14 +406,19 @@ function QuestInspector() {
                     </FieldShell>
 
                     <div className="px-3 pt-2">
-                        <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-ink-3 uppercase">Comments</p>
+                        <p className="mb-1 text-[10px] font-semibold tracking-wider text-ink-3 uppercase">Comments</p>
+                        <p className="mb-1.5 text-[10.5px] leading-snug text-ink-4">
+                            Replies on the post, the way the board reads them: a name (leave blank for a
+                            generated one), an optional avatar, and a line of text. Two or three short
+                            ones sell the post as part of the board.
+                        </p>
                         {(quest.hackhubPost.comments ?? []).map((c, i) => (
                             <div key={c.id} className="mb-2 grid gap-1.5 rounded-md border border-line/70 bg-surface p-2">
                                 <div className="flex items-center gap-1.5">
                                     <TextInput
                                         ariaLabel={`Comment ${i + 1} author`}
                                         value={c.authorName}
-                                        placeholder="Commenter name"
+                                        placeholder="Leave blank for a generated name"
                                         onChange={(authorName) =>
                                             write({
                                                 hackhubPost: {

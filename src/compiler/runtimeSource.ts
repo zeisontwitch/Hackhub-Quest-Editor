@@ -2416,11 +2416,18 @@ function __qeRegisterProject(sdk, PROJECT) {
                     }, Promise.resolve());
                 }
                 case "objective":
-                    /* When the story flow reaches an objective, tick it off.
-                       (Objectives with a trigger event complete via the SDK
-                       declarative trigger instead - see objectivesWithTriggers
-                       above: a flow arrival must not pre-empt them.) */
-                    if (d.name && questRef && questRef.completeObjective && !objectivesWithTriggers[d.name]) {
+                    /* When the story flow reaches an objective, tick it off -
+                       unless a trigger event owns it. A trigger objective is
+                       the player's job, not the flow's: flow arrival must not
+                       tick it (r212) and must not follow its "done" wire
+                       either - flowOuts cannot tell a done wire from an out
+                       wire, and following it completed the quest the moment
+                       the mails went out (r213, the probe's second finding).
+                       The listener runs the done wires when the event matches.
+                       A plain objective keeps both halves: ticked on arrival,
+                       done wire followed, because arrival IS its completion. */
+                    if (objectivesWithTriggers[d.name]) return undefined;
+                    if (d.name && questRef && questRef.completeObjective) {
                         questRef.completeObjective(d.name);
                     }
                     return next();

@@ -100,6 +100,13 @@ try {
         { x: 1280, y: 380 },
     );
 
+    /* r212 fixture fix: end the quest with the terminal Complete-quest node
+       on the objective's done wire. The journal's Complete button is OFF by
+       default (docs/04's old crash bug — defaults chosen r87/r88, lifted as a
+       constraint in r169), and the first probe simply had neither, so the
+       quest sat finished-but-unfinishable with no Complete button. */
+    const finish = makeNode("fx.completeQuest", { x: 1600, y: 220 });
+
     const note = makeNode("flow.note", { x: 320, y: 520 }, {
         text: [
             "r211 playtest probe (2026-09-20).",
@@ -114,13 +121,14 @@ try {
     });
 
     quest.graph = {
-        nodes: [claim, keep, withdraw, reply, oReply, tReply.trigger, note],
+        nodes: [claim, keep, withdraw, reply, oReply, tReply.trigger, finish, note],
         edges: [
             makeEdge(claim, "out", keep, "in"),
             makeEdge(keep, "out", withdraw, "in"),
             makeEdge(withdraw, "out", reply, "in"),
             makeEdge(reply, "out", oReply, "in"),
             tReply.edge,
+            makeEdge(oReply, "done", finish, "in"),
         ],
     };
     kit.applyLayout(quest);

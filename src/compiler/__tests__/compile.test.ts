@@ -2178,11 +2178,13 @@ describe("a briefing mail that actually arrives", () => {
             event: "Mail.Sent",
             conditions: [{ id: "c1", join: "and", field: "to", op: "contains", value: "qa-reply@qe24.test" }],
         });
-        q.graph.nodes = [entry, mail, obj, trig];
+        const finish = node("fx.completeQuest");
+        q.graph.nodes = [entry, mail, obj, trig, finish];
         q.graph.edges = [
             edge(entry.id, mail.id, "flow"),
             edge(mail.id, obj.id, "flow"),
             edge(trig.id, obj.id, "condition", "trigger", "trigger"),
+            edge(obj.id, finish.id, "flow", "done", "in"),
         ];
         const calls: string[] = [];
         const listeners: [string, (d: unknown) => void][] = [];
@@ -2192,8 +2194,11 @@ describe("a briefing mail that actually arrives", () => {
         qi.OnStart();
         await settle();
         qi.OnObjectivesStart();
-        /* The flow reached the objective (the mail's Out wire) and did NOT tick it. */
+        /* The flow reached the objective (the mail's Out wire) and did NOT tick
+           it — and did NOT follow the done wire either: that would complete the
+           quest before any reply existed (r213's second finding). */
         expect(calls).not.toContain("complete:send-a-reply");
+        expect(calls).not.toContain("questComplete");
         /* The quest's own outgoing mail, echoed back as a Mail.Sent: not a match. */
         const onSent = listeners.find(([e]) => e === "Mail.Sent");
         expect(onSent).toBeDefined();

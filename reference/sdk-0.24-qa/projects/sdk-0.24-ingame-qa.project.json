@@ -4,7 +4,7 @@
   "mod": {
     "id": "qe-sdk-024-editor-qa",
     "name": "QE SDK 0.24 Editor QA Scaffold",
-    "version": "1.0.39",
+    "version": "1.0.40",
     "author": "HackHub Quest Editor",
     "description": "Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, the Timer node delay and calendar modes, the Twotter node (accounts, backdated series, cleanup), and the pack extras (start-menu entry, desktop widget, right-click entries, translated words). Nothing auto-starts - claim one quest at a time with the harness command qe24 run - so a tester sees one row's noise, not five.",
     "tags": [
@@ -1955,7 +1955,16 @@
             }
           },
           {
-            "id": "flow-note8",
+            "id": "fx-completeQuest8",
+            "type": "fx.completeQuest",
+            "position": {
+              "x": 1800,
+              "y": 160
+            },
+            "data": {}
+          },
+          {
+            "id": "flow-note9",
             "type": "flow.note",
             "position": {
               "x": 0,
@@ -1969,7 +1978,7 @@
         ],
         "edges": [
           {
-            "id": "edge9",
+            "id": "edge10",
             "source": "entry-start1",
             "sourceHandle": "out",
             "target": "comms-dialogue2",
@@ -1977,7 +1986,7 @@
             "kind": "flow"
           },
           {
-            "id": "edge10",
+            "id": "edge11",
             "source": "comms-dialogue2",
             "sourceHandle": "out",
             "target": "comms-dialogue3",
@@ -1985,7 +1994,7 @@
             "kind": "flow"
           },
           {
-            "id": "edge11",
+            "id": "edge12",
             "source": "comms-dialogue3",
             "sourceHandle": "out",
             "target": "comms-dialogue4",
@@ -1993,7 +2002,7 @@
             "kind": "flow"
           },
           {
-            "id": "edge12",
+            "id": "edge13",
             "source": "comms-dialogue4",
             "sourceHandle": "out",
             "target": "objective5",
@@ -2007,6 +2016,14 @@
             "target": "objective5",
             "targetHandle": "trigger",
             "kind": "condition"
+          },
+          {
+            "id": "edge14",
+            "source": "objective5",
+            "sourceHandle": "done",
+            "target": "fx-completeQuest8",
+            "targetHandle": "in",
+            "kind": "flow"
           }
         ]
       }

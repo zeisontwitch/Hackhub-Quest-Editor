@@ -1,6 +1,6 @@
 # QE24 QA status (2026-09-20)
 
-**ONE OPEN PLAYTEST, no open questions:** the r211 mail-authoring probe — quest `QESdk024MailAuthoringQa`, export **1.0.39**, rows **W-01…W-05** in [`QE24-Playtest-MailAuthoring.md`](QE24-Playtest-MailAuthoring.md). It needs a game session; nothing else waits on it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
+**ONE OPEN PLAYTEST, no open questions:** the r211 mail-authoring probe — quest `QESdk024MailAuthoringQa`, export **1.0.40**, rows **W-01…W-05** in [`QE24-Playtest-MailAuthoring.md`](QE24-Playtest-MailAuthoring.md). It needs a game session; nothing else waits on it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
 harness 1.0.24) and are closed — transcript:
 [`QE24-TestResults-Mail.md`](QE24-TestResults-Mail.md). Ten rows, every one
 answered; three real findings came out of it:
@@ -66,7 +66,7 @@ never a re-run of the ones below.
 r211 turned the M-answers into editor features (direct replyable send,
 withdraw-on-quest-end, the to=From reply recipe). The probe quest ships in the
 QA export (**1.0.38**) and the `qe24 run` launcher (harness **1.0.26**,
-`qe24 run mailauth`); it can also be claimed from its Hackhub feed post. The first W-01 attempt (2026-09-20) found an **editor** bug — the flow runner pre-ticked trigger-carrying objectives, completing the probe's objective on arrival — fixed in r212; export 1.0.39 is the build to test.
+`qe24 run mailauth`); it can also be claimed from its Hackhub feed post. W-01/W-02 ran **green in game** (2026-09-21, export 1.0.39: three mails, Reply button only on the replyable one, the reply recipe ticked the objective — the to=From rule is proven). Two fixture/runtime findings followed: the probe had no ending (hasCompleteButton defaults off — docs/04), and fixing it exposed a second runtime bug (flow arrival followed the objective's done wire, completing the quest at start) — fixed in r213. Export **1.0.40** is the build to test; **W-03…W-05 still open**.
 Full checklist with install notes and the honest-failure log lines to watch:
 [`QE24-Playtest-MailAuthoring.md`](QE24-Playtest-MailAuthoring.md). Rows:
 **W-01** three mails arrive, Reply button on the right one · **W-02** a reply

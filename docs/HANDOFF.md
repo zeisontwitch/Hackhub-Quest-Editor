@@ -1,3 +1,40 @@
+# Handoff — r213
+
+**Zeis's real W-01/W-02 run: green — and it flushed out two more bugs.** The
+r212 fix held in game (objective stayed open until he replied), and the reply
+recipe **ticked in game**: `objective "send-a-reply" completed by Mail.Sent`
+after a reply to the probe mail — the to=From rule is now proven on an
+editor-authored quest. His findings, and what was done:
+
+1. **No Complete button (W-03 untestable).** The first probe had no ending:
+   `hasCompleteButton` defaults **off** (docs/04's r87/r88 crash-era defaults)
+   and the probe wired nothing else — fixture bug. Fix: the probe now ends
+   with a terminal **Complete quest** node on the objective's done wire (the
+   editor's own completion path since r169), not the journal button.
+2. **That fix exposed runtime bug #2:** plain flow arriving at an objective
+   followed its **done** wire immediately (`flowOuts` cannot tell a done wire
+   from an out wire), so the quest completed itself at START. r213: flow
+   **stops** at trigger-carrying objectives — no tick, no done-follow; the
+   listener runs the done wire when the event matches. Plain objectives
+   unchanged (arrival is their completion).
+3. Verified end-to-end against the compiled 1.0.40 artifact with a stub
+   engine: hostile payloads match nothing; a reply-shaped event ticks the
+   objective, completes the quest, and drains exactly one `Mail.remove` of
+   the armed withdraw id. Guard falsified by disable → red → restore.
+
+Also found and fixed on the way: the probe splice script silently wrote stale
+content (mutated the parsed object, wrote the pre-mutation text — the
+"verification" checked presence, not shape). Project writes are now
+write-once from the parsed object with disk re-reads asserted.
+
+Export **1.0.40** (probe v2 + r213 runtime), stamps `2026-09-20.r213`.
+**Zeis:** swap the export folder, abandon the stuck 1.0.39 quest (its
+withdrawal arming was session-scoped — the old *withdraw me* mail staying is
+the documented M-08 limit, not a bug), then `qe24 run mailauth` and W-01
+through W-04 on the checklist (W-03 now self-completes; no button).
+
+---
+
 # Handoff — r212
 
 **The first W-01 attempt found a real editor bug, and it is fixed.** Zeis

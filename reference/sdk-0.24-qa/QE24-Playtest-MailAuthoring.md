@@ -1,5 +1,9 @@
 # Playtest: the mail-authoring round (r211) — quest `QESdk024MailAuthoringQa`
 
+**RAN 2026-09-21 — W-01…W-04 GREEN.** Results:
+[`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md). Kept
+for the record; W-05 needs no run (see its verdict in the results file).
+
 One session, one quest, five reads. Everything the quest does is the r211
 authoring surface: a **replyable** mail sent direct (M-04), a **reply
 trigger** matched by `to` = the mail's From (M-05/M-06), and a

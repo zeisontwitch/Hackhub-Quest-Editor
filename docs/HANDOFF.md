@@ -1,3 +1,39 @@
+# Handoff — r214
+
+**The mail-authoring playtest ran green; the round is closed and nothing is
+open.** Zeis's run on a fresh save (export 1.0.40, harness 1.0.26,
+`qe24 run mailauth`), transcript:
+[`../reference/sdk-0.24-qa/QE24-TestResults-MailAuthoring.md`](../reference/sdk-0.24-qa/QE24-TestResults-MailAuthoring.md):
+
+- **W-01 green** — three mails, objective stayed open, `Mail.send [replyable]`,
+  withdraw armed (id `MaGUHssZcU`).
+- **W-02 green — the headline:** replied "asdfef" and
+  `objective "send-a-reply" completed by Mail.Sent`. The **to = From reply
+  recipe is proven on an editor-authored quest**.
+- **W-03 green** — the quest self-completed and the drain fired exactly once:
+  `cleanup: Mail.remove(MaGUHssZcU "QE24 authoring: withdraw me") -> true`,
+  then `quest completed by Complete quest node`.
+- **W-04 green** — after save → quit → reload the withdrawn mail stayed gone;
+  the keep-me control and the reply mail remained.
+- **W-05 closed on prior evidence** (same drain on the abandon reason,
+  measured in game in r209/M-07; covered by tests).
+
+The end-of-run `already completed (in-memory)` WARN is by design. Wrinkle
+recorded, not blocking: the probe's **Hackhub feed post never surfaced** in
+either attempt — the terminal claim worked both times; watch the next
+feed-post quest before filing a developer question.
+
+QA folder: **NOTHING OPEN** (STATUS banner restored). README's In-progress
+mail row moved to Closed. Remaining mail work lives with the developers
+(docs/03 §16 `repliedTo`, §17 inbox subjects) plus the proposal-only
+`qe24 mail sweep now`. Editor stamp → `2026-09-21.r214` (docs + regen only;
+no runtime changes this round — 1,790 tests unchanged).
+
+**Next up, Zeis's call:** the remaining In-progress row (SDK 0.24 follow-ups —
+phone-proxy/eavesdrop queue), templates, or a new direction.
+
+---
+
 # Handoff — r213
 
 **Zeis's real W-01/W-02 run: green — and it flushed out two more bugs.** The

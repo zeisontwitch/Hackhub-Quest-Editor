@@ -1,6 +1,6 @@
-# QE24 QA status (2026-09-20)
+# QE24 QA status (2026-09-21)
 
-**ONE OPEN PLAYTEST, no open questions:** the r211 mail-authoring probe — quest `QESdk024MailAuthoringQa`, export **1.0.40**, rows **W-01…W-05** in [`QE24-Playtest-MailAuthoring.md`](QE24-Playtest-MailAuthoring.md). It needs a game session; nothing else waits on it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
+**NOTHING OPEN.** The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
 harness 1.0.24) and are closed — transcript:
 [`QE24-TestResults-Mail.md`](QE24-TestResults-Mail.md). Ten rows, every one
 answered; three real findings came out of it:
@@ -61,17 +61,29 @@ author's decision rather than passed, and is marked as such). A future round
 that needs an in-game check adds a *new* row here and a new harness version —
 never a re-run of the ones below.
 
-## Open: the mail-authoring playtest (r211) — export 1.0.38, `QESdk024MailAuthoringQa`
+## Closed 2026-09-21: the mail-authoring playtest — W-01…W-04 green (export 1.0.40)
 
-r211 turned the M-answers into editor features (direct replyable send,
-withdraw-on-quest-end, the to=From reply recipe). The probe quest ships in the
-QA export (**1.0.38**) and the `qe24 run` launcher (harness **1.0.26**,
-`qe24 run mailauth`); it can also be claimed from its Hackhub feed post. W-01/W-02 ran **green in game** (2026-09-21, export 1.0.39: three mails, Reply button only on the replyable one, the reply recipe ticked the objective — the to=From rule is proven). Two fixture/runtime findings followed: the probe had no ending (hasCompleteButton defaults off — docs/04), and fixing it exposed a second runtime bug (flow arrival followed the objective's done wire, completing the quest at start) — fixed in r213. Export **1.0.40** is the build to test; **W-03…W-05 still open**.
-Full checklist with install notes and the honest-failure log lines to watch:
-[`QE24-Playtest-MailAuthoring.md`](QE24-Playtest-MailAuthoring.md). Rows:
-**W-01** three mails arrive, Reply button on the right one · **W-02** a reply
-ticks the `Mail.Sent`-on-`to` objective · **W-03** *withdraw me* leaves at
-Complete · **W-04** still gone after a reload · **W-05** abandon path.
+The probe quest `QESdk024MailAuthoringQa` (export 1.0.40, harness 1.0.26,
+`qe24 run mailauth`) ran on a fresh save. Full transcript:
+[`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md).
+
+| Row | Verdict | Evidence |
+| --- | --- | --- |
+| **W-01** | **green** | Three mails; the objective stayed open (r212's pre-tick and r213's pre-complete both gone); `Mail.send [replyable]`; withdraw armed (id `MaGUHssZcU`). |
+| **W-02** | **green** | Reply "asdfef" → `objective "send-a-reply" completed by Mail.Sent` — matched by `to` = the mail's From. **The reply recipe is proven on an editor-authored quest.** |
+| **W-03** | **green** | Quest self-completed: `cleanup: Mail.remove(MaGUHssZcU "QE24 authoring: withdraw me") -> true`, then `quest completed by Complete quest node`. |
+| **W-04** | **green** | After save → quit → reload: *withdraw me* still gone; *keep me* and *reply to me* remain. |
+| **W-05** | closed on prior evidence | Same drain as W-03 on the abandon reason; measured in game in r209 (M-07) and covered by runtime tests. Not re-run. |
+
+The end-of-run `already completed (in-memory)` WARN is by design (our listener
+and the engine's declarative trigger both fire). Wrinkle recorded, not
+blocking: the probe's **Hackhub feed post never surfaced** in either attempt
+(1.0.39, 1.0.40) — the terminal claim worked both times; watch the next
+feed-post quest before filing a developer question.
+
+The round this tested is closed: **direct replyable mail, the to=From reply
+recipe, and withdraw-on-quest-end are verified authoring features.** Open for
+the developers: docs/03 §16 (`repliedTo`) and §17 (inbox subjects).
 
 ## Settled: the moment.js warning is the game's own content — M-09, closed
 

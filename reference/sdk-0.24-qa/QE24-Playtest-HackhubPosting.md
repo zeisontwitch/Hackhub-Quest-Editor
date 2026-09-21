@@ -1,12 +1,17 @@
 # Playtest: Hackhub quest posting + the mail To field (r215 → r216 retest)
 
-**First attempt (r215, export 1.0.0 by Zeis): the post never reached the
-feed** and the player's own avatar broke — root cause found in the COMPILER:
-quest-level images shipped as inline 228 KB data-URIs the game's feed cannot
-load (mod icon/cover were always extracted to files; quest avatars were not).
-Fixed in r216, alongside everything his player's-eye pass flagged (see the
-history at the bottom). **Retest from scratch: rebuild the post in the
-editor, re-export, fresh save.**
+**Two attempts, two compiler bugs found.** First (r215): quest images shipped
+as inline data-URIs the feed cannot load — fixed in r216. Second (the r216
+retest, 2026-09-22): the export was clean — the asset file shipped, zero
+data-URIs — and the post **still** never surfaced. The r216 diagnosis round
+found the likely killer in the compiled runtime: every comment with a blank
+author rode out as an **empty author object**, and the SDK's own types require
+a comment author to carry a **name**. Both quests that never surfaced carried
+a blank-author comment; the one post that ever rendered had no comments at
+all. r217 stops sending the invalid shape. **For the retest, give every
+commenter a name — that is the shape the types guarantee.** (The r216 UI told
+you "leave blank for a generated name"; that advice is withdrawn for
+comments — blank is now unverified, see H-08.)
 
 Two things to check, one session. The **posting half is authored in the
 editor this time** — that is the point: you build the post with the new UI,
@@ -30,6 +35,8 @@ export, and see it on the board.
 | **H-04** the post on a second run | Start a **new save** on the same profile: does the post render again? (The once-claimed-never-again question from the r211 runs — this decides whether we file the §18 lifecycle question harder.) |
 | **H-06** employer vs poster | Set an **Employer name** in the quest settings, leave the post's **Poster name blank**, re-export, look at the feed. Whose name is on the post — the employer's or a generated stranger's? Tells us whether the game links the two fields (the UI currently says "not verified"). |
 | **H-07** the player card | Is your own Hackhub profile avatar intact this time? (It broke alongside the post in the r215 attempt — if it breaks again on a clean save **without** the mod, it is the game's own bug; say so in the results.) |
+| **H-08** the blank comment (optional, after H-01 passes) | On a **later** run: blank one commenter's name, re-export, fresh save. Does the post still render, and what name does the comment show — none, or a game-generated persona? This measures the §20 question. If the post vanishes again, the blank comment is the culprit and the editor will drop the "blank" option entirely. |
+| **H-09** a profile that has never seen the quest | Same quest, **brand-new profile** (not just a new save). If the post renders there but not on your main profile, the per-profile claim memory (§18) is confirmed end-to-end — your main profile is then the "poisoned" lab and fresh quests are the everyday path. |
 
 ## Part 2 — the mail To field
 
@@ -58,3 +65,16 @@ usual. Rows are recorded open in [`STATUS.md`](STATUS.md).
   Behaviour; the Employer/post relationship is written down with a row (H-06)
   to measure it; and the XP field carries an honest note (SDK-declared, never
   seen in the game UI).
+
+- **2026-09-22, the r216 retest:** export clean (the asset file shipped, zero
+  data-URIs), post still absent. The game log's two suspicious lines checked
+  out as old noise: the API v1 compatibility notice and the held
+  `Queue.HandleQuestHackhubPosts` job both appear in every session on file,
+  including the vanilla one. What did NOT check out: every quest that never
+  surfaced carried a **blank-author comment** (emitted as an empty author
+  object, violating the SDK's required `author.name`), and the only post that
+  ever rendered had no comments. r217 fixes the emitted shape, withdraws the
+  "leave blank" advice for commenters, surfaces the quest's internal id
+  (both r216 quests still carried the blank-project placeholder `q-blank` —
+  invisible in the UI; it never reaches the game, but it hid until now), and
+  files §19 (API v2) and §20 (comment authors).

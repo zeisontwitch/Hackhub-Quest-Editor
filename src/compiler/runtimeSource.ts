@@ -2912,18 +2912,36 @@ function __qeRegisterProject(sdk, PROJECT) {
                            both with a generated persona (seen in the r211
                            probe run: "Kristina Kaczmarek", a drawn avatar).
                            The editor's quest-settings section explains that. */
-                        if (qd.hackhubPost.authorName || qd.hackhubPost.authorAvatar) {
-                            hp.author = {};
-                            if (qd.hackhubPost.authorName) hp.author.name = qd.hackhubPost.authorName;
+                        /* Only a NAMED author ships. The SDK types make
+                           author.name required whenever author is present, so
+                           an avatar without a name cannot ride alone - the
+                           editor's blurbs say so. Blank post author remains
+                           the proven game-persona route (r211). */
+                        if (qd.hackhubPost.authorName) {
+                            hp.author = { name: qd.hackhubPost.authorName };
                             if (qd.hackhubPost.authorAvatar) hp.author.avatar = qd.hackhubPost.authorAvatar;
                         }
                         if (qd.hackhubPost.likes != null) hp.likes = qd.hackhubPost.likes;
                         if (qd.hackhubPost.comments && qd.hackhubPost.comments.length) {
                             hp.comments = qd.hackhubPost.comments.map(function (c) {
-                                var ca = {};
-                                if (c.authorName) ca.name = c.authorName;
-                                if (c.authorAvatar) ca.avatar = c.authorAvatar;
-                                return { author: ca, content: c.content };
+                                var cmt = { content: c.content };
+                                /* The SDK types require a comment author to carry a
+                                   name (author.name is not optional there). A blank
+                                   author used to ride out as an empty author object, which
+                                   breaks that contract - and the only two quests
+                                   that ever failed to surface their feed post both
+                                   carried a blank-author comment, while the one
+                                   post that DID render had no comments at all.
+                                   Blank now means NO author is sent; whether the
+                                   game mints a persona for it is unverified
+                                   (docs/03 §20) - a typed name is the proven
+                                   shape. Same rule for an avatar without a name:
+                                   the pair ships only when a name exists. */
+                                if (c.authorName) {
+                                    cmt.author = { name: c.authorName };
+                                    if (c.authorAvatar) cmt.author.avatar = c.authorAvatar;
+                                }
+                                return cmt;
                             });
                         }
                         this.HackhubPost = hp;

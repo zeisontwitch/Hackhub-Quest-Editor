@@ -1,3 +1,33 @@
+# Handoff — r217
+
+**The r216 retest failed clean — and that failure was the clue.** The export
+carried the extracted asset, zero data-URIs, and the post still never
+surfaced. Working the evidence backwards:
+
+- The game log's two scary lines are old friends, not causes: the API v1
+  compatibility notice and the held `Queue.HandleQuestHackhubPosts` job
+  appear in every session we have on file, **including the vanilla run**.
+- The SDK's own types (`index.d.ts`, 0.24.0) document the feed-post rule:
+  the post appears only while the quest **"hasn't been claimed yet"** —
+  per-profile claim memory is real and documented (explains the r211 probe:
+  rendered once at 1.0.38, claimed, never again on any save). The d.ts also
+  has **no `id` on quests** — the game knows quests by `Name`; our internal
+  `q-blank` never reaches it (both of Zeis's r216 quests carried that
+  invisible placeholder; the editor now shows the id with a confirmed reset).
+- The one contract violation both failing quests shared: a **blank comment
+  author**, emitted as an empty `author: {}` where the types require
+  `author.name`. The only post that ever rendered had no comments. r217
+  emits no author at all when the name is blank (and refuses an avatar
+  without a name, post- and comment-level), withdraws the "leave blank for
+  a generated name" placeholder on commenters, and pins it all with tests —
+  the guard is falsified.
+
+Zeis's retest: **give every commenter a name**, re-export, fresh save — H-01;
+then the blank-comment experiment (H-08) and a fresh profile (H-09) as
+controls. Filed for the developers: §19 (what is API v2? the SDK ships v1
+everywhere) and §20 (does the game mint personas for blank comment authors?).
+
+---
 # Handoff — r216
 
 **Zeis played the r215 round like a player, not a checklist — and it caught a

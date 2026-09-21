@@ -17,6 +17,7 @@ import { generateField } from "@/lib/generate";
 import { ImagePickerField, TagInput } from "./ModFields";
 import { FieldShell, NumberInput, SelectInput, TextArea, TextInput, Toggle } from "./primitives";
 import { NODE_SIM_EDITORS } from "./sims";
+import { Modal } from "@/editor/shell/Overlays";
 
 const TABS = [
     { value: "node", label: "Node" },
@@ -185,9 +186,28 @@ function NodeInspector({ nodeId }: { nodeId: string }) {
 function QuestInspector() {
     const quest = useEditor(selectActiveQuest);
     const updateQuest = useEditor((s) => s.updateQuest);
+    const project = useEditor((s) => s.project);
+    /* The internal id is load-bearing (save data, generated tweet/account ids),
+       so regenerating it is a deliberate, confirmed act - not a typo away. */
+    const [idConfirmOpen, setIdConfirmOpen] = useState(false);
     if (!quest) return <Empty>No quest selected.</Empty>;
 
     const write = (patch: Parameters<typeof updateQuest>[1]) => updateQuest(quest.id, patch);
+
+    const regenerateId = () => {
+        const base =
+            (quest.name || "quest")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "")
+                .slice(0, 32) || "quest";
+        let candidate = "";
+        do {
+            candidate = "q-" + base + "-" + Math.random().toString(16).slice(2, 6);
+        } while (project.quests.some((qq) => qq.id === candidate));
+        updateQuest(quest.id, { id: candidate });
+        setIdConfirmOpen(false);
+    };
 
     const objectiveCount = quest.graph.nodes.filter((n) => n.type === "objective").length;
     const noCompletionPath = quest.graph.nodes.filter(
@@ -197,13 +217,36 @@ function QuestInspector() {
     return (
         <div className="pb-8">
             <Section>Identity</Section>
-            <FieldShell label="Quest identifier" hint="A unique name for this quest, not shown to players. Other quests use it to unlock only after this one is finished.">
+            <FieldShell
+                label="Quest identifier"
+                hint="A unique name for this quest, not shown to players. Other quests use it to unlock only after this one is finished. The game remembers, per player profile, every identifier it has ever claimed - once claimed there, that quest's feed post never shows on that profile again. When a retest refuses to surface its post, give the quest a fresh identifier first."
+            >
                 <TextInput
                     ariaLabel="Quest identifier"
                     value={quest.name}
                     onChange={(name) => write({ name })}
                     mono
                 />
+            </FieldShell>
+            <FieldShell
+                label="Internal id"
+                hint={
+                    quest.id === "q-blank"
+                        ? "The editor's private key for this quest - used for save data and the ids of generated tweets and accounts. The game never sees it; players know the quest by the identifier above. This one is still the blank-project placeholder - harmless, but a real id keeps exports and saves readable."
+                        : "The editor's private key for this quest - used for save data and the ids of generated tweets and accounts. The game never sees it; players know the quest by the identifier above."
+                }
+            >
+                <div className="flex items-center gap-1.5">
+                    <TextInput ariaLabel="Internal id" value={quest.id} onChange={() => {}} mono disabled />
+                    <button
+                        type="button"
+                        className="btn btn-ghost shrink-0"
+                        onClick={() => setIdConfirmOpen(true)}
+                    >
+                        <Icon name="dice" size={13} />
+                        New id
+                    </button>
+                </div>
             </FieldShell>
             <FieldShell label="Display title">
                 <TextInput ariaLabel="Display title" value={quest.title} onChange={(title) => write({ title })} />
@@ -408,9 +451,12 @@ function QuestInspector() {
                     <div className="px-3 pt-2">
                         <p className="mb-1 text-[10px] font-semibold tracking-wider text-ink-3 uppercase">Comments</p>
                         <p className="mb-1.5 text-[10.5px] leading-snug text-ink-4">
-                            Replies on the post, the way the board reads them: a name (leave blank for a
-                            generated one), an optional avatar, and a line of text. Two or three short
-                            ones sell the post as part of the board.
+                            Replies on the post, the way the board reads them: a name, an optional
+                            avatar, and a line of text. Two or three short ones sell the post as part
+                            of the board. Give each commenter a name — the SDK requires one on every
+                            comment, and a blank one is the prime suspect when a feed post never
+                            shows up (both of the r216 playtest failures carried one). Blank now
+                            sends no name at all; whether the game invents one is unverified.
                         </p>
                         {(quest.hackhubPost.comments ?? []).map((c, i) => (
                             <div key={c.id} className="mb-2 grid gap-1.5 rounded-md border border-line/70 bg-surface p-2">
@@ -418,7 +464,7 @@ function QuestInspector() {
                                     <TextInput
                                         ariaLabel={`Comment ${i + 1} author`}
                                         value={c.authorName}
-                                        placeholder="Leave blank for a generated name"
+                                        placeholder="e.g. Riko Voss"
                                         onChange={(authorName) =>
                                             write({
                                                 hackhubPost: {
@@ -515,6 +561,38 @@ function QuestInspector() {
                     </p>
                 )}
             </div>
+
+        <Modal
+            open={idConfirmOpen}
+            onOpenChange={setIdConfirmOpen}
+            title="Give this quest a new internal id?"
+            subtitle={quest.id + " will be replaced"}
+        >
+            <div className="grid gap-3 px-4 py-4">
+                <p className="text-[12px] leading-relaxed text-ink-2">
+                    The internal id keys this quest's save data and the ids of things the editor
+                    generates for it (tweets, accounts, timers). Exports already installed keep
+                    their old id — the moment the quest gets a new one, the game treats what you
+                    ship next as a brand-new quest: old saves forget its claimed and completed
+                    state, and a feed post the profile had retired can appear again.
+                </p>
+                <p className="text-[12px] leading-relaxed text-ink-2">
+                    That last part is the reason this button exists: <strong>when a feed post
+                    refuses to render for a player who has claimed this quest before, a fresh id —
+                    and a fresh identifier above it — is the reset.</strong> Do not use it for
+                    cosmetics mid-project; renaming for looks breaks nothing the game sees, but it
+                    does orphan the old save state.
+                </p>
+                <div className="mt-1 flex items-center justify-end gap-2">
+                    <button type="button" className="btn-ghost" onClick={() => setIdConfirmOpen(false)}>
+                        Keep {quest.id}
+                    </button>
+                    <button type="button" className="btn-primary" onClick={regenerateId}>
+                        Generate a new id
+                    </button>
+                </div>
+            </div>
+        </Modal>
         </div>
     );
 }

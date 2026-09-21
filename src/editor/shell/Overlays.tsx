@@ -70,7 +70,7 @@ export function Toast() {
 
 /* ── Shared modal chrome ─────────────────────────────────────────────────── */
 
-function Modal({
+export function Modal({
     open,
     onOpenChange,
     title,

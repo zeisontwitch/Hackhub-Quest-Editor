@@ -328,7 +328,19 @@ export const useEditor = create<EditorStore>()((set, get) => {
         updateQuest: (id, patch) =>
             mutate((project) => {
                 const quest = project.quests.find((q) => q.id === id);
-                if (quest) Object.assign(quest, patch);
+                if (quest) {
+                    Object.assign(quest, patch);
+                    /* An id swap has to carry the id-keyed state across, or the
+                       editor immediately loses the quest it is editing (the
+                       active-quest pointer and the saved canvas viewport). */
+                    if (patch.id && patch.id !== id) {
+                        if (project.editor.activeQuestId === id) project.editor.activeQuestId = patch.id;
+                        if (project.editor.viewports[id]) {
+                            project.editor.viewports[patch.id] = project.editor.viewports[id];
+                            delete project.editor.viewports[id];
+                        }
+                    }
+                }
             }),
 
         /* Twotter accounts — the Twotter panel writes through these (r185) */

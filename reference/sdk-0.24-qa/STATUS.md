@@ -1,6 +1,6 @@
 # QE24 QA status (2026-09-21)
 
-**ONE OPEN PLAYTEST (retest after r216):** the Hackhub-posting + mail-To rows **H-01…H-07** — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
+**ONE OPEN PLAYTEST (second retest after r217):** the Hackhub-posting + mail-To rows **H-01…H-09** — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
 harness 1.0.24) and are closed — transcript:
 [`QE24-TestResults-Mail.md`](QE24-TestResults-Mail.md). Ten rows, every one
 answered; three real findings came out of it:
@@ -85,20 +85,33 @@ The round this tested is closed: **direct replyable mail, the to=From reply
 recipe, and withdraw-on-quest-end are verified authoring features.** Open for
 the developers: docs/03 §16 (`repliedTo`) and §17 (inbox subjects).
 
-## Open: Hackhub posting + mail To (r215 → r216 retest) — rows H-01…H-07
+## Open: Hackhub posting + mail To (r215 → r216 → r217) — rows H-01…H-09
 
-The first attempt (Zeis authoring in the editor, export r215) **found a real
-compiler bug before a single H-row could run**: quest-level images shipped as
-inline data-URIs, the game's feed could not load them, and the post — and his
-player card's avatar — never rendered. r216 extracts every quest image
-(employer avatar, post avatar/media, comment avatars, quest icon) to
-`assets/*.png` files with mod-relative paths, the same contract mod
-icon/cover always had. His player's-eye pass also fixed the editor: the
-feed-post notice is info-level (was error — a correct setup painted the
-export red), Journal group and Comments gained blurbs, the section moved into
-Behaviour, the Employer/post relationship is documented and now measured
-(H-06), and the XP field says honestly that we have never seen XP in the game
-UI. Checklist: [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md).
+Two attempts, two compiler bugs caught by playing it as a player:
+
+1. **r215:** quest-level images shipped as inline data-URIs the feed cannot
+   load — post and player avatar both broke. r216 extracts every quest image
+   to `assets/*.png` (the contract mod icon/cover always had).
+2. **The r216 retest was clean and still did not surface the post.** The
+   diagnosis round cleared the log's two suspects (the API v1 compat notice
+   and the held `Queue.HandleQuestHackhubPosts` job are in every session on
+   file, vanilla included) and found the real suspect in our own emitted
+   shape: **blank comment authors rode out as empty author objects**,
+   violating the SDK's required `author.name` — and both failing quests
+   carried one while the only post that ever rendered had no comments. r217
+   sends no author at all when a name is blank (persona unverified — §20),
+   withdraws the "leave blank" advice for commenters, and pins the contract
+   in tests (falsified). His player's-eye finds from r216 stand: feed-post
+   notice info-level, Journal/Comments blurbs, section inside Behaviour,
+   employer-vs-poster measured (H-06), XP honestly annotated. The quest's
+   internal id is now visible with a confirmed "new id" reset (both r216
+   quests still carried the invisible `q-blank` placeholder — it never
+   reaches the game, but it hid). The game's "current: API v2" notice is
+   filed as §19; the SDK itself ships v1.
+
+Checklist: [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md)
+— retest with **named** commenters (H-01), the blank-comment experiment
+(H-08), and a fresh profile for the claim-memory proof (H-09).
 
 ## Settled: the moment.js warning is the game's own content — M-09, closed
 

@@ -680,6 +680,14 @@ going away entirely.
    post of any quest that profile has ever claimed. If that is what happens,
    a removal API would also give us a way to re-offer a quest deliberately.
 
+**Update (r217, 2026-09-22):** the lifecycle half of the mystery is answered
+by the SDK's own types after all — `Quest.HackhubPost` in `index.d.ts`
+(SDK 0.24.0, line ~2157): *"The post appears once the quest's
+`QuestsToComplete` prerequisites (if any) are met **and the quest hasn't been
+claimed yet**."* That is per-profile claim memory, documented: our probe post
+rendered once (1.0.38), was claimed, and never rendered again — on any save.
+The removal ask below stands on its own.
+
 **What we would like, any one of these:**
 
 - a `Hackhub.removePost(quest)` (or a flag on quest registration) so a mod
@@ -696,3 +704,53 @@ going away entirely.
 button on the feed post itself**, not in the journal — the post is the
 quest's home while it is an offer. Worth keeping in mind if the lifecycle is
 ever redesigned.
+
+## 19. The game says "current API v2" — the SDK ships v1. What is v2?
+
+**Found while re-testing the feed-post round** (2026-09-22, game 1.3.1 /
+Content SDK 0.24.0).
+
+Every mod the editor exports logs the same line at boot:
+
+```
+[ContentSDK] Mod "…" uses API v1 (current: v2). Running in compatibility mode.
+```
+
+We ship `apiVersion: 1` because the pinned SDK itself does — its README's
+manifest example and its own `build.mjs` scaffold both write `"apiVersion": 1`,
+and `index.d.ts` documents nothing newer. Under that compatibility mode every
+feature we have measured verifies green in game: mail (both send paths),
+Twotter accounts and tweets, timers, the scheduler, quest completion. So
+compat mode is not known to break anything — but "current: v2" implies a
+pipeline we cannot see, and the one feature that has never verified (quest
+feed posts) is exactly the kind of thing a v2 could have re-plumbed.
+
+**What we would like:** any of these —
+
+- what API v2 changes for mods, and whether it is reachable from the public
+  SDK at all;
+- or confirmation that v2 is first-party-only and compatibility mode is the
+  intended permanent state for SDK mods;
+- or a pointer to what (if anything) behaves differently under compatibility
+  mode, so we stop suspecting it when something fails.
+
+## 20. The SDK requires comment authors to have names — does the game mint personas for blank ones?
+
+**Found while diagnosing the never-surfacing feed posts** (2026-09-22).
+
+`QuestHackhubPostComment` in `index.d.ts` requires `author: { name: string }`
+— not optional. The post-level author, by contrast, is documented: *"If
+omitted, the quest's (auto-generated) employer is used, falling back to an
+anonymous 'Hidden User'"* — and we have seen the game generate a full persona
+for a blank post author ("Kristina Kaczmarek", drawn avatar, r211 probe).
+
+Our editor let authors leave a comment's author blank and shipped an **empty
+author object** — a contract violation. Both quests that never surfaced their
+feed post carried one; the only post that ever rendered had no comments. r217
+sends no author at all when the name is blank, but whether the game tolerates
+a missing comment author (and mints a persona, as it does for posts) is
+unverified.
+
+**What we would like:** confirmation of what the engine does with a comment
+whose `author` is absent — persona, anonymous, or a failed post — so the
+editor knows whether "blank" is a feature or must be a required field.

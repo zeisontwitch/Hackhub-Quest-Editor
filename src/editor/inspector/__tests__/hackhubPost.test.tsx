@@ -44,7 +44,7 @@ afterEach(() => localStorage.clear());
 describe("the Hackhub feed post section", () => {
     it("writes a blank post when toggled on, and removes it when toggled off", async () => {
         const user = userEvent.setup();
-        loadQuest(createQuest({ name: "FeedQ", title: "Feed Q", closingObjectiveText: "done", description: "d" }));
+        loadQuest(createQuest({ id: "q-blank", name: "FeedQ", title: "Feed Q", closingObjectiveText: "done", description: "d" }));
         render(<InspectorPanel />);
 
         await user.click(toggleRow(/Post this quest to the Hackhub feed/));
@@ -57,7 +57,7 @@ describe("the Hackhub feed post section", () => {
 
     it("fills the poster name from the dice and keeps the avatar clear for the game persona", async () => {
         const user = userEvent.setup();
-        loadQuest(createQuest({ name: "FeedQ", title: "Feed Q", closingObjectiveText: "done", description: "d" }));
+        loadQuest(createQuest({ id: "q-blank", name: "FeedQ", title: "Feed Q", closingObjectiveText: "done", description: "d" }));
         render(<InspectorPanel />);
         await user.click(toggleRow(/Post this quest to the Hackhub feed/));
 
@@ -73,7 +73,7 @@ describe("the Hackhub feed post section", () => {
 
     it("adds and fills comments", async () => {
         const user = userEvent.setup();
-        loadQuest(createQuest({ name: "FeedQ", title: "Feed Q", closingObjectiveText: "done", description: "d" }));
+        loadQuest(createQuest({ id: "q-blank", name: "FeedQ", title: "Feed Q", closingObjectiveText: "done", description: "d" }));
         render(<InspectorPanel />);
         await user.click(toggleRow(/Post this quest to the Hackhub feed/));
 
@@ -89,5 +89,42 @@ describe("the Hackhub feed post section", () => {
 
         await user.click(screen.getByRole("button", { name: /Remove comment 1/ }));
         expect(currentQuest().hackhubPost!.comments).toHaveLength(0);
+    });
+});
+
+describe("the internal id row (r217)", () => {
+    it("shows the id read-only, and regenerates it only after the confirm dialog", async () => {
+        const user = userEvent.setup();
+        loadQuest(createQuest({ id: "q-blank", name: "FeedQ", title: "Feed Q", closingObjectiveText: "done", description: "d" }));
+        render(<InspectorPanel />);
+
+        /* The editor's private key is visible — the r216 playtest shipped two
+           quests that both still carried the blank-project placeholder,
+           invisible to the author. */
+        expect(screen.getByLabelText("Internal id")).toHaveValue("q-blank");
+
+        await user.click(screen.getByRole("button", { name: /New id/ }));
+        const confirm = await screen.findByText("Generate a new id");
+        await user.click(confirm);
+
+        const id = currentQuest().id;
+        expect(id).toMatch(/^q-feedq-[0-9a-f]{4}$/);
+        expect(screen.getByLabelText("Internal id")).toHaveValue(id);
+
+        /* The store keeps working after the id swap (write targets the new id). */
+        act(() => {
+            useEditor.getState().updateQuest(id, { title: "Renamed after swap" });
+        });
+        expect(currentQuest().title).toBe("Renamed after swap");
+    });
+
+    it("keeps the id when the author backs out of the dialog", async () => {
+        const user = userEvent.setup();
+        loadQuest(createQuest({ id: "q-blank", name: "FeedQ", title: "Feed Q", closingObjectiveText: "done", description: "d" }));
+        render(<InspectorPanel />);
+
+        await user.click(screen.getByRole("button", { name: /New id/ }));
+        await user.click(await screen.findByText(/Keep q-blank/));
+        expect(currentQuest().id).toBe("q-blank");
     });
 });

@@ -2260,14 +2260,33 @@ describe("a briefing mail that actually arrives", () => {
         expect(files.find((f) => f.path === "assets/q1-post-avatar.png")!.content).toBe("AAA");
         /* ...and what the engine receives is the path, not a data-URI. */
         const q = new (registered0(sdk).quests[0])();
-        const eq = q as unknown as { Employer: { avatar?: string }; HackhubPost: { author: { name?: string; avatar?: string }; likes: number; comments: { author: { name?: string; avatar?: string } }[] } };
+        const eq = q as unknown as { Employer: { avatar?: string }; HackhubPost: { author: { name?: string; avatar?: string }; likes: number; comments: { author?: { name?: string; avatar?: string }; content: string }[] } };
         expect(eq.Employer.avatar).toBe("assets/q0-employer.png");
         const hp = eq.HackhubPost;
         expect(hp.author).toEqual({ name: "M. Halloway", avatar: "assets/q1-post-avatar.png" });
         expect(hp.likes).toBe(42);
         expect(hp.comments[0].author).toEqual({ name: "Skeptical Dev", avatar: "assets/q2-comment0.png" });
-        /* No name and no avatar -> an EMPTY author, never a drawn "undefined". */
-        expect(hp.comments[1].author).toEqual({});
+        /* No name -> NO author object. The SDK types require author.name on a
+           comment whenever author is present, and `author: {}` is the one
+           shape both never-surfacing playtest quests shared (r216 round). */
+        expect(hp.comments[1].author).toBeUndefined();
+        expect(hp.comments[1].content).toBe("inbound");
+        /* An avatar without a name cannot ship either - the author key needs
+           its name; a lone avatar would break the contract the same way. */
+        const p3 = mailProject();
+        p3.quests[0].hackhubPost = {
+            content: "no name, just a face",
+            authorAvatar: "data:image/png;base64,DDD",
+            comments: [{ id: "c9", authorName: "", authorAvatar: "data:image/png;base64,EEE", content: "anon" }],
+        };
+        const { sdk: sdk3 } = engineWithMailSend([]);
+        runMod(compileProject(p3).files.find((f) => f.path === "dist/mod.js")!.content, sdk3);
+        const q3 = new (registered0(sdk3).quests[0])() as unknown as {
+            HackhubPost: { author?: unknown; comments: { author?: unknown; content: string }[] };
+        };
+        expect(q3.HackhubPost.author).toBeUndefined();
+        expect(q3.HackhubPost.comments[0].author).toBeUndefined();
+        expect(q3.HackhubPost.comments[0].content).toBe("anon");
         /* Fully blank post: no author object at all, so the game generates. */
         const p2 = mailProject();
         p2.quests[0].hackhubPost = { content: "just this", comments: [] };

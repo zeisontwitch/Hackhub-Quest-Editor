@@ -120,7 +120,7 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
-| 1 | **SDK 0.24 follow-up choices** | Wi-Fi, phone end-flow / quest-ending APIs, the `Ask player` prompt node, and the Scheduler/Time (as the r172/r173 **Timer** node with delay, relative units and fixed-date modes) are exposed and verified. **S-04 is answered** (clock zone: local), and the QA folder is closed with no pending checks — [`reference/sdk-0.24-qa/STATUS.md`](reference/sdk-0.24-qa/STATUS.md) is the ledger. Remaining queue: the phone-proxy/eavesdrop investigation. The **Twotter re-implementation** is done and closed (see **Done recently**, r196). HTTP/curl/DNS collaborator nodes stay fenced until SteelWaffe answers the upstream gaps. See [`docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md`](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md). |
+| 1 | **SDK 0.24 follow-up choices** | Wi-Fi, phone end-flow / quest-ending APIs, the `Ask player` prompt node, and the Scheduler/Time (as the r172/r173 **Timer** node with delay, relative units and fixed-date modes) are exposed and verified. **S-04 is answered** (clock zone: local), and the QA folder is closed with no pending checks — [`reference/sdk-0.24-qa/STATUS.md`](reference/sdk-0.24-qa/STATUS.md) is the ledger. (The phone-proxy/eavesdrop investigation was **dropped** on Zeis's call, 2026-09-21 — it had lingered in this queue long after its round ended; do not re-add it.) The **Twotter re-implementation** is done and closed (see **Done recently**, r196). HTTP/curl/DNS collaborator nodes stay fenced until SteelWaffe answers the upstream gaps. See [`docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md`](docs/plans/r167-wifi-exposure-and-sdk024-roadmap.md). |
 
 ### Closed from In progress
 

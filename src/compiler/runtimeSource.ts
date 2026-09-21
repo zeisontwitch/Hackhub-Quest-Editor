@@ -731,6 +731,10 @@ function __qeRegisterProject(sdk, PROJECT) {
         var mailNodes = g.nodes.filter(function (n) { return n.type === "comms.dialogue" && n.data.kind === "mail"; });
         var mailIndex = {};
         var mailFrom = {};
+        /* r215: the To field, honoured at last — it was in the schema and the
+           sim ("leave blank to send it to the player") but the send paths
+           never read it, so every graph mail went to the player. */
+        var mailTo = {};
         /* r211: the withdraw-on-quest-end flags, kept out of the Mails array
            on purpose — that array is handed to the engine as Quest.Mails, and
            the flag is ours, not a QuestMailDefinition field. */
@@ -738,12 +742,14 @@ function __qeRegisterProject(sdk, PROJECT) {
         mailNodes.forEach(function (n, i) {
             mailIndex[n.id] = i;
             if (n.data.mail.from) mailFrom[n.id] = n.data.mail.from;
+            if (n.data.mail.to) mailTo[n.id] = n.data.mail.to;
             if (n.data.mail.withdrawOnQuestEnd) mailWithdraw[n.id] = true;
         });
 
         var Mails = mailNodes.map(function (n) {
             var m = n.data.mail;
             var out = { title: m.subject, content: __QE.htmlToText(m.content) };
+            if (m.to) out.to = m.to;
             if (m.replyable) out.replyable = true;
             if (m.attachment && m.attachment.name) out.attachment = m.attachment;
             return out;
@@ -1393,6 +1399,7 @@ function __qeRegisterProject(sdk, PROJECT) {
             if (questRef && questRef.Mails && questRef.Mails[mi] &&
                 String(questRef.Mails[mi].title || "").length > 0) {
                 var filledMail = { title: subject, content: content };
+                if (baseMail.to) filledMail.to = baseMail.to;
                 if (baseMail.replyable) filledMail.replyable = true;
                 if (baseMail.attachment) filledMail.attachment = baseMail.attachment;
                 questRef.Mails[mi] = filledMail;
@@ -1416,7 +1423,10 @@ function __qeRegisterProject(sdk, PROJECT) {
                 var direct = { subject: subject, content: content };
                 if (from) direct.from = from;
                 if (wantsReply) direct.replyable = true;
-                var to = __QE.safe(function () { return sdk.Mail.getPlayerEmail ? sdk.Mail.getPlayerEmail() : ""; });
+                /* r215: the node's To field wins; the player's address is the
+                   fallback (the sim's "leave blank to send it to the player",
+                   which until now was the only thing it could do). */
+                var to = mailTo[node.id] || __QE.safe(function () { return sdk.Mail.getPlayerEmail ? sdk.Mail.getPlayerEmail() : ""; });
                 if (to) direct.to = to;
                 if (baseMail.attachment && baseMail.attachment.name) {
                     direct.attachments = [{
@@ -1456,7 +1466,7 @@ function __qeRegisterProject(sdk, PROJECT) {
                 } else {
                     try {
                         if (questRef.sendMail) {
-                            questRef.sendMail(mi, from || undefined);
+                            questRef.sendMail(mi, from || undefined, mailTo[node.id] || undefined);
                             how = "Quest.sendMail(" + mi + ")";
                         }
                     } catch (e2) {
@@ -2897,11 +2907,23 @@ function __qeRegisterProject(sdk, PROJECT) {
                     if (qd.hackhubPost) {
                         var hp = { content: qd.hackhubPost.content };
                         if (qd.hackhubPost.media) hp.media = qd.hackhubPost.media;
-                        if (qd.hackhubPost.authorName) hp.author = { name: qd.hackhubPost.authorName };
+                        /* r215: the avatar rides along when the author set one.
+                           Blank name/avatar is CONTRACT here - the game fills
+                           both with a generated persona (seen in the r211
+                           probe run: "Kristina Kaczmarek", a drawn avatar).
+                           The editor's quest-settings section explains that. */
+                        if (qd.hackhubPost.authorName || qd.hackhubPost.authorAvatar) {
+                            hp.author = {};
+                            if (qd.hackhubPost.authorName) hp.author.name = qd.hackhubPost.authorName;
+                            if (qd.hackhubPost.authorAvatar) hp.author.avatar = qd.hackhubPost.authorAvatar;
+                        }
                         if (qd.hackhubPost.likes != null) hp.likes = qd.hackhubPost.likes;
                         if (qd.hackhubPost.comments && qd.hackhubPost.comments.length) {
                             hp.comments = qd.hackhubPost.comments.map(function (c) {
-                                return { author: { name: c.authorName }, content: c.content };
+                                var ca = {};
+                                if (c.authorName) ca.name = c.authorName;
+                                if (c.authorAvatar) ca.avatar = c.authorAvatar;
+                                return { author: ca, content: c.content };
                             });
                         }
                         this.HackhubPost = hp;

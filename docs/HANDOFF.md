@@ -1,3 +1,42 @@
+# Handoff — r215
+
+**The Hackhub feed is authorable, and the last mail bug is closed.** Zeis
+approved the plan with three additions, all in: likes + comments (modeled on
+the Twotter node's fields — the game almost certainly reuses that machinery),
+a cleanup route (verified impossible — no removal surface exists; requested
+as docs/03 **§18**, which also records his feed-Complete-button note), and
+the Twotter-reuse hunch (the Employer/post author shapes mirror each other;
+the employer section gained its missing avatar field).
+
+Shipped:
+
+- **Quest settings → "Hackhub feed post"**: toggle (off ships nothing), post
+  text, poster name (dice `fullName`), poster avatar (the mod-icon upload
+  component), likes, comments (name + optional avatar + text, add/remove).
+  Blank anything = the game's generated persona — the r211 run proved the
+  game draws "Kristina Kaczmarek"s for blank fields, and the section says so.
+- **Runtime**: `HackhubPost.author`/comment authors now carry `avatar` (the
+  schema had it since r166; the runtime dropped it). Empty author fields
+  produce an empty/absent author — never `undefined` rendered.
+- **Mail To fixed**: the node's To address wins on the direct path and rides
+  `sendMail(index, from, to)` on the fallback; blank still means the player.
+  The `Mails[]` journal copy keeps `to` too.
+- Manual: the Quest settings guide gained the feed-post section; the
+  coverage gate caught two wording issues on the way in (broken anchor,
+  "API" jargon) and they are fixed.
+
+Tests: 5 new (3 UI, 2 runtime pins), 3 mutations falsified (avatars dropped,
+to ignored, toggle-off keeps post) — all red → restored. Gates: 1,795 tests /
+89 files, typecheck, build.
+
+**Zeis's checklist** (authored in the editor this time — it dogfoods the UI):
+[`../reference/sdk-0.24-qa/QE24-Playtest-HackhubPosting.md`](../reference/sdk-0.24-qa/QE24-Playtest-HackhubPosting.md)
+— H-01 the post renders with OUR avatar (the one thing jsdom cannot see),
+H-02 likes + drawn commenter avatar, H-03 the feed Complete button, H-04 the
+once-claimed-post mystery on a second save, H-05 the mail To address.
+
+---
+
 # Handoff — r214
 
 **The mail-authoring playtest ran green; the round is closed and nothing is

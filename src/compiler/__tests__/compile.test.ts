@@ -2209,6 +2209,62 @@ describe("a briefing mail that actually arrives", () => {
         expect(calls).toContain("complete:send-a-reply");
     });
 
+    it("delivers a graph mail to the address in its To field, falling back to the player (r215)", async () => {
+        /* The To field sat in the schema and the sim while both send paths
+           ignored it — every graph mail went to the player. Now the node's
+           address wins, and blank still means the player. */
+        const calls: string[] = [];
+        const { sdk } = engineWithMailSend(calls);
+        runMod(modJs(false, { to: "handler@portline-shipping.com" }), sdk);
+        const q = new (registered0(sdk).quests[0])();
+        q.OnStart();
+        await new Promise((r) => setTimeout(r, 1700));
+        expect(calls).toContain("Mail.send:One file:i.faber@ghostmail.io:handler@portline-shipping.com");
+        /* ...and the default is unchanged: no To means the player. */
+        calls.length = 0;
+        const { sdk: sdk2 } = engineWithMailSend(calls);
+        runMod(modJs(), sdk2);
+        const q2 = new (registered0(sdk2).quests[0])();
+        q2.OnStart();
+        await new Promise((r) => setTimeout(r, 1700));
+        expect(calls).toContain("Mail.send:One file:i.faber@ghostmail.io:player@gomail.com");
+    });
+
+    it("hands the Hackhub post's avatars to the engine, and nothing when blank (r215)", () => {
+        /* The schema carried authorAvatar (post + comments) since r166; the
+           runtime dropped it on the way to this.HackhubPost. The game draws
+           personas for blank fields, so blank must stay blank — but a set
+           avatar must reach the feed. */
+        const p = mailProject();
+        p.quests[0].hackhubPost = {
+            content: "Need a careful courier.",
+            authorName: "M. Halloway",
+            authorAvatar: "data:image/png;base64,AAA",
+            likes: 42,
+            comments: [
+                { id: "c1", authorName: "Skeptical Dev", authorAvatar: "data:image/png;base64,BBB", content: "pics" },
+                { id: "c2", authorName: "", content: "inbound" },
+            ],
+        };
+        const calls: string[] = [];
+        const { sdk } = engineWithMailSend(calls);
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const q = new (registered0(sdk).quests[0])();
+        const hp = (q as unknown as { HackhubPost: { author: { name?: string; avatar?: string }; likes: number; comments: { author: { name?: string; avatar?: string } }[] } }).HackhubPost;
+        expect(hp.author).toEqual({ name: "M. Halloway", avatar: "data:image/png;base64,AAA" });
+        expect(hp.likes).toBe(42);
+        expect(hp.comments[0].author).toEqual({ name: "Skeptical Dev", avatar: "data:image/png;base64,BBB" });
+        /* No name and no avatar → an EMPTY author, never a drawn "undefined". */
+        expect(hp.comments[1].author).toEqual({});
+        /* Fully blank post: no author object at all, so the game generates. */
+        const p2 = mailProject();
+        p2.quests[0].hackhubPost = { content: "just this", comments: [] };
+        const { sdk: sdk2 } = engineWithMailSend([]);
+        runMod(compileProject(p2).files.find((f) => f.path === "dist/mod.js")!.content, sdk2);
+        const q2 = new (registered0(sdk2).quests[0])() as unknown as { HackhubPost: Record<string, unknown> };
+        expect(q2.HackhubPost.author).toBeUndefined();
+    });
+
     it("warns when a replyable mail has no From — a reply can only be matched by to = that address", () => {
         const p = mailProject(true, { from: "" });
         const ws = compileProject(p).warnings;

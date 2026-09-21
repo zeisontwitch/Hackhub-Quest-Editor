@@ -10,7 +10,7 @@
 <div class="wrap">
 <nav class="toc" aria-label="Handbook contents">
   <div class="brand"><span class="dot"></span><strong>Quest Editor</strong></div>
-  <p class="build">Handbook · build 2026-09-21.r214</p>
+  <p class="build">Handbook · build 2026-09-21.r215</p>
   <div class="search">
     <input type="search" placeholder="Search the handbook…" aria-label="Search the handbook" />
     <div class="results" role="listbox" aria-label="Search results"></div>
@@ -72,7 +72,7 @@ keeps the floating panel inside the window, so you cannot lose it past an
 edge.</div>
 
 <h2 id="quest-settings">Quest settings</h2>
-<p>Five groups, thirteen settings. Most quests need four of them.</p>
+<p>Six groups. Most quests need four of them.</p>
 <h3>Identity</h3>
 <dl class="facts-list">
   <dt>Quest identifier</dt><dd>Internal. Unique across your mod, and the thing
@@ -83,6 +83,30 @@ edge.</div>
   <dt>Journal group</dt><dd>Folders the player's journal into groups. Two quests
   in the same group read as one story.</dd>
 </dl>
+<h3>Hackhub feed post</h3>
+<p>The toggle that puts the quest on the Hackhub feed as a job the player can
+accept on the spot — the organic way to be found, next to the scripted
+<b class="ui">Claim quest</b> node for quests the story starts itself. Quests
+accepted from the feed complete from the post itself, not the journal.</p>
+<dl class="facts-list">
+  <dt>Post this quest to the Hackhub feed</dt><dd>Off (the default) ships no
+  post at all.</dd>
+  <dt>Post text</dt><dd>The feed body — the pitch the player accepts.</dd>
+  <dt>Poster name</dt><dd>Who seems to have written the post. Blank, the game
+  generates a name; your own reads best when it is tied to the story rather
+  than a name anyone could have.</dd>
+  <dt>Poster avatar</dt><dd>A PNG or JPG. Blank, the game draws one — a mod
+  that ships no avatars still looks at home on the board.</dd>
+  <dt>Likes</dt><dd>Cosmetic. In-demand jobs have likes; desperate ones do
+  not, and sometimes that is the fiction.</dd>
+  <dt>Comments</dt><dd>Any number, each with a name, an optional drawn or
+  uploaded avatar, and a line of text.</dd>
+</dl>
+<p><b>About the game-generated persona:</b> every field you leave blank is
+filled by the game with a generated name and a drawn avatar, so a post with
+nothing set still looks like it belongs. Feed posts are part of the quest's
+registration — there is currently no way for a mod to take one back down;
+asking the game's developers for that is on the list.</p>
 <h3>Rewards</h3>
 <p><b class="ui">Money</b> and <b class="ui">XP</b>, both plain numbers. These
 are what the game pays for finishing the quest, which is separate from anything
@@ -379,7 +403,7 @@ with <kbd>Ctrl</kbd>+<kbd>Z</kbd>, exactly like typing.</div>
 
 <div class="pagefoot"><a href="nodes.html">← Node reference</a><a class="next" href="how-do-i.html">How do I… →</a></div>
 <footer class="colophon">
-  HackHub Quest Editor handbook · documents editor build 2026-09-21.r214 ·
+  HackHub Quest Editor handbook · documents editor build 2026-09-21.r215 ·
   every figure on these pages is taken from the editor's own source.
 </footer>
 </main>

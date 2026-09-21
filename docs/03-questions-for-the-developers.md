@@ -653,3 +653,46 @@ prints one raw entry per audit from now on.)
 **What we would like:** `getInbox()` entries filled as declared (or the
 declaration narrowed to what the engine actually returns). A working `subject`
 would also let a mod show honest "mail still in the inbox?" checks.
+
+## 18. Feed posts cannot be taken back down — is there a removal API?
+
+**Found while building the editor's Hackhub-posting section** (2026-09-21,
+game 1.3.1 / Content SDK 0.24).
+
+A quest's `HackhubPost` is registration data: the post lives on the feed for
+as long as the mod is installed, and every official quest's post we have seen
+behaves the same way — persistent. There is no `Hackhub.removePost` (or any
+equivalent) in the SDK's surface, and `Quest` has no unpost: the closest
+things are `Quest.unclaim` (removes the *claim*, not the post) and the mod
+going away entirely.
+
+**Why a mod would want it.** Two cases, both real for us:
+
+1. **Bug recovery.** A shipped post with a typo, a broken reward, or a story
+   change can never be withdrawn — the author's only options are shipping a
+   new version that *replaces* the registration (and hoping the engine
+   refreshes the post) or leaving the wrong post up.
+2. **The once-claimed mystery.** In our QA runs a feed post rendered exactly
+   once and then never again — not even on a fresh save — while the same
+   quest claimed fine through the API. Our working theory is that the engine
+   remembers *claimed quests per profile* (the same persistence class that
+   keeps mod Twotter accounts alive after the mod is deleted) and retires the
+   post of any quest that profile has ever claimed. If that is what happens,
+   a removal API would also give us a way to re-offer a quest deliberately.
+
+**What we would like, any one of these:**
+
+- a `Hackhub.removePost(quest)` (or a flag on quest registration) so a mod
+  can take its own post down;
+- or documentation of the intended post lifecycle — whether posts are meant
+  to be permanent, whether replacing a mod's registration refreshes the
+  post, and whether the engine really retires posts of once-claimed quests
+  per profile;
+- or, at minimum, confirmation that the post's *author* fields (name, drawn
+  avatar) are honored from `HackhubPost.author` — we now pass them through
+  and a game session is pending to confirm they render.
+
+**Note for the road:** quests accepted from the feed show their **Complete
+button on the feed post itself**, not in the journal — the post is the
+quest's home while it is an offer. Worth keeping in mind if the lifecycle is
+ever redesigned.

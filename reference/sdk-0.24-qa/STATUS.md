@@ -1,6 +1,6 @@
 # QE24 QA status (2026-09-21)
 
-**NOTHING OPEN.** The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
+**ONE OPEN PLAYTEST:** the r215 Hackhub-posting + mail-To rows **H-01…H-05** — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
 harness 1.0.24) and are closed — transcript:
 [`QE24-TestResults-Mail.md`](QE24-TestResults-Mail.md). Ten rows, every one
 answered; three real findings came out of it:
@@ -84,6 +84,19 @@ feed-post quest before filing a developer question.
 The round this tested is closed: **direct replyable mail, the to=From reply
 recipe, and withdraw-on-quest-end are verified authoring features.** Open for
 the developers: docs/03 §16 (`repliedTo`) and §17 (inbox subjects).
+
+## Open: Hackhub posting + mail To (r215) — rows H-01…H-05
+
+The editor can author feed posts now (quest-settings section, dice name,
+uploaded avatar, likes, comments; blank = the game's generated persona) and
+the runtime passes the avatars the compiler used to drop. The mail node's To
+field is honored on both send paths. Checklist:
+[`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md) — the
+post is authored in the editor, so this session also dogfoods the UI. The
+unknowns the session settles: whether the engine renders `author.avatar`
+(the drawn-avatar fallback is proven; ours is not), and the once-claimed
+feed-post mystery (H-04). Removal of feed posts: no API exists — requested
+from the developers as docs/03 **§18**.
 
 ## Settled: the moment.js warning is the game's own content — M-09, closed
 

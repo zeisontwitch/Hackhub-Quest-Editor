@@ -4,6 +4,7 @@
  * setting lives.
  */
 import { useEffect, useMemo, useState } from "react";
+import { nanoid } from "nanoid";
 import * as Tabs from "@radix-ui/react-tabs";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/Icon";
@@ -334,6 +335,154 @@ function QuestInspector() {
                     mono
                 />
             </FieldShell>
+            <ImagePickerField
+                label="Employer avatar"
+                hint="Optional. Left blank, the game draws one. The employer is who the quest is from — on a Hackhub feed post this is very likely the face next to it."
+                value={quest.employer.avatar}
+                onChange={(avatar) => write({ employer: { ...quest.employer, avatar } })}
+                ariaLabel="Employer avatar"
+            />
+
+            <Section>Hackhub feed post</Section>
+            <Toggle
+                label="Post this quest to the Hackhub feed"
+                hint="Puts the quest on the feed as a job the player can accept right there. Leave everything below blank and the game generates the poster's name and a drawn avatar — your quest then reads like any other post on the board. Quests accepted from the feed complete from the post itself, not the journal."
+                checked={!!quest.hackhubPost}
+                onChange={(on) =>
+                    write({
+                        hackhubPost: on
+                            ? { content: "", authorName: "", likes: undefined, comments: [] }
+                            : undefined,
+                    })
+                }
+            />
+            {quest.hackhubPost && (
+                <>
+                    <FieldShell label="Post text" hint="The feed body. This is the pitch the player accepts — say what the job is and who wants it done.">
+                        <TextArea
+                            ariaLabel="Hackhub post text"
+                            value={quest.hackhubPost.content}
+                            onChange={(content) => write({ hackhubPost: { ...quest.hackhubPost!, content } })}
+                            rows={4}
+                        />
+                    </FieldShell>
+                    <FieldShell label="Poster name" hint="Blank = the game generates one. A name nobody else on the board would use — something tied to your story — reads best.">
+                        <TextInputWithGenerate
+                            ariaLabel="Hackhub poster name"
+                            value={quest.hackhubPost.authorName ?? ""}
+                            onChange={(authorName) => write({ hackhubPost: { ...quest.hackhubPost!, authorName } })}
+                            onGenerate={() =>
+                                write({ hackhubPost: { ...quest.hackhubPost!, authorName: generateField("fullName") } })
+                            }
+                            generateLabel="full name"
+                        />
+                    </FieldShell>
+                    <ImagePickerField
+                        label="Poster avatar"
+                        hint="Optional. Blank = the game draws one."
+                        value={quest.hackhubPost.authorAvatar}
+                        onChange={(authorAvatar) => write({ hackhubPost: { ...quest.hackhubPost!, authorAvatar } })}
+                        ariaLabel="Hackhub poster avatar"
+                    />
+                    <FieldShell label="Likes" hint="Cosmetic, but it sells the post: a job with 300 likes reads in demand, one with 0 reads desperate — sometimes that is the point.">
+                        <NumberInput
+                            ariaLabel="Hackhub post likes"
+                            value={quest.hackhubPost.likes ?? 0}
+                            min={0}
+                            onChange={(likes) => write({ hackhubPost: { ...quest.hackhubPost!, likes } })}
+                        />
+                    </FieldShell>
+
+                    <div className="px-3 pt-2">
+                        <p className="mb-1.5 text-[10px] font-semibold tracking-wider text-ink-3 uppercase">Comments</p>
+                        {(quest.hackhubPost.comments ?? []).map((c, i) => (
+                            <div key={c.id} className="mb-2 grid gap-1.5 rounded-md border border-line/70 bg-surface p-2">
+                                <div className="flex items-center gap-1.5">
+                                    <TextInput
+                                        ariaLabel={`Comment ${i + 1} author`}
+                                        value={c.authorName}
+                                        placeholder="Commenter name"
+                                        onChange={(authorName) =>
+                                            write({
+                                                hackhubPost: {
+                                                    ...quest.hackhubPost!,
+                                                    comments: (quest.hackhubPost!.comments ?? []).map((x) =>
+                                                        x.id === c.id ? { ...x, authorName } : x,
+                                                    ),
+                                                },
+                                            })
+                                        }
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn-default shrink-0"
+                                        aria-label={`Remove comment ${i + 1}`}
+                                        onClick={() =>
+                                            write({
+                                                hackhubPost: {
+                                                    ...quest.hackhubPost!,
+                                                    comments: (quest.hackhubPost!.comments ?? []).filter((x) => x.id !== c.id),
+                                                },
+                                            })
+                                        }
+                                    >
+                                        <Icon name="trash" size={12} />
+                                    </button>
+                                </div>
+                                <TextArea
+                                    ariaLabel={`Comment ${i + 1} text`}
+                                    value={c.content}
+                                    onChange={(content) =>
+                                        write({
+                                            hackhubPost: {
+                                                ...quest.hackhubPost!,
+                                                comments: (quest.hackhubPost!.comments ?? []).map((x) =>
+                                                    x.id === c.id ? { ...x, content } : x,
+                                                ),
+                                            },
+                                        })
+                                    }
+                                    rows={2}
+                                />
+                                <ImagePickerField
+                                    label="Commenter avatar"
+                                    hint="Optional. Blank = the game draws one."
+                                    value={c.authorAvatar}
+                                    onChange={(authorAvatar) =>
+                                        write({
+                                            hackhubPost: {
+                                                ...quest.hackhubPost!,
+                                                comments: (quest.hackhubPost!.comments ?? []).map((x) =>
+                                                    x.id === c.id ? { ...x, authorAvatar } : x,
+                                                ),
+                                            },
+                                        })
+                                    }
+                                    ariaLabel={`Comment ${i + 1} avatar`}
+                                />
+                            </div>
+                        ))}
+                        <button
+                            type="button"
+                            className="btn-default"
+                            onClick={() =>
+                                write({
+                                    hackhubPost: {
+                                        ...quest.hackhubPost!,
+                                        comments: [
+                                            ...(quest.hackhubPost!.comments ?? []),
+                                            { id: nanoid(8), authorName: "", content: "" },
+                                        ],
+                                    },
+                                })
+                            }
+                        >
+                            <Icon name="plus" size={12} />
+                            Add a comment
+                        </button>
+                    </div>
+                </>
+            )}
 
             <Section>Health</Section>
             <div className="px-3 py-2 text-[11.5px] leading-relaxed text-ink-3">

@@ -391,6 +391,12 @@ var QA_QUESTS = [
         what: "sends its replyable Mails[0] through this.sendMail(0) at start (M-06: does the Reply button draw on the quest path?), and its end hook sweeps the probe mails once `qe24 mail cleanup on` is armed (M-07).",
     },
     {
+        alias: "mailauth",
+        name: "QESdk024MailAuthoringQa",
+        title: "Mail authoring probe (r211)",
+        what: "three mails from one start - keep me (control), withdraw me (leaves at quest end), reply to me (Reply button + the to=From reply trigger). Complete the objective, then read which mails survived.",
+    },
+    {
         alias: "surface",
         name: "QESdk024EditorQa",
         title: "QE SDK 0.24 editor QA",

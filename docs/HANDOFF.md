@@ -26,6 +26,12 @@ replyable mail node). Editor stamps → `2026-09-20.r211`. Field count stays
 does not enumerate. Five mutations falsified (direct flag, arming, drain case,
 warning recipe, ledger). 1,789 tests / 88 files green; typecheck + build clean.
 
+**The playtest probe shipped with the round:** quest `QESdk024MailAuthoringQa`
+in export **1.0.38** (claimed from its Hackhub feed post, or `qe24 run
+mailauth` on harness 1.0.26), checklist in
+[`../reference/sdk-0.24-qa/QE24-Playtest-MailAuthoring.md`](../reference/sdk-0.24-qa/QE24-Playtest-MailAuthoring.md),
+rows W-01…W-05 open in STATUS.
+
 **For Zeis to playtest** (jsdom cannot see these):
 1. an editor-authored replyable mail draws its **Reply button**;
 2. replying fires a `Mail.Sent`-on-`to` trigger and ticks the objective;

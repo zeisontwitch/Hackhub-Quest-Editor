@@ -18,7 +18,7 @@ npm run build
 
 ## What the editor compiled for you
 
-- Quests: QESdk024EditorQa, QESdk024TimerQa, QESdk024TimerCalQa, QESdk024WaitMonthQa, QESdk024TwotterQa, QESdk024TwotterShareQa, QESdk024TwotterPostEventQa
+- Quests: QESdk024EditorQa, QESdk024TimerQa, QESdk024TimerCalQa, QESdk024WaitMonthQa, QESdk024TwotterQa, QESdk024TwotterShareQa, QESdk024TwotterPostEventQa, QESdk024MailAuthoringQa
 - Websites: qe24-website.test
 - Permissions requested: network, mail, events, ui
 
@@ -31,7 +31,9 @@ npm run build
 - Twotter QA (T-08/T-09/T-10/T-11/T-13): nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.
 - Twotter QA (T-12: two quests, one account): nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.
 - Twotter QA (T-13: does Twotter.Post ever fire?): nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.
+- Mail authoring probe: the player claims this one from its Hackhub feed post — nothing in it runs until they do. Turn on “Start automatically” in the quest's Behaviour settings if it should begin the moment the mod loads.
 - QESdk024EditorQa: “Create Wi-Fi” exports as a native access point in HackHub 1.3.0+. Current QA found one game display wart: Bettercap may show no network name after targeting the AP by BSSID, but scanning, joining and cracking still worked.
+- QESdk024MailAuthoringQa: “QE24 authoring: reply to me” lets the player reply. The mail goes out with its reply flag and the Reply button draws (proven in game, 2026-09-20). The player's reply arrives addressed to your From address “qa-reply@qe24.test” — to react to it, trigger on the Mail.Sent event where “to” contains that address; a reply carries no reference to the mail it answers.
 - qe24-website.test: 1 unlisted page (/hidden/result). Nothing links to it and the in-game search will not show it, so the player reaches it only by typing the address or by running dirhunter on the host — which is exactly what makes a good hiding place for a clue. If you meant this to be findable normally, turn on “Listed in search” for the page.
 <!--
 Hand-maintained. `npm run gen:qa-export` appends this file to the compiled

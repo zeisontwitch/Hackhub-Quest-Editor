@@ -374,13 +374,16 @@ describe("r179 raw harness — the Twotter probe", () => {
            a tester's desktop and start menu, so `qe24 extras cleanup` now
            removes every QE24 registration id the project ever used, and the
            QA export ships no extras data any more. */
-        expect(manifest.version).toBe("1.0.25");
+        expect(manifest.version).toBe("1.0.26");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
         expect(code).toContain('sub === "mail"');
         expect(code).toContain('alias: "mail"');
         expect(code).toContain("sdk.RegisterQuest(QE24MailQa);");
+        /* r211's authoring probe rides the launcher too. */
+        expect(code).toContain('alias: "mailauth"');
+        expect(code).toContain("QESdk024MailAuthoringQa");
         /* The retired probes' leftovers are cleanable, and the probes' verbs
            are gone. */
         expect(code).toContain('verb === "cleanup"');
@@ -876,6 +879,7 @@ describe("r181 raw harness — starting a quest on demand", () => {
             "QESdk024TwotterShareQa",
             "QESdk024TwotterPostEventQa",
             "QESdk024MailQa",
+            "QESdk024MailAuthoringQa",
             "QESdk024EditorQa",
         ]);
         expect(tools.text()).toContain("Unclaimed:");

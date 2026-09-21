@@ -1,6 +1,6 @@
 # QE24 QA status (2026-09-20)
 
-**NOTHING OPEN.** The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
+**ONE OPEN PLAYTEST, no open questions:** the r211 mail-authoring probe — quest `QESdk024MailAuthoringQa`, export **1.0.38**, rows **W-01…W-05** in [`QE24-Playtest-MailAuthoring.md`](QE24-Playtest-MailAuthoring.md). It needs a game session; nothing else waits on it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
 harness 1.0.24) and are closed — transcript:
 [`QE24-TestResults-Mail.md`](QE24-TestResults-Mail.md). Ten rows, every one
 answered; three real findings came out of it:
@@ -60,6 +60,18 @@ or deliberately shelved (S-10, the short-month clamp, is shelved by the
 author's decision rather than passed, and is marked as such). A future round
 that needs an in-game check adds a *new* row here and a new harness version —
 never a re-run of the ones below.
+
+## Open: the mail-authoring playtest (r211) — export 1.0.38, `QESdk024MailAuthoringQa`
+
+r211 turned the M-answers into editor features (direct replyable send,
+withdraw-on-quest-end, the to=From reply recipe). The probe quest ships in the
+QA export (**1.0.38**) and the `qe24 run` launcher (harness **1.0.26**,
+`qe24 run mailauth`); it can also be claimed from its Hackhub feed post.
+Full checklist with install notes and the honest-failure log lines to watch:
+[`QE24-Playtest-MailAuthoring.md`](QE24-Playtest-MailAuthoring.md). Rows:
+**W-01** three mails arrive, Reply button on the right one · **W-02** a reply
+ticks the `Mail.Sent`-on-`to` objective · **W-03** *withdraw me* leaves at
+Complete · **W-04** still gone after a reload · **W-05** abandon path.
 
 ## Settled: the moment.js warning is the game's own content — M-09, closed
 

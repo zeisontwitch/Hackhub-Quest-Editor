@@ -4,7 +4,7 @@
   "mod": {
     "id": "qe-sdk-024-editor-qa",
     "name": "QE SDK 0.24 Editor QA Scaffold",
-    "version": "1.0.37",
+    "version": "1.0.38",
     "author": "HackHub Quest Editor",
     "description": "Evidence-only project for SDK 0.24 in-game verification: native Wi-Fi, HTTP/curl events, the Timer node delay and calendar modes, the Twotter node (accounts, backdated series, cleanup), and the pack extras (start-menu entry, desktop widget, right-click entries, translated words). Nothing auto-starts - claim one quest at a time with the harness command qe24 run - so a tester sees one row's noise, not five.",
     "tags": [
@@ -1777,6 +1777,234 @@
             "source": "qe-tw3-post-trigger",
             "sourceHandle": "when",
             "target": "qe-tw3-obj-post-event",
+            "targetHandle": "trigger",
+            "kind": "condition"
+          }
+        ]
+      }
+    },
+    {
+      "id": "q-mail-authoring-qa",
+      "name": "QESdk024MailAuthoringQa",
+      "title": "Mail authoring probe",
+      "description": "Three mails arrive. One stays, one vanishes when the quest ends, one takes a reply. Proves the r211 authoring paths in game.",
+      "group": "side",
+      "rewards": {
+        "money": 0,
+        "xp": 0
+      },
+      "employer": {},
+      "autoStart": false,
+      "autoComplete": false,
+      "questsToComplete": [],
+      "abandonable": true,
+      "hasCompleteButton": false,
+      "hideObjectivesWhenDone": true,
+      "closingObjectiveText": "Reply sent — now check which mails survived.",
+      "hackhubPost": {
+        "content": "QA probe (r211): three mails, one reply. Accept to run the mail-authoring probe.",
+        "comments": []
+      },
+      "dialog": [],
+      "dataKeys": [],
+      "graph": {
+        "nodes": [
+          {
+            "id": "entry-start1",
+            "type": "entry.start",
+            "position": {
+              "x": 0,
+              "y": 0
+            },
+            "data": {}
+          },
+          {
+            "id": "comms-dialogue2",
+            "type": "comms.dialogue",
+            "position": {
+              "x": 360,
+              "y": 160
+            },
+            "data": {
+              "kind": "mail",
+              "phone": {
+                "branch": "default",
+                "startIndex": 0,
+                "continueMode": "onEnd"
+              },
+              "kisscord": {
+                "contactId": "",
+                "messages": []
+              },
+              "mail": {
+                "from": "qa-authoring@qe24.test",
+                "subject": "QE24 authoring: keep me",
+                "content": "This one is the control. It has no flags at all.\n\nWhen the quest ends it should still be here, and after a save and reload it should STILL be here.",
+                "replyable": false,
+                "withdrawOnQuestEnd": false
+              },
+              "weechat": {
+                "host": "",
+                "password": "",
+                "registerServer": true,
+                "messages": []
+              },
+              "postLive": false
+            }
+          },
+          {
+            "id": "comms-dialogue3",
+            "type": "comms.dialogue",
+            "position": {
+              "x": 720,
+              "y": 160
+            },
+            "data": {
+              "kind": "mail",
+              "phone": {
+                "branch": "default",
+                "startIndex": 0,
+                "continueMode": "onEnd"
+              },
+              "kisscord": {
+                "contactId": "",
+                "messages": []
+              },
+              "mail": {
+                "from": "qa-authoring@qe24.test",
+                "subject": "QE24 authoring: withdraw me",
+                "content": "This one carries the new withdraw flag.\n\nWhen the quest completes it should disappear from the inbox — and stay gone after a save and reload.",
+                "replyable": false,
+                "withdrawOnQuestEnd": true
+              },
+              "weechat": {
+                "host": "",
+                "password": "",
+                "registerServer": true,
+                "messages": []
+              },
+              "postLive": false
+            }
+          },
+          {
+            "id": "comms-dialogue4",
+            "type": "comms.dialogue",
+            "position": {
+              "x": 1080,
+              "y": 160
+            },
+            "data": {
+              "kind": "mail",
+              "phone": {
+                "branch": "default",
+                "startIndex": 0,
+                "continueMode": "onEnd"
+              },
+              "kisscord": {
+                "contactId": "",
+                "messages": []
+              },
+              "mail": {
+                "from": "qa-reply@qe24.test",
+                "subject": "QE24 authoring: reply to me",
+                "content": "This one is replyable — it should show a Reply button.\n\nReply with anything. The quest's objective ticks when your reply goes out, which proves the recipe: a reply is matchable by who it is addressed TO — this mail's From address.",
+                "replyable": true,
+                "withdrawOnQuestEnd": false
+              },
+              "weechat": {
+                "host": "",
+                "password": "",
+                "registerServer": true,
+                "messages": []
+              },
+              "postLive": false
+            }
+          },
+          {
+            "id": "objective5",
+            "type": "objective",
+            "position": {
+              "x": 1440,
+              "y": 160
+            },
+            "data": {
+              "name": "send-a-reply",
+              "description": "Reply to “QE24 authoring: reply to me” with anything",
+              "hidden": false,
+              "hint": "The Reply button is under the mail in GoMail. Any text works — the objective matches where the reply goes, not what it says."
+            }
+          },
+          {
+            "id": "trigger-event6",
+            "type": "trigger.event",
+            "position": {
+              "x": 0,
+              "y": 160
+            },
+            "data": {
+              "event": "Mail.Sent",
+              "conditions": [
+                {
+                  "id": "c1",
+                  "join": "and",
+                  "field": "to",
+                  "op": "contains",
+                  "value": "qa-reply@qe24.test"
+                }
+              ]
+            }
+          },
+          {
+            "id": "flow-note8",
+            "type": "flow.note",
+            "position": {
+              "x": 0,
+              "y": 320
+            },
+            "data": {
+              "text": "r211 playtest probe (2026-09-20).\n\nkeep me: control — no flags. withdraw me: withdrawOnQuestEnd. reply to me: replyable, and the\nobjective's trigger matches Mail.Sent where to contains qa-reply@qe24.test.\n\nGreen is: three mails arrive, the Reply button only on the third, the objective ticks on a reply,\nthe second mail leaves at Complete (and stays gone after a reload), the other two stay.",
+              "width": 340
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge9",
+            "source": "entry-start1",
+            "sourceHandle": "out",
+            "target": "comms-dialogue2",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "edge10",
+            "source": "comms-dialogue2",
+            "sourceHandle": "out",
+            "target": "comms-dialogue3",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "edge11",
+            "source": "comms-dialogue3",
+            "sourceHandle": "out",
+            "target": "comms-dialogue4",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "edge12",
+            "source": "comms-dialogue4",
+            "sourceHandle": "out",
+            "target": "objective5",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "edge7",
+            "source": "trigger-event6",
+            "sourceHandle": "when",
+            "target": "objective5",
             "targetHandle": "trigger",
             "kind": "condition"
           }

@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 1,
+  "kind": "hackhub-quest-editor/project",
+  "mod": {
+    "id": "hhfeed-test-v6",
+    "name": "HHFeed Test v6",
+    "version": "1.0.6",
+    "author": "Zeissss",
+    "description": "6th HHFeed Test",
+    "tags": [],
+    "dependencies": [],
+    "minSdkVersion": "0.21.0",
+    "apiVersion": 1
+  },
+  "quests": [
+    {
+      "id": "q-hhfeedtest6-0311",
+      "name": "HHFeedTest6",
+      "title": "Hackhub Feed Test 6",
+      "description": "Test 6 for the Hackhub Feed",
+      "group": "side",
+      "rewards": {
+        "money": 0,
+        "xp": 0
+      },
+      "employer": {
+        "firstName": "",
+        "lastName": "",
+        "email": ""
+      },
+      "autoStart": false,
+      "autoComplete": false,
+      "questsToComplete": [],
+      "abandonable": true,
+      "hasCompleteButton": false,
+      "hideObjectivesWhenDone": true,
+      "closingObjectiveText": "",
+      "hackhubPost": {
+        "content": "Hackhub Feed Test 6",
+        "authorName": "",
+        "likes": 2,
+        "comments": []
+      },
+      "dialog": [],
+      "dataKeys": [],
+      "graph": {
+        "nodes": [
+          {
+            "id": "entry-start1",
+            "type": "entry.start",
+            "position": {
+              "x": 1,
+              "y": -5
+            },
+            "data": {}
+          },
+          {
+            "id": "wifEyDGO1A",
+            "type": "comms.dialogue",
+            "position": {
+              "x": 320.5,
+              "y": -12.5
+            },
+            "data": {
+              "kind": "mail",
+              "phone": {
+                "branch": "default",
+                "startIndex": 0,
+                "continueMode": "onEnd"
+              },
+              "kisscord": {
+                "contactId": "",
+                "messages": []
+              },
+              "mail": {
+                "from": "ada43@cryptletter.net",
+                "subject": "Hackhub Feed Test 3",
+                "content": "Third hackhub feed test",
+                "replyable": false,
+                "withdrawOnQuestEnd": true
+              },
+              "weechat": {
+                "host": "",
+                "password": "",
+                "registerServer": true,
+                "messages": []
+              },
+              "postLive": false
+            }
+          },
+          {
+            "id": "llEK2_NYQW",
+            "type": "objective",
+            "position": {
+              "x": 688.5,
+              "y": -9.5
+            },
+            "data": {
+              "name": "readEmail",
+              "description": "YOu've got mail",
+              "hint": "Read the mail",
+              "hidden": false
+            }
+          },
+          {
+            "id": "xV7nkHXkvn",
+            "type": "trigger.event",
+            "position": {
+              "x": 682.5,
+              "y": 105.5
+            },
+            "data": {
+              "event": "",
+              "conditions": []
+            }
+          },
+          {
+            "id": "n66qz4CLa1",
+            "type": "fx.completeQuest",
+            "position": {
+              "x": 1056.5,
+              "y": -1.5
+            },
+            "data": {}
+          },
+          {
+            "id": "Nf1Xja-7Cv",
+            "type": "flow.debug",
+            "position": {
+              "x": 7.5,
+              "y": -157.5
+            },
+            "data": {
+              "label": "Out-QuestStart",
+              "labelAuto": true,
+              "toast": false,
+              "includeData": true,
+              "includePayload": true
+            }
+          },
+          {
+            "id": "VdOyffeBAI",
+            "type": "flow.debug",
+            "position": {
+              "x": 324.5,
+              "y": -155.5
+            },
+            "data": {
+              "label": "Out-Dialogue-HackhubFeedTest3",
+              "labelAuto": true,
+              "toast": false,
+              "includeData": true,
+              "includePayload": true
+            }
+          },
+          {
+            "id": "bxrfv6bHgr",
+            "type": "flow.debug",
+            "position": {
+              "x": 683.5,
+              "y": -149.5
+            },
+            "data": {
+              "label": "OnComplete-Objective-ReadEmail",
+              "labelAuto": true,
+              "toast": false,
+              "includeData": true,
+              "includePayload": true
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "7qA4j1cRkV",
+            "source": "entry-start1",
+            "sourceHandle": "out",
+            "target": "wifEyDGO1A",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "iJt9igJzhX",
+            "source": "wifEyDGO1A",
+            "sourceHandle": "out",
+            "target": "llEK2_NYQW",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "Unnv_pdlic",
+            "source": "xV7nkHXkvn",
+            "sourceHandle": "when",
+            "target": "llEK2_NYQW",
+            "targetHandle": "trigger",
+            "kind": "condition"
+          },
+          {
+            "id": "CQ6wdXZZHI",
+            "source": "llEK2_NYQW",
+            "sourceHandle": "done",
+            "target": "n66qz4CLa1",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "C2C1a_eMfZ",
+            "source": "entry-start1",
+            "sourceHandle": "out",
+            "target": "Nf1Xja-7Cv",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "XCXqrXmZfL",
+            "source": "wifEyDGO1A",
+            "sourceHandle": "out",
+            "target": "VdOyffeBAI",
+            "targetHandle": "in",
+            "kind": "flow"
+          },
+          {
+            "id": "IVoxTqt4FJ",
+            "source": "llEK2_NYQW",
+            "sourceHandle": "done",
+            "target": "bxrfv6bHgr",
+            "targetHandle": "in",
+            "kind": "flow"
+          }
+        ]
+      }
+    }
+  ],
+  "websites": [],
+  "twotterAccounts": [],
+  "extras": {
+    "menuItems": [],
+    "widgets": [],
+    "contextItems": []
+  },
+  "translations": {
+    "languages": [
+      "en"
+    ],
+    "strings": {}
+  },
+  "editor": {
+    "activeQuestId": "q-hhfeedtest6-0311",
+    "viewports": {
+      "q-hhfeedtest6-0311": {
+        "x": 301.75,
+        "y": 598,
+        "zoom": 1
+      }
+    }
+  }
+}

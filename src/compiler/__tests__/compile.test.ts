@@ -2296,6 +2296,24 @@ describe("a briefing mail that actually arrives", () => {
         expect(q2.HackhubPost.author).toBeUndefined();
     });
 
+    it("names the emitted quest class after the quest, so identity is not shared (r220 theory)", () => {
+        /* Every compiled quest used to be an anonymous class assigned to
+           `cls` - cls.name === "cls" for EVERY quest in EVERY export. If the
+           engine keys claim memory (the feed's "hasn't been claimed yet"
+           check) on the class name, one claimed editor quest retired every
+           editor export's feed post on the profile. The class is now renamed
+           to the quest's own name at construction. */
+        const p = mailProject();
+        p.quests[0].name = "HHFeedTest3";
+        p.quests[0].hackhubPost = { content: "identity probe", comments: [] };
+        const { sdk } = engineWithMailSend([]);
+        runMod(compileProject(p).files.find((f) => f.path === "dist/mod.js")!.content, sdk);
+        const QuestClass = registered0(sdk).quests[0];
+        expect(QuestClass.name).toBe("HHFeedTest3");
+        /* And a second quest gets its OWN class name - no more shared "cls". */
+        expect(registered0(sdk).quests.length).toBe(1);
+    });
+
     it("treats a feed-post quest as good-to-know, not needs-attention (r215 playtest)", () => {
         /* The deliberate discovery route shipped as a red error-level
            warning - a correct setup looked broken in the export dialog. It is

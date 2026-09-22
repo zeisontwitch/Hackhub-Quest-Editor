@@ -380,7 +380,7 @@ describe("r179 raw harness — the Twotter probe", () => {
            quest "hasn't been claimed yet" (index.d.ts) and every editor
            export since 1.0.38 has failed to surface - the grid tells the
            poison field or proves the suppression is profile-global. */
-        expect(manifest.version).toBe("1.0.28");
+        expect(manifest.version).toBe("1.0.29");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
@@ -398,7 +398,7 @@ describe("r179 raw harness — the Twotter probe", () => {
         expect(code).not.toContain("function extrasOn");
         /* r219: the feed probe rides its own subcommand and versioned names. */
         expect(code).toContain('sub === "feed"');
-        expect(code).toContain('FEED_PROBE_SUFFIX = "1028"');
+        expect(code).toContain('FEED_PROBE_SUFFIX = "1029"');
         expect(code).toContain("assets/qhp.png");
     });
 
@@ -892,16 +892,18 @@ describe("r181 raw harness — starting a quest on demand", () => {
             "QESdk024MailQa",
             "QESdk024MailAuthoringQa",
             "QESdk024EditorQa",
-            "QEHhBare1028",
-            "QEHhAuthor1028",
-            "QEHhAuthorFile1028",
-            "QEHhSocial1028",
-            "QEHhEmployer1028",
-            "QEHhAutoC1028",
-            "QEHhButton1028",
-            "QEHhAbandon1028",
-            "QEHhRewards1028",
-            "QEHhClone1028",
+            "QEHhBare1029",
+            "QEHhAuthor1029",
+            "QEHhAuthorFile1029",
+            "QEHhSocial1029",
+            "QEHhEmployer1029",
+            "QEHhAutoC1029",
+            "QEHhButton1029",
+            "QEHhAbandon1029",
+            "QEHhRewards1029",
+            "QEHhClone1029",
+            "QEHhCls1029",
+            "QEHhRenamed1029",
         ]);
         expect(tools.text()).toContain("Unclaimed:");
     });
@@ -1237,31 +1239,37 @@ describe("r220 raw harness — the Hackhub feed probe grid", () => {
         );
         const byName = new Map(quests.map((q) => [q.Name, q]));
         const names = [
-            "QEHhBare1028", "QEHhAuthor1028", "QEHhAuthorFile1028", "QEHhSocial1028", "QEHhEmployer1028",
-            "QEHhAutoC1028", "QEHhButton1028", "QEHhAbandon1028", "QEHhRewards1028", "QEHhClone1028",
+            "QEHhBare1029", "QEHhAuthor1029", "QEHhAuthorFile1029", "QEHhSocial1029", "QEHhEmployer1029",
+            "QEHhAutoC1029", "QEHhButton1029", "QEHhAbandon1029", "QEHhRewards1029", "QEHhClone1029",
+            "QEHhCls1029", "QEHhRenamed1029",
         ];
         for (const name of names) {
             expect(byName.has(name), name).toBe(true);
             expect(byName.get(name)!.AutoStart, name).toBe(false);
         }
+        /* Accepted strays used to be stuck in the journal forever (Zeis, r220
+           run) - every probe is abandonable now. */
+        for (const name of names) {
+            expect((byName.get(name) as unknown as { Abandonable?: boolean }).Abandonable, name).toBe(true);
+        }
         /* Controls (proven renderers from r219's run, fresh names). */
-        expect(byName.get("QEHhBare1028")!.HackhubPost).toEqual({ content: expect.stringContaining("HF1") });
-        expect(byName.get("QEHhAuthor1028")!.HackhubPost!.author).toEqual({ name: "Selin Calloway" });
-        expect(byName.get("QEHhAuthorFile1028")!.HackhubPost!.author).toEqual({ name: "Selin Calloway", avatar: "assets/qhp.png" });
-        expect(byName.get("QEHhSocial1028")!.HackhubPost!.comments).toHaveLength(2);
+        expect(byName.get("QEHhBare1029")!.HackhubPost).toEqual({ content: expect.stringContaining("HF1") });
+        expect(byName.get("QEHhAuthor1029")!.HackhubPost!.author).toEqual({ name: "Selin Calloway" });
+        expect(byName.get("QEHhAuthorFile1029")!.HackhubPost!.author).toEqual({ name: "Selin Calloway", avatar: "assets/qhp.png" });
+        expect(byName.get("QEHhSocial1029")!.HackhubPost!.comments).toHaveLength(2);
         /* HF5: the employer in the SDK's OWN shape - firstName/lastName/email -
            so the documented fallback is measured fairly this time. */
-        expect(byName.get("QEHhEmployer1028")!.Employer).toEqual({
+        expect(byName.get("QEHhEmployer1029")!.Employer).toEqual({
             firstName: "Ada", lastName: "Bakker", email: "ada.bakker@qe24.test", avatar: "assets/qhp.png",
         });
-        expect(byName.get("QEHhEmployer1028")!.HackhubPost!.author).toBeUndefined();
+        expect(byName.get("QEHhEmployer1029")!.HackhubPost!.author).toBeUndefined();
         /* The editor-clone rows: each isolates one ALWAYS-ASSIGNED field. */
-        expect(byName.get("QEHhAutoC1028")!.AutoComplete).toBe(false);
-        expect(byName.get("QEHhButton1028")!.HasCompleteButton).toBe(false);
-        expect(byName.get("QEHhAbandon1028")!.Abandonable).toBe(true);
-        expect(byName.get("QEHhRewards1028")!.Rewards).toEqual({ money: 0, xp: 0 });
+        expect(byName.get("QEHhAutoC1029")!.AutoComplete).toBe(false);
+        expect(byName.get("QEHhButton1029")!.HasCompleteButton).toBe(false);
+        expect(byName.get("QEHhAbandon1029")!.Abandonable).toBe(true);
+        expect(byName.get("QEHhRewards1029")!.Rewards).toEqual({ money: 0, xp: 0 });
         /* HF10 assigns everything a compiled editor quest assigns. */
-        const clone = byName.get("QEHhClone1028")!;
+        const clone = byName.get("QEHhClone1029")!;
         expect(clone.AutoComplete).toBe(false);
         expect(clone.HasCompleteButton).toBe(false);
         expect(clone.Abandonable).toBe(true);
@@ -1271,10 +1279,19 @@ describe("r220 raw harness — the Hackhub feed probe grid", () => {
             firstName: "Ada", lastName: "Bakker", email: "ada.bakker@qe24.test", avatar: "assets/qhp.png",
         });
         /* The controls must NOT carry the editor's assignments - that is what
-           makes them controls. */
-        expect(byName.get("QEHhBare1028")!.AutoComplete).toBeUndefined();
-        expect(byName.get("QEHhBare1028")!.HasCompleteButton).toBeUndefined();
-        expect(byName.get("QEHhBare1028")!.Abandonable).toBeUndefined();
+           makes them controls. (Abandonable is now deliberately true on EVERY
+           probe: accepted strays have to be abandonable - r220 run's lesson.) */
+        expect(byName.get("QEHhBare1029")!.AutoComplete).toBeUndefined();
+        expect(byName.get("QEHhBare1029")!.HasCompleteButton).toBeUndefined();
+        /* The decisive pair (r221): HF11 is the editor's exact structural
+           twin - an anonymous class in a var named cls, so cls.name === "cls",
+           the identity EVERY editor quest shared and one was claimed on
+           2026-09-21. HF12 renames its class; that is the editor's new
+           emission. Names ARE the assertion here. */
+        const classes = sdk.__registered.quests as unknown as (new () => unknown)[];
+        const clsByName = new Map(classes.map((c) => [c.name, c]));
+        expect(clsByName.get("cls")).toBeDefined(); /* HF11 - the shared identity */
+        expect(clsByName.get("QEHhRenamed1029")).toBeDefined(); /* HF12 */
         /* The avatar the file rows point at must exist in the mod. */
         expect(readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/assets/qhp.png"))).toBeTruthy();
     });
@@ -1286,12 +1303,11 @@ describe("r220 raw harness — the Hackhub feed probe grid", () => {
         (tools as { getArgs: () => string[] }).getArgs = () => ["feed"];
         await runCommand(tools);
         const text = (tools as { text: () => string }).text();
-        for (const name of ["QEHhBare1028", "QEHhAutoC1028", "QEHhButton1028", "QEHhAbandon1028", "QEHhRewards1028", "QEHhClone1028"]) {
+        for (const name of ["QEHhBare1029", "QEHhAutoC1029", "QEHhButton1029", "QEHhAbandon1029", "QEHhRewards1029", "QEHhClone1029", "QEHhCls1029", "QEHhRenamed1029"]) {
             expect(text).toContain(name);
         }
-        expect(text).toContain("editor-clone rows");
-        expect(text).toContain("THAT field kills the post");
-        expect(text).toContain("Ada Bakker");
+        expect(text).toContain("ABANDONABLE");
+        expect(text).toContain("CLASS");
         expect(text).toContain("qe24 run clear");
     });
 
@@ -1302,7 +1318,7 @@ describe("r220 raw harness — the Hackhub feed probe grid", () => {
         (tools as { getArgs: () => string[] }).getArgs = () => ["run", "clear"];
         await runCommand(tools);
         const unclaimed = (sdk as unknown as { __unclaimed: string[] }).__unclaimed;
-        for (const name of ["QEHhBare1028", "QEHhAuthor1028", "QEHhAuthorFile1028", "QEHhSocial1028", "QEHhEmployer1028", "QEHhAutoC1028", "QEHhButton1028", "QEHhAbandon1028", "QEHhRewards1028", "QEHhClone1028"]) {
+        for (const name of ["QEHhBare1029", "QEHhAuthor1029", "QEHhAuthorFile1029", "QEHhSocial1029", "QEHhEmployer1029", "QEHhAutoC1029", "QEHhButton1029", "QEHhAbandon1029", "QEHhRewards1029", "QEHhClone1029", "QEHhCls1029", "QEHhRenamed1029"]) {
             expect(unclaimed).toContain(name);
         }
     });

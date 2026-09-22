@@ -778,8 +778,22 @@ contract-clean `author: { name }` shapes:
 | r217 (v3) | employer{name,avatar} + `author{name,avatar file}` + named comment + likes | fresh name + fresh id, fresh save | absent |
 | r218 H-10 | **bare** — content + likes only, no author, no comments, no employer | fresh, fresh save, no mods | **absent** |
 
-**Resolution direction (r219's grid ran, 2026-09-22): the post shapes are
-innocent.** All five harness variants rendered in one feed — bare, named
+**Resolution direction (r219 + r220 grids ran, 2026-09-22): the post shapes,
+the quest fields, AND the manifest are all innocent** — eleven variants
+rendered from hand-authored mods, including a canary with the editor exports'
+exact manifest (`mail, events`). The one structural difference left: every
+editor-compiled quest is an anonymous class expression (`var cls = class …`),
+so `cls.name === "cls"` for **every quest in every export**, while hand mods
+name their classes. If the engine keys quest identity (claim memory, and with
+it the feed's "hasn't been claimed yet" check) on the class name, one claimed
+editor quest retires every editor export's posts on that profile — which
+would explain why fresh quest names never helped. The r221 round renames the
+editor's emitted classes to the quest's own name (identity-correcting
+regardless) and ships a harness pair that decides the theory in one look
+(anonymous-class twin vs renamed class). A rendering footnote from the same
+run: an author declared with a name but no avatar draws a **broken-image
+icon**, and the employer's file avatar does not resolve on the post-accept
+revealed card either. All five harness variants rendered in one feed — bare, named
 poster, file-avatar poster, likes + named comments — so `HackhubPost` itself
 still works, the extracted-asset avatar contract renders, and the suppression
 is **mod-shaped**: the same shapes that render from our QA harness (five

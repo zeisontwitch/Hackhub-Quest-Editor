@@ -1,3 +1,42 @@
+# Handoff — r221
+
+**The r220 grid rendered everything — all eleven posts, canary included.**
+Zeis's transcript (`QE24_TestResults-HackhubFeed-v3.md`): controls, every
+always-assigned editor field (AutoComplete/HasCompleteButton/Abandonable/
+zero Rewards/full clone), and HC1 from a mod with the editor's exact
+manifest. His accept-reveals measured the employer fallback (HF-5 revealed
+"Ada Bakker"; employerless quests revealed generated personas) and confirmed
+"Hidden User" posters are standard Hackhub behaviour — some posters are
+simply hidden until the quest is accepted. Ergonomics complaint recorded and
+fixed: probe quests are abandonable now.
+
+That empties every shape/field/manifest theory. The one structural
+difference left between the rendering hand mods and the never-rendering
+editor exports: **every editor-compiled quest is an anonymous class
+expression assigned to `cls` — `cls.name === "cls"` for every quest in every
+export.** Hand mods name their classes; harness factories infer `""` (which
+must fall back to `Name`). If the engine keys claim memory on the class
+name, the 2026-09-21 feed-accept of the 1.0.38 mail probe burned `cls` once
+and has suppressed every editor export since — fresh quest names never
+mattered because identity was never the name.
+
+**r221 acts on it two ways:**
+1. **The editor fix:** the compiled quest class is renamed to the quest's own
+   name at construction (`Object.defineProperty(cls, "name", …)` in the
+   emitted runtime) — per-quest identity, correct regardless of the theory.
+   Guard falsified; his v3 recompiles clean.
+2. **The decisive pair** (harness 1.0.29): **HF-11** is the editor's exact
+   structural twin (anonymous `cls` class — predicted ABSENT) and **HF-12**
+   is identical but renamed (predicted PRESENT). One look at the feed
+   confirms or kills the theory. Every probe is abandonable now.
+
+Also: the editor's poster/commenter blurbs say name-without-avatar draws a
+broken icon; §21 carries the full resolution direction; §22 the avatar/
+fallback matrix + the hidden-until-accept note. Delivery zips live in
+`reference/sdk-0.24-qa/delivery/` (workspace files are not reachable for
+Zeis — Git is the delivery channel).
+
+---
 # Handoff — r220
 
 **The grid rendered — every single row.** Zeis's screenshots: HF-1's bare

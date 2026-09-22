@@ -1836,7 +1836,7 @@ class QE24MailQa extends sdk.Quest {
    a profile that has "used up" a name can never see its post again
    (index.d.ts: a post shows only while the quest "hasn't been claimed
    yet"), so every harness bump mints fresh names for a re-run. */
-var FEED_PROBE_SUFFIX = "1028"; /* 1.0.28 - bump WITH the manifest version */
+var FEED_PROBE_SUFFIX = "1029"; /* 1.0.29 - bump WITH the manifest version */
 var FEED_AVATAR = "assets/qhp.png"; /* the violet square this mod ships */
 
 function feedQuest(nameSuffix, title, post, employer, fields) {
@@ -1852,6 +1852,7 @@ function feedQuest(nameSuffix, title, post, employer, fields) {
             this.Description = "Feed-discovery probe. Accept it from its Hackhub feed post - that is the whole test.";
             this.Group = F.group || "sandbox";
             this.AutoStart = false;
+            this.Abandonable = true; /* accepted strays can be abandoned from the journal */
             this.Objectives = [{ name: "accept", description: "Accepted from the feed post - nothing to do." }];
             if (employer) this.Employer = employer;
             this.HackhubPost = post;
@@ -1957,6 +1958,54 @@ var FEED_PROBES = [
                 { autoComplete: false, hasCompleteButton: false, abandonable: true, rewards: { money: 0, xp: 0 }, group: "side" });
         },
     },
+    {
+        id: "HF11",
+        what: "THE EDITOR MIMIC: anonymous class in a var named cls (class.name = cls, the shared identity) - PREDICTED ABSENT",
+        make: function () {
+            var cls = class extends sdk.Quest {
+                constructor() {
+                    super();
+                    this.Name = "QEHhCls" + FEED_PROBE_SUFFIX;
+                    this.Title = "QE24 feed probe (cls mimic)";
+                    this.Description = "Structural twin of a compiled editor quest. If HF12 shows and this does not, the class-name identity theory is CONFIRMED.";
+                    this.Group = "sandbox";
+                    this.AutoStart = false;
+                    this.Abandonable = true;
+                    this.Objectives = [{ name: "accept", description: "Accepted from the feed post - nothing to do." }];
+                    this.HackhubPost = { content: "HF11 cls mimic - QE24 feed probe." };
+                }
+                CreateData() { return {}; }
+                OnStart() { log(this.Name + " started from the feed claim."); }
+                OnObjectivesStart() {}
+            };
+            return cls;
+        },
+    },
+    {
+        id: "HF12",
+        what: "Same quest, class RENAMED to the quest name (the editor's new emission) - PREDICTED PRESENT",
+        make: function () {
+            var name = "QEHhRenamed" + FEED_PROBE_SUFFIX;
+            var cls = class extends sdk.Quest {
+                constructor() {
+                    super();
+                    this.Name = name;
+                    this.Title = "QE24 feed probe (renamed class)";
+                    this.Description = "Same shape as HF11 but the class carries its own name. Present + HF11 absent = theory confirmed.";
+                    this.Group = "sandbox";
+                    this.AutoStart = false;
+                    this.Abandonable = true;
+                    this.Objectives = [{ name: "accept", description: "Accepted from the feed post - nothing to do." }];
+                    this.HackhubPost = { content: "HF12 renamed class - QE24 feed probe." };
+                }
+                CreateData() { return {}; }
+                OnStart() { log(this.Name + " started from the feed claim."); }
+                OnObjectivesStart() {}
+            };
+            Object.defineProperty(cls, "name", { value: name, configurable: true });
+            return cls;
+        },
+    },
 ];
 
 for (var fpi = 0; fpi < FEED_PROBES.length; fpi++) sdk.RegisterQuest(FEED_PROBES[fpi].make());
@@ -1964,42 +2013,33 @@ for (var fpi = 0; fpi < FEED_PROBES.length; fpi++) sdk.RegisterQuest(FEED_PROBES
 /* The same construction the classes use, so `qe24 run clear` can unclaim
    them by name without keeping the classes around. */
 function feedProbeNames() {
-    var bases = { HF1: "Bare", HF2: "Author", HF3: "AuthorFile", HF4: "Social", HF5: "Employer", HF6: "AutoC", HF7: "Button", HF8: "Abandon", HF9: "Rewards", HF10: "Clone" };
+    var bases = { HF1: "Bare", HF2: "Author", HF3: "AuthorFile", HF4: "Social", HF5: "Employer", HF6: "AutoC", HF7: "Button", HF8: "Abandon", HF9: "Rewards", HF10: "Clone", HF11: "Cls", HF12: "Renamed" };
     var out = [];
     for (var i = 0; i < FEED_PROBES.length; i++) out.push("QEHh" + bases[FEED_PROBES[i].id] + FEED_PROBE_SUFFIX);
     return out;
 }
 
 function printFeedProbe(tools) {
-    tools.println("QE24 Hackhub feed probe (r220) - ten posts, ONE look at the feed.");
+    tools.println("QE24 Hackhub feed probe (r221) - twelve posts, ONE look at the feed.");
     tools.println("");
-    tools.println("For each row below, note whether its post is on the Hackhub feed.");
-    tools.println("Do this BEFORE claiming anything - a claimed quest's post is gone.");
+    tools.println("Note which of HF1..HF12 are present BEFORE claiming anything.");
+    tools.println("Every probe is ABANDONABLE now - accepted strays can be abandoned.");
     tools.println("");
     var names = feedProbeNames();
-    var r;
-    for (r = 0; r < 5; r++) {
-        tools.println("  " + FEED_PROBES[r].id + "  " + FEED_PROBES[r].what);
-        tools.println("       quest: " + names[r]);
-    }
-    tools.println("  --- the editor-clone rows (a compiled editor quest ALWAYS assigns these) ---");
-    for (r = 5; r < FEED_PROBES.length; r++) {
+    for (var r = 0; r < FEED_PROBES.length; r++) {
         tools.println("  " + FEED_PROBES[r].id + "  " + FEED_PROBES[r].what);
         tools.println("       quest: " + names[r]);
     }
     tools.println("");
-    tools.println("How to read the grid (r219 proved the first five all render):");
-    tools.println("  HF6..HF9 absent (singles) -> THAT field kills the post. Found it.");
-    tools.println("  HF10 absent, HF6..HF9 all present -> a JOINT effect of the editor's");
-    tools.println("       assignments; the next grid bisects pairs.");
-    tools.println("  ALL ten present -> the class fields are innocent too: what remains is");
-    tools.println("       the manifest (permissions/identity - the canary mod answers that)");
-    tools.println("       or the editor's compiled runtime itself.");
-    tools.println("  HF1..HF5 absent this time -> profile-level suppression (they rendered");
-    tools.println("       last session); note it and do not claim anything.");
+    tools.println("This round tests ONE theory (the r220 grid cleared everything else):");
+    tools.println("the engine keys quest identity on the CLASS's name. Every editor quest");
+    tools.println("compiled as class \"cls\"; one was claimed from the feed on 2026-09-21,");
+    tools.println("which would retire every editor export's post on this profile since.");
     tools.println("");
-    tools.println("Also worth one glance: HF5 - if the poster shows \"Ada Bakker\" the d.ts's");
-    tools.println("employer fallback works; \"Hidden User\" means it does not (docs/03 §22).");
+    tools.println("  HF11 absent + HF12 present -> CONFIRMED. The editor now renames its");
+    tools.println("               classes; editor posts should render again.");
+    tools.println("  HF11 present -> theory dead; the suppression is something else.");
+    tools.println("  both absent  -> re-run on a fresh save before concluding anything.");
     tools.println("");
     tools.println("Cleanup: qe24 run clear (it unclaims these too).");
 }

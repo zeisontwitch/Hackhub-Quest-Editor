@@ -3214,6 +3214,16 @@ function __qeRegisterProject(sdk, PROJECT) {
                     __QE.log("OnAbandon: finished, handing back to the game");
                 }
             };
+            /* A class expression without a name infers it from the variable
+               it is assigned to - every editor quest was class "cls". If the
+               engine keys quest identity (claim memory, and with it the
+               feed's "hasn't been claimed yet" check) on the class name, all
+               editor quests shared ONE identity, and the first claim retired
+               every editor export's feed post on that profile. Name the
+               class after the quest so identity is the quest's own (r221). */
+            if (qd.name) {
+                try { Object.defineProperty(cls, "name", { value: qd.name, configurable: true }); } catch (_e) {}
+            }
             return cls;
         })();
 

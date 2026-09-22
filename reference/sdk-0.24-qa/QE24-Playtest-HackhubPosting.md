@@ -85,40 +85,58 @@ not shape-shaped**. The harness mod differs from every failing editor export
 in exactly the ways the next round isolates: its manifest (five permissions
 vs `mail, events`) and its quest class (no ALWAYS-ASSIGNED fields).
 
-## Part 4 — r220: the editor-clone grid + the canary (next run)
+## Part 4 — RAN (r220, harness 1.0.28 + canary 1.0.1): ALL ELEVEN RENDERED
 
-**Install BOTH** (replace the folders, restart):
-- **harness 1.0.28** — `qe-sdk-0.24-qa` (fresh names, ten posts)
-- **canary 1.0.1** — `qe24-feedcanary` (one bare post, `HC1`, with the
-  editor exports' exact manifest: apiVersion 1, permissions `mail, events`)
+Transcript: `QE24_TestResults-HackhubFeed-v3.md`. Fresh save, both mods:
 
-Then: open Hackhub, one look, note which of **HF-1…HF-10** and **HC1** show.
-The grid:
-
-| Row | Isolates |
+| Row | Result |
 |---|---|
-| HF-1…HF-4 | the controls, again (fresh names) |
-| **HF-5** | the employer fallback with the SDK's REAL shape (`firstName/lastName/email/avatar`) — poster "Ada Bakker" = the employer name shows pre-accept; "Hidden User" = normal (hidden-until-accept is standard Hackhub behaviour, Zeis confirms) — then **accept HF-5 and look again**: does the poster reveal as Ada Bakker? |
-| **HF-6** | bare + `AutoComplete = false`, explicitly (the editor always assigns it) |
-| **HF-7** | bare + `HasCompleteButton = false`, explicitly |
-| **HF-8** | bare + `Abandonable = true`, explicitly |
-| **HF-9** | bare + `Rewards = {money: 0, xp: 0}` (the editor ships a zero rewards object) |
-| **HF-10** | THE FULL EDITOR CLONE — all of the above + `Group: "side"` + the employer |
-| **HC1** | the canary: a mail+events mod posting the HF-1 shape |
+| HF-1…HF-4 (controls, fresh names) | **all rendered** |
+| HF-5 employer (SDK shape) | rendered ("Hidden User" pre-accept — normal); **on accept the poster REVEALED as "Ada Bakker"** (with a broken avatar — the employer's file avatar doesn't resolve on the revealed card) |
+| HF-6 explicit `AutoComplete=false` | **rendered** — and on accept revealed a generated persona |
+| HF-7 explicit `HasCompleteButton=false` | **rendered** |
+| HF-8 explicit `Abandonable=true` | **rendered** (and was abandonable — the assignment works) |
+| HF-9 zero `Rewards` | **rendered** |
+| HF-10 the full editor clone | **rendered** |
+| **HC1 canary** (editor's exact manifest: `mail, events`) | **RENDERED** |
 
-Reading it:
-- **one of HF-6…HF-9 absent** → that field kills the post. Found it.
-- **HF-10 absent, HF-6…HF-9 present** → a joint effect; the next grid bisects.
-- **all ten present, HC1 absent** → the manifest shape (two permissions) is
-  the killer; §21 goes to the developers with the canary as proof.
-- **all ten present, HC1 present** → manifest innocent too: the editor's
-  compiled runtime itself is the last suspect standing.
-- **HF-1…HF-5 absent this time** → the suppression is per-session/profile
-  after all; note it, claim nothing.
+**Verdict: the manifest is innocent, the quest fields are innocent, the post
+shapes are innocent.** Everything renders from hand-authored mods. The only
+editor render ever (1.0.38) was the FIRST claim of the one identity every
+editor quest shared. Which leaves exactly one structural difference: **every
+editor-compiled quest is an anonymous class expression assigned to `cls` —
+`cls.name === "cls"` for every quest in every export** — while hand mods
+name their classes. If the engine keys claim memory (the feed's "hasn't been
+claimed yet") on the CLASS name, the 2026-09-21 feed-accept of the 1.0.38
+probe burned "cls" once and suppressed every editor export since — fresh
+quest names irrelevant, because identity was never the name. Hand mods'
+classes have unique names; the harness factories' anonymous classes infer
+name "" — which must fall back to `Name` (fresh each round). Every datapoint
+fits.
 
-Cleanup: `qe24 run clear`. No fresh save needed (all names are fresh).
+r221 also fixed the editor's emission (the class is renamed to the quest's
+own name at construction — identity-correcting regardless of the theory) and
+made every probe abandonable (accepted strays were stuck forever — Zeis's
+r220 ergonomics note).
 
-## History## History
+## Part 5 — r221: the decisive pair (harness 1.0.29) — NEXT RUN
+
+Install harness **1.0.29** (replace the folder, restart), open Hackhub, one
+look at the feed:
+
+| Row | Identity | Prediction |
+|---|---|---|
+| HF-11 (`QEHhCls1029`) | `cls` — the exact editor structural twin | **ABSENT** ("cls" was claimed 2026-09-21) |
+| HF-12 (`QEHhRenamed1029`) | its own name — the editor's NEW emission | **PRESENT** |
+
+HF-11 absent + HF-12 present → **theory confirmed**: the class name is the
+identity, the editor fix is the cure, and the r215-era mystery (why fresh
+names never helped) is closed. HF-11 present → theory dead, and the
+suppression is something no local artifact reveals. Both absent → re-run on
+a fresh save first. (`qe24 feed` prints this. Accepted strays are
+abandonable now; `qe24 run clear` unclaims everything.)
+
+## History## History## History
 
 - **2026-09-21, first attempt (Zeis's own export, r215):** the feed showed
   only official posts; his post was missing and his player avatar broke.
@@ -177,3 +195,13 @@ Cleanup: `qe24 run clear`. No fresh save needed (all names are fresh).
   "Hidden User" rows were normal, not an engine quirk; §22's question is
   now about the reveal: does accepting a probe post reveal an authored
   (or employer) author?
+
+- **2026-09-22, the r220 grid RAN: all eleven posts rendered, including the
+  canary** (transcript `QE24_TestResults-HackhubFeed-v3.md`). Manifest,
+  quest fields, and post shapes are all innocent; Zeis's accept-reveals
+  measured the employer fallback (Ada Bakker revealed; generated personas
+  otherwise) and confirmed hidden-until-accept is standard. One structural
+  difference remains between the rendering hand mods and the never-
+  rendering editor exports: the compiled quests are ALL class "cls". r221
+  renames the editor's classes (the fix) and ships the HF-11/HF-12 pair
+  that decides the theory in one look.

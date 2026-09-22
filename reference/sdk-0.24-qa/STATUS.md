@@ -1,6 +1,6 @@
 # QE24 QA status (2026-09-21)
 
-**ONE OPEN PLAYTEST (the editor-clone grid + canary, r220):** Hackhub feed rows **HF-1…HF-10 + HC1** in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md) — harness 1.0.28 + canary 1.0.1, one look at the feed. The r219 grid RAN: all five shapes rendered, so the post fields are innocent and the suppression is mod-shaped. — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
+**ONE OPEN PLAYTEST (the decisive pair, r221):** Hackhub rows **HF-11 + HF-12** in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md) — harness 1.0.29, one look at the feed. The r220 grid RAN: **all eleven posts rendered** (controls + every editor quest field + the canary with the editor's exact manifest), so shapes, fields and manifest are all innocent — the last structural difference is that every editor-compiled quest shares the class identity `cls`, which one feed-accept burned on 2026-09-21. — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
 harness 1.0.24) and are closed — transcript:
 [`QE24-TestResults-Mail.md`](QE24-TestResults-Mail.md). Ten rows, every one
 answered; three real findings came out of it:
@@ -93,6 +93,14 @@ Two attempts, two compiler bugs caught by playing it as a player:
    load — post and player avatar both broke. r216 extracts every quest image
    to `assets/*.png` (the contract mod icon/cover always had).
 2. **The r216 retest was clean and still did not surface the post.**
+   Nor r217's (v3), r218's bare post — and then the r219/r220 harness grids
+   **rendered everything** (5 shapes, then 10 controls/field-clones + the
+   canary). Shapes, quest fields, manifest: all innocent. The surviving
+   difference: editor quests are all anonymous `cls` classes (shared
+   identity), hand mods name theirs. r221 renames the editor's classes and
+   ships HF-11/HF-12 to decide the theory. His accept-reveals also measured
+   the employer fallback (Ada Bakker revealed on accept) and confirmed
+   hidden-until-accept posters are standard Hackhub behaviour.
    Nor did r217's (v3), r218's bare-post replication (H-10) — and then r219's
    harness grid **rendered all five shapes in one feed**. The post fields are
    innocent; the file-avatar contract drew (HF-3's violet square); name-
@@ -126,8 +134,8 @@ Two attempts, two compiler bugs caught by playing it as a player:
    filed as §19; the SDK itself ships v1.
 
 Checklist: [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md)
-— next run: **HF-1…HF-10 + HC1** (harness 1.0.28 + canary 1.0.1), then
-H-08/H-09 once an editor export renders again.
+— next run: **HF-11 + HF-12** (harness 1.0.29). Then an editor-authored
+post again — this time the editor's classes carry per-quest identities.
 
 ## Settled: the moment.js warning is the game's own content — M-09, closed
 

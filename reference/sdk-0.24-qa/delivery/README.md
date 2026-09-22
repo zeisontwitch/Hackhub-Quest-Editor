@@ -2,7 +2,7 @@
 
 | File | What it is |
 |---|---|
-| `qe-sdk-0.24-qa-1.0.28.zip` | QA harness 1.0.28 — the r220 feed grid: HF-1…HF-4 controls, HF-5 employer fallback (SDK employer shape), HF-6…HF-10 the editor's always-assigned quest fields isolated, HF-10 the full editor clone. |
+| `qe-sdk-0.24-qa-1.0.29.zip` | QA harness 1.0.29 — the decisive pair: HF-11 (the editor's anonymous-`cls` structural twin) vs HF-12 (renamed class), plus HF-1…HF-10 controls. Every probe is abandonable now. |
 | `qe24-feedcanary-1.0.1.zip` | Feed canary 1.0.1 — ONE bare post (HC1) from a mod with the editor exports' exact manifest (apiVersion 1, permissions `mail, events`). |
 
 **Install BOTH folders** (delete the old `qe-sdk-0.24-qa` folder first — the

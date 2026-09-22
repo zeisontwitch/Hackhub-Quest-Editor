@@ -1,9 +1,9 @@
 {
   "id": "qe24-feedcanary",
   "name": "QE24 Feed Canary",
-  "version": "1.0.1",
-  "author": "HackHub Quest Editor",
-  "description": "One bare-post quest with the editor exports' exact permissions (mail, events). If the harness's posts render and this one does not, the manifest is the discriminator (docs/03 #21).",
+  "version": "1.0.2",
+  "author": "Zeis",
+  "description": "One bare-post quest with the editor exports' exact permissions (mail, events) - and the editor exports' AUTHOR. 1.0.1 (author HackHub Quest Editor) rendered; if this one does not, the author string is the discriminator (docs/03 #21).",
   "apiVersion": 1,
   "dependencies": [],
   "permissions": [

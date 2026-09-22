@@ -119,24 +119,30 @@ own name at construction — identity-correcting regardless of the theory) and
 made every probe abandonable (accepted strays were stuck forever — Zeis's
 r220 ergonomics note).
 
-## Part 5 — r221: the decisive pair (harness 1.0.29) — NEXT RUN
+## Part 5 — RAN (r221, harness 1.0.29): HF-11 PRESENT — the class theory is dead
 
-Install harness **1.0.29** (replace the folder, restart), open Hackhub, one
-look at the feed:
+Fresh save: HF-1…HF-12 **all present**, including HF-11 (the anonymous `cls`
+structural twin). So the class name is NOT the identity the feed keys on.
+Every hand-authored shape renders; the suppression lives in whatever makes an
+editor export an editor export.
 
-| Row | Identity | Prediction |
-|---|---|---|
-| HF-11 (`QEHhCls1029`) | `cls` — the exact editor structural twin | **ABSENT** ("cls" was claimed 2026-09-21) |
-| HF-12 (`QEHhRenamed1029`) | its own name — the editor's NEW emission | **PRESENT** |
+## Part 6 — r222: the author test + the v4 end-to-end — NEXT RUN
 
-HF-11 absent + HF-12 present → **theory confirmed**: the class name is the
-identity, the editor fix is the cure, and the r215-era mystery (why fresh
-names never helped) is closed. HF-11 present → theory dead, and the
-suppression is something no local artifact reveals. Both absent → re-run on
-a fresh save first. (`qe24 feed` prints this. Accepted strays are
-abandonable now; `qe24 run clear` unclaims everything.)
+Two mods this session, one look at the feed:
 
-## History## History## History
+1. **canary 1.0.2** (`qe24-feedcanary`, from
+   `delivery/qe24-feedcanary-1.0.2.zip`) — identical to the 1.0.1 canary
+   that rendered, except the manifest author is now **"Zeis"**. Post **HC2**.
+   - HC2 absent → **the author string is the discriminator.** Every silent
+     export is authored "Zeis"; every rendering mod is not. Actionable
+     immediately (the editor stops shipping "Zeis" as its default author).
+   - HC2 present → author innocent too; what remains is the editor's
+     compiled mod machinery itself (its load-time Localization calls are the
+     only SDK surface no rendering mod has touched).
+2. **v4** — author a fresh post in the **r221 editor** (fresh quest name and
+   id), export, install. The end-to-end retest on the renamed-class runtime.
+
+## History## History## History## History
 
 - **2026-09-21, first attempt (Zeis's own export, r215):** the feed showed
   only official posts; his post was missing and his player avatar broke.
@@ -205,3 +211,11 @@ abandonable now; `qe24 run clear` unclaims everything.)
   rendering editor exports: the compiled quests are ALL class "cls". r221
   renames the editor's classes (the fix) and ships the HF-11/HF-12 pair
   that decides the theory in one look.
+
+- **2026-09-22, r221's pair RAN: HF-11 PRESENT.** The class-identity theory
+  is dead — an anonymous `cls`-named class rendered like any other. r222
+  pivots to the last untested correlation: author "Zeis" is on every silent
+  export and no rendering mod (canary 1.0.2 flips just that string). The
+  r211→r213 runtime diff (52 lines, flow-runner only) confirms nothing
+  registration-relevant changed around the 1.0.38 render — that once-render
+  stays fully explained by per-quest-name claim memory.

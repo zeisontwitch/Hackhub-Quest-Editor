@@ -1,3 +1,34 @@
+# Handoff — r222
+
+**HF-11 rendered. The class-identity theory is dead.** Zeis's fresh-save
+look: HF-1…HF-12 all present, including the anonymous `cls`-class structural
+twin of an editor quest. Class names join shapes, quest fields, and the
+manifest on the "innocent" pile — every hand-authored mod renders, and the
+suppression lives in whatever makes an editor export an editor export.
+
+The surviving untested correlation, now the whole round: **every silent
+export is authored "Zeis"; no mod that ever rendered is.** The QA export
+(1.0.38, author "HackHub Quest Editor") rendered once; the canary (same
+author) rendered; the harness (same author) renders everything; Zeis's five
+editor exports (author "Zeis") never surfaced a single post. r222's canary
+1.0.2 flips exactly that one string: identical to the rendering 1.0.1 in
+every way — manifest shape, permissions, bare post, fresh quest name
+(`QEFeedCanary102`, post **HC2**) — except `author: "Zeis"`. Absent → the
+author string is the discriminator (and the editor stops defaulting to it).
+Present → author innocent, and what remains is the editor's compiled mod
+machinery — its load-time `Localization.register` calls are the only SDK
+surface no rendering mod has ever touched.
+
+Same session: **v4** — a fresh post authored in the r221 editor, exported,
+installed. The end-to-end retest. Archaeology note: the r211→r213 runtime
+diff (the 1.0.38→1.0.39 boundary) is 52 lines of flow-runner logic with
+zero registration changes, so the single editor render stays fully explained
+by per-quest-name claim memory.
+
+Guard: the canary's scaffold test now pins version/author/name (falsified).
+Delivery: `reference/sdk-0.24-qa/delivery/qe24-feedcanary-1.0.2.zip`.
+
+---
 # Handoff — r221
 
 **The r220 grid rendered everything — all eleven posts, canary included.**

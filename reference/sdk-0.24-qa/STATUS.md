@@ -1,6 +1,6 @@
 # QE24 QA status (2026-09-21)
 
-**ONE OPEN PLAYTEST (the decisive pair, r221):** Hackhub rows **HF-11 + HF-12** in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md) — harness 1.0.29, one look at the feed. The r220 grid RAN: **all eleven posts rendered** (controls + every editor quest field + the canary with the editor's exact manifest), so shapes, fields and manifest are all innocent — the last structural difference is that every editor-compiled quest shares the class identity `cls`, which one feed-accept burned on 2026-09-21. — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
+**ONE OPEN PLAYTEST (the author test + v4, r222):** canary **HC2** (author "Zeis", everything else identical to the canary that rendered) + a fresh post authored in the r221 editor, in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md). The r221 pair RAN: HF-11 (the anonymous `cls` twin) rendered — the class-identity theory is dead; shapes, fields, manifest, and class names are all innocent, and the last untested correlation is the author string. — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
 harness 1.0.24) and are closed — transcript:
 [`QE24-TestResults-Mail.md`](QE24-TestResults-Mail.md). Ten rows, every one
 answered; three real findings came out of it:
@@ -134,8 +134,8 @@ Two attempts, two compiler bugs caught by playing it as a player:
    filed as §19; the SDK itself ships v1.
 
 Checklist: [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md)
-— next run: **HF-11 + HF-12** (harness 1.0.29). Then an editor-authored
-post again — this time the editor's classes carry per-quest identities.
+— next run: **HC2 + v4**. If HC2 is absent, the author string is the
+discriminator; either way v4 is the end-to-end retest.
 
 ## Settled: the moment.js warning is the game's own content — M-09, closed
 

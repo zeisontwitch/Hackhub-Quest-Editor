@@ -1340,13 +1340,18 @@ describe("r220 raw harness — the feed canary (editor-export manifest)", () => 
         return (sdk as { __registered: Harness }).__registered;
     }
 
-    it("ships a manifest IDENTICAL in shape to an editor export (mail+events only)", () => {
+    it("ships a manifest IDENTICAL in shape to an editor export (mail+events only) - and the editor exports' AUTHOR (r222)", () => {
         const manifest = JSON.parse(
             readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/feedcanary/manifest.json"), "utf8"),
-        ) as { id: string; apiVersion: number; permissions: string[] };
+        ) as { id: string; apiVersion: number; permissions: string[]; author: string; version: string };
         expect(manifest.id).toBe("qe24-feedcanary");
         expect(manifest.apiVersion).toBe(1);
         expect(manifest.permissions).toEqual(["mail", "events"]);
+        /* The one delta vs the rendering 1.0.1: the author string. Every
+           editor export that never rendered is authored "Zeis"; every mod
+           that ever rendered is not. */
+        expect(manifest.version).toBe("1.0.2");
+        expect(manifest.author).toBe("Zeis");
     });
 
     it("registers one bare-post quest whose HackhubPost carries no author block", () => {
@@ -1357,9 +1362,9 @@ describe("r220 raw harness — the feed canary (editor-export manifest)", () => 
         );
         expect(quests).toHaveLength(1);
         const q = quests[0];
-        expect(q.Name).toBe("QEFeedCanary101");
+        expect(q.Name).toBe("QEFeedCanary102");
         expect(q.AutoStart).toBe(false);
-        expect(q.HackhubPost).toEqual({ content: expect.stringContaining("HC1") });
+        expect(q.HackhubPost).toEqual({ content: expect.stringContaining("HC2") });
         expect(q.HackhubPost!.author).toBeUndefined();
     });
 });

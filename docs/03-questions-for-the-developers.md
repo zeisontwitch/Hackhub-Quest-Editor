@@ -823,11 +823,20 @@ declarations don't describe:
 2. **The documented employer fallback is unmeasured.** The d.ts says an
    omitted post author falls back to "the quest's (auto-generated) employer,
    falling back to an anonymous 'Hidden User'". A probe with an INVALID
-   employer shape (`{name}`) correctly landed on "Hidden User"; whether a
-   well-formed `Employer` (`firstName/lastName/email/avatar`) becomes the
-   post's author is being measured right now (harness 1.0.28, row HF-5).
-   Note the interplay with 1: if the fallback fires, does the employer's
-   avatar come along, or does the post draw the broken icon?
+   employer shape (`{name}`) landed on "Hidden User"; whether a well-formed
+   `Employer` (`firstName/lastName/email/avatar`) becomes the post's author
+   is being measured right now (harness 1.0.28, row HF-5). Note the
+   interplay with 1: if the fallback fires, does the employer's avatar come
+   along, or does the post draw the broken icon?
+
+   **Zeis's correction (2026-09-22), which reframes this half:** "Hidden
+   User" is **standard Hackhub behaviour** — some posters are shown, some
+   are hidden and only get revealed once the quest is accepted. So a
+   "Hidden User" on an unaccepted probe post is not an anomaly to explain;
+   the open questions become: does a well-formed employer (or any authored
+   `author`) show pre-accept at all, and does accepting reveal the author
+   the d.ts promises? Row HF-5's read now includes: accept it and see
+   whether the poster changes.
 
 **What we would like:** the intended author/avatar matrix — which
 combinations render what, and whether the employer fallback is expected to

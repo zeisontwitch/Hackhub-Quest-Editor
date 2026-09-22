@@ -98,7 +98,7 @@ The grid:
 | Row | Isolates |
 |---|---|
 | HF-1…HF-4 | the controls, again (fresh names) |
-| **HF-5** | the employer fallback with the SDK's REAL shape (`firstName/lastName/email/avatar`) — poster "Ada Bakker" = fallback works; "Hidden User" = §22 |
+| **HF-5** | the employer fallback with the SDK's REAL shape (`firstName/lastName/email/avatar`) — poster "Ada Bakker" = the employer name shows pre-accept; "Hidden User" = normal (hidden-until-accept is standard Hackhub behaviour, Zeis confirms) — then **accept HF-5 and look again**: does the poster reveal as Ada Bakker? |
 | **HF-6** | bare + `AutoComplete = false`, explicitly (the editor always assigns it) |
 | **HF-7** | bare + `HasCompleteButton = false`, explicitly |
 | **HF-8** | bare + `Abandonable = true`, explicitly |
@@ -172,3 +172,8 @@ Cleanup: `qe24 run clear`. No fresh save needed (all names are fresh).
   Zeis's player card flaky again (game-side). r220 isolates the two remaining
   deltas: the editor's ALWAYS-ASSIGNED quest fields (HF-6…HF-10) and the
   editor's manifest shape (the canary, HC1).
+- **Zeis, on "Hidden User":** standard Hackhub behaviour — some posters are
+  shown, some are hidden until the quest is accepted. So the r219 grid's
+  "Hidden User" rows were normal, not an engine quirk; §22's question is
+  now about the reveal: does accepting a probe post reveal an authored
+  (or employer) author?

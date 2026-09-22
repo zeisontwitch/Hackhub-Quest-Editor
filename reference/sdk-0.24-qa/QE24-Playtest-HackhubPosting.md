@@ -149,28 +149,39 @@ from the harness. So class name alone should not matter, yet the rename is
 the ONLY emitted difference between the r218 and r222 compilers (verified by
 git diff), and v6's zip carries it (`Object.defineProperty(cls, "name", …)`).
 
-## Part 7 — r224: VF-1, CORRECTED — v3 ALONE
+## Part 7 — VF-1 RAN (r224): v3 ABSENT — the fork resolves; the saga is CLOSED
 
-**Correction (Zeis, 2026-09-22): the canary was NOT installed for the v6
-run** — v6 rendered with only itself installed. The co-installation fork is
-dead, and that sharpens the question to a single clean run:
+**The old emission is still broken today.** Fresh save, the original v3 zip
+alone: "Hackhub Feed Test 3" did not surface. Same profile, same day,
+same-ish shape:
 
-**Install the OLD v3 export alone** (the `hhfeed-test-v3-1.0.3(1).zip` you
-have — its emission predates the rename), fresh save, one look at the feed:
+| Export | Emission | Result |
+|---|---|---|
+| v3 (r217 build) | anonymous `cls` class | **ABSENT** — again, on a fresh save |
+| v6 (r222 build) | class renamed to the quest's name | **PRESENT** (alone) |
 
-| Result | Meaning |
-|---|---|
-| **"Hackhub Feed Test 3" renders** | the BUILD never mattered. Everything renders now; the r215–r218 failures were a **stuck feed pipeline on the profile** (the held `Queue.HandleQuestHackhubPosts` job is the fingerprint) that the harness sessions un-jammed — 12 posts flooding through, or simply more game sessions. The editor was never broken in its current form; §21 becomes a pipeline note for the developers. |
-| **absent** | the r218 emission is still broken TODAY, and the r221 rename is the cure — HF-11's render gets the footnote (the twin ran from the harness, whose context differs in ways we cannot see), and v6's render is the rename working. |
+The rename is the only emitted difference between those two builds
+(git-verified), so within editor exports the A/B is decisive: **the r221
+rename is the cure; pre-r221 exports do not surface feed posts.**
 
-Why this is still worth one look after v6's success: v6 proves the CURRENT
-build works; VF-1 tells us whether the OLD builds were ever broken — which
-decides whether the five failed exports were our bug (renamed classes fixed
-it) or the game's (a jam that cleared). Different §21 text either way, and
-it decides whether pre-r221 exports still out there are dead on arrival or
-fine.
+The one loose thread, recorded honestly: HF-11 — a hand-written quest whose
+class infers the SAME name "cls" — rendered from the harness. So the bare
+name string is not universally fatal; whatever the engine trips on involves
+the anonymous class inside a compiled editor export's registration context
+(the editor's emitted class surface differs from a hand mod's in ways we
+cannot see from artifacts). That "why" goes to the developers in §21 — the
+"what" is settled by the A/B above. One archaeology note for them: in the
+old emission the class inferred its name from the variable `cls`, and the
+editor's runtime defines up to three such classes (Quest, Command, Website)
+in one module; the fix gives quests per-quest names.
 
-## History## History## History## History## History## History
+**For authors, the practical state:** editor builds r221+ (stamp
+`2026-09-21.r221` and later) put posts on the feed — proven end to end by
+v6. Exports built r220 or older are dead for feed discovery: re-export.
+
+| **H-12** (optional, last flourish) | Author a post with an **uploaded avatar and a comment** in the current editor, export, install. v6 proved the post arrives; this verifies the editor-export visuals (avatar file, comment) that the harness already proved (HF-3/HF-4). |
+
+## History## History## History## History## History## History## History
 
 - **2026-09-21, first attempt (Zeis's own export, r215):** the feed showed
   only official posts; his post was missing and his player avatar broke.
@@ -258,3 +269,11 @@ fine.
 - **Correction to the r223 plan:** the canary was NOT installed beside v6 —
   it rendered alone. Co-installation is out; the fork collapses to "does the
   OLD emission render today?" (v3 alone), which is now VF-1.
+
+- **2026-09-22, VF-1: v3 (old emission) ABSENT alone on a fresh save.** With
+  v6 present beside it in the matrix, the fork resolves: pre-r221 editor
+  builds do not surface feed posts; the r221 rename is the cure. HF-11's
+  harness render is the recorded footnote (name string alone is not the
+  trigger — the compiled export's context is involved). The saga that began
+  with the r215 playtest closes: author in the current editor, and the post
+  ships.

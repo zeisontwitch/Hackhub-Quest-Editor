@@ -793,19 +793,24 @@ like everything else), and then the r222 round produced the breakthrough:
 renamed classes) surfaced on the feed — the first editor render since
 1.0.38, after five consecutive silent exports. The author string was
 doubly cleared on the way (canary 1.0.2 authored "Zeis" rendered; v6
-authored "Zeissss" rendered). What is NOT settled is WHICH variable flipped:
-the only emitted delta between the silent r218 and the rendering r222 is
-the class rename — and Zeis confirmed v6 ran with **only itself installed**,
-so co-installation is ruled out. Two candidates survive: the rename (though
-the harness's anonymous-class twin rendered, so the class name alone is not
-the whole story), or profile-level feed-pipeline state — every failure
-predates the harness sessions and every success follows them, which smells
-like a stuck queue (the held `Queue.HandleQuestHackhubPosts` job is the
-fingerprint) that the flood of probe posts un-jammed. The r224 run
-re-installs the OLD pre-rename v3 export alone: it renders → the pipeline
-was jammed and cleared (a pipeline note for you); it stays absent → the
-rename is the cure. The editor's emitted classes carry per-quest names from
-r221 on regardless. A rendering footnote from the same
+authored "Zeissss" rendered). **VF-1 has now run (Zeis, fresh save): the OLD v3 export — pre-rename
+emission — stayed ABSENT**, the same day v6 (renamed) rendered beside it in
+the matrix. Within editor exports the A/B is decisive: the anonymous-class
+emission does not surface feed posts; the per-quest-named emission does.
+The rename is the only emitted difference between those builds, and the
+editor carries it since 2026-09-21.r221 — every export from r221 on is
+fine; older exports need re-exporting.
+
+One honest footnote for your pipeline: the same inferred `cls` name rendered
+from our hand-written harness, so the raw name string alone is not the
+trigger — the failure needs the anonymous class inside a compiled export's
+registration context (the old runtime also inferred `cls` for its Command
+and Website classes in the same module, though neither was registered in the
+tested exports — the exact trip-wire is yours to pinpoint). Everything else
+was falsified as a cause along the way: post shapes, author/comment fields,
+avatars as asset files, the employer fallback, rewards/behaviour assignments,
+manifest permissions, the author string, co-installation. The documented
+once-claim-per-name rule stands as the only removal mechanism. A rendering footnote from the same
 run: an author declared with a name but no avatar draws a **broken-image
 icon**, and the employer's file avatar does not resolve on the post-accept
 revealed card either. All five harness variants rendered in one feed — bare, named

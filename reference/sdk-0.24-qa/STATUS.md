@@ -1,140 +1,32 @@
 # QE24 QA status (2026-09-21)
 
-**ONE OPEN PLAYTEST (VF-1, r223):** reinstall the OLD v3 export beside canary 1.0.2 — see [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md). The r222 round delivered the breakthrough: **v6, an editor export (build r222), RENDERED** — the first editor post since 1.0.38 — and HC2 cleared the author string. The open question is which variable fixed it: the r221 class rename (the only emitted delta) or profile-level feed-pipeline state that the harness sessions un-jammed (Zeis confirmed v6 ran with only itself installed — co-installation is ruled out). — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
-harness 1.0.24) and are closed — transcript:
-[`QE24-TestResults-Mail.md`](QE24-TestResults-Mail.md). Ten rows, every one
-answered; three real findings came out of it:
+## RESOLVED: Hackhub quest feed posts (r215 → r225) — one optional flourish left
 
-- **A reply carries no `repliedTo`.** The raw payload (M-05):
-  `{"id":"…","from":"bkelso@gomail.com","to":"qe24-direct@qe24.test","subject":"(Reply)","content":"asdf","sentAt":…}`.
-  `MailDefinition.replyable`'s doc comment promises a `repliedTo` field naming
-  the original mail; the engine does not send it. What a quest CAN match on is
-  **`to` — the original mail's `from`** (proven: the mail quest's own objective
-  ticked on exactly that, M-06). Filed as docs/03 §16.
-- **`getInbox()` entries carry no `subject`** (M-01/M-07: 27–30 entries, ids
-  readable, zero subjects). The first sweep matched by subject and never fired;
-  the sweep now matches the probe's **from** addresses. Filed as docs/03 §17.
-- **The unload hook has no mod identity either** (M-08): the
-  disable-then-restart path fired `OnModPackageUnloaded` correctly — and every
-  permission-gated call from it was refused with `Mod "null"` (`Mail.remove`,
-  `Mail.getInbox`, `Http.*`), while the un-gated `Twotter.removeUser` ran. So
-  the dev-prescribed collect-ids-remove-on-unload pattern is **unreachable on
-  1.3.1** for mail; quest-end cleanup **works** (M-07: the OnAbandon sweep
-  removed the replyable mail, `-> true`). Filed as an amendment to docs/03 §14.
+**Editor-authored feed posts work.** The five-week question closed with a
+same-day A/B on Zeis's profile: the old v3 export (pre-rename emission,
+built r217) **stayed absent** on a fresh save, while v6 (renamed-class
+emission, built r222) had rendered **alone** earlier the same day. The
+rename is the only emitted difference between those builds — so editor
+exports whose quest class is anonymous do not surface posts, and the
+r221 fix (per-quest class names) is the cure. Every competing theory was
+falsified along the way: post shapes, author/comment fields, avatars as
+asset files (the harness even drew HF-3's violet square), the employer
+fallback (reveals on accept — "Ada Bakker"), rewards/behaviour assignments,
+manifest permissions (the canary rendered), the author string ("Zeis" and
+"Zeissss" both rendered), and co-installation. Hidden-until-accept posters
+are standard Hackhub behaviour (Zeis). The one loose thread — an anonymous
+`cls` quest rendering from the hand harness — is recorded as a footnote for
+the developers in §21 (the compiled export's context is involved; the exact
+trip-wire is theirs to pinpoint).
 
-Row verdicts: **M-01 green** (id `8SaLAMoEmk`, same id via getInbox; wrinkle:
-the mail arrives pre-read) · **M-02 green** (`true` → `false` → `false`) ·
-**M-03 green** (removed while never read, and the removal survived
-save → quit → reload) · **M-04 green** (Reply button draws on the direct
-`Mail.send({ replyable: true })` path — the editor runtime's stale assumption
-is disproved) · **M-05 green** (payload above; subject of a reply is the
-constant `(Reply)`) · **M-06 green** (Reply button draws on the
-`this.sendMail(0)` path too; the reply objective ticked) · **M-07 red, our
-fixture** (the reminder-only objective hid the Complete button — the r185
-canary lesson, repeated; fixed in r210 — and the subject sweep was dead, see
-above) · **M-08 red, the game's** (unload refusals, docs/03 §14) ·
-**M-10 green** (a real mailer-daemon bounce drew, 550 reply quoted).
-**M-09** is folded into the Twotter section below: the `moment` warning fired
-on a **clean save with no mods** — the game's own content, never ours, never
-mail.
+**Practical:** author in the current editor (r221+, stamp on every export)
+and the post ships. Exports built r220 or older are dead for feed discovery
+— re-export. **Optional last flourish, H-12** in the checklist: a post with
+an uploaded avatar + a comment from the editor, to verify the visuals the
+harness already proved.
 
-**Retired with the round:** the raw harness's pack-extras and click probes
-(r199–r205; their surfaces lingered on the tester's desktop and start menu).
-`qe24 extras cleanup` (harness **1.0.25**) removes every QE24 menu, widget and
-right-click id the project ever used, and the QA export (1.0.36) ships **no
-extras data** any more — the pack-extras *feature* stays in the editor, only
-the QA project's instance of it is gone. **What Zeis should do once:** run
-`qe24 extras cleanup` (from the installed `reference/sdk-0.24-qa/mod/`
-folder's harness), then replace the old editor export folder with the 1.0.36
-one — after that the desktop and start menu carry no QE24 surfaces, and
-nothing re-registers them on load.
-
-Everything below this line is closed. **Two things belong to the developers,
-not to us:** **Q14** (now covering click handlers *and* the unload hook) and
-**Q15** (`Handbook.open` deep links) — both in
-`docs/03-questions-for-the-developers.md`, alongside the new **§16** (`repliedTo`)
-and **§17** (inbox subjects).
-
-One page, so nobody re-runs a finished check. Every round is closed, answered
-or deliberately shelved (S-10, the short-month clamp, is shelved by the
-author's decision rather than passed, and is marked as such). A future round
-that needs an in-game check adds a *new* row here and a new harness version —
-never a re-run of the ones below.
-
-## Closed 2026-09-21: the mail-authoring playtest — W-01…W-04 green (export 1.0.40)
-
-The probe quest `QESdk024MailAuthoringQa` (export 1.0.40, harness 1.0.26,
-`qe24 run mailauth`) ran on a fresh save. Full transcript:
-[`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md).
-
-| Row | Verdict | Evidence |
-| --- | --- | --- |
-| **W-01** | **green** | Three mails; the objective stayed open (r212's pre-tick and r213's pre-complete both gone); `Mail.send [replyable]`; withdraw armed (id `MaGUHssZcU`). |
-| **W-02** | **green** | Reply "asdfef" → `objective "send-a-reply" completed by Mail.Sent` — matched by `to` = the mail's From. **The reply recipe is proven on an editor-authored quest.** |
-| **W-03** | **green** | Quest self-completed: `cleanup: Mail.remove(MaGUHssZcU "QE24 authoring: withdraw me") -> true`, then `quest completed by Complete quest node`. |
-| **W-04** | **green** | After save → quit → reload: *withdraw me* still gone; *keep me* and *reply to me* remain. |
-| **W-05** | closed on prior evidence | Same drain as W-03 on the abandon reason; measured in game in r209 (M-07) and covered by runtime tests. Not re-run. |
-
-The end-of-run `already completed (in-memory)` WARN is by design (our listener
-and the engine's declarative trigger both fire). Wrinkle recorded, not
-blocking: the probe's **Hackhub feed post never surfaced** in either attempt
-(1.0.39, 1.0.40) — the terminal claim worked both times; watch the next
-feed-post quest before filing a developer question.
-
-The round this tested is closed: **direct replyable mail, the to=From reply
-recipe, and withdraw-on-quest-end are verified authoring features.** Open for
-the developers: docs/03 §16 (`repliedTo`) and §17 (inbox subjects).
-
-## Open: Hackhub posting + mail To (r215 → r216 → r217) — rows H-01…H-09
-
-Two attempts, two compiler bugs caught by playing it as a player:
-
-1. **r215:** quest-level images shipped as inline data-URIs the feed cannot
-   load — post and player avatar both broke. r216 extracts every quest image
-   to `assets/*.png` (the contract mod icon/cover always had).
-2. **The r216 retest was clean and still did not surface the post.**
-   Nor r217's (v3), r218's bare post — and then the r219/r220 harness grids
-   **rendered everything** (5 shapes, then 10 controls/field-clones + the
-   canary). Shapes, quest fields, manifest: all innocent. The surviving
-   difference: editor quests are all anonymous `cls` classes (shared
-   identity), hand mods name theirs. r221 renames the editor's classes and
-   ships HF-11/HF-12 to decide the theory. His accept-reveals also measured
-   the employer fallback (Ada Bakker revealed on accept) and confirmed
-   hidden-until-accept posters are standard Hackhub behaviour.
-   Nor did r217's (v3), r218's bare-post replication (H-10) — and then r219's
-   harness grid **rendered all five shapes in one feed**. The post fields are
-   innocent; the file-avatar contract drew (HF-3's violet square); name-
-   without-avatar draws a broken icon; the suppression is **mod-shaped** (the
-   harness's five permissions vs an editor export's two; the editor's
-   ALWAYS-ASSIGNED quest fields). r220 splits those two: HF-6…HF-10 clone the
-   editor's assignments one at a time, HC1 is a canary mod with the editor's
-   exact manifest. H-07 stays closed (the player card flaked again this
-   session — the game's own gateway).
-   The r217 retest (v3) was flawless by every local check — fresh name, fresh
-   id, named commenter, extracted assets — and still did not surface it. The
-   matrix across every attempt: the ONLY post that ever rendered (r211 probe,
-   1.0.38) was bare — text, no poster, no comments; every post carrying an
-   author block (r215, v2, v3) never showed. **H-10 is the decisive
-   replication run.** The player's own profile card breaks on clean saves
-   with clean exports while the auth gateway 429s — game-side, not ours. The
-   diagnosis round cleared the log's two suspects (the API v1 compat notice
-   and the held `Queue.HandleQuestHackhubPosts` job are in every session on
-   file, vanilla included) and found the real suspect in our own emitted
-   shape: **blank comment authors rode out as empty author objects**,
-   violating the SDK's required `author.name` — and both failing quests
-   carried one while the only post that ever rendered had no comments. r217
-   sends no author at all when a name is blank (persona unverified — §20),
-   withdraws the "leave blank" advice for commenters, and pins the contract
-   in tests (falsified). His player's-eye finds from r216 stand: feed-post
-   notice info-level, Journal/Comments blurbs, section inside Behaviour,
-   employer-vs-poster measured (H-06), XP honestly annotated. The quest's
-   internal id is now visible with a confirmed "new id" reset (both r216
-   quests still carried the invisible `q-blank` placeholder — it never
-   reaches the game, but it hid). The game's "current: API v2" notice is
-   filed as §19; the SDK itself ships v1.
-
-Checklist: [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md)
-— next run: **VF-1 corrected** — the OLD v3 zip ALONE, fresh save, one look.
+The full matrix and every run: [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md);
+the developer-facing summary: docs/03 §21.
 
 ## Settled: the moment.js warning is the game's own content — M-09, closed
 

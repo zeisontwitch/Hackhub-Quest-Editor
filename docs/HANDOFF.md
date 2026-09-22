@@ -1,3 +1,33 @@
+# Handoff — r225
+
+**VF-1: v3 stayed absent. The fork resolved — and the saga closed.**
+
+Zeis re-installed the original v3 zip (pre-rename emission) alone on a fresh
+save: "Hackhub Feed Test 3" did not surface. Same profile, same day v6
+(renamed emission) rendered alone. The rename is the only emitted delta
+between those builds (git-verified), so within editor exports the A/B is
+decisive:
+
+- **Pre-r221 editor exports do not surface feed posts. Still, today.**
+- **The r221 per-quest class names are the cure. v6 proved it standalone.**
+
+The honest footnote: HF-11 — a hand-written anonymous `cls`-named quest —
+rendered from the harness, so the bare name string is not the whole trigger;
+the failure needs the anonymous class inside a compiled export's registration
+context. That "why" goes to the developers (§21 carries the full falsification
+matrix — eleven+ candidate causes eliminated across one day); the "what" and
+the fix are settled by the game itself.
+
+Practical state: author in the current editor (r221+), the post ships — v6
+proved the chain. Exports older than r221 need re-exporting for feed
+discovery. The only open editor-side row is optional: **H-12** — a post with
+an uploaded avatar + a comment from the editor, verifying visuals the
+harness already proved (HF-3's violet square, HF-4's named comments).
+
+Every run of this investigation is in
+[`../reference/sdk-0.24-qa/QE24-Playtest-HackhubPosting.md`](../reference/sdk-0.24-qa/QE24-Playtest-HackhubPosting.md).
+
+---
 # Handoff — r223
 
 **CORRECTION (Zeis): v6 rendered with only itself installed** — no canary.

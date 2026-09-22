@@ -380,7 +380,7 @@ describe("r179 raw harness — the Twotter probe", () => {
            quest "hasn't been claimed yet" (index.d.ts) and every editor
            export since 1.0.38 has failed to surface - the grid tells the
            poison field or proves the suppression is profile-global. */
-        expect(manifest.version).toBe("1.0.27");
+        expect(manifest.version).toBe("1.0.28");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
@@ -398,7 +398,7 @@ describe("r179 raw harness — the Twotter probe", () => {
         expect(code).not.toContain("function extrasOn");
         /* r219: the feed probe rides its own subcommand and versioned names. */
         expect(code).toContain('sub === "feed"');
-        expect(code).toContain('FEED_PROBE_SUFFIX = "1027"');
+        expect(code).toContain('FEED_PROBE_SUFFIX = "1028"');
         expect(code).toContain("assets/qhp.png");
     });
 
@@ -892,11 +892,16 @@ describe("r181 raw harness — starting a quest on demand", () => {
             "QESdk024MailQa",
             "QESdk024MailAuthoringQa",
             "QESdk024EditorQa",
-            "QEHhBare1027",
-            "QEHhAuthor1027",
-            "QEHhAuthorFile1027",
-            "QEHhSocial1027",
-            "QEHhEmployer1027",
+            "QEHhBare1028",
+            "QEHhAuthor1028",
+            "QEHhAuthorFile1028",
+            "QEHhSocial1028",
+            "QEHhEmployer1028",
+            "QEHhAutoC1028",
+            "QEHhButton1028",
+            "QEHhAbandon1028",
+            "QEHhRewards1028",
+            "QEHhClone1028",
         ]);
         expect(tools.text()).toContain("Unclaimed:");
     });
@@ -1223,72 +1228,122 @@ describe("r210 raw harness — the retired probes' cleanup", () => {
     });
 });
 
-describe("r219 raw harness — the Hackhub feed probe", () => {
-    it("registers five feed-probe quests: version-stamped names, contract-clean posts", () => {
+describe("r220 raw harness — the Hackhub feed probe grid", () => {
+    it("registers ten feed probes: five controls + five editor-clone rows, version-stamped", () => {
         const sdk = harnessSdk();
         loadHarness(sdk);
         const quests = sdk.__registered.quests.map(
-            (q) => new (q as unknown as new () => { Name: string; AutoStart?: boolean; HackhubPost?: Record<string, unknown>; Employer?: Record<string, unknown> })(),
+            (q) => new (q as unknown as new () => { Name: string; AutoStart?: boolean; HackhubPost?: Record<string, unknown>; Employer?: Record<string, unknown>; Group?: string; AutoComplete?: boolean; HasCompleteButton?: boolean; Abandonable?: boolean; Rewards?: Record<string, number> })(),
         );
         const byName = new Map(quests.map((q) => [q.Name, q]));
-        /* The suffix is the harness version: claim memory (a post shows only
-           while its quest "hasn't been claimed yet") makes a used-up name
-           useless, so every harness bump mints fresh names. */
-        for (const name of ["QEHhBare1027", "QEHhAuthor1027", "QEHhAuthorFile1027", "QEHhSocial1027", "QEHhEmployer1027"]) {
+        const names = [
+            "QEHhBare1028", "QEHhAuthor1028", "QEHhAuthorFile1028", "QEHhSocial1028", "QEHhEmployer1028",
+            "QEHhAutoC1028", "QEHhButton1028", "QEHhAbandon1028", "QEHhRewards1028", "QEHhClone1028",
+        ];
+        for (const name of names) {
             expect(byName.has(name), name).toBe(true);
             expect(byName.get(name)!.AutoStart, name).toBe(false);
         }
-        /* HF1 bare: no author object at all - the only shape that ever rendered. */
-        expect(byName.get("QEHhBare1027")!.HackhubPost).toEqual({
-            content: expect.stringContaining("HF1"),
+        /* Controls (proven renderers from r219's run, fresh names). */
+        expect(byName.get("QEHhBare1028")!.HackhubPost).toEqual({ content: expect.stringContaining("HF1") });
+        expect(byName.get("QEHhAuthor1028")!.HackhubPost!.author).toEqual({ name: "Selin Calloway" });
+        expect(byName.get("QEHhAuthorFile1028")!.HackhubPost!.author).toEqual({ name: "Selin Calloway", avatar: "assets/qhp.png" });
+        expect(byName.get("QEHhSocial1028")!.HackhubPost!.comments).toHaveLength(2);
+        /* HF5: the employer in the SDK's OWN shape - firstName/lastName/email -
+           so the documented fallback is measured fairly this time. */
+        expect(byName.get("QEHhEmployer1028")!.Employer).toEqual({
+            firstName: "Ada", lastName: "Bakker", email: "ada.bakker@qe24.test", avatar: "assets/qhp.png",
         });
-        /* HF2: a named poster, nothing else. */
-        expect(byName.get("QEHhAuthor1027")!.HackhubPost!.author).toEqual({ name: "Selin Calloway" });
-        /* HF3: the avatar rides as an asset FILE path, like mod icons do. */
-        expect(byName.get("QEHhAuthorFile1027")!.HackhubPost!.author).toEqual({ name: "Selin Calloway", avatar: "assets/qhp.png" });
-        /* HF4: likes and comments whose authors all carry NAMES - the d.ts
-           requires author.name; the empty author object is the r217 suspect. */
-        const social = byName.get("QEHhSocial1027")!.HackhubPost!;
-        expect(social.likes).toBe(3);
-        expect(social.comments).toEqual([
-            { author: { name: "Riko Voss" }, content: "first" },
-            { author: { name: "Mara Quill" }, content: "on my way" },
-        ]);
-        /* HF5: the employer fallback - employer set, post bare, no author. */
-        const employer = byName.get("QEHhEmployer1027")!;
-        expect(employer.HackhubPost!.author).toBeUndefined();
-        expect(employer.Employer).toEqual({ name: "Ada Bakker", avatar: "assets/qhp.png" });
-        /* The avatar the file-path variants point at must exist in the mod. */
+        expect(byName.get("QEHhEmployer1028")!.HackhubPost!.author).toBeUndefined();
+        /* The editor-clone rows: each isolates one ALWAYS-ASSIGNED field. */
+        expect(byName.get("QEHhAutoC1028")!.AutoComplete).toBe(false);
+        expect(byName.get("QEHhButton1028")!.HasCompleteButton).toBe(false);
+        expect(byName.get("QEHhAbandon1028")!.Abandonable).toBe(true);
+        expect(byName.get("QEHhRewards1028")!.Rewards).toEqual({ money: 0, xp: 0 });
+        /* HF10 assigns everything a compiled editor quest assigns. */
+        const clone = byName.get("QEHhClone1028")!;
+        expect(clone.AutoComplete).toBe(false);
+        expect(clone.HasCompleteButton).toBe(false);
+        expect(clone.Abandonable).toBe(true);
+        expect(clone.Rewards).toEqual({ money: 0, xp: 0 });
+        expect(clone.Group).toBe("side");
+        expect(clone.Employer).toEqual({
+            firstName: "Ada", lastName: "Bakker", email: "ada.bakker@qe24.test", avatar: "assets/qhp.png",
+        });
+        /* The controls must NOT carry the editor's assignments - that is what
+           makes them controls. */
+        expect(byName.get("QEHhBare1028")!.AutoComplete).toBeUndefined();
+        expect(byName.get("QEHhBare1028")!.HasCompleteButton).toBeUndefined();
+        expect(byName.get("QEHhBare1028")!.Abandonable).toBeUndefined();
+        /* The avatar the file rows point at must exist in the mod. */
         expect(readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/assets/qhp.png"))).toBeTruthy();
     });
 
-    it("qe24 feed prints the grid, the reading guide, and the once-claim warning", async () => {
+    it("qe24 feed prints the ten rows, the reading guide, and the employer-fallback check", async () => {
         const sdk = harnessSdk();
         loadHarness(sdk);
         const tools = toolsFor(sdk);
         (tools as { getArgs: () => string[] }).getArgs = () => ["feed"];
         await runCommand(tools);
         const text = (tools as { text: () => string }).text();
-        for (const name of ["QEHhBare1027", "QEHhAuthorFile1027", "QEHhEmployer1027"]) {
+        for (const name of ["QEHhBare1028", "QEHhAutoC1028", "QEHhButton1028", "QEHhAbandon1028", "QEHhRewards1028", "QEHhClone1028"]) {
             expect(text).toContain(name);
         }
-        expect(text).toContain("HF1");
-        expect(text).toContain("HF5");
-        expect(text).toContain("ALL five absent");
-        expect(text).toContain("HF1 only");
-        expect(text).toContain("assets/qhp.png");
+        expect(text).toContain("editor-clone rows");
+        expect(text).toContain("THAT field kills the post");
+        expect(text).toContain("Ada Bakker");
         expect(text).toContain("qe24 run clear");
     });
 
-    it("qe24 run clear unclaims the feed probes too", async () => {
+    it("qe24 run clear unclaims all ten probes", async () => {
         const sdk = harnessSdk();
         loadHarness(sdk);
         const tools = toolsFor(sdk);
         (tools as { getArgs: () => string[] }).getArgs = () => ["run", "clear"];
         await runCommand(tools);
         const unclaimed = (sdk as unknown as { __unclaimed: string[] }).__unclaimed;
-        for (const name of ["QEHhBare1027", "QEHhAuthor1027", "QEHhAuthorFile1027", "QEHhSocial1027", "QEHhEmployer1027"]) {
+        for (const name of ["QEHhBare1028", "QEHhAuthor1028", "QEHhAuthorFile1028", "QEHhSocial1028", "QEHhEmployer1028", "QEHhAutoC1028", "QEHhButton1028", "QEHhAbandon1028", "QEHhRewards1028", "QEHhClone1028"]) {
             expect(unclaimed).toContain(name);
         }
+    });
+});
+
+describe("r220 raw harness — the feed canary (editor-export manifest)", () => {
+    /** Loads the canary the same way the scaffold loads the harness. */
+    function loadCanary(sdk: unknown): Harness {
+        const code = readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/feedcanary/dist/mod.js"), "utf8");
+        const mod: { exports: unknown } = { exports: {} };
+        new Function("require", "module", "exports", code)(
+            (name: string) => {
+                if (name === "@hotbunny/hackhub-content-sdk") return sdk;
+                throw new Error(`unexpected require: ${name}`);
+            },
+            mod,
+            mod.exports,
+        );
+        return (sdk as { __registered: Harness }).__registered;
+    }
+
+    it("ships a manifest IDENTICAL in shape to an editor export (mail+events only)", () => {
+        const manifest = JSON.parse(
+            readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/feedcanary/manifest.json"), "utf8"),
+        ) as { id: string; apiVersion: number; permissions: string[] };
+        expect(manifest.id).toBe("qe24-feedcanary");
+        expect(manifest.apiVersion).toBe(1);
+        expect(manifest.permissions).toEqual(["mail", "events"]);
+    });
+
+    it("registers one bare-post quest whose HackhubPost carries no author block", () => {
+        const sdk = harnessSdk();
+        loadCanary(sdk);
+        const quests = sdk.__registered.quests.map(
+            (q) => new (q as unknown as new () => { Name: string; HackhubPost?: Record<string, unknown>; AutoStart?: boolean })(),
+        );
+        expect(quests).toHaveLength(1);
+        const q = quests[0];
+        expect(q.Name).toBe("QEFeedCanary101");
+        expect(q.AutoStart).toBe(false);
+        expect(q.HackhubPost).toEqual({ content: expect.stringContaining("HC1") });
+        expect(q.HackhubPost!.author).toBeUndefined();
     });
 });

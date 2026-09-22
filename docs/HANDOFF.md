@@ -1,3 +1,37 @@
+# Handoff — r220
+
+**The grid rendered — every single row.** Zeis's screenshots: HF-1's bare
+post as "Hidden User" (the drawn persona), HF-2's named poster (with a
+broken-image icon — name without avatar breaks the avatar slot), **HF-3's
+file avatar drawing as the violet square** (the extracted-asset contract,
+visually proven at last), HF-4's likes + both named comments (commenter
+avatars absent → broken icons), HF-5 as "Hidden User" — which measured
+nothing, because the probe's employer `{name}` was the WRONG shape
+(`QuestEmployer` is `firstName/lastName/email/avatar`).
+
+So: **the post shapes are innocent. HackhubPost works.** The suppression is
+mod-shaped, and exactly two deltas remain between the rendering harness and
+the never-rendering editor exports:
+
+1. the compiled editor quest **always assigns** `AutoComplete`, `HasCompleteButton`,
+   `Abandonable` and a zero `Rewards` object — the r84 anti-pattern
+   (assigned-false vs omitted), never tested against the feed;
+2. the **manifest** (five permissions vs `mail, events`).
+
+r220 splits them: harness **1.0.28** re-runs the five controls under fresh
+names plus **HF-6…HF-10** (each editor assignment isolated, then the full
+clone) and a correctly-shaped employer-fallback row; the new **canary mod**
+(`qe24-feedcanary`, editor-identical manifest) posts one bare **HC1**. One
+look at the feed reads the whole matrix. `qe24 feed` prints it;
+`qe24 run clear` cleans up. Scaffold tests drive both mods (42 tests in the
+scaffold file); guards falsified (an HF-6 assignment removed; the canary's
+post given an author block).
+
+Also this round: the editor's poster/commenter blurbs now say name-without-
+avatar draws a broken icon (evidence-backed), §21 gained the resolution
+direction, §22 files the avatar/fallback rendering matrix question.
+
+---
 # Handoff — r219
 
 **H-10 came back absent: even the bare post fails from an editor export.**

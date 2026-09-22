@@ -778,13 +778,18 @@ contract-clean `author: { name }` shapes:
 | r217 (v3) | employer{name,avatar} + `author{name,avatar file}` + named comment + likes | fresh name + fresh id, fresh save | absent |
 | r218 H-10 | **bare** — content + likes only, no author, no comments, no employer | fresh, fresh save, no mods | **absent** |
 
-One more datapoint narrows it: the single successful render came from our
-**QA harness mod** (`qe-sdk-0.24-qa` — permissions `network, events, mail,
-shell, ui`), while every failing export ships only `mail, events` under a
-fresh mod id each time. A harness probe (r219) now re-runs the bare shape
-from that very mod, plus four field-isolated variants, to split "the author
-poisons the post" from "editor-shaped mods no longer surface at all" from
-"this profile has used its one shot".
+**Resolution direction (r219's grid ran, 2026-09-22): the post shapes are
+innocent.** All five harness variants rendered in one feed — bare, named
+poster, file-avatar poster, likes + named comments — so `HackhubPost` itself
+still works, the extracted-asset avatar contract renders, and the suppression
+is **mod-shaped**: the same shapes that render from our QA harness (five
+permissions) never surface from an editor export (`mail, events`, fresh ids).
+The r220 round isolates the two surviving deltas: the compiled editor quest's
+ALWAYS-ASSIGNED fields (`AutoComplete`/`HasCompleteButton`/`Abandonable`/zero
+`Rewards`) and the manifest shape (a canary mod with editor-identical
+permissions). One more engine observation from the same run: a post author
+declared with a **name but no avatar** draws a **broken-image icon** on the
+post — the anonymous "Hidden User" persona, by contrast, renders fine.
 
 At the same time, every session log — vanilla runs included — shows
 `[Scheduler] Holding job "Queue.HandleQuestHackhubPosts": no handler
@@ -800,3 +805,30 @@ registered.` when feed-adjacent UI opens.
 - whether the once-per-profile claim rule (d.ts, `HackhubPost`) also
   suppresses posts for quest names a profile has claimed through
   `Quest.claim` rather than the feed.
+
+## 22. Feed-post author rendering: name-without-avatar draws a broken icon — and when exactly does the employer fallback fire?
+
+**Found in the r219 harness grid** (2026-09-22, game 1.3.1, SDK 0.24.0).
+
+Two rendering behaviours around `HackhubPost.author` that the type
+declarations don't describe:
+
+1. **A named author with no avatar draws a broken-image icon.** `author:
+   { name }` (no `avatar`) renders the name and a broken `<img>` next to it —
+   the same for comment authors. The anonymous route (no `author` at all)
+   renders the game's drawn "Hidden User" persona without incident. So for
+   the feed, `avatar` is effectively required whenever `author` is present —
+   or the game should fall back to a drawn persona for named-but-avatarless
+   authors.
+2. **The documented employer fallback is unmeasured.** The d.ts says an
+   omitted post author falls back to "the quest's (auto-generated) employer,
+   falling back to an anonymous 'Hidden User'". A probe with an INVALID
+   employer shape (`{name}`) correctly landed on "Hidden User"; whether a
+   well-formed `Employer` (`firstName/lastName/email/avatar`) becomes the
+   post's author is being measured right now (harness 1.0.28, row HF-5).
+   Note the interplay with 1: if the fallback fires, does the employer's
+   avatar come along, or does the post draw the broken icon?
+
+**What we would like:** the intended author/avatar matrix — which
+combinations render what, and whether the employer fallback is expected to
+carry the employer's name AND avatar to the post.

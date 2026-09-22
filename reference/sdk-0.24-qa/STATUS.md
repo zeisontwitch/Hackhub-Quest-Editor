@@ -1,6 +1,6 @@
 # QE24 QA status (2026-09-21)
 
-**ONE OPEN PLAYTEST (the harness grid, r219):** Hackhub feed rows **HF-1…HF-5** in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md) — five post variants from the QA harness 1.0.27, one look at the feed. H-01…H-11 are recorded below it. — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
+**ONE OPEN PLAYTEST (the editor-clone grid + canary, r220):** Hackhub feed rows **HF-1…HF-10 + HC1** in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md) — harness 1.0.28 + canary 1.0.1, one look at the feed. The r219 grid RAN: all five shapes rendered, so the post fields are innocent and the suppression is mod-shaped. — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
 harness 1.0.24) and are closed — transcript:
 [`QE24-TestResults-Mail.md`](QE24-TestResults-Mail.md). Ten rows, every one
 answered; three real findings came out of it:
@@ -93,15 +93,15 @@ Two attempts, two compiler bugs caught by playing it as a player:
    load — post and player avatar both broke. r216 extracts every quest image
    to `assets/*.png` (the contract mod icon/cover always had).
 2. **The r216 retest was clean and still did not surface the post.**
-   Nor did r217's (v3: fresh name + id, named commenter, extracted assets),
-   nor did r218's **H-10 bare-post replication** — content only, no author,
-   no comments, fresh save. Every editor-export shape has now failed,
-   including the only shape that ever rendered (the r211 probe, 1.0.38,
-   from the QA harness mod — which ships five permissions where editor
-   exports ship two). r219 turns the harness loose on it: five post
-   variants, version-stamped names, `qe24 feed` prints the grid. His player
-   avatar returned on 2026-09-22 — H-07's card was the game's own gateway
-   failing, closed.
+   Nor did r217's (v3), r218's bare-post replication (H-10) — and then r219's
+   harness grid **rendered all five shapes in one feed**. The post fields are
+   innocent; the file-avatar contract drew (HF-3's violet square); name-
+   without-avatar draws a broken icon; the suppression is **mod-shaped** (the
+   harness's five permissions vs an editor export's two; the editor's
+   ALWAYS-ASSIGNED quest fields). r220 splits those two: HF-6…HF-10 clone the
+   editor's assignments one at a time, HC1 is a canary mod with the editor's
+   exact manifest. H-07 stays closed (the player card flaked again this
+   session — the game's own gateway).
    The r217 retest (v3) was flawless by every local check — fresh name, fresh
    id, named commenter, extracted assets — and still did not surface it. The
    matrix across every attempt: the ONLY post that ever rendered (r211 probe,
@@ -126,8 +126,8 @@ Two attempts, two compiler bugs caught by playing it as a player:
    filed as §19; the SDK itself ships v1.
 
 Checklist: [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md)
-— next run: **the harness grid** (`qe24 feed`, HF-1…HF-5), then H-08/H-09
-once something renders.
+— next run: **HF-1…HF-10 + HC1** (harness 1.0.28 + canary 1.0.1), then
+H-08/H-09 once an editor export renders again.
 
 ## Settled: the moment.js warning is the game's own content — M-09, closed
 

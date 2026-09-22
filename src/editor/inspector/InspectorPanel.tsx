@@ -421,7 +421,7 @@ function QuestInspector() {
                             rows={4}
                         />
                     </FieldShell>
-                    <FieldShell label="Poster name" hint="Blank = the game generates one. A name nobody else on the board would use — something tied to your story — reads best.">
+                    <FieldShell label="Poster name" hint="Blank (with no avatar) = the game posts as its anonymous \u201cHidden User\u201d persona. A name WITH an avatar reads best — a name without an avatar draws a broken-image icon on the post (observed in game, r219).">
                         <TextInputWithGenerate
                             ariaLabel="Hackhub poster name"
                             value={quest.hackhubPost.authorName ?? ""}
@@ -453,10 +453,9 @@ function QuestInspector() {
                         <p className="mb-1.5 text-[10.5px] leading-snug text-ink-4">
                             Replies on the post, the way the board reads them: a name, an optional
                             avatar, and a line of text. Two or three short ones sell the post as part
-                            of the board. Give each commenter a name — the SDK requires one on every
-                            comment, and a blank one is the prime suspect when a feed post never
-                            shows up (both of the r216 playtest failures carried one). Blank now
-                            sends no name at all; whether the game invents one is unverified.
+                            of the board. Give each commenter a name and an avatar — the SDK
+                            requires the name, and in game a name WITHOUT an avatar draws a
+                            broken-image icon next to the comment (observed, r220's probe run).
                         </p>
                         {(quest.hackhubPost.comments ?? []).map((c, i) => (
                             <div key={c.id} className="mb-2 grid gap-1.5 rounded-md border border-line/70 bg-surface p-2">

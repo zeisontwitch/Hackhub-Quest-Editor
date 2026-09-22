@@ -63,30 +63,62 @@ address), export, run.
 Paste results into `QE24-TestResults-HackhubPosting.md` on QA-Filedump as
 usual. Rows are recorded open in [`STATUS.md`](STATUS.md).
 
-## Part 3 — the harness grid (r219, no editor involved)
+## Part 3 — the harness grid, RAN (r219, harness 1.0.27): ALL FIVE RENDERED
 
-**Install the QA harness 1.0.27 (the folder `mod/` — it now ships an
-`assets/qhp.png` the file-avatar rows point at — replace the whole folder,
-then restart the game) and run `qe24 feed` in the terminal.** It prints the
-grid; the short form:
+**The posts are back.** Fresh save, harness installed, one look at the feed:
 
-| Row | Post shape | Isolates |
+| Row | Shape | Result |
 |---|---|---|
-| **HF-1** | content **only** | the r211 shape, from the mod it once worked from |
-| **HF-2** | + poster **name** | the author block, name only |
-| **HF-3** | + poster name + **avatar file** | the extracted-asset path (the r216 fix, from a mod with full permissions) |
-| **HF-4** | + **likes + two named comments** | the social block, contract-clean |
-| **HF-5** | **employer** set (name + avatar file), post bare | the d.ts's documented employer fallback for the poster |
+| **HF-1** bare | content only | **RENDERED** — poster is the game's drawn "Hidden User" persona |
+| **HF-2** poster name | `author{name}` | **RENDERED** — name shows, but the avatar slot is a **broken-image icon** (name without avatar = broken icon, observed) |
+| **HF-3** name + avatar file | `author{name, avatar:"assets/qhp.png"}` | **RENDERED — the violet square drew.** The asset-file avatar contract is visually proven in the feed |
+| **HF-4** likes + 2 named comments | contract-clean | **RENDERED** — 3 likes, both comments with names and text; commenter avatars (absent) drew broken icons |
+| **HF-5** employer fallback (first try: `{name}`) | post bare | **RENDERED** as "Hidden User" — but the shape was WRONG (`QuestEmployer` is `firstName/lastName/email`, not `name`), so this measured nothing; redone as HF-5' in 1.0.28 |
 
-One look at the feed, transcribe which of HF-1…HF-5 are present. All absent
-→ mod quest posts don't surface at all on this profile/build (§21, and a
-**second Steam account** is the next probe: profile memory vs engine break).
-HF-1 only → the author block is the poison and the grid names the exact
-field. All present → the editor exports differ from this mod somewhere we
-haven't looked (permissions? mod identity?) — record it. Cleanup:
-`qe24 run clear`.
+Plus, in the same feed: official posts (drawn personas, photo avatars) — and
+Zeis's own player card was broken again this session (it was fine last
+session): the card flakiness is the game's own gateway, confirmed.
 
-## History
+**What the grid proved:** the post shapes are innocent — every shape renders,
+from a mod, on this profile, on this build. The suppression is **mod-shaped,
+not shape-shaped**. The harness mod differs from every failing editor export
+in exactly the ways the next round isolates: its manifest (five permissions
+vs `mail, events`) and its quest class (no ALWAYS-ASSIGNED fields).
+
+## Part 4 — r220: the editor-clone grid + the canary (next run)
+
+**Install BOTH** (replace the folders, restart):
+- **harness 1.0.28** — `qe-sdk-0.24-qa` (fresh names, ten posts)
+- **canary 1.0.1** — `qe24-feedcanary` (one bare post, `HC1`, with the
+  editor exports' exact manifest: apiVersion 1, permissions `mail, events`)
+
+Then: open Hackhub, one look, note which of **HF-1…HF-10** and **HC1** show.
+The grid:
+
+| Row | Isolates |
+|---|---|
+| HF-1…HF-4 | the controls, again (fresh names) |
+| **HF-5** | the employer fallback with the SDK's REAL shape (`firstName/lastName/email/avatar`) — poster "Ada Bakker" = fallback works; "Hidden User" = §22 |
+| **HF-6** | bare + `AutoComplete = false`, explicitly (the editor always assigns it) |
+| **HF-7** | bare + `HasCompleteButton = false`, explicitly |
+| **HF-8** | bare + `Abandonable = true`, explicitly |
+| **HF-9** | bare + `Rewards = {money: 0, xp: 0}` (the editor ships a zero rewards object) |
+| **HF-10** | THE FULL EDITOR CLONE — all of the above + `Group: "side"` + the employer |
+| **HC1** | the canary: a mail+events mod posting the HF-1 shape |
+
+Reading it:
+- **one of HF-6…HF-9 absent** → that field kills the post. Found it.
+- **HF-10 absent, HF-6…HF-9 present** → a joint effect; the next grid bisects.
+- **all ten present, HC1 absent** → the manifest shape (two permissions) is
+  the killer; §21 goes to the developers with the canary as proof.
+- **all ten present, HC1 present** → manifest innocent too: the editor's
+  compiled runtime itself is the last suspect standing.
+- **HF-1…HF-5 absent this time** → the suppression is per-session/profile
+  after all; note it, claim nothing.
+
+Cleanup: `qe24 run clear`. No fresh save needed (all names are fresh).
+
+## History## History
 
 - **2026-09-21, first attempt (Zeis's own export, r215):** the feed showed
   only official posts; his post was missing and his player avatar broke.
@@ -132,3 +164,11 @@ haven't looked (permissions? mod identity?) — record it. Cleanup:
   mod — the one mod whose post ever rendered, with five permissions where the
   editor ships two. That permission/identity difference is now the sharpest
   untested variable we have.
+
+- **2026-09-22, the r219 grid RAN: all five posts rendered.** Shapes are
+  innocent; the file-avatar contract drew (HF-3's violet square);
+  name-without-avatar draws a broken icon (HF-2, HF-4's commenters); the
+  employer fallback measured nothing (wrong shape — redone in 1.0.28);
+  Zeis's player card flaky again (game-side). r220 isolates the two remaining
+  deltas: the editor's ALWAYS-ASSIGNED quest fields (HF-6…HF-10) and the
+  editor's manifest shape (the canary, HC1).

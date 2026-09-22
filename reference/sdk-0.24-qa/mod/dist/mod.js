@@ -1836,21 +1836,29 @@ class QE24MailQa extends sdk.Quest {
    a profile that has "used up" a name can never see its post again
    (index.d.ts: a post shows only while the quest "hasn't been claimed
    yet"), so every harness bump mints fresh names for a re-run. */
-var FEED_PROBE_SUFFIX = "1027"; /* 1.0.27 - bump WITH the manifest version */
+var FEED_PROBE_SUFFIX = "1028"; /* 1.0.28 - bump WITH the manifest version */
 var FEED_AVATAR = "assets/qhp.png"; /* the violet square this mod ships */
 
-function feedQuest(nameSuffix, title, post, employer) {
+function feedQuest(nameSuffix, title, post, employer, fields) {
+    /* `fields` carries the editor's ALWAYS-ASSIGNED settings (r219's grid
+       proved posts themselves render from this mod; the r220 rows isolate
+       what a compiled editor quest adds to the class). */
+    var F = fields || {};
     return class extends sdk.Quest {
         constructor() {
             super();
             this.Name = "QEHh" + nameSuffix;
             this.Title = title;
             this.Description = "Feed-discovery probe. Accept it from its Hackhub feed post - that is the whole test.";
-            this.Group = "sandbox";
+            this.Group = F.group || "sandbox";
             this.AutoStart = false;
             this.Objectives = [{ name: "accept", description: "Accepted from the feed post - nothing to do." }];
             if (employer) this.Employer = employer;
             this.HackhubPost = post;
+            if (F.autoComplete === false) this.AutoComplete = false;
+            if (F.hasCompleteButton === false) this.HasCompleteButton = false;
+            if (F.abandonable === true) this.Abandonable = true;
+            if (F.rewards) this.Rewards = F.rewards;
         }
         CreateData() { return {}; }
         OnStart() { log(this.Name + " started from the feed claim - the post RENDERED and worked end to end."); }
@@ -1861,15 +1869,15 @@ function feedQuest(nameSuffix, title, post, employer) {
 var FEED_PROBES = [
     {
         id: "HF1",
-        what: "content ONLY - the r211 shape, in the mod it once worked from",
+        what: "content ONLY - the r211 shape (control)",
         make: function () {
             return feedQuest("Bare" + FEED_PROBE_SUFFIX, "QE24 feed probe (bare)",
-                { content: "HF1 bare post - QE24 feed probe. If only this one shows, the author block is the poison." });
+                { content: "HF1 bare post - QE24 feed probe." });
         },
     },
     {
         id: "HF2",
-        what: "content + author.name only (no avatar)",
+        what: "content + author.name only (no avatar: renders a broken icon - known)",
         make: function () {
             return feedQuest("Author" + FEED_PROBE_SUFFIX, "QE24 feed probe (named poster)",
                 { content: "HF2 named poster - QE24 feed probe.", author: { name: "Selin Calloway" } });
@@ -1877,7 +1885,7 @@ var FEED_PROBES = [
     },
     {
         id: "HF3",
-        what: "content + author.name + author.avatar as an ASSET FILE (assets/qhp.png)",
+        what: "content + author.name + avatar ASSET FILE (assets/qhp.png)",
         make: function () {
             return feedQuest("AuthorFile" + FEED_PROBE_SUFFIX, "QE24 feed probe (poster avatar file)",
                 { content: "HF3 poster avatar file - QE24 feed probe.", author: { name: "Selin Calloway", avatar: FEED_AVATAR } });
@@ -1885,7 +1893,7 @@ var FEED_PROBES = [
     },
     {
         id: "HF4",
-        what: "content + likes + TWO NAMED comments (the contract-clean shape)",
+        what: "content + likes + two NAMED comments (contract-clean)",
         make: function () {
             return feedQuest("Social" + FEED_PROBE_SUFFIX, "QE24 feed probe (likes + comments)",
                 {
@@ -1900,11 +1908,53 @@ var FEED_PROBES = [
     },
     {
         id: "HF5",
-        what: "employer set (name + avatar file), post BARE - the documented employer fallback for the poster",
+        what: "employer in the SDK's OWN shape (firstName/lastName/email/avatar), post BARE - the documented employer fallback",
         make: function () {
             return feedQuest("Employer" + FEED_PROBE_SUFFIX, "QE24 feed probe (employer fallback)",
                 { content: "HF5 employer fallback - QE24 feed probe." },
-                { name: "Ada Bakker", avatar: FEED_AVATAR });
+                { firstName: "Ada", lastName: "Bakker", email: "ada.bakker@qe24.test", avatar: FEED_AVATAR });
+        },
+    },
+    {
+        id: "HF6",
+        what: "bare + AutoComplete = false, EXPLICITLY (the editor always assigns it)",
+        make: function () {
+            return feedQuest("AutoC" + FEED_PROBE_SUFFIX, "QE24 feed probe (explicit AutoComplete=false)",
+                { content: "HF6 explicit AutoComplete false - QE24 feed probe." }, null, { autoComplete: false });
+        },
+    },
+    {
+        id: "HF7",
+        what: "bare + HasCompleteButton = false, EXPLICITLY (the editor always assigns it)",
+        make: function () {
+            return feedQuest("Button" + FEED_PROBE_SUFFIX, "QE24 feed probe (explicit HasCompleteButton=false)",
+                { content: "HF7 explicit HasCompleteButton false - QE24 feed probe." }, null, { hasCompleteButton: false });
+        },
+    },
+    {
+        id: "HF8",
+        what: "bare + Abandonable = true, EXPLICITLY (the editor always assigns it)",
+        make: function () {
+            return feedQuest("Abandon" + FEED_PROBE_SUFFIX, "QE24 feed probe (explicit Abandonable=true)",
+                { content: "HF8 explicit Abandonable true - QE24 feed probe." }, null, { abandonable: true });
+        },
+    },
+    {
+        id: "HF9",
+        what: "bare + Rewards = { money: 0, xp: 0 } (the editor ships a zero rewards object)",
+        make: function () {
+            return feedQuest("Rewards" + FEED_PROBE_SUFFIX, "QE24 feed probe (zero rewards)",
+                { content: "HF9 zero rewards - QE24 feed probe." }, null, { rewards: { money: 0, xp: 0 } });
+        },
+    },
+    {
+        id: "HF10",
+        what: "THE FULL EDITOR CLONE: every explicit assignment a compiled quest makes, one bare post",
+        make: function () {
+            return feedQuest("Clone" + FEED_PROBE_SUFFIX, "QE24 feed probe (editor clone)",
+                { content: "HF10 editor clone - QE24 feed probe." },
+                { firstName: "Ada", lastName: "Bakker", email: "ada.bakker@qe24.test", avatar: FEED_AVATAR },
+                { autoComplete: false, hasCompleteButton: false, abandonable: true, rewards: { money: 0, xp: 0 }, group: "side" });
         },
     },
 ];
@@ -1914,42 +1964,42 @@ for (var fpi = 0; fpi < FEED_PROBES.length; fpi++) sdk.RegisterQuest(FEED_PROBES
 /* The same construction the classes use, so `qe24 run clear` can unclaim
    them by name without keeping the classes around. */
 function feedProbeNames() {
-    var bases = { HF1: "Bare", HF2: "Author", HF3: "AuthorFile", HF4: "Social", HF5: "Employer" };
+    var bases = { HF1: "Bare", HF2: "Author", HF3: "AuthorFile", HF4: "Social", HF5: "Employer", HF6: "AutoC", HF7: "Button", HF8: "Abandon", HF9: "Rewards", HF10: "Clone" };
     var out = [];
     for (var i = 0; i < FEED_PROBES.length; i++) out.push("QEHh" + bases[FEED_PROBES[i].id] + FEED_PROBE_SUFFIX);
     return out;
 }
 
 function printFeedProbe(tools) {
-    tools.println("QE24 Hackhub feed probe (r219) - five posts, ONE look at the feed.");
+    tools.println("QE24 Hackhub feed probe (r220) - ten posts, ONE look at the feed.");
     tools.println("");
-    tools.println("For each row below, note whether its post is on the Hackhub feed");
-    tools.println("(search the feed for the HF prefix in the post text). Do this BEFORE");
-    tools.println("claiming anything - a claimed quest's post is gone for the profile.");
+    tools.println("For each row below, note whether its post is on the Hackhub feed.");
+    tools.println("Do this BEFORE claiming anything - a claimed quest's post is gone.");
     tools.println("");
     var names = feedProbeNames();
-    var whats = [
-        "content ONLY - the r211 shape, in the mod it once worked from",
-        "content + author.name only (no avatar)",
-        "content + author.name + avatar ASSET FILE (assets/qhp.png)",
-        "content + likes + two NAMED comments (contract-clean)",
-        "employer set (name + avatar file), post BARE - the employer fallback",
-    ];
-    for (var r = 0; r < FEED_PROBES.length; r++) {
-        tools.println("  " + FEED_PROBES[r].id + "  " + whats[r]);
+    var r;
+    for (r = 0; r < 5; r++) {
+        tools.println("  " + FEED_PROBES[r].id + "  " + FEED_PROBES[r].what);
+        tools.println("       quest: " + names[r]);
+    }
+    tools.println("  --- the editor-clone rows (a compiled editor quest ALWAYS assigns these) ---");
+    for (r = 5; r < FEED_PROBES.length; r++) {
+        tools.println("  " + FEED_PROBES[r].id + "  " + FEED_PROBES[r].what);
         tools.println("       quest: " + names[r]);
     }
     tools.println("");
-    tools.println("How to read the grid:");
-    tools.println("  ALL five absent   -> mod quest posts are not surfacing at all here:");
-    tools.println("                       docs/03 §21 goes to the developers, and a brand-new");
-    tools.println("                       profile (second Steam account) tells memory from break.");
-    tools.println("  HF1 only          -> the author block is the poison; HF2-HF5 vs HF1 split");
-    tools.println("                       the exact field that kills it.");
-    tools.println("  some, not others  -> copy the grid into the results file; the differing");
-    tools.println("                       field between a present and an absent row is the answer.");
-    tools.println("  ALL five present  -> the editor exports differ from this mod somewhere we");
-    tools.println("                       have not looked (permissions? mod identity?) - record it.");
+    tools.println("How to read the grid (r219 proved the first five all render):");
+    tools.println("  HF6..HF9 absent (singles) -> THAT field kills the post. Found it.");
+    tools.println("  HF10 absent, HF6..HF9 all present -> a JOINT effect of the editor's");
+    tools.println("       assignments; the next grid bisects pairs.");
+    tools.println("  ALL ten present -> the class fields are innocent too: what remains is");
+    tools.println("       the manifest (permissions/identity - the canary mod answers that)");
+    tools.println("       or the editor's compiled runtime itself.");
+    tools.println("  HF1..HF5 absent this time -> profile-level suppression (they rendered");
+    tools.println("       last session); note it and do not claim anything.");
+    tools.println("");
+    tools.println("Also worth one glance: HF5 - if the poster shows \"Ada Bakker\" the d.ts's");
+    tools.println("employer fallback works; \"Hidden User\" means it does not (docs/03 §22).");
     tools.println("");
     tools.println("Cleanup: qe24 run clear (it unclaims these too).");
 }

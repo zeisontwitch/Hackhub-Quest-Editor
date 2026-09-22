@@ -149,26 +149,28 @@ from the harness. So class name alone should not matter, yet the rename is
 the ONLY emitted difference between the r218 and r222 compilers (verified by
 git diff), and v6's zip carries it (`Object.defineProperty(cls, "name", …)`).
 
-## Part 7 — r223: VF-1, the disambiguator — NEXT RUN
+## Part 7 — r224: VF-1, CORRECTED — v3 ALONE
 
-**Install the OLD v3 export** (the `hhfeed-test-v3-1.0.3(1).zip` you already
-have — its emission predates the rename) **together with canary 1.0.2** on a
-fresh save. One look at the feed:
+**Correction (Zeis, 2026-09-22): the canary was NOT installed for the v6
+run** — v6 rendered with only itself installed. The co-installation fork is
+dead, and that sharpens the question to a single clean run:
+
+**Install the OLD v3 export alone** (the `hhfeed-test-v3-1.0.3(1).zip` you
+have — its emission predates the rename), fresh save, one look at the feed:
 
 | Result | Meaning |
 |---|---|
-| **"Hackhub Feed Test 3" renders** (HC2 also renders) | the BUILD never mattered — the trigger is session state (an editor export renders when a hand mod posts alongside it, or after the profile's feed machinery has been exercised). §21 gets a note about the engine's post pipeline; the editor is fully exonerated. |
-| **v3 absent, HC2 renders beside it** | **the r221 rename is the fix** — the saga closes with the class identity as the cause after all, and HF-11's render gets a footnote (the mimic lived in the harness, whose registration state differs from a compiled export's). |
-| both absent | re-run once more before concluding anything; note it. |
+| **"Hackhub Feed Test 3" renders** | the BUILD never mattered. Everything renders now; the r215–r218 failures were a **stuck feed pipeline on the profile** (the held `Queue.HandleQuestHackhubPosts` job is the fingerprint) that the harness sessions un-jammed — 12 posts flooding through, or simply more game sessions. The editor was never broken in its current form; §21 becomes a pipeline note for the developers. |
+| **absent** | the r218 emission is still broken TODAY, and the r221 rename is the cure — HF-11's render gets the footnote (the twin ran from the harness, whose context differs in ways we cannot see), and v6's render is the rename working. |
 
-No new downloads needed — use the v3 zip from QA-filedump and the canary
-1.0.2 you already installed. As always: fresh save, log, one look.
+Why this is still worth one look after v6's success: v6 proves the CURRENT
+build works; VF-1 tells us whether the OLD builds were ever broken — which
+decides whether the five failed exports were our bug (renamed classes fixed
+it) or the game's (a jam that cleared). Different §21 text either way, and
+it decides whether pre-r221 exports still out there are dead on arrival or
+fine.
 
-**Practical state either way: editor-authored feed posts WORK on the current
-build** — v6 proved it end to end (authored → exported → installed → on the
-feed).
-
-## History## History## History## History## History
+## History## History## History## History## History## History
 
 - **2026-09-21, first attempt (Zeis's own export, r215):** the feed showed
   only official posts; his post was missing and his player avatar broke.
@@ -252,3 +254,7 @@ feed).
   failing r218 and the working r222 is exactly the class rename; the
   co-installation (canary) is the other candidate. VF-1 (v3 zip + canary
   together) splits them.
+
+- **Correction to the r223 plan:** the canary was NOT installed beside v6 —
+  it rendered alone. Co-installation is out; the fork collapses to "does the
+  OLD emission render today?" (v3 alone), which is now VF-1.

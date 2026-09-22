@@ -1,5 +1,10 @@
 # Handoff — r223
 
+**CORRECTION (Zeis): v6 rendered with only itself installed** — no canary.
+Co-installation is ruled out; the VF-1 disambiguator is now simply the OLD
+v3 export ALONE on a fresh save (renders → the pipeline had jammed and the
+harness sessions cleared it; absent → the r221 rename is the cure).
+
 **IT RENDERED. v6 — an editor export — surfaced on the feed.** After five
 consecutive silent exports (r215 through r218), Zeis authored a post in the
 r222 editor (bare + 2 likes, fresh name, employer empty), exported,

@@ -1,6 +1,6 @@
 # QE24 QA status (2026-09-21)
 
-**ONE OPEN PLAYTEST (the author test + v4, r222):** canary **HC2** (author "Zeis", everything else identical to the canary that rendered) + a fresh post authored in the r221 editor, in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md). The r221 pair RAN: HF-11 (the anonymous `cls` twin) rendered — the class-identity theory is dead; shapes, fields, manifest, and class names are all innocent, and the last untested correlation is the author string. — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
+**ONE OPEN PLAYTEST (VF-1, r223):** reinstall the OLD v3 export beside canary 1.0.2 — see [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md). The r222 round delivered the breakthrough: **v6, an editor export (build r222), RENDERED** — the first editor post since 1.0.38 — and HC2 cleared the author string. The open question is which variable fixed it: the r221 class rename (the only emitted delta) or the co-installed hand mod (v6 is the first editor export to share a session with one). — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
 harness 1.0.24) and are closed — transcript:
 [`QE24-TestResults-Mail.md`](QE24-TestResults-Mail.md). Ten rows, every one
 answered; three real findings came out of it:
@@ -134,8 +134,7 @@ Two attempts, two compiler bugs caught by playing it as a player:
    filed as §19; the SDK itself ships v1.
 
 Checklist: [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md)
-— next run: **HC2 + v4**. If HC2 is absent, the author string is the
-discriminator; either way v4 is the end-to-end retest.
+— next run: **VF-1** (v3 zip + canary together, fresh save, one look).
 
 ## Settled: the moment.js warning is the game's own content — M-09, closed
 

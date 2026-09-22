@@ -126,23 +126,49 @@ structural twin). So the class name is NOT the identity the feed keys on.
 Every hand-authored shape renders; the suppression lives in whatever makes an
 editor export an editor export.
 
-## Part 6 — r222: the author test + the v4 end-to-end — NEXT RUN
+## Part 6 — RAN (r222): HC2 present, **AND V6 — AN EDITOR EXPORT — RENDERED**
 
-Two mods this session, one look at the feed:
+Fresh saves, two stages:
 
-1. **canary 1.0.2** (`qe24-feedcanary`, from
-   `delivery/qe24-feedcanary-1.0.2.zip`) — identical to the 1.0.1 canary
-   that rendered, except the manifest author is now **"Zeis"**. Post **HC2**.
-   - HC2 absent → **the author string is the discriminator.** Every silent
-     export is authored "Zeis"; every rendering mod is not. Actionable
-     immediately (the editor stops shipping "Zeis" as its default author).
-   - HC2 present → author innocent too; what remains is the editor's
-     compiled mod machinery itself (its load-time Localization calls are the
-     only SDK surface no rendering mod has touched).
-2. **v4** — author a fresh post in the **r221 editor** (fresh quest name and
-   id), export, install. The end-to-end retest on the renamed-class runtime.
+- **HC2 present** — the author string is innocent (Zeis doubled down by
+  exporting v6 authored "Zeissss"; it rendered too).
+- **v6 (editor export, build r222) RENDERED.** The first editor-authored
+  post to surface since 1.0.38 — five editor exports failed before it.
 
-## History## History## History## History
+v6's shape (from his uploaded project): **bare + 2 likes** — employer empty,
+no author, no comments. Exactly the H-10 shape that was absent… with two
+differences:
+
+| | H-10 (absent) | v6 (PRESENT) |
+|---|---|---|
+| Emitted class | anonymous `cls` | **renamed to the quest's name (r221 fix)** |
+| Session | export alone | **canary 1.0.2 installed beside it** |
+
+And the complication: HF-11 — the anonymous-`cls` structural twin — rendered
+from the harness. So class name alone should not matter, yet the rename is
+the ONLY emitted difference between the r218 and r222 compilers (verified by
+git diff), and v6's zip carries it (`Object.defineProperty(cls, "name", …)`).
+
+## Part 7 — r223: VF-1, the disambiguator — NEXT RUN
+
+**Install the OLD v3 export** (the `hhfeed-test-v3-1.0.3(1).zip` you already
+have — its emission predates the rename) **together with canary 1.0.2** on a
+fresh save. One look at the feed:
+
+| Result | Meaning |
+|---|---|
+| **"Hackhub Feed Test 3" renders** (HC2 also renders) | the BUILD never mattered — the trigger is session state (an editor export renders when a hand mod posts alongside it, or after the profile's feed machinery has been exercised). §21 gets a note about the engine's post pipeline; the editor is fully exonerated. |
+| **v3 absent, HC2 renders beside it** | **the r221 rename is the fix** — the saga closes with the class identity as the cause after all, and HF-11's render gets a footnote (the mimic lived in the harness, whose registration state differs from a compiled export's). |
+| both absent | re-run once more before concluding anything; note it. |
+
+No new downloads needed — use the v3 zip from QA-filedump and the canary
+1.0.2 you already installed. As always: fresh save, log, one look.
+
+**Practical state either way: editor-authored feed posts WORK on the current
+build** — v6 proved it end to end (authored → exported → installed → on the
+feed).
+
+## History## History## History## History## History
 
 - **2026-09-21, first attempt (Zeis's own export, r215):** the feed showed
   only official posts; his post was missing and his player avatar broke.
@@ -219,3 +245,10 @@ Two mods this session, one look at the feed:
   r211→r213 runtime diff (52 lines, flow-runner only) confirms nothing
   registration-relevant changed around the 1.0.38 render — that once-render
   stays fully explained by per-quest-name claim memory.
+
+- **2026-09-22, r222's run: HC2 present (author innocent, "Zeissss" rendered
+  too) — and v6, an editor export built with r222, RENDERED.** Bare post,
+  fresh name, five failed exports before it. The emitted delta between the
+  failing r218 and the working r222 is exactly the class rename; the
+  co-installation (canary) is the other candidate. VF-1 (v3 zip + canary
+  together) splits them.

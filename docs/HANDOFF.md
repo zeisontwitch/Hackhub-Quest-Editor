@@ -1,3 +1,35 @@
+# Handoff — r223
+
+**IT RENDERED. v6 — an editor export — surfaced on the feed.** After five
+consecutive silent exports (r215 through r218), Zeis authored a post in the
+r222 editor (bare + 2 likes, fresh name, employer empty), exported,
+installed — and there it was. The author test was cleared on the way: canary
+1.0.2 (author "Zeis") rendered, and v6 (author "Zeissss" — his own tweak)
+rendered too. **Editor-authored feed posts work on the current build.**
+
+Which variable fixed it is the one open question, and the artifacts set it
+up precisely:
+
+- The ONLY emitted delta between the silent r218 and the rendering r222 is
+  the r221 class rename (verified by git diff; v6's zip carries it).
+- But v6 is also the FIRST editor export to share a session with a hand mod
+  (canary 1.0.2) — every silent export ran alone.
+- And HF-11 (the anonymous `cls` structural twin, hand-side) rendered, so
+  the class name alone should not matter.
+
+**VF-1 decides:** the OLD v3 export (pre-rename emission — the zip he
+already has) re-installed BESIDE canary 1.0.2, fresh save, one look.
+Renders → the build never mattered; the trigger is session/co-installation
+(an engine pipeline note for the developers). Absent while HC2 renders →
+the rename is the cure and the saga closes on the identity theory after
+all. Either way the practical result stands: author in the editor, export,
+ship — the post arrives.
+
+Also recorded: v6's project deltas vs v3 (employer emptied, author/comment
+stripped — he re-authored bare), the "Zeissss" experiment, and the delivery
+channel note (zips live in `reference/sdk-0.24-qa/delivery/` in Git).
+
+---
 # Handoff — r222
 
 **HF-11 rendered. The class-identity theory is dead.** Zeis's fresh-save

@@ -287,6 +287,7 @@ row**. Paste the log only where a row says so. Row Q is last and optional.
 
 | Export | Editor build | Result |
 |---|---|---|
+| 1.0.47 | 2026-09-21.r223 | **No functional change** — the build stamp. The headline is Zeis's v6: an editor export rendered on the feed for the first time since 1.0.38 (the r221 rename build). |
 | 1.0.46 | 2026-09-21.r222 | **No functional change** — the build stamp. The round is the canary (1.0.2: author \"Zeis\") + Zeis's v4 end-to-end authoring. |
 | 1.0.45 | 2026-09-21.r221 | **The quest class carries its own name now.** Every compiled quest was an anonymous class assigned to `cls` (one shared identity across every quest and export); the emitted runtime renames the class to the quest's name at construction. r220's grid proved shapes/fields/manifest innocent, so this shared identity is the last suspect for the never-rendering posts. Runtime change; treat the next export as the retest. |
 | 1.0.44 | 2026-09-21.r220 | **No functional change** — the build stamp. The round went into the QA harness (1.0.28: the editor-clone grid HF-6…HF-10) and a new canary mod (`qe24-feedcanary`, editor-identical manifest). Editor blurbs gained the in-game avatar finding (name without avatar draws a broken icon). |

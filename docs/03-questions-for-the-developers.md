@@ -787,11 +787,20 @@ so `cls.name === "cls"` for **every quest in every export**, while hand mods
 name their classes. If the engine keys quest identity (claim memory, and with
 it the feed's "hasn't been claimed yet" check) on the class name, one claimed
 editor quest retires every editor export's posts on that profile — which
-would explain why fresh quest names never helped. The r221 pair RAN: **the anonymous-class twin rendered** — the class name
-is not the identity either. The surviving untested correlation: every silent
-export is authored **"Zeis"**, and no mod that ever rendered is (the r222
-canary flips exactly that string). The editor's emitted classes are renamed
-to the quest's own name regardless (identity-correcting). A rendering footnote from the same
+would explain why fresh quest names never helped. The r221 pair RAN (the anonymous-class twin rendered — class names innocent
+like everything else), and then the r222 round produced the breakthrough:
+**an editor export rendered.** Zeis's v6 (bare post, build r222 with the
+renamed classes) surfaced on the feed — the first editor render since
+1.0.38, after five consecutive silent exports. The author string was
+doubly cleared on the way (canary 1.0.2 authored "Zeis" rendered; v6
+authored "Zeissss" rendered). What is NOT settled is WHICH variable flipped:
+the only emitted delta between the silent r218 and the rendering r222 is
+the class rename, but an editor export also ran BESIDE a hand mod for the
+first time in any rendering attempt (every silent export ran alone). The
+r223 disambiguator re-installs the OLD pre-rename v3 export beside the
+canary: it either renders (session/co-installation is the trigger — a
+pipeline note for you) or stays absent (the class rename is the cure).
+The editor's emitted classes carry per-quest names from r221 on regardless. A rendering footnote from the same
 run: an author declared with a name but no avatar draws a **broken-image
 icon**, and the employer's file avatar does not resolve on the post-accept
 revealed card either. All five harness variants rendered in one feed — bare, named

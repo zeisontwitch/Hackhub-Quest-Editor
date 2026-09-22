@@ -1,6 +1,6 @@
 # QE24 QA status (2026-09-21)
 
-**ONE OPEN PLAYTEST (second retest after r217):** the Hackhub-posting + mail-To rows **H-01…H-09** — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
+**ONE OPEN PLAYTEST (third retest after r218):** the Hackhub-posting + mail-To rows **H-01…H-11** — H-10 (the bare-post replication) is the next run — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
 harness 1.0.24) and are closed — transcript:
 [`QE24-TestResults-Mail.md`](QE24-TestResults-Mail.md). Ten rows, every one
 answered; three real findings came out of it:
@@ -92,7 +92,14 @@ Two attempts, two compiler bugs caught by playing it as a player:
 1. **r215:** quest-level images shipped as inline data-URIs the feed cannot
    load — post and player avatar both broke. r216 extracts every quest image
    to `assets/*.png` (the contract mod icon/cover always had).
-2. **The r216 retest was clean and still did not surface the post.** The
+2. **The r216 retest was clean and still did not surface the post.**
+   The r217 retest (v3) was flawless by every local check — fresh name, fresh
+   id, named commenter, extracted assets — and still did not surface it. The
+   matrix across every attempt: the ONLY post that ever rendered (r211 probe,
+   1.0.38) was bare — text, no poster, no comments; every post carrying an
+   author block (r215, v2, v3) never showed. **H-10 is the decisive
+   replication run.** The player's own profile card breaks on clean saves
+   with clean exports while the auth gateway 429s — game-side, not ours. The
    diagnosis round cleared the log's two suspects (the API v1 compat notice
    and the held `Queue.HandleQuestHackhubPosts` job are in every session on
    file, vanilla included) and found the real suspect in our own emitted
@@ -110,8 +117,8 @@ Two attempts, two compiler bugs caught by playing it as a player:
    filed as §19; the SDK itself ships v1.
 
 Checklist: [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md)
-— retest with **named** commenters (H-01), the blank-comment experiment
-(H-08), and a fresh profile for the claim-memory proof (H-09).
+— next run: **H-10**, the bare-post replication; then H-11 (author block
+isolated), H-08 (blank-comment experiment), H-09 (fresh profile).
 
 ## Settled: the moment.js warning is the game's own content — M-09, closed
 

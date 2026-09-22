@@ -1,3 +1,33 @@
+# Handoff — r218
+
+**v3 failed flawless.** Fresh quest name, fresh id (the new-id button's first
+field use), named employer + poster + commenter, all avatars extracted to
+asset files, contract-clean author shapes, fresh save — the post still never
+surfaced, and the player's own profile card is still avatarless. That empties
+our side of the ledger: every export-side bug we could find (data-URI images,
+empty comment authors) is fixed and verified in his zips. What remains is a
+pattern, not a bug we can patch:
+
+- **The only feed post that has ever rendered was bare** — the r211 probe
+  (1.0.38): `content` only, no author, no comments. The game drew the persona.
+- **Every post carrying an author block failed** — r215 (`author{name}` +
+  data-URI avatar), v2 (`author{name}` only + blank comment), v3 (employer +
+  `author{name,avatar file}` + named comment). Fresh names and ids each time.
+- Claim memory (d.ts: a post shows only while the quest "hasn't been claimed
+  yet") explains repeat absences, but NOT v3 — that name was never used.
+- The held `Queue.HandleQuestHackhubPosts` job appears in every log, vanilla
+  included; the player card breaks on clean saves while the auth gateway
+  429s. All of it is filed: docs/03 **§21** (posts stopped surfacing), §19
+  (API v2), §20 (blank comment personas).
+
+r218's change is one honest sentence in the compiler's feed-post notice:
+**the only shape we have ever seen render is a bare one** — strip to it (and
+a never-used identifier) when a post refuses to show. Zeis's next run is
+**H-10**: author exactly that shape, fresh name, fresh save. If it renders,
+H-11 isolates the author block; if it doesn't, mod quest posts are dead on
+1.3.1 and §21 goes to the developers with the full matrix.
+
+---
 # Handoff — r217
 
 **The r216 retest failed clean — and that failure was the clue.** The export

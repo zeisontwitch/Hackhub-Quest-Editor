@@ -120,7 +120,7 @@ function planningComments(quests: ProjectDocument["quests"]): string {
  * browser tab / local checkout (the round-21 crash hunt was ambiguous
  * exactly because of this).
  */
-export const EDITOR_BUILD = "2026-09-21.r217";
+export const EDITOR_BUILD = "2026-09-21.r218";
 
 /** Warning severity (r153): info = good to know, warn = could cause issues,
     error = will break or strand the player. */
@@ -333,7 +333,7 @@ function warnUnstartableQuests(project: ProjectDocument): CompilerWarning[] {
                    flagged that painting it red made a correct setup look
                    broken. Info keeps the yellow "Good to know" heading. */
                 warnings.push({ level: "info", text:
-                    `${q.title || q.name}: the player claims this one from its Hackhub feed post — nothing in it runs until they do. Turn on “Start automatically” in the quest's Behaviour settings if it should begin the moment the mod loads.` });
+                    `${q.title || q.name}: the player claims this one from its Hackhub feed post — nothing in it runs until they do. Turn on “Start automatically” in the quest's Behaviour settings if it should begin the moment the mod loads. Field evidence (r218): the only feed post we have ever seen render is a bare one — post text only, poster and employer left empty, no comments. If the post never shows up in game, strip it to that (and give the quest an identifier it has never had) before anything else.` });
             } else {
                 warnings.push({ level: "error", text:
                     `${q.title || q.name}: nothing can start this quest. It does not start automatically and it is not advertised on the Hackhub feed, so the player has no way to claim it. Turn on “Start automatically” in the quest's Behaviour settings, or give it a feed post.` });

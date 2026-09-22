@@ -2307,6 +2307,11 @@ describe("a briefing mail that actually arrives", () => {
         const feedNote = ws.find((w) => w.text.includes("claims this one from its Hackhub feed post"))!;
         expect(feedNote).toBeDefined();
         expect(feedNote.level).toBe("info");
+        /* r218 field evidence rides along in the notice: the bare post is the
+           only shape we have ever seen render, so the notice says to strip to
+           it (and to a never-used identifier) when a post refuses to show. */
+        expect(feedNote.text).toContain("the only feed post we have ever seen render is a bare one");
+        expect(feedNote.text).toContain("an identifier it has never had");
         expect(ws.some((w) => w.level === "error")).toBe(false);
         /* ...while a quest with no route at all stays red. */
         const stranded = mailProject();

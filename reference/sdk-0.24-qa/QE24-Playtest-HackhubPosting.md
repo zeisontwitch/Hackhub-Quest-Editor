@@ -1,5 +1,14 @@
 # Playtest: Hackhub quest posting + the mail To field (r215 → r216 retest)
 
+**Three attempts. The first two found compiler bugs (data-URI avatars, blank
+comment authors) — both fixed and verified in the exports. The third (v3)
+was flawless by every check we can run locally — fresh name, fresh id, named
+commenter, extracted assets, contract-clean shapes — and the post STILL never
+surfaced.** That empties our side of the ledger and leaves one pattern: every
+post that carried an author block (r215, v2, v3) failed; the only post that
+ever rendered (the r211 probe, export 1.0.38) was **bare** — text only, no
+poster, no comments, no employer. H-10 below is the decisive replication.
+
 **Two attempts, two compiler bugs found.** First (r215): quest images shipped
 as inline data-URIs the feed cannot load — fixed in r216. Second (the r216
 retest, 2026-09-22): the export was clean — the asset file shipped, zero
@@ -37,6 +46,8 @@ export, and see it on the board.
 | **H-07** the player card | Is your own Hackhub profile avatar intact this time? (It broke alongside the post in the r215 attempt — if it breaks again on a clean save **without** the mod, it is the game's own bug; say so in the results.) |
 | **H-08** the blank comment (optional, after H-01 passes) | On a **later** run: blank one commenter's name, re-export, fresh save. Does the post still render, and what name does the comment show — none, or a game-generated persona? This measures the §20 question. If the post vanishes again, the blank comment is the culprit and the editor will drop the "blank" option entirely. |
 | **H-09** a profile that has never seen the quest | Same quest, **brand-new profile** (not just a new save). If the post renders there but not on your main profile, the per-profile claim memory (§18) is confirmed end-to-end — your main profile is then the "poisoned" lab and fresh quests are the everyday path. |
+| **H-10** THE REPLICATION — the bare post (do this one next) | Author the only shape that has ever rendered: new project, quest identifier **never used on this profile**, post toggle ON with **text only** — poster name/avatar left EMPTY, **no comments**, **Employer section left completely empty** (nothing typed, no avatar), re-export, fresh save. Renders → the author/employer/comment blocks are the killer and we bisect from there (H-11 is the first cut). Absent → mod quest posts are dead on 1.3.1 entirely, §21 goes to the developers with the full matrix. |
+| **H-11** the author block, isolated (only if H-10 renders) | Same bare quest, but poster **name** filled (nothing else — no avatar, no comments, employer still empty). Absent → `HackhubPost.author` is the poison (v2 already failed with a name-only author); the editor drops or re-shapes the field. |
 
 ## Part 2 — the mail To field
 
@@ -78,3 +89,13 @@ usual. Rows are recorded open in [`STATUS.md`](STATUS.md).
   (both r216 quests still carried the blank-project placeholder `q-blank` —
   invisible in the UI; it never reaches the game, but it hid until now), and
   files §19 (API v2) and §20 (comment authors).
+
+- **2026-09-22, v3 (export 1.0.3, r217):** every local check passed — fresh
+  name `HHFeedTest3`, fresh id (the new-id button's first field use), employer
+  + poster + commenter all named, all three avatars extracted to asset files,
+  zero data-URIs, contract-clean author shapes. Fresh save. **Post absent;
+  player card still avatarless.** The failures now line up: every post with an
+  author block failed (r215, v2, v3); the only ever-render was a bare post.
+  The player's own profile card has now broken on a clean save with a clean
+  export — with the auth gateway 429-ing every session, that card is the
+  game's online side failing, not our data.

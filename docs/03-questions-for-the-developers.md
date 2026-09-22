@@ -754,3 +754,40 @@ unverified.
 **What we would like:** confirmation of what the engine does with a comment
 whose `author` is absent — persona, anonymous, or a failed post — so the
 editor knows whether "blank" is a feature or must be a required field.
+
+## 21. Mod quest posts have stopped surfacing on the feed — is `HackhubPost` (and its `author`) still read?
+
+**Found across the editor's feed-post playtests** (2026-09-21/22, game 1.3.1,
+Content SDK 0.24.0; five exports, three fresh quest names, two fresh saves).
+
+A quest's `HackhubPost` rendered **exactly once** across every session we
+have run: the r211 mail probe (export 1.0.38) — a **bare** post: `content`
+only, no `author`, no comments, and the game drew a persona for the poster
+("Kristina Kaczmarek"). Every attempt since carried the fields the d.ts
+advertises, and **none of them ever surfaced** — not on fresh saves, not
+with fresh quest names and fresh quest ids, not with avatars shipped as
+extracted asset files (mod icon/cover's proven contract), not with
+contract-clean `author: { name }` shapes:
+
+| Attempt | Post shape | Quest name | Result |
+|---|---|---|---|
+| r211 probe (1.0.38) | content only | fresh | **rendered once**, accepted from the feed |
+| same probe (1.0.39/40) | content only | already claimed | absent (the d.ts "hasn't been claimed yet" rule) |
+| r215 | `author{name}` + data-URI avatar | fresh | absent |
+| r216 (v2) | `author{name}`, blank-author comment | fresh ×2 | absent |
+| r217 (v3) | employer{name,avatar} + `author{name,avatar file}` + named comment + likes | fresh name + fresh id, fresh save | absent |
+
+At the same time, every session log — vanilla runs included — shows
+`[Scheduler] Holding job "Queue.HandleQuestHackhubPosts": no handler
+registered.` when feed-adjacent UI opens.
+
+**What we would like, any of these:**
+
+- confirmation whether `HackhubPost` (and specifically `author.name` /
+  `author.avatar`) still reaches the feed renderer in 1.3.1, or whether the
+  pipeline behind `Queue.HandleQuestHackhubPosts` lost its handler;
+- whether a bare `content`-only post is the supported shape (it is the only
+  one we have seen work);
+- whether the once-per-profile claim rule (d.ts, `HackhubPost`) also
+  suppresses posts for quest names a profile has claimed through
+  `Quest.claim` rather than the feed.

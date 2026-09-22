@@ -1,6 +1,6 @@
 # QE24 QA status (2026-09-21)
 
-**ONE OPEN PLAYTEST (third retest after r218):** the Hackhub-posting + mail-To rows **H-01…H-11** — H-10 (the bare-post replication) is the next run — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
+**ONE OPEN PLAYTEST (the harness grid, r219):** Hackhub feed rows **HF-1…HF-5** in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md) — five post variants from the QA harness 1.0.27, one look at the feed. H-01…H-11 are recorded below it. — checklist in [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md), authored in the editor this time (that is the feature). The mail-authoring playtest ran **green** on 2026-09-21 — W-01…W-04 in game, W-05 closed on prior evidence (transcript: [`QE24-TestResults-MailAuthoring.md`](QE24-TestResults-MailAuthoring.md)). The round it tested is closed with it. The mail rows **M-01…M-10 ran on 2026-09-20** (game 1.3.1,
 harness 1.0.24) and are closed — transcript:
 [`QE24-TestResults-Mail.md`](QE24-TestResults-Mail.md). Ten rows, every one
 answered; three real findings came out of it:
@@ -93,6 +93,15 @@ Two attempts, two compiler bugs caught by playing it as a player:
    load — post and player avatar both broke. r216 extracts every quest image
    to `assets/*.png` (the contract mod icon/cover always had).
 2. **The r216 retest was clean and still did not surface the post.**
+   Nor did r217's (v3: fresh name + id, named commenter, extracted assets),
+   nor did r218's **H-10 bare-post replication** — content only, no author,
+   no comments, fresh save. Every editor-export shape has now failed,
+   including the only shape that ever rendered (the r211 probe, 1.0.38,
+   from the QA harness mod — which ships five permissions where editor
+   exports ship two). r219 turns the harness loose on it: five post
+   variants, version-stamped names, `qe24 feed` prints the grid. His player
+   avatar returned on 2026-09-22 — H-07's card was the game's own gateway
+   failing, closed.
    The r217 retest (v3) was flawless by every local check — fresh name, fresh
    id, named commenter, extracted assets — and still did not surface it. The
    matrix across every attempt: the ONLY post that ever rendered (r211 probe,
@@ -117,8 +126,8 @@ Two attempts, two compiler bugs caught by playing it as a player:
    filed as §19; the SDK itself ships v1.
 
 Checklist: [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md)
-— next run: **H-10**, the bare-post replication; then H-11 (author block
-isolated), H-08 (blank-comment experiment), H-09 (fresh profile).
+— next run: **the harness grid** (`qe24 feed`, HF-1…HF-5), then H-08/H-09
+once something renders.
 
 ## Settled: the moment.js warning is the game's own content — M-09, closed
 

@@ -46,7 +46,8 @@ export, and see it on the board.
 | **H-07** the player card | Is your own Hackhub profile avatar intact this time? (It broke alongside the post in the r215 attempt — if it breaks again on a clean save **without** the mod, it is the game's own bug; say so in the results.) |
 | **H-08** the blank comment (optional, after H-01 passes) | On a **later** run: blank one commenter's name, re-export, fresh save. Does the post still render, and what name does the comment show — none, or a game-generated persona? This measures the §20 question. If the post vanishes again, the blank comment is the culprit and the editor will drop the "blank" option entirely. |
 | **H-09** a profile that has never seen the quest | Same quest, **brand-new profile** (not just a new save). If the post renders there but not on your main profile, the per-profile claim memory (§18) is confirmed end-to-end — your main profile is then the "poisoned" lab and fresh quests are the everyday path. |
-| **H-10** THE REPLICATION — the bare post (do this one next) | Author the only shape that has ever rendered: new project, quest identifier **never used on this profile**, post toggle ON with **text only** — poster name/avatar left EMPTY, **no comments**, **Employer section left completely empty** (nothing typed, no avatar), re-export, fresh save. Renders → the author/employer/comment blocks are the killer and we bisect from there (H-11 is the first cut). Absent → mod quest posts are dead on 1.3.1 entirely, §21 goes to the developers with the full matrix. |
+| **H-10** ~~THE REPLICATION — the bare post~~ **RUN 2026-09-22: ABSENT** | Bare post (text + 2 likes only), no employer, no poster, no comments, fresh save, no mods → **the post still did not surface.** So even the r211 shape fails from an editor export today. (His player avatar was BACK this session — H-07's card was the game's own gateway failing, now closed.) Autostart was never the issue: a feed post with no autostart is the intended discovery shape. **Next: the harness grid, HF-1…HF-5 below.** |
+| **H-11** ~~the author block, isolated~~ | **Superseded** — H-10's bare post failed too, so the author block is not the (only) poison. The harness grid splits the fields instead. |
 | **H-11** the author block, isolated (only if H-10 renders) | Same bare quest, but poster **name** filled (nothing else — no avatar, no comments, employer still empty). Absent → `HackhubPost.author` is the poison (v2 already failed with a name-only author); the editor drops or re-shapes the field. |
 
 ## Part 2 — the mail To field
@@ -61,6 +62,29 @@ address), export, run.
 
 Paste results into `QE24-TestResults-HackhubPosting.md` on QA-Filedump as
 usual. Rows are recorded open in [`STATUS.md`](STATUS.md).
+
+## Part 3 — the harness grid (r219, no editor involved)
+
+**Install the QA harness 1.0.27 (the folder `mod/` — it now ships an
+`assets/qhp.png` the file-avatar rows point at — replace the whole folder,
+then restart the game) and run `qe24 feed` in the terminal.** It prints the
+grid; the short form:
+
+| Row | Post shape | Isolates |
+|---|---|---|
+| **HF-1** | content **only** | the r211 shape, from the mod it once worked from |
+| **HF-2** | + poster **name** | the author block, name only |
+| **HF-3** | + poster name + **avatar file** | the extracted-asset path (the r216 fix, from a mod with full permissions) |
+| **HF-4** | + **likes + two named comments** | the social block, contract-clean |
+| **HF-5** | **employer** set (name + avatar file), post bare | the d.ts's documented employer fallback for the poster |
+
+One look at the feed, transcribe which of HF-1…HF-5 are present. All absent
+→ mod quest posts don't surface at all on this profile/build (§21, and a
+**second Steam account** is the next probe: profile memory vs engine break).
+HF-1 only → the author block is the poison and the grid names the exact
+field. All present → the editor exports differ from this mod somewhere we
+haven't looked (permissions? mod identity?) — record it. Cleanup:
+`qe24 run clear`.
 
 ## History
 
@@ -99,3 +123,12 @@ usual. Rows are recorded open in [`STATUS.md`](STATUS.md).
   The player's own profile card has now broken on a clean save with a clean
   export — with the auth gateway 429-ing every session, that card is the
   game's online side failing, not our data.
+
+- **2026-09-22, H-10 (the bare-post replication):** bare post, fresh save,
+  no mods — **absent**. Every editor-export shape has now failed, including
+  the only one that ever worked. His player avatar returned this session,
+  closing H-07 as game-side (the 429ing gateway). r219 answers with the
+  harness grid (HF-1…HF-5): the same probe quest shapes, from the QA harness
+  mod — the one mod whose post ever rendered, with five permissions where the
+  editor ships two. That permission/identity difference is now the sharpest
+  untested variable we have.

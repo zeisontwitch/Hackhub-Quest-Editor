@@ -1,3 +1,33 @@
+# Handoff — r219
+
+**H-10 came back absent: even the bare post fails from an editor export.**
+Zeis ran the exact 1.0.38 shape — content + 2 likes, no employer, no poster,
+no comments, fresh save, no mods — and the feed stayed empty. His player
+avatar was back, closing H-07 as the game's own gateway failing. That is
+every editor-export shape eliminated, including the only one that ever
+rendered. r219 answers with the tool that shape of question deserves: **the
+QA harness, version 1.0.27, now carries a Hackhub feed probe** — `qe24 feed`
+prints a five-row grid (HF-1 bare / HF-2 named poster / HF-3 poster avatar
+file / HF-4 likes + named comments / HF-5 employer fallback), all under
+version-stamped quest names (a profile can "use up" a name per the d.ts
+once-claim rule, so every harness bump mints fresh ones), with
+`qe24 run clear` extended to clean them up. The harness mod ships a
+violet `assets/qhp.png` for the file-avatar rows — install the whole folder.
+
+Why the harness is the right blade: the ONLY feed post that ever rendered
+came from **this mod** (r211, 1.0.38) — which ships permissions
+`network, events, mail, shell, ui`, where every failing editor export ships
+`mail, events` under a fresh id. The grid splits the surviving theories:
+author-block poison (HF-2/3/4/5 vs HF-1), editor-mod identity/permissions
+(all present), or profile-global suppression (all absent — then a second
+Steam account is the next probe). docs/03 §21 carries the full matrix
+including the H-10 row and the permission observation.
+
+Tests: the scaffold suite drives the new probe (registration + contract-
+clean shapes + the printed grid + run-clear coverage); both new guards were
+falsified (registration removed, a comment author emptied). Harness 1.0.27.
+
+---
 # Handoff — r218
 
 **v3 failed flawless.** Fresh quest name, fresh id (the new-id button's first

@@ -373,8 +373,14 @@ describe("r179 raw harness — the Twotter probe", () => {
            pack-extras and click probes are retired: their surfaces lingered on
            a tester's desktop and start menu, so `qe24 extras cleanup` now
            removes every QE24 registration id the project ever used, and the
-           QA export ships no extras data any more. */
-        expect(manifest.version).toBe("1.0.26");
+           QA export ships no extras data any more. r219 adds the `qe24 feed`
+           probe: five HackhubPost quest variants (bare / named poster /
+           poster avatar file / likes+named comments / employer fallback)
+           under version-stamped names, because a post only shows while its
+           quest "hasn't been claimed yet" (index.d.ts) and every editor
+           export since 1.0.38 has failed to surface - the grid tells the
+           poison field or proves the suppression is profile-global. */
+        expect(manifest.version).toBe("1.0.27");
         expect(code).toContain('sub === "twotter"');
         expect(code).toContain('verb === "audit"');
         expect(code).toContain("sdk.RegisterQuest(QE24TwotterProbe);");
@@ -390,6 +396,10 @@ describe("r179 raw harness — the Twotter probe", () => {
         expect(code).toContain('"qe24-menu-extras"');
         expect(code).not.toContain('sub === "clickprobe"');
         expect(code).not.toContain("function extrasOn");
+        /* r219: the feed probe rides its own subcommand and versioned names. */
+        expect(code).toContain('sub === "feed"');
+        expect(code).toContain('FEED_PROBE_SUFFIX = "1027"');
+        expect(code).toContain("assets/qhp.png");
     });
 
     it("audits the round's handles, and calls a present-and-undefined bio by name", () => {
@@ -868,7 +878,8 @@ describe("r181 raw harness — starting a quest on demand", () => {
         const tools = toolsFor(sdk);
         tools.getArgs = () => ["run", "clear"];
         runCommand(tools);
-        /* Every quest the launcher knows, including the two probe quests. */
+        /* Every quest the launcher knows, the two probe quests, and (r219)
+           the five Hackhub feed probes. */
         expect(sdk.__unclaimed).toEqual([
             "QESdk024TimerQa",
             "QESdk024TimerCalQa",
@@ -881,6 +892,11 @@ describe("r181 raw harness — starting a quest on demand", () => {
             "QESdk024MailQa",
             "QESdk024MailAuthoringQa",
             "QESdk024EditorQa",
+            "QEHhBare1027",
+            "QEHhAuthor1027",
+            "QEHhAuthorFile1027",
+            "QEHhSocial1027",
+            "QEHhEmployer1027",
         ]);
         expect(tools.text()).toContain("Unclaimed:");
     });
@@ -1204,5 +1220,75 @@ describe("r210 raw harness — the retired probes' cleanup", () => {
         expect(sdk.menuAdded).toEqual([]);
         expect(sdk.widgetsAdded).toEqual([]);
         expect(sdk.ctxAdded).toEqual([]);
+    });
+});
+
+describe("r219 raw harness — the Hackhub feed probe", () => {
+    it("registers five feed-probe quests: version-stamped names, contract-clean posts", () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const quests = sdk.__registered.quests.map(
+            (q) => new (q as unknown as new () => { Name: string; AutoStart?: boolean; HackhubPost?: Record<string, unknown>; Employer?: Record<string, unknown> })(),
+        );
+        const byName = new Map(quests.map((q) => [q.Name, q]));
+        /* The suffix is the harness version: claim memory (a post shows only
+           while its quest "hasn't been claimed yet") makes a used-up name
+           useless, so every harness bump mints fresh names. */
+        for (const name of ["QEHhBare1027", "QEHhAuthor1027", "QEHhAuthorFile1027", "QEHhSocial1027", "QEHhEmployer1027"]) {
+            expect(byName.has(name), name).toBe(true);
+            expect(byName.get(name)!.AutoStart, name).toBe(false);
+        }
+        /* HF1 bare: no author object at all - the only shape that ever rendered. */
+        expect(byName.get("QEHhBare1027")!.HackhubPost).toEqual({
+            content: expect.stringContaining("HF1"),
+        });
+        /* HF2: a named poster, nothing else. */
+        expect(byName.get("QEHhAuthor1027")!.HackhubPost!.author).toEqual({ name: "Selin Calloway" });
+        /* HF3: the avatar rides as an asset FILE path, like mod icons do. */
+        expect(byName.get("QEHhAuthorFile1027")!.HackhubPost!.author).toEqual({ name: "Selin Calloway", avatar: "assets/qhp.png" });
+        /* HF4: likes and comments whose authors all carry NAMES - the d.ts
+           requires author.name; the empty author object is the r217 suspect. */
+        const social = byName.get("QEHhSocial1027")!.HackhubPost!;
+        expect(social.likes).toBe(3);
+        expect(social.comments).toEqual([
+            { author: { name: "Riko Voss" }, content: "first" },
+            { author: { name: "Mara Quill" }, content: "on my way" },
+        ]);
+        /* HF5: the employer fallback - employer set, post bare, no author. */
+        const employer = byName.get("QEHhEmployer1027")!;
+        expect(employer.HackhubPost!.author).toBeUndefined();
+        expect(employer.Employer).toEqual({ name: "Ada Bakker", avatar: "assets/qhp.png" });
+        /* The avatar the file-path variants point at must exist in the mod. */
+        expect(readFileSync(join(process.cwd(), "reference/sdk-0.24-qa/mod/assets/qhp.png"))).toBeTruthy();
+    });
+
+    it("qe24 feed prints the grid, the reading guide, and the once-claim warning", async () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        (tools as { getArgs: () => string[] }).getArgs = () => ["feed"];
+        await runCommand(tools);
+        const text = (tools as { text: () => string }).text();
+        for (const name of ["QEHhBare1027", "QEHhAuthorFile1027", "QEHhEmployer1027"]) {
+            expect(text).toContain(name);
+        }
+        expect(text).toContain("HF1");
+        expect(text).toContain("HF5");
+        expect(text).toContain("ALL five absent");
+        expect(text).toContain("HF1 only");
+        expect(text).toContain("assets/qhp.png");
+        expect(text).toContain("qe24 run clear");
+    });
+
+    it("qe24 run clear unclaims the feed probes too", async () => {
+        const sdk = harnessSdk();
+        loadHarness(sdk);
+        const tools = toolsFor(sdk);
+        (tools as { getArgs: () => string[] }).getArgs = () => ["run", "clear"];
+        await runCommand(tools);
+        const unclaimed = (sdk as unknown as { __unclaimed: string[] }).__unclaimed;
+        for (const name of ["QEHhBare1027", "QEHhAuthor1027", "QEHhAuthorFile1027", "QEHhSocial1027", "QEHhEmployer1027"]) {
+            expect(unclaimed).toContain(name);
+        }
     });
 });

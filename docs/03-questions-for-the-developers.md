@@ -776,6 +776,15 @@ contract-clean `author: { name }` shapes:
 | r215 | `author{name}` + data-URI avatar | fresh | absent |
 | r216 (v2) | `author{name}`, blank-author comment | fresh ×2 | absent |
 | r217 (v3) | employer{name,avatar} + `author{name,avatar file}` + named comment + likes | fresh name + fresh id, fresh save | absent |
+| r218 H-10 | **bare** — content + likes only, no author, no comments, no employer | fresh, fresh save, no mods | **absent** |
+
+One more datapoint narrows it: the single successful render came from our
+**QA harness mod** (`qe-sdk-0.24-qa` — permissions `network, events, mail,
+shell, ui`), while every failing export ships only `mail, events` under a
+fresh mod id each time. A harness probe (r219) now re-runs the bare shape
+from that very mod, plus four field-isolated variants, to split "the author
+poisons the post" from "editor-shaped mods no longer surface at all" from
+"this profile has used its one shot".
 
 At the same time, every session log — vanilla runs included — shows
 `[Scheduler] Holding job "Queue.HandleQuestHackhubPosts": no handler

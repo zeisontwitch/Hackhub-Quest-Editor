@@ -440,10 +440,11 @@ function runQaQuest(tools, alias) {
     }
     if (alias === "clear") {
         var cleared = [];
-        for (var i = 0; i < QA_QUESTS.length; i++) {
+        var clearNames = QA_QUESTS.map(function (q) { return q.name; }).concat(feedProbeNames());
+        for (var i = 0; i < clearNames.length; i++) {
             /* Function-scoped copy: `var name` inside a callback would be the
                same binding for every iteration under ES5. */
-            var name = QA_QUESTS[i].name;
+            var name = clearNames[i];
             var ok = (function (id) {
                 return safe("Quest.unclaim", function () { api.unclaim(id); return true; }, false);
             })(name);
@@ -1826,6 +1827,133 @@ class QE24MailQa extends sdk.Quest {
     }
 }
 
+
+/* ── Hackhub feed probe (r219) ─────────────────────────────────────
+   The editor's feed posts stopped surfacing (docs/03 §21): the ONLY post
+   that ever rendered was the bare r211 one, from THIS mod. Five variants,
+   one look at the feed - the grid isolates the field (or proves the
+   suppression is global per profile). Names carry the harness version:
+   a profile that has "used up" a name can never see its post again
+   (index.d.ts: a post shows only while the quest "hasn't been claimed
+   yet"), so every harness bump mints fresh names for a re-run. */
+var FEED_PROBE_SUFFIX = "1027"; /* 1.0.27 - bump WITH the manifest version */
+var FEED_AVATAR = "assets/qhp.png"; /* the violet square this mod ships */
+
+function feedQuest(nameSuffix, title, post, employer) {
+    return class extends sdk.Quest {
+        constructor() {
+            super();
+            this.Name = "QEHh" + nameSuffix;
+            this.Title = title;
+            this.Description = "Feed-discovery probe. Accept it from its Hackhub feed post - that is the whole test.";
+            this.Group = "sandbox";
+            this.AutoStart = false;
+            this.Objectives = [{ name: "accept", description: "Accepted from the feed post - nothing to do." }];
+            if (employer) this.Employer = employer;
+            this.HackhubPost = post;
+        }
+        CreateData() { return {}; }
+        OnStart() { log(this.Name + " started from the feed claim - the post RENDERED and worked end to end."); }
+        OnObjectivesStart() {}
+    };
+}
+
+var FEED_PROBES = [
+    {
+        id: "HF1",
+        what: "content ONLY - the r211 shape, in the mod it once worked from",
+        make: function () {
+            return feedQuest("Bare" + FEED_PROBE_SUFFIX, "QE24 feed probe (bare)",
+                { content: "HF1 bare post - QE24 feed probe. If only this one shows, the author block is the poison." });
+        },
+    },
+    {
+        id: "HF2",
+        what: "content + author.name only (no avatar)",
+        make: function () {
+            return feedQuest("Author" + FEED_PROBE_SUFFIX, "QE24 feed probe (named poster)",
+                { content: "HF2 named poster - QE24 feed probe.", author: { name: "Selin Calloway" } });
+        },
+    },
+    {
+        id: "HF3",
+        what: "content + author.name + author.avatar as an ASSET FILE (assets/qhp.png)",
+        make: function () {
+            return feedQuest("AuthorFile" + FEED_PROBE_SUFFIX, "QE24 feed probe (poster avatar file)",
+                { content: "HF3 poster avatar file - QE24 feed probe.", author: { name: "Selin Calloway", avatar: FEED_AVATAR } });
+        },
+    },
+    {
+        id: "HF4",
+        what: "content + likes + TWO NAMED comments (the contract-clean shape)",
+        make: function () {
+            return feedQuest("Social" + FEED_PROBE_SUFFIX, "QE24 feed probe (likes + comments)",
+                {
+                    content: "HF4 likes and comments - QE24 feed probe.",
+                    likes: 3,
+                    comments: [
+                        { author: { name: "Riko Voss" }, content: "first" },
+                        { author: { name: "Mara Quill" }, content: "on my way" },
+                    ],
+                });
+        },
+    },
+    {
+        id: "HF5",
+        what: "employer set (name + avatar file), post BARE - the documented employer fallback for the poster",
+        make: function () {
+            return feedQuest("Employer" + FEED_PROBE_SUFFIX, "QE24 feed probe (employer fallback)",
+                { content: "HF5 employer fallback - QE24 feed probe." },
+                { name: "Ada Bakker", avatar: FEED_AVATAR });
+        },
+    },
+];
+
+for (var fpi = 0; fpi < FEED_PROBES.length; fpi++) sdk.RegisterQuest(FEED_PROBES[fpi].make());
+
+/* The same construction the classes use, so `qe24 run clear` can unclaim
+   them by name without keeping the classes around. */
+function feedProbeNames() {
+    var bases = { HF1: "Bare", HF2: "Author", HF3: "AuthorFile", HF4: "Social", HF5: "Employer" };
+    var out = [];
+    for (var i = 0; i < FEED_PROBES.length; i++) out.push("QEHh" + bases[FEED_PROBES[i].id] + FEED_PROBE_SUFFIX);
+    return out;
+}
+
+function printFeedProbe(tools) {
+    tools.println("QE24 Hackhub feed probe (r219) - five posts, ONE look at the feed.");
+    tools.println("");
+    tools.println("For each row below, note whether its post is on the Hackhub feed");
+    tools.println("(search the feed for the HF prefix in the post text). Do this BEFORE");
+    tools.println("claiming anything - a claimed quest's post is gone for the profile.");
+    tools.println("");
+    var names = feedProbeNames();
+    var whats = [
+        "content ONLY - the r211 shape, in the mod it once worked from",
+        "content + author.name only (no avatar)",
+        "content + author.name + avatar ASSET FILE (assets/qhp.png)",
+        "content + likes + two NAMED comments (contract-clean)",
+        "employer set (name + avatar file), post BARE - the employer fallback",
+    ];
+    for (var r = 0; r < FEED_PROBES.length; r++) {
+        tools.println("  " + FEED_PROBES[r].id + "  " + whats[r]);
+        tools.println("       quest: " + names[r]);
+    }
+    tools.println("");
+    tools.println("How to read the grid:");
+    tools.println("  ALL five absent   -> mod quest posts are not surfacing at all here:");
+    tools.println("                       docs/03 §21 goes to the developers, and a brand-new");
+    tools.println("                       profile (second Steam account) tells memory from break.");
+    tools.println("  HF1 only          -> the author block is the poison; HF2-HF5 vs HF1 split");
+    tools.println("                       the exact field that kills it.");
+    tools.println("  some, not others  -> copy the grid into the results file; the differing");
+    tools.println("                       field between a present and an absent row is the answer.");
+    tools.println("  ALL five present  -> the editor exports differ from this mod somewhere we");
+    tools.println("                       have not looked (permissions? mod identity?) - record it.");
+    tools.println("");
+    tools.println("Cleanup: qe24 run clear (it unclaims these too).");
+}
+
 class QE24Command extends sdk.Command {
     constructor() {
         super();
@@ -1833,7 +1961,7 @@ class QE24Command extends sdk.Command {
         this.Description = "SDK 0.24 QA harness commands";
         this.Autocomplete = [
             { label: "qe24", type: "STRING" },
-            { label: "guide|next|run|status|history|clock|timers|extras|mail|twotter|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
+            { label: "guide|next|run|status|history|clock|timers|extras|mail|twotter|feed|seed|http-fetch|schedule|collab|intercept|claim|complete|button-ready|retire|unclaim|phone-auto|phone-direct|reset", type: "STRING" },
         ];
     }
     async Run(tools) {
@@ -1897,6 +2025,10 @@ class QE24Command extends sdk.Command {
         }
         if (sub === "mail") {
             mailProbe(tools, args[1] || "guide", args[2]);
+            return;
+        }
+        if (sub === "feed") {
+            printFeedProbe(tools);
             return;
         }
         if (sub === "twotter") {

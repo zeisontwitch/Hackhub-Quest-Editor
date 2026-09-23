@@ -367,23 +367,39 @@ export function Toggle({
     label,
     hint,
     id,
+    hintTooltip,
 }: {
     checked: boolean;
     onChange: (checked: boolean) => void;
     label: string;
     hint?: string;
     id?: string;
+    /** Show the hint as a mouse-over ⓘ next to the label (the FieldShell
+        pattern) instead of an always-visible paragraph under it. */
+    hintTooltip?: boolean;
 }) {
     return (
         <div className="flex items-start justify-between gap-3 px-3 py-2">
             <div className="min-w-0">
-                <label
-                    htmlFor={id}
-                    className="block cursor-pointer text-[12.5px] leading-tight font-medium text-ink-2"
-                >
-                    {label}
-                </label>
-                {hint && <p className="field-hint">{hint}</p>}
+                {hintTooltip && hint ? (
+                    <div className="flex items-center gap-1">
+                        <label
+                            htmlFor={id}
+                            className="block cursor-pointer text-[12.5px] leading-tight font-medium text-ink-2"
+                        >
+                            {label}
+                        </label>
+                        <HintBadge label={label} hint={hint} />
+                    </div>
+                ) : (
+                    <label
+                        htmlFor={id}
+                        className="block cursor-pointer text-[12.5px] leading-tight font-medium text-ink-2"
+                    >
+                        {label}
+                    </label>
+                )}
+                {hint && !hintTooltip && <p className="field-hint">{hint}</p>}
             </div>
             <Switch.Root
                 id={id}

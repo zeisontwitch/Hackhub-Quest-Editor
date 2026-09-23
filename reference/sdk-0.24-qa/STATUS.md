@@ -27,7 +27,9 @@ and it taught the last mechanic — named posters are visible immediately;
 only blank posts are Hidden-User-until-accept (the reveal measured on HF-5
 applies to the blank route). His two UI asks shipped in r226: a dice on the
 commenter name field and an explicit "Anonymous poster (Hidden User)"
-toggle.
+toggle. r227 polished both from his r226 review: the dice aligns with its
+field, and the author-facing copy is plain language with the toggle's
+explanation in a mouse-over ⓘ.
 
 The full matrix and every run: [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md);
 the developer-facing summary: docs/03 §21.

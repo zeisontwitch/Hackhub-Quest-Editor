@@ -16,8 +16,11 @@ import { useEditor } from "@/store/editor";
     click targets the switch inside the row that carries the label text — the
     same approach the sims test uses. */
 function toggleRow(label: RegExp): HTMLElement {
-    const row = screen.getAllByText(label)[0].closest("div.flex")!;
-    const btn = row.querySelector("button");
+    /* The outer toggle row (items-start) — the tooltip toggles nest the label
+       in an inner flex, so the row is identified by its own layout class.
+       The row can also hold the ⓘ badge (a button), so target the switch. */
+    const row = screen.getAllByText(label)[0].closest("div.items-start")!;
+    const btn = row.querySelector('button[role="switch"]') as HTMLButtonElement | null;
     if (!btn) throw new Error("no switch in row: " + label);
     return btn;
 }

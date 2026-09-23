@@ -302,8 +302,8 @@ function QuestInspector() {
             </div>
 
             <p className="px-3 pb-2 text-[10.5px] leading-snug text-ink-4">
-                XP is declared by the SDK, but we have never seen the game show XP anywhere —
-                money is the reward a player actually sees.
+                The game knows about XP on paper, but we have never seen it show XP anywhere —
+                money is the reward a player actually gets.
             </p>
 
             <Section>Behaviour</Section>
@@ -401,7 +401,7 @@ function QuestInspector() {
 
             <Toggle
                 label="Post this quest to the Hackhub feed"
-                hint="Puts the quest on the feed as a job the player can accept right there. Leave everything below blank and the game generates the poster's name and a drawn avatar — your quest then reads like any other post on the board. Quests accepted from the feed complete from the post itself, not the journal."
+                hint="Puts the quest on the feed as a job the player can accept right there. Quests accepted from the feed complete from the post itself, not the journal. The Anonymous toggle below decides who the post is from: masked until accepted, or named and out in the open."
                 checked={!!quest.hackhubPost}
                 onChange={(on) =>
                     write({
@@ -423,7 +423,8 @@ function QuestInspector() {
                     </FieldShell>
                     <Toggle
                         label="Anonymous poster (Hidden User)"
-                        hint="On: the post ships with no author — the board shows the game's \u201cHidden User\u201d, and the author is only revealed once the player accepts (the employer if one is set, else a generated persona). Off: the poster name below is used, and named posters are visible on the board immediately (observed in game, r225)."
+                        hintTooltip
+                        hint="On: the post has no name on it. The board shows a masked poster — the game calls it “Hidden User” — and the name behind the mask is only shown once the player accepts the job: the quest's employer if you set one, otherwise a person the game makes up. Off: the post shows the name and avatar below right away."
                         checked={!quest.hackhubPost.authorName && !quest.hackhubPost.authorAvatar}
                         onChange={(anonymous) =>
                             write({
@@ -438,7 +439,7 @@ function QuestInspector() {
                     />
                     {!(!quest.hackhubPost.authorName && !quest.hackhubPost.authorAvatar) && (
                         <>
-                            <FieldShell label="Poster name" hint="A name WITH an avatar reads best — a name without an avatar draws a broken-image icon on the post (observed in game, r219).">
+                            <FieldShell label="Poster name" hint="A name with an avatar reads best — a name without an avatar draws a broken-image icon on the post (seen in game).">
                                 <TextInputWithGenerate
                                     ariaLabel="Hackhub poster name"
                                     value={quest.hackhubPost.authorName ?? ""}
@@ -472,9 +473,9 @@ function QuestInspector() {
                         <p className="mb-1.5 text-[10.5px] leading-snug text-ink-4">
                             Replies on the post, the way the board reads them: a name, an optional
                             avatar, and a line of text. Two or three short ones sell the post as part
-                            of the board. Give each commenter a name and an avatar — the SDK
-                            requires the name, and in game a name WITHOUT an avatar draws a
-                            broken-image icon next to the comment (observed, r220's probe run).
+                            of the board. Give each commenter a name and an avatar — a name
+                            without an avatar draws a broken-image icon next to the comment
+                            (seen in game).
                         </p>
                         {(quest.hackhubPost.comments ?? []).map((c, i) => (
                             <div key={c.id} className="mb-2 grid gap-1.5 rounded-md border border-line/70 bg-surface p-2">

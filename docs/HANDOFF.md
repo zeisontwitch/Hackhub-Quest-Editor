@@ -1,3 +1,38 @@
+# Handoff — r227
+
+**Zeis reviewed the r226 UI (screenshot on file) and caught two real bugs.
+Both are fixed, plus one honest catch of our own.**
+
+1. **The comment dice floated.** `TextInputWithGenerate` wrapped the field
+   and its dice in a top-aligned flex, so next to the row's centered trash
+   button the dice visibly drifted. The wrapper is `items-center` now.
+2. **The toggle hint printed the raw text `\u201cHidden User\u201d`.** JSX
+   attribute strings do not read `\uXXXX` escapes — tsc accepts them
+   silently and the six characters went straight to the screen. The hint is
+   rebuilt with real curly quotes and moved into a mouse-over ⓘ
+   (`Toggle`'s new `hintTooltip` prop — the same HintBadge pattern the rest
+   of the Inspector uses), per his standing rule that explanations live in
+   tooltips, not always-visible paragraphs. While in there, every
+   author-facing blurb in the feed section went through the no-jargon pass:
+   no SDK talk, no round numbers, only what the game itself says —
+   "Hidden User" stays, it is the game's own word.
+3. **A lost edit, owned.** r226's commit message claimed the post-toggle
+   hint had been rewritten, but that edit was lost between script attempts
+   and never shipped — the committed file still carried the r215-era "the
+   game generates the poster's name and a drawn avatar" text, which directly
+   contradicted the new toggle. It ships now: *"The Anonymous toggle below
+   decides who the post is from: masked until accepted, or named and out in
+   the open."* Lesson recorded: after multi-attempt edit sessions, grep the
+   committed file for every claimed change before writing the commit
+   message.
+
+No compiled-quest change (dice alignment and copy are editor-side only) —
+editor delivery is stamp-only **1.0.51**.
+
+Gates: 1,806 tests / 89 files, typecheck, build — green. Stamps r227.
+
+---
+
 # Handoff — r226
 
 **H-12: GREEN. The feed saga is fully closed — visuals included.** Zeis's v7

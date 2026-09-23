@@ -179,7 +179,7 @@ in one module; the fix gives quests per-quest names.
 `2026-09-21.r221` and later) put posts on the feed — proven end to end by
 v6. Exports built r220 or older are dead for feed discovery: re-export.
 
-| **H-12** (optional, last flourish) | Author a post with an **uploaded avatar and a comment** in the current editor, export, install. v6 proved the post arrives; this verifies the editor-export visuals (avatar file, comment) that the harness already proved (HF-3/HF-4). |
+| **H-12** ~~optional flourish~~ **RAN r225 editor: GREEN** | v7: uploaded poster avatar + 2 likes + 1 named comment — **everything rendered** (screenshot on file): the post under its authored name ("Ugo Jansen", visible pre-accept), the uploaded avatar drawn from the asset file, likes, and the comment. **Named posters are visible immediately** — only blank posts are Hidden-User-until-accept. The named-but-avatarless comment drew no avatar (broken icon): matches harness HF-4 exactly; the game does NOT mint avatars for named authors — §22's answer, game-side. His two UI asks are r226: the commenter dice, and the Anonymous poster toggle. |
 
 ## History## History## History## History## History## History## History
 
@@ -277,3 +277,12 @@ v6. Exports built r220 or older are dead for feed discovery: re-export.
   trigger — the compiled export's context is involved). The saga that began
   with the r215 playtest closes: author in the current editor, and the post
   ships.
+
+- **2026-09-22, H-12 GREEN (v7, r225 editor):** post + uploaded avatar + named
+  comment all rendered from an editor export. New mechanic confirmed: named
+  posters show immediately; blank = Hidden User until accept. Named-but-
+  avatarless comments draw no avatar (game-side, matches the harness). r226
+  adds his two asks: a dice on the commenter name field, and an
+  "Anonymous poster (Hidden User)" toggle that makes the blank-route explicit
+  (on = Hidden User until accept; off = named poster, visible immediately,
+  dice-generated when flipped).

@@ -21,9 +21,13 @@ trip-wire is theirs to pinpoint).
 
 **Practical:** author in the current editor (r221+, stamp on every export)
 and the post ships. Exports built r220 or older are dead for feed discovery
-— re-export. **Optional last flourish, H-12** in the checklist: a post with
-an uploaded avatar + a comment from the editor, to verify the visuals the
-harness already proved.
+— re-export. ~~Optional last flourish, H-12~~ **H-12 ran GREEN** (v7, r225 editor):
+post + uploaded avatar + named comment all rendered from an editor export,
+and it taught the last mechanic — named posters are visible immediately;
+only blank posts are Hidden-User-until-accept (the reveal measured on HF-5
+applies to the blank route). His two UI asks shipped in r226: a dice on the
+commenter name field and an explicit "Anonymous poster (Hidden User)"
+toggle.
 
 The full matrix and every run: [`QE24-Playtest-HackhubPosting.md`](QE24-Playtest-HackhubPosting.md);
 the developer-facing summary: docs/03 §21.

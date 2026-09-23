@@ -1,3 +1,35 @@
+# Handoff — r226
+
+**H-12: GREEN. The feed saga is fully closed — visuals included.** Zeis's v7
+(r225 editor, screenshot on file): authored poster "Ugo Jansen" visible
+pre-accept, the uploaded avatar drawn from the asset file, 2 likes, and a
+named comment. Two new facts came with it:
+
+1. **Named posters are visible immediately.** Only blank posts are
+   "Hidden User" until accept (the reveal Zeis measured on HF-5). The editor
+   now teaches exactly that.
+2. **The game does not mint avatars for named-but-avatarless authors** — his
+   "Needs Dicebutton" comment shipped contract-clean (`author: { name }`, no
+   avatar key — zero empty author objects in the mod) and still drew no
+   avatar, matching harness HF-4. Game-side; §22's answer is written.
+
+His two asks are r226:
+
+- **The commenter dice:** every comment author field now has the full-name
+  dice (his "Needs Dicebutton" was typed by hand for the last time).
+- **The Anonymous poster toggle:** an explicit control for the Hidden User
+  route. On (the fresh-post default): the post ships with no author — Hidden
+  User until accept, then the employer (if set, e.g. v7's Ugo Jansen
+  employer) or a generated persona is revealed. Off: the poster name/avatar
+  fields appear, dice-generating a name so the post can't silently fall back
+  to anonymous. The toggle is derived from the blank state (the r215 design:
+  the toggle IS the field's state), so no schema change and no migration.
+
+Also fixed this round: a sandbox reset caught mid-round (recovery recipe,
+nothing lost). Guards: the anonymous toggle hardwired-off fails, the
+commenter dice removed fails — both falsified. Stamp-only delivery 1.0.50.
+
+---
 # Handoff — r225
 
 **VF-1: v3 stayed absent. The fork resolved — and the saga closed.**

@@ -287,6 +287,7 @@ row**. Paste the log only where a row says so. Row Q is last and optional.
 
 | Export | Editor build | Result |
 |---|---|---|
+| 1.0.50 | 2026-09-21.r226 | **No functional change to compiled quests** — the round is editor UI: a dice on every comment author field, and the explicit \"Anonymous poster (Hidden User)\" toggle (the blank-post route, now taught: Hidden User until accept; named posters visible immediately). H-12 ran green — feed posts, avatars and comments all render from editor exports. |
 | 1.0.49 | 2026-09-21.r225 | **No functional change** — the build stamp. VF-1 ran: the old v3 export stayed absent on a fresh save, closing the feed saga — the r221 class rename is the cure, and exports older than r221 need re-exporting for feed discovery. |
 | 1.0.48 | 2026-09-21.r224 | **No functional change** — the build stamp. Zeis corrected the r223 record: v6 rendered with only itself installed (no canary), so the open fork is \"stuck profile pipeline\" vs \"the rename is the cure\" — the old v3 export alone decides. |
 | 1.0.47 | 2026-09-21.r223 | **No functional change** — the build stamp. The headline is Zeis's v6: an editor export rendered on the feed for the first time since 1.0.38 (the r221 rename build). |

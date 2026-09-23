@@ -55,20 +55,46 @@ describe("the Hackhub feed post section", () => {
         expect(currentQuest().hackhubPost).toBeUndefined();
     });
 
-    it("fills the poster name from the dice and keeps the avatar clear for the game persona", async () => {
+    it("starts anonymous (Hidden User), and flipping the toggle dice-generates a visible poster", async () => {
         const user = userEvent.setup();
         loadQuest(createQuest({ id: "q-blank", name: "FeedQ", title: "Feed Q", closingObjectiveText: "done", description: "d" }));
         render(<InspectorPanel />);
         await user.click(toggleRow(/Post this quest to the Hackhub feed/));
 
-        await user.click(screen.getByRole("button", { name: /Generate full name/ }));
+        /* A fresh post is anonymous: no author at all — the board shows the
+           game's "Hidden User" and reveals the author on accept (r225's
+           measured mechanic). The poster fields are hidden in this state. */
+        expect(currentQuest().hackhubPost!.authorName).toBe("");
+        expect(screen.queryByLabelText("Hackhub poster name")).toBeNull();
+
+        /* Flipping Anonymous off dice-generates a name (so the post cannot
+           silently regress to anonymous) and reveals the fields. */
+        await user.click(toggleRow(/Anonymous poster/));
         const name = currentQuest().hackhubPost!.authorName ?? "";
         expect(name.length).toBeGreaterThan(2);
         expect(name).not.toMatch(/^(firstName|lastName)/);
+        expect(screen.getByLabelText("Hackhub poster name")).toHaveValue(name);
+
+        /* The poster dice still works on the revealed field. */
+        await user.click(screen.getByRole("button", { name: /Generate full name/ }));
+        expect((currentQuest().hackhubPost!.authorName ?? "").length).toBeGreaterThan(2);
 
         await user.type(screen.getByLabelText("Hackhub post text"), "Small job, good pay.");
         expect(currentQuest().hackhubPost!.content).toBe("Small job, good pay.");
-        expect(currentQuest().hackhubPost!.authorAvatar).toBeUndefined();
+    });
+
+    it("the Anonymous toggle wipes a typed name/avatar back to the Hidden User route", async () => {
+        const user = userEvent.setup();
+        loadQuest(createQuest({ id: "q-blank", name: "FeedQ", title: "Feed Q", closingObjectiveText: "done", description: "d" }));
+        render(<InspectorPanel />);
+        await user.click(toggleRow(/Post this quest to the Hackhub feed/));
+        await user.click(toggleRow(/Anonymous poster/)); // off: named poster
+        await user.type(screen.getByLabelText("Hackhub poster name"), "Ugo Jansen");
+
+        await user.click(toggleRow(/Anonymous poster/)); // on again
+        expect(currentQuest().hackhubPost!.authorName).toBe("");
+        expect(currentQuest().hackhubPost!.authorAvatar ?? "").toBe("");
+        expect(screen.queryByLabelText("Hackhub poster name")).toBeNull();
     });
 
     it("adds and fills comments", async () => {
@@ -128,3 +154,18 @@ describe("the internal id row (r217)", () => {
         expect(currentQuest().id).toBe("q-blank");
     });
 });
+
+    it("the commenter name field has a dice button (r226)", async () => {
+        const user = userEvent.setup();
+        loadQuest(createQuest({ id: "q-blank", name: "FeedQ", title: "Feed Q", closingObjectiveText: "done", description: "d" }));
+        render(<InspectorPanel />);
+        await user.click(toggleRow(/Post this quest to the Hackhub feed/));
+
+        /* Add a comment, then dice its author instead of typing. The FIRST
+           Generate button on the page is the poster's — but the poster fields
+           are hidden while anonymous, so index 0 is the commenter's. */
+        await user.click(screen.getByRole("button", { name: /Add a comment/ }));
+        await user.click(screen.getAllByRole("button", { name: /Generate full name/ })[0]);
+        const c = (currentQuest().hackhubPost!.comments ?? [])[0];
+        expect((c?.authorName ?? "").length).toBeGreaterThan(2);
+    });

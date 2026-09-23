@@ -847,13 +847,15 @@ registered.` when feed-adjacent UI opens.
 Two rendering behaviours around `HackhubPost.author` that the type
 declarations don't describe:
 
-1. **A named author with no avatar draws a broken-image icon.** `author:
-   { name }` (no `avatar`) renders the name and a broken `<img>` next to it —
-   the same for comment authors. The anonymous route (no `author` at all)
-   renders the game's drawn "Hidden User" persona without incident. So for
-   the feed, `avatar` is effectively required whenever `author` is present —
-   or the game should fall back to a drawn persona for named-but-avatarless
-   authors.
+1. **A named author with no avatar draws a broken-image icon — ANSWERED
+   (r226): the game does not mint avatars for named authors.** Confirmed from
+   BOTH paths: the harness grid (HF-2/HF-4) and an editor export (v7: comment
+   by "Needs Dicebutton", shipped clean as `author: { name }` with no avatar
+   key — no generated persona appeared, just the broken icon). Either fall
+   back to a drawn persona for named-but-avatarless authors, or document
+   `avatar` as effectively required whenever `author` is present. The
+   anonymous route (no `author` at all) renders the drawn "Hidden User"
+   persona without incident.
 2. **The documented employer fallback is unmeasured.** The d.ts says an
    omitted post author falls back to "the quest's (auto-generated) employer,
    falling back to an anonymous 'Hidden User'". A probe with an INVALID

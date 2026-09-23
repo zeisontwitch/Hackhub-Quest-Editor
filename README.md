@@ -141,11 +141,11 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
+| r226 | **H-12 green — the feed saga fully closed, visuals included; the commenter dice + Anonymous toggle** | v7 rendered everything from an editor export and taught the last mechanic: named posters are visible immediately, blank ones are Hidden-User-until-accept. The game doesn't mint avatars for named-but-avatarless authors (§22 answered). r226 adds the commenter name dice and an explicit Anonymous poster toggle. |
 | r225 | **Saga closed: the old emission stays absent — per-quest class names are the cure** | The decisive A/B: old v3 export absent on a fresh save, v6 (renamed classes) rendered the same day. Editor exports since r221 work; older ones need re-exporting. 11+ causes falsified across one day; §21 carries the matrix to the developers; H-12 (editor avatar+comment visuals) optional. |
 | r224 | **Correction: v6 rendered alone — one run now decides \"stuck pipeline\" vs \"the rename fixed it\"** | No canary was installed beside v6, ruling out co-installation. VF-1: the old v3 export alone, fresh save — renders means the profile's feed pipeline had jammed and cleared (engine note); absent means the class rename is the cure. |
 | r223 | **An editor export finally rendered — feed posts work; one fork left** | v6 (bare post, r222 build) surfaced on the feed — the first editor render since 1.0.38, after five silent exports. Author string doubly cleared. The fix is either the r221 class rename (the only emitted delta) or the hand mod running beside it — VF-1 (old v3 export + canary together) decides. |
 | r222 | **The author test — \"Zeis\" is on every silent export and no rendering mod** | HF-11 rendered: class names innocent, like shapes, fields, and the manifest before them. Canary 1.0.2 flips the one untested string (author \"Zeis\") while v4 — a post authored in the r221 editor — runs the end-to-end retest in the same session. |
-| r221 | **Every editor quest was class \"cls\" — the identity theory, the fix, and the decisive pair** | The r220 grid rendered all eleven posts: shapes, fields, manifest all innocent. The last difference between rendering hand mods and silent editor exports: compiled quests are anonymous classes all named `cls` — one claimed `cls` would retire every editor post on the profile. r221 renames the emitted classes to the quest's own name and ships HF-11 (the cls twin) vs HF-12 (renamed) to confirm or kill it in one look. |
 ---
 
 ### Standing rule

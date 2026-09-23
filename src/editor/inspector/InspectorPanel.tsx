@@ -421,24 +421,43 @@ function QuestInspector() {
                             rows={4}
                         />
                     </FieldShell>
-                    <FieldShell label="Poster name" hint="Blank (with no avatar) = the game posts as its anonymous \u201cHidden User\u201d persona. A name WITH an avatar reads best — a name without an avatar draws a broken-image icon on the post (observed in game, r219).">
-                        <TextInputWithGenerate
-                            ariaLabel="Hackhub poster name"
-                            value={quest.hackhubPost.authorName ?? ""}
-                            onChange={(authorName) => write({ hackhubPost: { ...quest.hackhubPost!, authorName } })}
-                            onGenerate={() =>
-                                write({ hackhubPost: { ...quest.hackhubPost!, authorName: generateField("fullName") } })
-                            }
-                            generateLabel="full name"
-                        />
-                    </FieldShell>
-                    <ImagePickerField
-                        label="Poster avatar"
-                        hint="Optional. Blank = the game draws one."
-                        value={quest.hackhubPost.authorAvatar}
-                        onChange={(authorAvatar) => write({ hackhubPost: { ...quest.hackhubPost!, authorAvatar } })}
-                        ariaLabel="Hackhub poster avatar"
+                    <Toggle
+                        label="Anonymous poster (Hidden User)"
+                        hint="On: the post ships with no author — the board shows the game's \u201cHidden User\u201d, and the author is only revealed once the player accepts (the employer if one is set, else a generated persona). Off: the poster name below is used, and named posters are visible on the board immediately (observed in game, r225)."
+                        checked={!quest.hackhubPost.authorName && !quest.hackhubPost.authorAvatar}
+                        onChange={(anonymous) =>
+                            write({
+                                hackhubPost: {
+                                    ...quest.hackhubPost!,
+                                    ...(anonymous
+                                        ? { authorName: "", authorAvatar: "" }
+                                        : { authorName: generateField("fullName"), authorAvatar: "" }),
+                                },
+                            })
+                        }
                     />
+                    {!(!quest.hackhubPost.authorName && !quest.hackhubPost.authorAvatar) && (
+                        <>
+                            <FieldShell label="Poster name" hint="A name WITH an avatar reads best — a name without an avatar draws a broken-image icon on the post (observed in game, r219).">
+                                <TextInputWithGenerate
+                                    ariaLabel="Hackhub poster name"
+                                    value={quest.hackhubPost.authorName ?? ""}
+                                    onChange={(authorName) => write({ hackhubPost: { ...quest.hackhubPost!, authorName } })}
+                                    onGenerate={() =>
+                                        write({ hackhubPost: { ...quest.hackhubPost!, authorName: generateField("fullName") } })
+                                    }
+                                    generateLabel="full name"
+                                />
+                            </FieldShell>
+                            <ImagePickerField
+                                label="Poster avatar"
+                                hint="Optional, but named posters without one draw a broken-image icon — give the name a face."
+                                value={quest.hackhubPost.authorAvatar}
+                                onChange={(authorAvatar) => write({ hackhubPost: { ...quest.hackhubPost!, authorAvatar } })}
+                                ariaLabel="Hackhub poster avatar"
+                            />
+                        </>
+                    )}
                     <FieldShell label="Likes" hint="Cosmetic, but it sells the post: a job with 300 likes reads in demand, one with 0 reads desperate — sometimes that is the point.">
                         <NumberInput
                             ariaLabel="Hackhub post likes"
@@ -460,7 +479,7 @@ function QuestInspector() {
                         {(quest.hackhubPost.comments ?? []).map((c, i) => (
                             <div key={c.id} className="mb-2 grid gap-1.5 rounded-md border border-line/70 bg-surface p-2">
                                 <div className="flex items-center gap-1.5">
-                                    <TextInput
+                                    <TextInputWithGenerate
                                         ariaLabel={`Comment ${i + 1} author`}
                                         value={c.authorName}
                                         placeholder="e.g. Riko Voss"
@@ -474,6 +493,17 @@ function QuestInspector() {
                                                 },
                                             })
                                         }
+                                        onGenerate={() =>
+                                            write({
+                                                hackhubPost: {
+                                                    ...quest.hackhubPost!,
+                                                    comments: (quest.hackhubPost!.comments ?? []).map((x) =>
+                                                        x.id === c.id ? { ...x, authorName: generateField("fullName") } : x,
+                                                    ),
+                                                },
+                                            })
+                                        }
+                                        generateLabel="full name"
                                     />
                                     <button
                                         type="button"

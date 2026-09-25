@@ -25,11 +25,18 @@ export interface Size {
 }
 
 /**
- * Padding a new group frame keeps around the selection it wraps (r228,
- * approved value). 32 clears the frame's ~28px title bar, so a grouped node
- * never sits under the grip.
+ * Edge padding a new group frame keeps around the selection it wraps
+ * (r228, approved value). 32 clears the frame's ~28px title bar, so a
+ * grouped node never sits under the grip.
  */
-export const GROUP_PAD = 32;
+export const PAD_EDGE = 32;
+
+/**
+ * Top padding (r229): double the bottom pad, because the frame's title bar
+ * sits inside the top band — 64 leaves the bar plus the same 32 px of
+ * breathing room the other edges get.
+ */
+export const PAD_TOP = PAD_EDGE * 2;
 
 /** The resizer's minimums (GraphNode's NodeResizer) — a new frame never
     starts smaller than the author could drag it to. */
@@ -97,9 +104,10 @@ export function stepGroupDrag(
 
 /**
  * The rect a new group frame gets when `nodes` are grouped (Ctrl+G, r228):
- * the selection's bounding box plus GROUP_PAD, clamped to the resizer
- * minimums, integer output. `nodes` includes any group frames in the
- * selection — the new folder carries them as members.
+ * the selection's bounding box plus PAD_EDGE (top: PAD_TOP, for the title
+ * bar), clamped to the resizer minimums, integer output. `nodes` includes
+ * any group frames in the selection — the new folder carries them as
+ * members.
  */
 export function frameAround(
     nodes: NodeDoc[],
@@ -117,7 +125,7 @@ export function frameAround(
         x1 = Math.max(x1, n.position.x + s.width);
         y1 = Math.max(y1, n.position.y + s.height);
     }
-    const w = Math.max(FRAME_MIN_W, Math.round(x1 - x0 + GROUP_PAD * 2));
-    const h = Math.max(FRAME_MIN_H, Math.round(y1 - y0 + GROUP_PAD * 2));
-    return { x: Math.round(x0 - GROUP_PAD), y: Math.round(y0 - GROUP_PAD), w, h };
+    const w = Math.max(FRAME_MIN_W, Math.round(x1 - x0 + PAD_EDGE * 2));
+    const h = Math.max(FRAME_MIN_H, Math.round(y1 - y0 + PAD_TOP + PAD_EDGE));
+    return { x: Math.round(x0 - PAD_EDGE), y: Math.round(y0 - PAD_TOP), w, h };
 }

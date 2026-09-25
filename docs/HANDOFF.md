@@ -1,3 +1,41 @@
+# Handoff — r229
+
+**Two minor changes from Zeis after the r228 screenshot (nested frames
+confirmed working): the new frame's top padding should clear the title bar,
+and Settings gets an on/off for random frame colours on creation. Both
+landed.**
+
+1. **Top padding** (`src/editor/canvas/groupDrag.ts`). `GROUP_PAD` (uniform
+   32) became `PAD_EDGE = 32` (left/right/bottom) and `PAD_TOP = PAD_EDGE *
+   2` — 64 on top, where the frame's title bar lives, so a wrapped node
+   never sits under the grip. Only `frameAround` changed; the drag state
+   machine and the 160×120 minimums are untouched. The `frameAround` tests
+   re-pinned (top edge = selection − 64).
+2. **Random frame colours on creation** (new pure module
+   `src/editor/canvas/groupColours.ts`). The group node already carried a
+   `color` field with an inspector picker offering 8 curated frame colours —
+   so this round just decides the *starting* colour. The 8 hex values moved
+   to `groupColours.ts` as the single source of truth (the inspector keeps
+   the labels and imports the values, so picker and roll can't drift).
+   `randomGroupColour()` rolls uniformly from them; the on/off is a
+   per-author pref (module value + subscribe + localStorage, same shape as
+   the snap/wire prefs), **default off** per Zeis. The roll happens in
+   `addNode` — the one chokepoint palette, node search and Ctrl+G all
+   funnel through — and never overwrites a colour the caller picked.
+   Paste/duplicate clone data directly, so a copied frame keeps its colour.
+   Settings gains a "Group frames" section with the one switch; reset-all
+   covers it. Compiler untouched: the colour already rides in the exported
+   frame data exactly as when hand-picked; planning notes stay
+   label + comment.
+
+Falsified: uniform-32 pad → both re-pinned `frameAround` cases red; the
+pref check out of `addNode` → the colour cases red (the Ctrl+G case proves
+the roll is not pinned, since slate is itself a swatch).
+
+Gates: 1,835 tests / 91 files, typecheck, build — green. Stamps r229.
+
+---
+
 # Handoff — r228
 
 **Two items from Zeis: the website editor dropped the caret on every

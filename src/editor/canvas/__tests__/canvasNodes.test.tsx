@@ -4,7 +4,7 @@
  * own data. Both were reported from the real editor, so both are pinned here
  * against the mounted app rather than the store alone.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "@/App";
@@ -28,6 +28,11 @@ import { Position } from "@xyflow/react";
 import { TypedEdge } from "@/editor/canvas/TypedEdge";
 import { sourcesOf } from "@/schema/registry";
 import { readableOn } from "@/editor/canvas/GraphNode";
+import {
+    FRAME_COLOURS,
+    resetGroupColourForTests,
+    setGroupColourRandom,
+} from "@/editor/canvas/groupColours";
 
 const quest = () => useEditor.getState().project.quests[0];
 
@@ -35,6 +40,15 @@ beforeEach(() => {
     localStorage.clear();
     act(() => useEditor.getState().load(createProject(), { clearHistory: true }));
 });
+
+/** Dispatch a real window keydown, the way the browser would. */
+function pressG(target?: EventTarget) {
+    act(() => {
+        (target ?? window).dispatchEvent(
+            new KeyboardEvent("keydown", { key: "g", ctrlKey: true, bubbles: true, cancelable: true }),
+        );
+    });
+}
 
 describe("reroute nodule", () => {
     /** a → reroute → b, with the nodule selected. */
@@ -662,15 +676,6 @@ describe("Ctrl+G groups and ungroups the selection", () => {
         return cx >= fx && cx <= fx + fw && cy >= fy && cy <= fy + fh;
     };
 
-    /** Dispatch a real window keydown, the way the browser would. */
-    function pressG(target?: EventTarget) {
-        act(() => {
-            (target ?? window).dispatchEvent(
-                new KeyboardEvent("keydown", { key: "g", ctrlKey: true, bubbles: true, cancelable: true }),
-            );
-        });
-    }
-
     it("wraps the selection in a new frame, selecting the frame", async () => {
         const st = useEditor.getState();
         const a = st.addNode("fx.notify", { x: 0, y: 0 })!;
@@ -754,5 +759,62 @@ describe("Ctrl+G groups and ungroups the selection", () => {
         }
         expect(nodes().filter((x) => x.type === "layout.group")).toHaveLength(0);
         expect(useEditor.getState().selection.nodeIds).toEqual([a]);
+    });
+});
+
+describe("new frames' colour (r229 random-on-creation)", () => {
+    const nodes = () => quest().graph.nodes;
+    const frameColour = (n: NodeDoc) => (n.data as { color: string }).color;
+    const SLATE = "#64748b";
+
+    afterEach(() => resetGroupColourForTests());
+
+    it("addNode leaves a new frame slate while the toggle is off (the default)", () => {
+        const id = useEditor.getState().addNode("layout.group", { x: 0, y: 0 })!;
+        expect(frameColour(nodes().find((x) => x.id === id)!)).toBe(SLATE);
+    });
+
+    it("addNode rolls a ready-made colour for a new frame when the toggle is on", () => {
+        setGroupColourRandom(true);
+        // Seed the roll so the assertion is exact: 0.5 → index 4 (pink).
+        const random = vi.spyOn(Math, "random").mockReturnValue(0.5);
+        const id = useEditor.getState().addNode("layout.group", { x: 0, y: 0 })!;
+        expect(frameColour(nodes().find((x) => x.id === id)!)).toBe(FRAME_COLOURS[4]);
+        random.mockRestore();
+    });
+
+    it("never overwrites a colour the caller picked", () => {
+        setGroupColourRandom(true);
+        const id = useEditor.getState().addNode("layout.group", { x: 0, y: 0 }, { color: "#f472b6" })!;
+        expect(frameColour(nodes().find((x) => x.id === id)!)).toBe("#f472b6");
+    });
+
+    it("does not touch non-frame nodes", () => {
+        setGroupColourRandom(true);
+        const id = useEditor.getState().addNode("fx.notify", { x: 0, y: 0 })!;
+        expect("color" in (nodes().find((x) => x.id === id)!.data as object)).toBe(false);
+    });
+
+    it("Ctrl+G wears a ready-made colour when the toggle is on — and the roll is not pinned", async () => {
+        setGroupColourRandom(true);
+        const st = useEditor.getState();
+        const a = st.addNode("fx.notify", { x: 0, y: 0 })!;
+        st.select({ nodeIds: [a], edgeIds: [] });
+        render(<App />);
+        await waitFor(() => expect(document.querySelectorAll(".react-flow__node").length).toBe(1));
+
+        // Group, read the colour, ungroup, re-select the node — six times.
+        const seen = new Set<string>();
+        for (let i = 0; i < 6; i++) {
+            pressG();
+            const frame = nodes().find((n) => n.type === "layout.group")!;
+            expect(FRAME_COLOURS).toContain(frameColour(frame));
+            seen.add(frameColour(frame));
+            pressG(); // ungroup (the frame is selected now)
+            st.select({ nodeIds: [a], edgeIds: [] });
+        }
+        // Six rolls from eight colours: all-same has a ~0.3% chance.
+        expect(seen.size).toBeGreaterThan(1);
+        expect(nodes().filter((x) => x.type === "layout.group")).toHaveLength(0);
     });
 });

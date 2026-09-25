@@ -59,6 +59,11 @@ import {
     wirePhysicsEnabled,
 } from "@/editor/canvas/wirePhysicsPref";
 import {
+    groupColourRandomOn,
+    setGroupColourRandom,
+    subscribeGroupColourRandom,
+} from "@/editor/canvas/groupColours";
+import {
     DEFAULT_TUNING,
     dampingRatio,
     resetWireTuning,
@@ -128,6 +133,7 @@ export function SettingsDialog({
     const step = useSyncExternalStore(subscribeSnap, snapStep, () => 22);
     const motion = useSyncExternalStore(subscribeWireMotion, wireMotionEnabled, () => true);
     const physics = useSyncExternalStore(subscribeWirePhysics, wirePhysicsEnabled, () => true);
+    const groupColour = useSyncExternalStore(subscribeGroupColourRandom, groupColourRandomOn, () => false);
     const tuning = useSyncExternalStore(subscribeWireTuning, wireTuning, () => DEFAULT_TUNING);
     const drift = useSyncExternalStore(subscribeWireMotion, dotPeriodS, () => DOT_PERIOD_S);
     const grid = useSyncExternalStore(subscribeCanvasGrid, canvasGrid, () => ({
@@ -231,6 +237,14 @@ export function SettingsDialog({
                                 what snaps together also spaces together.
                             </p>
                         </div>
+
+                        <Section>Group frames</Section>
+                        <SwitchRow
+                            label="Random frame colours"
+                            description="New group frames get one of the ready-made colours picked for them, so clusters are easy to tell apart at a glance. You can still pick a colour by hand on any frame."
+                            checked={groupColour}
+                            onChange={setGroupColourRandom}
+                        />
 
                         <Section>Canvas grid</Section>
                         <SwitchRow

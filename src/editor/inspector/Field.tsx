@@ -7,6 +7,7 @@
  */
 import { useMemo, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { FRAME_COLOURS } from "@/editor/canvas/groupColours";
 import { ColourPicker } from "./ColourPicker";
 import { Icon } from "@/components/Icon";
 import type { FieldDef } from "@/schema/registry";
@@ -39,17 +40,13 @@ import {
 import type { NetworkDevice } from "@/schema/common";
 import type { ConditionClause } from "@/schema/nodes";
 
-/** Ready-made frame colours. Anything else is one click away in the picker. */
-const GROUP_COLORS = [
-    { value: "#64748b", label: "Slate" },
-    { value: "#60a5fa", label: "Blue" },
-    { value: "#34d399", label: "Green" },
-    { value: "#fbbf24", label: "Amber" },
-    { value: "#f472b6", label: "Pink" },
-    { value: "#a78bfa", label: "Violet" },
-    { value: "#fb923c", label: "Orange" },
-    { value: "#22d3ee", label: "Cyan" },
-] as const;
+/**
+ * Ready-made frame colours: the values come from the single source of truth
+ * the random-on-creation roll (r229) uses, so the picker and the roll can
+ * never drift apart. Anything else is one click away in the picker.
+ */
+const GROUP_COLOUR_LABELS = ["Slate", "Blue", "Green", "Amber", "Pink", "Violet", "Orange", "Cyan"];
+const GROUP_COLORS = FRAME_COLOURS.map((value, i) => ({ value, label: GROUP_COLOUR_LABELS[i] }));
 
 /**
  * Picks one of the mod's Twotter accounts (r185), by handle. Accounts are

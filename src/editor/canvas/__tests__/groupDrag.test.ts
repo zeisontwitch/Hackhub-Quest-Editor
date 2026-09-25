@@ -11,7 +11,8 @@ import { describe, expect, it } from "vitest";
 import {
     FRAME_MIN_H,
     FRAME_MIN_W,
-    GROUP_PAD,
+    PAD_EDGE,
+    PAD_TOP,
     beginGroupDrag,
     frameAround,
     stepGroupDrag,
@@ -100,12 +101,13 @@ describe("frameAround", () => {
     it("wraps the selection's bounding box with the pad", () => {
         const a = node("a", "fx.notify", 100, 100);
         const b = node("b", "fx.notify", 400, 300);
-        // Bounding box of the two cards: x 100..640, y 100..420.
+        // Bounding box of the two cards: x 100..640, y 100..420. The top
+        // edge keeps PAD_TOP (title bar), the others PAD_EDGE (r229).
         expect(frameAround([a, b], sizeOf)).toEqual({
-            x: 100 - GROUP_PAD,
-            y: 100 - GROUP_PAD,
-            w: 640 - 100 + GROUP_PAD * 2,
-            h: 420 - 100 + GROUP_PAD * 2,
+            x: 100 - PAD_EDGE,
+            y: 100 - PAD_TOP,
+            w: 640 - 100 + PAD_EDGE * 2,
+            h: 420 - 100 + PAD_TOP + PAD_EDGE,
         });
     });
 
@@ -113,8 +115,8 @@ describe("frameAround", () => {
         const tiny = node("t", "fx.notify", 100, 100);
         const tinySize = () => ({ width: 10, height: 10 });
         expect(frameAround([tiny], tinySize)).toEqual({
-            x: 100 - GROUP_PAD,
-            y: 100 - GROUP_PAD,
+            x: 100 - PAD_EDGE,
+            y: 100 - PAD_TOP,
             w: FRAME_MIN_W,
             h: FRAME_MIN_H,
         });

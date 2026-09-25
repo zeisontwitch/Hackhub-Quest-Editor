@@ -141,11 +141,11 @@ archived once it has stayed fixed for a few rounds.
 
 | # | Item | Notes |
 |---|---|---|
+| r229 | **Group frames clear their own title bar — and can wear a colour of their own** | New frames now wrap the selection with a 64 px top pad (double the other edges), so the title bar sits inside the frame instead of over the first row of nodes. New Settings toggle (off by default): group frames get one of the eight ready-made colours picked for them on creation — palette, node search and Ctrl+G all roll from the same colour set the inspector picker offers, so a copied frame keeps its colour and a hand-picked one is never overwritten. |
 | r228 | **Typing in the website editor no longer drops the caret; groups that carry their own** | The page editor now recognises its own edits and leaves the iframe alone — the cursor survives every keystroke, and undo still reloads the frame. New group-drag state machine: grabbing a frame freezes its contents at the moment of the grab, so bystanders in the path are not dragged along and nested frames move with their parent. Ctrl+G wraps the selection in a new frame (frames already in the selection become members, so folders nest); pressing it again on a frame removes only that frame. Also fixed: frames were measured from keys they never had, so the wrap silently used default sizes. |
 | r227 | **Zeis's r226 review: the dice alignment + plain-language author copy** | Two real bugs caught on the screenshot: the comment dice floated (top-aligned wrapper — centered now), and the toggle hint printed literal `\u201c` escapes (JSX attribute strings do not read `\u` escapes) — rebuilt with real quotes inside a mouse-over ⓘ, and every author-facing blurb de-jargoned (no SDK talk, no round numbers; "Hidden User" stays, it is the game's own word). Also owned: r226's post-toggle hint rewrite never shipped (lost between script attempts) — it lands now, teaching the real mechanic. |
 | r226 | **H-12 green — the feed saga fully closed, visuals included; the commenter dice + Anonymous toggle** | v7 rendered everything from an editor export and taught the last mechanic: named posters are visible immediately, blank ones are Hidden-User-until-accept. The game doesn't mint avatars for named-but-avatarless authors (§22 answered). r226 adds the commenter name dice and an explicit Anonymous poster toggle. |
 | r225 | **Saga closed: the old emission stays absent — per-quest class names are the cure** | The decisive A/B: old v3 export absent on a fresh save, v6 (renamed classes) rendered the same day. Editor exports since r221 work; older ones need re-exporting. 11+ causes falsified across one day; §21 carries the matrix to the developers; H-12 (editor avatar+comment visuals) optional. |
-| r224 | **Correction: v6 rendered alone — one run now decides \"stuck pipeline\" vs \"the rename fixed it\"** | No canary was installed beside v6, ruling out co-installation. VF-1: the old v3 export alone, fresh save — renders means the profile's feed pipeline had jammed and cleared (engine note); absent means the class rename is the cure. |
 ---
 
 ### Standing rule
@@ -183,7 +183,7 @@ Older **Done recently** rows are archived at
 All four original steps are complete — the editor builds playable mods. The
 work since has been in-game QA, and the polish that came out of it.
 
-Counted from the code at build `2026-09-25.r228`: **1,826 tests** across 91
+Counted from the code at build `2026-09-25.r229`: **1,835 tests** across 91
 files, **40 node types** in 10 categories (all palette-visible), **160 editable
 fields** and **76 sockets** (counted in the manual), **13 templates**
 (11 playable + 2 reference sheets), **99 game events**, against

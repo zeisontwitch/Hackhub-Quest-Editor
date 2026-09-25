@@ -16,6 +16,7 @@ import { ProjectSchema, createProject, createQuest } from "@/schema/project";
 import { nodeTypeDef, sourcesOf } from "@/schema/registry";
 import { layeredLayout } from "@/analysis/graph";
 import { debugProbeName } from "@/editor/canvas/debugName";
+import { groupColourRandomOn, randomGroupColour } from "@/editor/canvas/groupColours";
 import { canConnect, type EdgeKind } from "@/schema/edges";
 import type { NodeType } from "@/schema/nodes";
 import type { Position, Viewport } from "@/schema/common";
@@ -476,11 +477,20 @@ export const useEditor = create<EditorStore>()((set, get) => {
             if (!quest) return null;
             const def = nodeTypeDef(type);
             const id = nanoid(10);
+            const nodeData = (data ? { ...(def.create() as object), ...data } : def.create()) as Record<
+                string,
+                unknown
+            >;
+            // r229: a new frame may wear a random ready-made colour when the
+            // author opted in — but never over a colour the caller picked.
+            if (type === "layout.group" && groupColourRandomOn() && data?.color === undefined) {
+                nodeData.color = randomGroupColour();
+            }
             const node = {
                 id,
                 type,
                 position,
-                data: data ? { ...(def.create() as object), ...data } : def.create(),
+                data: nodeData,
             } as unknown as NodeDoc;
             mutate((project) => {
                 const q = project.quests.find((x) => x.id === quest.id);

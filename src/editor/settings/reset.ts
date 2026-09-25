@@ -9,6 +9,7 @@
  * look you spent a minute choosing.
  */
 import { setSnapEnabled, setSnapStep } from "@/editor/canvas/snapGrid";
+import { setGroupColourRandom } from "@/editor/canvas/groupColours";
 import { DEFAULT_CANVAS_GRID, setCanvasGrid } from "@/editor/canvas/canvasGrid";
 import { DOT_PERIOD_S, setDotPeriod, setWireMotion } from "@/editor/canvas/wireMotion";
 import { defaultWirePhysics, setWirePhysicsEnabled } from "@/editor/canvas/wirePhysicsPref";
@@ -23,6 +24,7 @@ export function resetEditorPreferences(): void {
     setUiFont("system");
     setSnapEnabled(false);
     setSnapStep(22);
+    setGroupColourRandom(false);
     setCanvasGrid({ ...DEFAULT_CANVAS_GRID });
     setWireMotion(true);
     // The OS reduced-motion hint is part of the fresh default, not just "on".

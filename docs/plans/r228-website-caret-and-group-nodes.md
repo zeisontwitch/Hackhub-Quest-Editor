@@ -1,6 +1,6 @@
 # r228 — Website caret fix + Group node touch-up (Ctrl+G, stable group drag)
 
-**Status: approved (Zeis, 2026-09-25) — implementing.**
+**Status: done (2026-09-25) — gates green, 1,826 tests / 91 files; see Handoff r228.**
 Two items from Zeis:
 
 1. In the WYSIWYG website editor, clicking into a text field and typing loses the

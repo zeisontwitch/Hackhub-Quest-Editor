@@ -645,3 +645,114 @@ describe("a debug probe names itself after what it is watching", () => {
             .toBe("OnComplete-Objective-FindServer");
     });
 });
+
+describe("Ctrl+G groups and ungroups the selection", () => {
+    const nodes = () => quest().graph.nodes;
+    const frameData = (n: NodeDoc) => n.data as { w?: number; h?: number };
+    const centreInFrame = (n: NodeDoc, frame: NodeDoc) => {
+        // jsdom measures nothing, so the size is the computed 240×120 card
+        // (or the frame's stored w/h) — the same sizeOf the handler uses.
+        const size =
+            n.type === "layout.group"
+                ? { width: frameData(n).w ?? 360, height: frameData(n).h ?? 240 }
+                : { width: 240, height: 120 };
+        const fx = frame.position.x, fy = frame.position.y;
+        const fw = frameData(frame).w ?? 360, fh = frameData(frame).h ?? 240;
+        const cx = n.position.x + size.width / 2, cy = n.position.y + size.height / 2;
+        return cx >= fx && cx <= fx + fw && cy >= fy && cy <= fy + fh;
+    };
+
+    /** Dispatch a real window keydown, the way the browser would. */
+    function pressG(target?: EventTarget) {
+        act(() => {
+            (target ?? window).dispatchEvent(
+                new KeyboardEvent("keydown", { key: "g", ctrlKey: true, bubbles: true, cancelable: true }),
+            );
+        });
+    }
+
+    it("wraps the selection in a new frame, selecting the frame", async () => {
+        const st = useEditor.getState();
+        const a = st.addNode("fx.notify", { x: 0, y: 0 })!;
+        const b = st.addNode("fx.notify", { x: 400, y: 200 })!;
+        st.select({ nodeIds: [a, b], edgeIds: [] });
+        render(<App />);
+        await waitFor(() => expect(document.querySelectorAll(".react-flow__node").length).toBe(2));
+
+        pressG();
+
+        const frames = nodes().filter((n) => n.type === "layout.group");
+        expect(frames).toHaveLength(1);
+        const frame = frames[0]!;
+        for (const id of [a, b]) expect(centreInFrame(nodes().find((n) => n.id === id)!, frame)).toBe(true);
+        expect(useEditor.getState().selection.nodeIds).toEqual([frame.id]);
+    });
+
+    it("creates a new folder that carries a selected frame as a member", async () => {
+        // Zeis's example: Group A (a frame with a node inside) plus an extra
+        // node outside — Ctrl+G must create Group B around BOTH, leaving A.
+        const st = useEditor.getState();
+        const groupA = st.addNode("layout.group", { x: 0, y: 0 })!;
+        const inside = st.addNode("fx.notify", { x: 100, y: 60 })!; // inside A
+        const extra = st.addNode("fx.notify", { x: 800, y: 0 })!; // outside A
+        st.select({ nodeIds: [groupA, inside, extra], edgeIds: [] });
+        render(<App />);
+        await waitFor(() => expect(document.querySelectorAll(".react-flow__node").length).toBe(3));
+
+        pressG();
+
+        const frames = nodes().filter((n) => n.type === "layout.group");
+        expect(frames).toHaveLength(2);
+        const groupB = frames.find((f) => f.id !== groupA)!;
+        expect(nodes().some((n) => n.id === groupA)).toBe(true); // A survives
+        expect(centreInFrame(nodes().find((n) => n.id === groupA)!, groupB)).toBe(true);
+        expect(centreInFrame(nodes().find((n) => n.id === extra)!, groupB)).toBe(true);
+        expect(useEditor.getState().selection.nodeIds).toEqual([groupB.id]);
+    });
+
+    it("ungroup deletes only the highlighted frame; nested and parent frames stay", async () => {
+        const st = useEditor.getState();
+        const groupB = st.addNode("layout.group", { x: 0, y: 0 }, { w: 700, h: 500 })!;
+        const groupA = st.addNode("layout.group", { x: 100, y: 100 }, { w: 300, h: 200 })!;
+        const n = st.addNode("fx.notify", { x: 150, y: 150 })!; // inside A (and B)
+        st.select({ nodeIds: [groupA], edgeIds: [] });
+        render(<App />);
+        await waitFor(() => expect(document.querySelectorAll(".react-flow__node").length).toBe(3));
+
+        pressG();
+
+        expect(nodes().some((x) => x.id === groupA)).toBe(false);
+        expect(nodes().some((x) => x.id === groupB)).toBe(true);
+        const survivor = nodes().find((x) => x.id === n)!;
+        expect(survivor.position).toEqual({ x: 150, y: 150 });
+        expect(useEditor.getState().selection.nodeIds).toEqual([]);
+    });
+
+    it("says so instead of doing nothing on an empty selection", async () => {
+        render(<App />);
+        await waitFor(() => expect(document.querySelectorAll(".react-flow__node").length).toBe(0));
+        pressG();
+        expect(useEditor.getState().ui.toast?.message).toBe("Select some nodes first.");
+        expect(nodes().filter((x) => x.type === "layout.group")).toHaveLength(0);
+    });
+
+    it("is ignored while the author is typing in a field", async () => {
+        const st = useEditor.getState();
+        const a = st.addNode("fx.notify", { x: 0, y: 0 })!;
+        st.select({ nodeIds: [a], edgeIds: [] });
+        render(<App />);
+        await waitFor(() => expect(document.querySelectorAll(".react-flow__node").length).toBe(1));
+
+        // A real focused input is the faithful "typing" target.
+        const input = document.createElement("input");
+        document.body.appendChild(input);
+        input.focus();
+        try {
+            pressG(input);
+        } finally {
+            input.remove();
+        }
+        expect(nodes().filter((x) => x.type === "layout.group")).toHaveLength(0);
+        expect(useEditor.getState().selection.nodeIds).toEqual([a]);
+    });
+});

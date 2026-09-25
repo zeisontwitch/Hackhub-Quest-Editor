@@ -16,7 +16,7 @@ import * as Popover from "@radix-ui/react-popover";
 import Prism from "prismjs";
 import { cn } from "@/lib/cn";
 import { useEditor } from "@/store/editor";
-import { joinDocument, linkElement, linkRange, normalizePath, splitDocument } from "./pageDoc";
+import { joinDocument, linkElement, linkRange, normalizePath, splitDocument, type SplitDoc } from "./pageDoc";
 
 const INLINE = [
     { cmd: "bold", label: "B", title: "Bold", className: "font-bold" },
@@ -36,6 +36,21 @@ const BLOCKS = [
 export interface TargetingState {
     path: string;
     origin: { x: number; y: number };
+}
+
+/**
+ * The document the editing iframe loads: the page's own document, with a CSP
+ * that blocks script execution while keeping the <script> nodes in the DOM
+ * (they must survive into the emitted document, and body.innerHTML is what we
+ * emit). Pages with no script are returned byte-identical. Pure, so the
+ * component can pin it at mount and recompute it on outside changes.
+ */
+function editingSource(doc: string, parts: SplitDoc): string {
+    if (!/<script[\s>]/i.test(doc)) return doc;
+    const csp = `<meta http-equiv="Content-Security-Policy" content="script-src 'none'">`;
+    return parts.isFull && /<head[^>]*>/i.test(parts.head)
+        ? parts.head.replace(/<head[^>]*>/i, (m) => `${m}\n${csp}`) + parts.body + parts.tail
+        : `<!doctype html><html><head>${csp}</head><body>${parts.isFull ? parts.body : doc}</body></html>`;
 }
 
 export function VisualPageEditor({
@@ -59,6 +74,11 @@ export function VisualPageEditor({
 }) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const fileRef = useRef<HTMLInputElement>(null);
+    /** The full document the last `emit()` wrote to the parent. When that
+        string flows back as the `doc` prop, the change came from our own
+        keystroke — the iframe must NOT be reloaded (see the srcDoc effect),
+        or the caret dies on every character. */
+    const lastEmitted = useRef(doc);
     /** Armed point-to-link path; null = normal editing clicks. A ref, so the
         click handler attached once at iframe load always reads the current
         arm without re-attaching listeners. */
@@ -89,19 +109,32 @@ export function VisualPageEditor({
     // from outside, so the caret never resets mid-typing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const parts = useMemo(() => splitDocument(doc), []);
-    // Scripts stay OFF while editing (the Preview tab runs them). We cannot
-    // `sandbox` the iframe — emit() needs same-origin access to the body —
-    // so instead the *editing copy* gets a CSP that blocks script execution
-    // while keeping the <script> nodes in the DOM (they must survive into
-    // the emitted document, and body.innerHTML is what we emit). Pages with
-    // no script keep their document byte-identical.
-    const editingDoc = useMemo(() => {
-        if (!/<script[\s>]/i.test(doc)) return doc;
-        const csp = `<meta http-equiv="Content-Security-Policy" content="script-src 'none'">`;
-        return parts.isFull && /<head[^>]*>/i.test(parts.head)
-            ? parts.head.replace(/<head[^>]*>/i, (m) => `${m}\n${csp}`) + parts.body + parts.tail
-            : `<!doctype html><html><head>${csp}</head><body>${parts.isFull ? parts.body : doc}</body></html>`;
-    }, [doc, parts]);
+
+    /**
+     * The document the iframe loads. Fixed at mount — the parent remounts us
+     * (key) on outside changes, and our OWN keystrokes must never touch it:
+     * rewriting the iframe's `srcdoc` makes the browser navigate it to a fresh
+     * document, which is what killed the caret after every keystroke (r228).
+     * The only in-place update is the doc-diff effect below, for outside
+     * changes that do not remount us (undo/redo).
+     */
+    const [srcDoc, setSrcDoc] = useState(() => editingSource(doc, parts));
+
+    /**
+     * Scripts stay OFF while editing (the Preview tab runs them). We cannot
+     * `sandbox` the iframe — emit() needs same-origin access to the body —
+     * so instead the *editing copy* gets a CSP that blocks script execution
+     * while keeping the <script> nodes in the DOM (they must survive into
+     * the emitted document, and body.innerHTML is what we emit). Pages with
+     * no script keep their document byte-identical.
+     */
+    // The iframe already shows `doc` when we last emitted it — only a change
+    // that came from OUTSIDE (e.g. undo) needs a reload.
+    useEffect(() => {
+        if (doc !== lastEmitted.current) setSrcDoc(editingSource(doc, parts));
+        // `parts` is fixed at mount, so `doc` alone drives the diff.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [doc]);
 
     // Keep the armed ref in lockstep with the (controlled or internal)
     // targeting state; the once-attached iframe handlers read the ref.
@@ -154,7 +187,13 @@ export function VisualPageEditor({
 
     const emit = () => {
         const body = iframeRef.current?.contentDocument?.body;
-        if (body) onChange(joinDocument(parts, body.innerHTML));
+        if (!body) return;
+        const joined = joinDocument(parts, body.innerHTML);
+        // Record what the iframe now holds BEFORE the parent round-trips it:
+        // when it comes back as the `doc` prop, the diff effect recognises
+        // the echo and leaves the frame (and its caret) alone.
+        lastEmitted.current = joined;
+        onChange(joined);
     };
 
     const onLoad = () => {
@@ -401,7 +440,7 @@ export function VisualPageEditor({
             <iframe
                 ref={iframeRef}
                 title={ariaLabel}
-                srcDoc={editingDoc}
+                srcDoc={srcDoc}
                 onLoad={onLoad}
                 className="block h-[48vh] w-full border-0 bg-white"
             />

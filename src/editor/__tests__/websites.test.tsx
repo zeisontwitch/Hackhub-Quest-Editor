@@ -490,6 +490,47 @@ describe("visual and code editors in isolation", () => {
         expect(screen.getByText(/images are embedded/)).toBeInTheDocument();
     });
 
+    it("keeps the frame loaded while the author types — no reload per keystroke", async () => {
+        // r228: every keystroke round-tripped the document through the parent
+        // and back, and the round-trip rewrote the iframe's `srcdoc` — which
+        // in a real browser navigates the frame and kills the caret. The
+        // self-echo must leave `srcdoc` byte-identical. (jsdom's iframe body
+        // is empty, but emit() runs the identical mechanics: read the body,
+        // join, hand it to the parent.)
+        function Harness() {
+            const [value, setValue] = useState("<p>hello</p>");
+            return <VisualPageEditor doc={value} onChange={setValue} ariaLabel="caret" />;
+        }
+        render(<Harness />);
+        const frame = screen.getByTitle("caret") as HTMLIFrameElement;
+        await waitFor(() => expect(frame.contentDocument?.body).toBeTruthy());
+        const srcdocBefore = frame.getAttribute("srcdoc")!;
+        act(() => {
+            frame.contentDocument!.body.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        await new Promise((r) => setTimeout(r, 20));
+        expect(frame.getAttribute("srcdoc")).toBe(srcdocBefore);
+    });
+
+    it("reloads the frame when the document changes from outside (e.g. undo)", async () => {
+        function Harness() {
+            const [value, setValue] = useState("<p>hello</p>");
+            return (
+                <div>
+                    <button type="button" onClick={() => setValue("<p>rewound</p>")}>
+                        rewind
+                    </button>
+                    <VisualPageEditor doc={value} onChange={setValue} ariaLabel="undo" />
+                </div>
+            );
+        }
+        render(<Harness />);
+        const frame = screen.getByTitle("undo") as HTMLIFrameElement;
+        await waitFor(() => expect(frame.contentDocument?.body).toBeTruthy());
+        fireEvent.click(screen.getByRole("button", { name: "rewind" }));
+        await waitFor(() => expect(frame.getAttribute("srcdoc")).toBe("<p>rewound</p>"));
+    });
+
     it("the link picker lists the site's pages and arms point-to-link", () => {
         /* fireEvent, not userEvent: Radix's popover mounts its content
            mid-click and userEvent's pointer sequence hangs on it in jsdom. */

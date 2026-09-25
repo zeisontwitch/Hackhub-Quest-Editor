@@ -69,8 +69,12 @@ export function nodeSize(
     twotterAccounts?: Pick<TwotterAccountDoc, "id" | "handle">[],
 ): Size {
     if (doc.type === "layout.group") {
-        const data = doc.data as { width?: number; height?: number };
-        return { width: data.width ?? 360, height: data.height ?? 240 };
+        // The schema stores `w` / `h` (LayoutGroupNodeDataSchema); this branch
+        // once read `width` / `height`, which no frame ever carries, so every
+        // real frame measured as the 360×240 default and a resized frame's
+        // centre was wrong (r228).
+        const data = doc.data as { w?: number; h?: number };
+        return { width: data.w ?? 360, height: data.h ?? 240 };
     }
 
     if (doc.type === "flow.note") {

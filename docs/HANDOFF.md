@@ -1,3 +1,49 @@
+# Handoff — r228
+
+**Two items from Zeis: the website editor dropped the caret on every
+keystroke, and group nodes needed a Ctrl+G toggle plus drags that carry
+only what they carried when grabbed. Both landed, and the second exposed
+a third bug on the way.**
+
+1. **The caret fix** (`src/editor/websites/pageEditor.tsx`). The visual
+   page editor kept the iframe's `srcdoc` in state and recomputed it
+   from the page document on every render — so each keystroke re-rendered
+   the parent, rewrote the iframe's `srcdoc`, restarted the document and
+   killed the caret. The component now remembers the exact string it last
+   emitted (`lastEmitted` ref + the small pure helper `editingSource`)
+   and reloads the frame only when the document changes from *outside* —
+   undo/redo is the only path that does not already remount the editor
+   through `outsideRev`. Falsified: with the guard removed, the new
+   test shows the frame being rewritten on a self-echo.
+2. **Ctrl+G group/ungroup** (new effect in `QuestCanvas` + the shortcuts
+   row in `Overlays`). A selection containing plain nodes is wrapped in a
+   new frame (32 px padding, 160×120 minimum); a frame already in the
+   selection becomes a *member* of the new frame, so folders nest. On a
+   frames-only selection, Ctrl+G removes only that frame — nested and
+   parent frames and every contained node stay. Empty selection gets a
+   toast; the typing guard reuses the now-exported `isTypingTarget`.
+3. **The group-drag state machine** (new pure module
+   `src/editor/canvas/groupDrag.ts`, 12 tests). `beginGroupDrag` freezes
+   the set of nodes whose *centre* is inside the frame at drag start
+   (group frames included); `stepGroupDrag` moves exactly that set on
+   every step. The old code recomputed membership from the frame's
+   *current* rectangle on every `onNodeDrag` step, so a bystander the
+   frame swept past mid-drag was captured and dragged along. Falsified:
+   reverting to per-step containment makes the bystander test red.
+4. **The exposed third bug.** `nodeSize()`'s frame branch read
+   `data.width`/`data.height` — keys no frame carries (frames store
+   `w`/`h`) — so every frame measured 360×240: the Ctrl+G wrap was sized
+   from defaults and any future `sizeOf` consumer would inherit that.
+   Fixed, and the test re-pinned to the real keys — the old test asserted
+   the wrong keys, a green test pinning a wrong contract.
+
+Compiler untouched: group titles/comments still ride out as planning
+notes via `planningComments()` (pinned in furniture.test.ts, unchanged).
+
+Gates: 1,826 tests / 91 files, typecheck, build — green. Stamps r228.
+
+---
+
 # Handoff — r227
 
 **Zeis reviewed the r226 UI (screenshot on file) and caught two real bugs.

@@ -63,8 +63,12 @@ describe("nodeSize", () => {
     });
 
     it("sizes a frame from its own stored dimensions", () => {
-        expect(nodeSize(doc("layout.group", { width: 500, height: 300 })))
+        // The schema stores `w` / `h` — this test once used `width` / `height`,
+        // keys no frame ever carries, so it stayed green while every real
+        // frame measured as the 360×240 default (r228).
+        expect(nodeSize(doc("layout.group", { w: 500, h: 300 })))
             .toEqual({ width: 500, height: 300 });
+        expect(nodeSize(doc("layout.group"))).toEqual({ width: 360, height: 240 });
     });
 
     it("treats a reroute nodule as the small dot it is", () => {

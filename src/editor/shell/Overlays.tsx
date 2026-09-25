@@ -282,6 +282,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
             { keys: ["Ctrl"], gesture: "click", action: "Add to / toggle the selection" },
             { gesture: "drag on empty canvas", action: "Box-select (any overlap counts)" },
             { keys: ["Shift"], gesture: "drag a box", action: "Add to / remove from the selection" },
+            { keys: ["Ctrl", "G"], action: "Group the selection — press again on a frame to ungroup it" },
             { keys: ["Esc"], action: "Clear the selection" },
         ],
     },

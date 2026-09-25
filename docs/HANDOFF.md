@@ -1,3 +1,34 @@
+# Handoff — r230
+
+**Zeis: "I cannot select a nested group frame, only the parent group
+frame."**
+
+1. **Nested frames were unselectable — paint order, fixed.** Every frame
+   renders at the same stacking level (`zIndex: -1`), so between frames
+   React Flow's array order decides who paints on top. The sort kept
+   *creation* order among frames, and a frame is always created *after*
+   the frame it contains — so the parent's full-size body painted over the
+   child's title bar and swallowed every click inside it. The `nodes`
+   memo now sorts frames by **area descending** (largest first = deepest):
+   a nested child is always strictly smaller than its parent, so every
+   child paints above its parent at any depth. Frame-vs-card order (the
+   minimap rule) is untouched. Two new paint-order tests (inner-first
+   workflow + reverse creation order); falsified by reverting to
+   creation order.
+2. **Zeis relaxed the plan-first rule:** small in-place fixes may ship
+   without an approval round — larger changes still get a plan first.
+3. **Sandbox-reset recovery, documented:** the reset had rewound the local
+   branch to r227 and wiped `node_modules` (snapshot-excluded), with one
+   generated file (`editor-export/dist/mod.js`) persisting at its r227
+   stamp. The pushed r229 commit was intact on the remote; re-anchored
+   the branch to it (`reset --soft` + index refresh — working tree,
+   including the in-flight r230 edits, was never touched) and regenerated
+   the export.
+
+Gates: 1,837 tests / 91 files, typecheck, build — green. Stamps r230.
+
+---
+
 # Handoff — r229
 
 **Two minor changes from Zeis after the r228 screenshot (nested frames

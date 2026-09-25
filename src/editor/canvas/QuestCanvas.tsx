@@ -314,7 +314,25 @@ function CanvasInner() {
         // Frames first. zIndex handles the canvas, but the MiniMap paints in
         // array order and ignores zIndex — with a frame last, its solid rect
         // covered every node inside it and the map looked empty.
-        docs.sort((a, b) => Number(b.type === "layout.group") - Number(a.type === "layout.group"));
+        // Among frames, largest first: React Flow paints equal-zIndex nodes
+        // in array order, and a frame is created AFTER the frame it contains,
+        // so creation order put the parent's body over the child's title bar
+        // and made the child impossible to select (r230). A nested frame is
+        // always strictly smaller than its parent, so area descending keeps
+        // every child painted above the parent that contains it.
+        docs.sort((a, b) => {
+            const af = a.type === "layout.group" ? 1 : 0;
+            const bf = b.type === "layout.group" ? 1 : 0;
+            if (af !== bf) return bf - af; // frames before cards
+            if (af) {
+                const area = (n: NodeDoc) => {
+                    const s = nodeSize(n);
+                    return s.width * s.height;
+                };
+                return area(b) - area(a); // largest first = deepest
+            }
+            return 0;
+        });
         return docs.map((doc) => ({
             id: doc.id,
             type: "qe" as const,

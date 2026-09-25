@@ -304,6 +304,39 @@ describe("minimap", () => {
         expect(rendered[0].getAttribute("data-id")).toBe(frame);
     });
 
+    it("paints a nested frame above the parent that contains it", async () => {
+        // The real workflow: the inner frame exists first; the outer one is
+        // what wraps it, so it is created LAST. Frames share one z-index, so
+        // React Flow paints them in array order — the parent must come first,
+        // or its body covers the child's title bar and the child cannot be
+        // selected (r230).
+        const st = useEditor.getState();
+        const inner = st.addNode("layout.group", { x: 100, y: 100 }, { w: 200, h: 150 })!;
+        const outer = st.addNode("layout.group", { x: 0, y: 0 }, { w: 600, h: 400 })!;
+        render(<App />);
+
+        const order = await waitFor(() => {
+            const els = [...document.querySelectorAll(".react-flow__node")];
+            expect(els.length).toBe(2);
+            return els.map((el) => el.getAttribute("data-id"));
+        });
+        expect(order.indexOf(outer)).toBeLessThan(order.indexOf(inner));
+    });
+
+    it("keeps the smaller frame on top regardless of creation order", async () => {
+        const st = useEditor.getState();
+        const outer = st.addNode("layout.group", { x: 0, y: 0 }, { w: 600, h: 400 })!;
+        const inner = st.addNode("layout.group", { x: 100, y: 100 }, { w: 200, h: 150 })!;
+        render(<App />);
+
+        const order = await waitFor(() => {
+            const els = [...document.querySelectorAll(".react-flow__node")];
+            expect(els.length).toBe(2);
+            return els.map((el) => el.getAttribute("data-id"));
+        });
+        expect(order.indexOf(outer)).toBeLessThan(order.indexOf(inner));
+    });
+
     it("draws a frame as a see-through wash of its own colour", () => {
         expect(withAlpha("#fbbf24", 0.22)).toBe("rgba(251, 191, 36, 0.22)");
         expect(withAlpha("not a colour", 0.22)).toBe("not a colour");

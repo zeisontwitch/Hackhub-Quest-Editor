@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     alignPositions,
+    carryFrameContents,
     distributePositions,
     GRID,
     snapPoint,
@@ -116,6 +117,27 @@ describe("distributePositions", () => {
         expect(moved).toEqual({ b: { x: 150, y: 0 } });
     });
 
+    it("keeps the outer cards and equalises the gaps (Zeis's Photoshop example)", () => {
+        // Five 240-wide cards, unevenly spaced — his Distribute-Horizontally
+        // screenshot. The first and last are the anchors; the three in
+        // between land so every gap is equal:
+        // (1600 - 240 - 3 × 240) / 4 = 160 px.
+        const sized = (id: string, x: number) => ({
+            id,
+            position: { x, y: 0 },
+            size: { width: 240, height: 120 },
+        });
+        const moved = distributePositions(
+            [sized("a", 0), sized("b", 300), sized("c", 500), sized("d", 900), sized("e", 1600)],
+            "row",
+        );
+        expect(moved.a).toBeUndefined(); // anchor
+        expect(moved.e).toBeUndefined(); // anchor
+        expect(moved.b).toEqual({ x: 400, y: 0 });
+        expect(moved.c).toEqual({ x: 800, y: 0 });
+        expect(moved.d).toEqual({ x: 1200, y: 0 });
+    });
+
     it("needs at least three nodes to mean anything", () => {
         expect(distributePositions([n("a", 0, 0), n("b", 90, 0)], "row")).toEqual({});
     });
@@ -123,6 +145,73 @@ describe("distributePositions", () => {
     it("works down a column too", () => {
         const moved = distributePositions([n("a", 0, 0), n("b", 0, 5), n("c", 0, 200)], "column");
         expect(moved).toEqual({ b: { x: 0, y: 100 } });
+    });
+});
+
+describe("carryFrameContents (r231)", () => {
+    const box = (
+        id: string,
+        type: string,
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+    ) => ({ id, type, position: { x, y }, size: { width: w, height: h } });
+    const FRAME = box("frame", "layout.group", 0, 0, 360, 240);
+
+    it("carries an unselected content with its selected frame", () => {
+        const inside = box("in", "fx.notify", 60, 60, 240, 120); // centre (180,120): inside
+        const outside = box("out", "fx.notify", 500, 0, 240, 120); // centre (620,60): outside
+        const moved = { frame: { x: 100, y: 0 } };
+        expect(carryFrameContents([FRAME, inside, outside], new Set(["frame"]), moved)).toEqual({
+            in: { x: 160, y: 60 },
+        });
+    });
+
+    it("never carries a selected node — it has its own slot", () => {
+        const inside = box("in", "fx.notify", 60, 60, 240, 120);
+        const moved = { frame: { x: 100, y: 0 }, in: { x: 900, y: 60 } };
+        expect(carryFrameContents([FRAME, inside], new Set(["frame", "in"]), moved)).toEqual({});
+    });
+
+    it("carries a nested UNSELECTED frame — and its contents — by the outer delta", () => {
+        const inner = box("inner", "layout.group", 40, 40, 200, 140); // inside the outer
+        const deep = box("deep", "fx.notify", 60, 60, 80, 40); // inside both
+        const moved = { frame: { x: 100, y: 0 } };
+        const carried = carryFrameContents(
+            [FRAME, inner, deep],
+            new Set(["frame"]),
+            moved,
+        );
+        // Neither the inner frame nor its content is selected, so both follow
+        // the outer frame's delta — the inner stays exactly where it was
+        // inside it.
+        expect(carried).toEqual({ inner: { x: 140, y: 40 }, deep: { x: 160, y: 60 } });
+    });
+
+    it("prefers the INNER selected frame when both parent and child are selected", () => {
+        const inner = box("inner", "layout.group", 40, 40, 200, 140);
+        const deep = box("deep", "fx.notify", 60, 60, 80, 40);
+        const moved = { frame: { x: 100, y: 0 }, inner: { x: 800, y: 40 } };
+        const carried = carryFrameContents(
+            [FRAME, inner, deep],
+            new Set(["frame", "inner"]),
+            moved,
+        );
+        // deep belongs to the child — the box that defined where it ends up.
+        expect(carried).toEqual({ deep: { x: 60 + 760, y: 60 } });
+    });
+
+    it("does nothing when no selected frame moves", () => {
+        const inside = box("in", "fx.notify", 60, 60, 240, 120);
+        expect(carryFrameContents([FRAME, inside], new Set(["frame"]), {})).toEqual({});
+    });
+
+    it("a frame without a known size carries nothing", () => {
+        const bare = { id: "frame", type: "layout.group", position: { x: 0, y: 0 } };
+        const inside = box("in", "fx.notify", 60, 60, 240, 120);
+        const moved = { frame: { x: 100, y: 0 } };
+        expect(carryFrameContents([bare, inside], new Set(["frame"]), moved)).toEqual({});
     });
 });
 

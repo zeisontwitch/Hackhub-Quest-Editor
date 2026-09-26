@@ -1,3 +1,46 @@
+# Handoff — r231
+
+**Zeis:** "This does break with groups, however. The group frames themselves
+distribute properly, but they don't take their contents with them."
+
+**The hole:** arranging (Row / Column / Even across / Even down) moves the
+*selected* boxes to their slots and writes the document — a group frame is
+just one of those boxes, so it moved alone and its unselected contents
+stayed put, leaving the frame as an empty border. The group drag didn't
+have this (the r228 freeze), but arrange never carried anything.
+
+**The fix (new pure `carryFrameContents` in `arrange.ts` + one wiring
+change in the canvas' arrange callback):** after the slots are computed,
+every *unselected* node follows the delta of the **innermost selected frame
+that contains its centre** — measured against the frame's ORIGINAL rect
+(same freeze-at-start rule as `beginGroupDrag`, same centre containment).
+Innermost, because a node inside two selected frames belongs to the child
+— the box that defined where it ends up. A selected node is never carried:
+it has its own slot. Nested *unselected* frames are carried too, so a
+sub-folder and its contents ride the outer frame's delta and stay exactly
+where they were inside it. Row/Column and both Even buttons go through the
+same call. One `arrangeNodes` write for boxes + contents → one undo step.
+`SizedNode` gains an optional `type` so the carry can tell frames apart.
+
+Tests: six pure cases (basic carry, selected-node exemption, nested
+unselected frame + deep content, inner-selected-frame preference, no-op,
+size-less frame) plus an end-to-end toolbar test reproducing Zeis's bug
+(frame in the middle of a spread, its content must follow the −80 px
+delta). Falsified: carry wiring removed → the e2e test goes red.
+
+**Process note:** Zeis confirmed "Even across"/"Even down" were the
+Distribute buttons he thought were missing (r230-era screenshot example
+pinned as a regression test) — the naming hid it; no rename requested.
+Also: the sandbox reset three times across these rounds, each time rewinding
+the local branch to r227 and wiping `node_modules`; the pushed remote was
+always authoritative, and the recovery is `npm ci` + fetch the remote
+branch + `reset --soft FETCH_HEAD` + index refresh (working tree,
+including in-flight edits, survives intact every time).
+
+Gates: 1,845 tests / 91 files, typecheck, build — green. Stamps r231.
+
+---
+
 # Handoff — r230
 
 **Zeis: "I cannot select a nested group frame, only the parent group

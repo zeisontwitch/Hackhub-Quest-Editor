@@ -17,6 +17,9 @@ export interface SizedNode {
     id: string;
     position: XY;
     size?: { width: number; height: number };
+    /** Present when the canvas spreads a full NodeDoc (needed to tell group
+        frames apart — r231). */
+    type?: string;
 }
 
 /** Spacing of the snap grid, in flow units. Matches the canvas dot pattern. */
@@ -150,4 +153,67 @@ export function snapPositions(
         moved[n.id] = next;
     }
     return moved;
+}
+
+/**
+ * Carry a group frame's unselected contents with it (r231).
+ *
+ * Aligning and distributing move the SELECTED boxes to their new slots. A
+ * group frame is a box that other nodes sit inside, so when it moves to a
+ * slot its contents must follow — otherwise the frame is left carrying an
+ * empty border (the same hole the group drag had before the r228 freeze:
+ * the frame moved, the contents stayed).
+ *
+ * Rule: an unselected node moves by the delta of the INNERMOST selected
+ * frame that contains its centre, measured against the frame's ORIGINAL
+ * rect (the freeze-at-start rule from beginGroupDrag). Innermost, because a
+ * node inside two selected frames (parent and child) belongs to the child —
+ * the box that defined where it ends up. A selected node is never carried:
+ * it has its own slot in `moved`.
+ *
+ * Returns only the nodes that actually move, so an arrange that moves no
+ * contents writes nothing.
+ */
+export function carryFrameContents(
+    allNodes: SizedNode[],
+    selected: ReadonlySet<string>,
+    moved: Record<string, XY>,
+): Record<string, XY> {
+    const frames = allNodes.filter(
+        (f) => f.type === "layout.group" && selected.has(f.id) && moved[f.id] !== undefined,
+    );
+    if (frames.length === 0) return {};
+    const centre = (n: SizedNode): XY => ({
+        x: n.position.x + (n.size?.width ?? 0) / 2,
+        y: n.position.y + (n.size?.height ?? 0) / 2,
+    });
+    const contains = (f: SizedNode, c: XY): boolean => {
+        const w = f.size?.width ?? 0;
+        const h = f.size?.height ?? 0;
+        return (
+            c.x >= f.position.x &&
+            c.x <= f.position.x + w &&
+            c.y >= f.position.y &&
+            c.y <= f.position.y + h
+        );
+    };
+    const area = (f: SizedNode) => (f.size?.width ?? 0) * (f.size?.height ?? 0);
+    const carried: Record<string, XY> = {};
+    for (const n of allNodes) {
+        if (selected.has(n.id)) continue; // it has its own slot
+        const c = centre(n);
+        let innermost: SizedNode | undefined;
+        for (const f of frames) {
+            if (!contains(f, c)) continue;
+            if (!innermost || area(f) < area(innermost)) innermost = f;
+        }
+        if (!innermost) continue;
+        const target = {
+            x: n.position.x + (moved[innermost.id]!.x - innermost.position.x) + 0,
+            y: n.position.y + (moved[innermost.id]!.y - innermost.position.y) + 0,
+        };
+        if (target.x === n.position.x && target.y === n.position.y) continue;
+        carried[n.id] = target;
+    }
+    return carried;
 }

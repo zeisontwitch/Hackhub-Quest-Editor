@@ -26,7 +26,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { GraphNode, type GraphRFNode } from "./GraphNode";
 import { boxSelectionResult, onlyDeselects, resolveSelection } from "./applyChanges";
-import { alignPositions, distributePositions, GRID } from "./arrange";
+import { alignPositions, carryFrameContents, distributePositions, GRID } from "./arrange";
 import { beginGroupDrag, frameAround, stepGroupDrag, type GroupDrag } from "./groupDrag";
 import { nodeSize } from "./nodeSize";
 import { NodeSearchPopover } from "./NodeSearchPopover";
@@ -745,9 +745,14 @@ function CanvasInner() {
                the measuring pass reads the same accounts the card renders
                with — a mismatch would size the card wrong. */
             const twotterAccounts = useEditor.getState().project.twotterAccounts;
-            const chosen = q.graph.nodes
-                .filter((n) => selection.nodeIds.includes(n.id))
-                .map((n) => ({ ...n, size: nodeSize(n, q, twotterAccounts) }));
+            // Size EVERY node, not just the selected ones: carrying a
+            // frame's contents (r231) tests containment against the whole
+            // quest.
+            const all = q.graph.nodes.map((n) => ({
+                ...n,
+                size: nodeSize(n, q, twotterAccounts),
+            }));
+            const chosen = all.filter((n) => selection.nodeIds.includes(n.id));
             if (chosen.length < 2) return;
             /*
              * Snapping is handed to alignPositions so it can snap the shared
@@ -756,14 +761,23 @@ function CanvasInner() {
              * square each — which is precisely how r97's centring came to look
              * as though it had done nothing (r98).
              *
-             * Spreading is left unsnapped: its whole purpose is equal gaps, and
-             * rounding each position to the grid would make them unequal again.
+             * Spreading is left unsnapped: its whole purpose is equal gaps,
+             * and rounding each position to the grid would make them unequal
+             * again.
              */
             const moved =
                 what === "row" || what === "column"
                     ? alignPositions(chosen, what, snapEnabled() ? snapStep() : 0)
                     : distributePositions(chosen, what === "spread-row" ? "row" : "column");
-            arrangeNodes(moved);
+            /*
+             * The selected boxes' slots are not the whole move: a group
+             * frame's unselected contents have to follow it, or the frame
+             * would be left carrying an empty border (r231).
+             */
+            arrangeNodes({
+                ...moved,
+                ...carryFrameContents(all, new Set(selection.nodeIds), moved),
+            });
         },
         [activeQuest, arrangeNodes, measured, rfStore, selection.nodeIds],
     );

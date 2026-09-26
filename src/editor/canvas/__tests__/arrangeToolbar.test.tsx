@@ -60,6 +60,30 @@ describe("arrange toolbar", () => {
         expect(posOf(c).x).toBe(400);
     });
 
+    it("spreads a group frame WITH its unselected contents (r231)", async () => {
+        const user = userEvent.setup();
+        const st = useEditor.getState();
+        const b = st.addNode("fx.notify", { x: 0, y: 0 })!;
+        const frame = st.addNode("layout.group", { x: 1000, y: 0 }, { w: 400, h: 240 })!;
+        const inside = st.addNode("fx.notify", { x: 1040, y: 40 })!; // centre (1160,100): inside
+        const c = st.addNode("fx.notify", { x: 2000, y: 20 })!;
+        render(<App />);
+        await waitFor(() => expect(document.querySelectorAll(".react-flow__node").length).toBe(4));
+        act(() => useEditor.getState().select({ nodeIds: [b, frame, c], edgeIds: [] }));
+        await waitFor(() => expect(btn("Space out across").disabled).toBe(false));
+        await user.click(btn("Space out across"));
+
+        // b (0, w 240) and c (2000) are the anchors; the frame's slot is
+        // 240 + (1760 - 400) / 2 = 920, so its delta is -80.
+        expect(posOf(b).x).toBe(0);
+        expect(posOf(c).x).toBe(2000);
+        expect(posOf(frame).x).toBe(920);
+        // The reported bug: the contents used to stay put. They must follow
+        // the frame's delta.
+        expect(posOf(inside).x).toBe(1040 - 80);
+        expect(posOf(inside).y).toBe(40);
+    });
+
     it("stacks them into a column on the selection's centre", async () => {
         const { a, b, c, user } = await threeNodes();
         act(() => useEditor.getState().select({ nodeIds: [a, b, c], edgeIds: [] }));

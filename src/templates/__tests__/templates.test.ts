@@ -25,6 +25,7 @@ describe("template registry", () => {
             "the-help-desk-leak",
             "bad-attachment",
             "six-tries",
+            "dead-air",
             "cold-storage",
             "contract-hack",
             "long-game",

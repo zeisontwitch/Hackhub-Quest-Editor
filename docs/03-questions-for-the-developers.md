@@ -140,9 +140,9 @@ The raw harness's `Http.registerHost()` server did fire Browser-origin response/
 
 ## 6. SMS/text-message SDK surface still appears absent in SDK 0.24
 
-**Observed.** The pinned SDK has phone-call dialogs and `PhoneApp`, plus Mail/Kisscord/WeeChat messaging APIs, but no SMS/text-message namespace or event surface. Searches for `sms`, `text message`, and equivalent event names in `index.d.ts` / `reference/hackhub-events.json` do not find a native SMS API.
+**Observed.** The pinned SDK has phone-call dialogs and `PhoneApp`, plus Mail/Kisscord/WeeChat messaging APIs, but no SMS/text-message namespace or event surface. Searches for `sms`, `text message`, and equivalent event names in `index.d.ts` / `reference/hackhub-events.json` do not find a native SMS API. (r232, verified in the pinned 0.24.0: `PhoneApp` is a mod app that appears on the in-game phone home screen — an HTML app driven through the `HackhubSDK.Phone` bridge — not a dial mechanism. The SDK has no dial event or callback either: a quest's call is started mod-side via `quest.createDialog(branch)`. The main game's own quests have a player-dials-a-number experience, but nothing in the mod SDK surface expresses it.)
 
-**Question.** Is native SMS planned for a later SDK? If yes, will it be quest-declared like phone-call dialog, an imperative namespace such as `SMS.send(...)`, an event surface for read/reply, or part of `PhoneApp`?
+**Question.** Is native SMS planned for a later SDK? If yes, will it be quest-declared like phone-call dialog, an imperative namespace such as `SMS.send(...)`, an event surface for read/reply, or part of `PhoneApp`? And is the main game's player-dial flow (dial a number → the quest's call starts) reachable from mod content at all — e.g. a dialable-number registration or an `onDial`-style hook — or is it client-internal to the campaign?
 
 **Editor stance.** Keep using Kisscord/other channels as substitutes where templates need a contact beat. Do not ship an SMS editor until a pinned SDK declares it and in-game QA verifies it.
 

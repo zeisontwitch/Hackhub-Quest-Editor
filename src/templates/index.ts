@@ -19,6 +19,7 @@ import { buildDataGrab } from "@/templates/harbourManifest";
 import { buildHelpDeskLeak } from "@/templates/helpDeskLeak";
 import { buildBadAttachment } from "@/templates/badAttachment";
 import { buildSixTries } from "@/templates/sixTries";
+import { buildDeadAir } from "@/templates/deadAir";
 import { buildColdStorage } from "@/templates/coldStorage";
 import { buildContractHack } from "@/templates/ledgerContract";
 import { buildReference } from "@/templates/reference";
@@ -98,6 +99,15 @@ export const TEMPLATES: Template[] = [
         difficulty: "Advanced",
         nodeCount: 23,
         build: buildSixTries,
+    },
+    {
+        id: "dead-air",
+        name: "Dead Air",
+        description:
+            "A quest told through its communication modes: a phone brief, drips released as each job is verified, a phreak loop, a Kisscord market where information is the currency, and a social-engineering call whose wrong word ends the quest on a cheaper ending.",
+        difficulty: "Advanced",
+        nodeCount: 29,
+        build: buildDeadAir,
     },
     {
         id: "cold-storage",

@@ -104,9 +104,9 @@ export const TEMPLATES: Template[] = [
         id: "dead-air",
         name: "Dead Air",
         description:
-            "A quest told through its communication modes: a phone brief, drips released as each job is verified, a phreak loop, a Kisscord market where information is the currency, and a social-engineering call whose wrong word ends the quest on a cheaper ending.",
+            "A quest told through its communication modes: a phone brief, drips released as each job is verified, a phreak loop, a Kisscord market where information is the currency, and a social-engineering call whose wrong word costs a day — the line goes dark, a Timer waits an in-game day, the retry call re-checks the word, and both paths converge into the same next drip.",
         difficulty: "Advanced",
-        nodeCount: 29,
+        nodeCount: 28,
         build: buildDeadAir,
     },
     {

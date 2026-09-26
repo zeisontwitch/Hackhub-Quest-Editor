@@ -1,7 +1,34 @@
 # r232 — "Dead Air": the contact-driven template (phreaking + social engineering)
 
-**Status: shipped (2026-09-26).** Review passed with two corrections that
-shaped the build (see "As-built deltas").
+**Status: shipped (2026-09-26), fail route reworked in r233.** Review passed
+with two corrections that shaped the build (see "As-built deltas").
+
+## r233 — the fail route rework (Zeis, post-ship review)
+
+Zeis: "wouldn't a reroute nodule work here, to bring together both wires and
+run it into the singular success route after trying again? We could even hook
+in our new Timer node and make the player wait a day before calling again."
+
+- **Verified in the shipping runtime first** (`src/compiler/runtimeSource.ts`):
+  flow walks *out of* each fired node (`flowOuts`); there is no target-side
+  index and no started-guard — a node with two incoming flow wires runs once
+  per playthrough, and in this quest the two feeding wires (first call's
+  `out`, retry call's `out`) are mutually exclusive, because a call ends
+  either normally or on the failed line. Converging wires are safe; this is
+  now Dead Air's first, pinned by a dedicated test block.
+- **The reroute as merge point does not exist**: its own blurb says it is a
+  tidy point to *fan a wire out* to several nodes — one in, one out. The
+  reconverge is two edges into one node's `in`, directly.
+- **The Timer is a real in-game mechanic, not just a beat**: `flow.timer`
+  mode `after`, `days: 1` arms a job on the game's clock (the Scheduler
+  API, r172/r173 QA) and the flow resumes when the in-game day comes.
+  Caveat (the node's own): a game build without the Scheduler API will not
+  fire timers — the fail route then cannot resume.
+- **Shape**: cut ending (call + half pay + warning close) removed; added
+  the "call again tomorrow" drip, the day Timer, and the retry call (branch
+  `"second"`, same word check with `wrongRoute: "retry"` + a coaching
+  `failureText` — fumbleable in the call, never dead-ending the quest).
+  29 → 28 nodes; one payment, one close.
 
 ## As-built deltas (implementation findings, all verified)
 

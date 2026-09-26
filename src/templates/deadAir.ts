@@ -4,16 +4,19 @@
  * A quest told entirely through how it talks to you: a phone brief,
  * e-mail drips released as each job is verified, a phreak loop (nmap, hydra,
  * cat), a Kisscord market where information is the currency, and a
- * social-engineering phone call with a real failure route — botch the line
- * and the quest ends on a different, cheaper ending. The "Two Ways Out"
- * shape (approved roadmap item) carried inside one call.
+ * social-engineering phone call. Botch the call's typed word and the line
+ * goes dark — Ilsa says call again tomorrow, a Timer node waits one in-game
+ * day, the retry call re-checks the word with in-call retry, and both the
+ * first call's success and the retry's success wire into the same next drip
+ * (the template's first converging wire).
  *
  *   brief (phone)  →  nmap  →  hydra  →  cat  →  the call  →  the market  →
  *   the last mail  →  close (phone)  →  pay.
  *
  * The call's typed answer registers a terminal command the player uses to
- * answer (compiler info note); `wrongRoute: "wrong"` fires the node's
- * failure output, which is what makes the fail route a flow branch.
+ * answer (compiler info note); the first call's check uses
+ * `wrongRoute: "wrong"`, which fires the node's failure output — that is
+ * what makes the failed call a flow branch at all.
  */
 import { createQuest, createProject, type ProjectDocument } from "@/schema/project";
 import { TARGET_IP_TOKEN } from "@/schema/common";
@@ -147,6 +150,51 @@ export function buildDeadAir(): ProjectDocument {
             ],
         },
         {
+            /* The retry call, after the failed first call and a night on the
+               in-game clock. The same check, but wrongRoute "retry": the
+               player can fumble the word in the call and be asked again, so
+               the quest never dead-ends. */
+            id: "b-second",
+            name: "second",
+            lines: [
+                {
+                    id: "s0",
+                    speaker: "Operator",
+                    text: "Fennmark Freight. …You again.",
+                    isEnd: false,
+                    options: [],
+                },
+                {
+                    id: "s1",
+                    speaker: "Operator",
+                    text: "I was just about to report this line.",
+                    isEnd: false,
+                    options: [],
+                },
+                {
+                    id: "s2",
+                    speaker: "Operator",
+                    text: "The supervisor only takes night-shift calls. Who's calling for?",
+                    isEnd: false,
+                    options: [],
+                    input: {
+                        expected: CODEWORD,
+                        matchMode: "contains",
+                        caseSensitive: false,
+                        failureText: "The voice is slower now. 'Who. Is. Calling. For.' The config file told you what to say — say it.",
+                        wrongRoute: "retry",
+                    },
+                },
+                {
+                    id: "s3",
+                    speaker: "Operator",
+                    text: "…alpine. Kofi Mensah. K. Mensah. And if I hear your number again, the report goes up.",
+                    isEnd: true,
+                    options: [],
+                },
+            ],
+        },
+        {
             id: "b-close",
             name: "close",
             lines: [
@@ -168,26 +216,6 @@ export function buildDeadAir(): ProjectDocument {
                     id: "c3",
                     speaker: "Ilsa Marek",
                     text: "Same number as always. You know how I work — one piece at a time.",
-                    isEnd: true,
-                    options: [],
-                },
-            ],
-        },
-        {
-            id: "b-cut",
-            name: "cut",
-            lines: [
-                {
-                    id: "f1",
-                    speaker: "Ilsa Marek",
-                    text: "I heard it go quiet. Don't.",
-                    isEnd: false,
-                    options: [],
-                },
-                {
-                    id: "f2",
-                    speaker: "Ilsa Marek",
-                    text: "I'm pulling out. Half the fee is on its way — and no second time.",
                     isEnd: true,
                     options: [],
                 },
@@ -380,37 +408,38 @@ export function buildDeadAir(): ProjectDocument {
         phone: { branch: "gate", startIndex: 0, continueMode: "onEnd" },
     });
 
-    /* The failure route: the line goes dark, the client pulls out, and the
-       quest ends on the cheaper ending. No retry — the fail route is a real
-       branch (the "Two Ways Out" shape), and the quest never dead-ends. */
+    /* The failure route: the line goes dark, the client says call again
+       tomorrow, a Timer waits one in-game day on the game's clock, and the
+       retry call re-checks the word — with in-call retry, so the quest
+       never dead-ends. The retry's success and the first call's success
+       both run into drip5 below: a converging wire, safe because the two
+       paths are mutually exclusive (a call ends either normally or on the
+       failed line, never both). */
     const failDrip = makeNode("comms.dialogue", { x: 1920, y: 440 }, {
         kind: "mail",
         mail: {
             from: CLIENT,
             subject: "That was the wrong move.",
             content:
-                "I heard it go quiet. The line's dark, and now he knows someone's knocking.\n\n" +
-                "You don't get a second call. I'm sorry — that's the job.",
+                "I heard it go quiet. The line's hot, and now he knows someone's knocking.\n\n" +
+                "Don't call again today — he'll be watching the line. Call again tomorrow, and have the word ready before they ask for it. The config file told you what it is.",
             replyable: false,
         },
     });
 
-    const callCut = makeNode("comms.dialogue", { x: 2240, y: 440 }, {
+    const waitDay = makeNode("flow.timer", { x: 2240, y: 440 }, {
+        mode: "after",
+        years: 0,
+        months: 0,
+        weeks: 0,
+        days: 1,
+        hours: 0,
+        minutes: 0,
+    });
+
+    const callSecond = makeNode("comms.dialogue", { x: 2560, y: 440 }, {
         kind: "phone",
-        phone: { branch: "cut", startIndex: 0, continueMode: "onEnd" },
-    });
-
-    const payFail = makeNode("fx.pay", { x: 2560, y: 440 }, {
-        amountMode: "fixed",
-        amount: 2300,
-        description: "Half the fee — the line went dark",
-        fromName: "I. Marek",
-    });
-
-    const closingFail = makeNode("fx.notify", { x: 2560, y: 660 }, {
-        message: "The line went dark. Half the fee, and no second time.",
-        variant: "toast",
-        tone: "warning",
+        phone: { branch: "second", startIndex: 0, continueMode: "onEnd" },
     });
 
     /* ── the market and the last piece ────────────────────────────────── */
@@ -530,7 +559,7 @@ export function buildDeadAir(): ProjectDocument {
             "",
             "The phreak loop: nmap (the banner carries the password — the last word of the company motto), hydra (Terminal.Hydra only carries credentials when the run succeeded, so a failed crack can't tick the objective), cat (the config hides the extension and the night-shift word).",
             "",
-            "The call: the quest's script starts it (the engine has no player-dial event). The options line is in-call branching — the fault route loops back to the question. The typed answer registers a terminal command the player uses to answer, and wrongRoute `wrong` fires this node's failure output: the fail route is a flow branch that ends the quest on the cheaper ending. That is the 'Two Ways Out' shape, carried inside one call.",
+            "The call: the quest's script starts it (the engine has no player-dial event). The options line is in-call branching — the fault route loops back to the question. The typed answer registers a terminal command the player uses to answer, and wrongRoute `wrong` fires the node's failure output: the fail route is a flow branch. The line goes dark, the client says call again tomorrow, a Timer node waits one in-game day on the game's clock, and the retry call re-checks the word with wrongRoute `retry`, so it can be fumbled in the call but never kills the quest. The first call's success and the retry's success both wire into the same next drip — a converging wire, safe because the two paths are mutually exclusive.",
             "",
             "The market: a Kisscord chain that pauses until the player types the send message — information for information, no money system. The license number only exists in the broker's reply, so the last trigger needs both its conditions: the right address AND the number.",
         ].join("\n"),
@@ -545,7 +574,7 @@ export function buildDeadAir(): ProjectDocument {
             drip2, o2, t2.trigger,
             drip3, o3, t3.trigger,
             drip4, callGate,
-            failDrip, callCut, payFail, closingFail,
+            failDrip, waitDay, callSecond,
             drip5, market, drip6, o4, t4.trigger,
             callClose, pay, closing,
             note,
@@ -568,12 +597,14 @@ export function buildDeadAir(): ProjectDocument {
             t3.edge,
             makeEdge(o3, "done", drip4, "in"),
             makeEdge(drip4, "out", callGate, "in"),
-            // the call: out = the name, failure = the line goes dark
+            // the call: out = the name; failure = the line goes dark,
+            // wait an in-game day, try again — and the retry's success
+            // converges into the same next drip
             makeEdge(callGate, "out", drip5, "in"),
             makeEdge(callGate, "failure", failDrip, "in"),
-            makeEdge(failDrip, "out", callCut, "in"),
-            makeEdge(callCut, "out", payFail, "in"),
-            makeEdge(payFail, "out", closingFail, "in"),
+            makeEdge(failDrip, "out", waitDay, "in"),
+            makeEdge(waitDay, "out", callSecond, "in"),
+            makeEdge(callSecond, "out", drip5, "in"),
             // the market, then the last piece
             makeEdge(drip5, "out", market, "in"),
             makeEdge(market, "out", drip6, "in"),

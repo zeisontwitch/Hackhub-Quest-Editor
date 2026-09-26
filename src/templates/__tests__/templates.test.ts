@@ -364,6 +364,65 @@ describe("template audit pins", () => {
         expect(messages.map((m) => m.content).join("\n")).toContain("Zara");
     });
 
+    /* Dead Air (r232, reworked r233) carries the social-engineering call:
+       these pins hold the fail-route shape — wrong word costs an in-game
+       day, the retry re-checks with in-call retry, and both paths converge
+       into the same next drip. */
+    describe("dead-air's failed call waits a day and converges", () => {
+        const quest = () => getTemplate("dead-air")!.build().quests[0];
+
+        it("the first call's failed line is a flow branch (wrongRoute wrong)", () => {
+            const gate = quest().dialog.find((b) => b.name === "gate")!;
+            const checked = gate.lines.find((l) => l.input)!;
+            expect(checked.input!.wrongRoute).toBe("wrong");
+        });
+
+        it("the retry call re-checks the word with in-call retry", () => {
+            const second = quest().dialog.find((b) => b.name === "second")!;
+            const checked = second.lines.find((l) => l.input)!;
+            expect(checked.input!.wrongRoute).toBe("retry");
+            expect(checked.input!.failureText).toContain("config file");
+        });
+
+        it("the fail route waits one in-game day on a Timer", () => {
+            const g = quest().graph;
+            const timer = g.nodes.find((n) => n.type === "flow.timer")!;
+            expect(timer.data).toMatchObject({ mode: "after", days: 1 });
+            const failDrip = g.nodes.find(
+                (n) => n.type === "comms.dialogue" && (n.data as { mail: { subject: string } }).mail.subject === "That was the wrong move.",
+            )!;
+            const secondCall = g.nodes.find(
+                (n) => n.type === "comms.dialogue" && (n.data as { phone: { branch: string } }).phone.branch === "second",
+            )!;
+            expect(g.edges).toContainEqual(expect.objectContaining({ source: failDrip.id, target: timer.id, kind: "flow" }));
+            expect(g.edges).toContainEqual(expect.objectContaining({ source: timer.id, target: secondCall.id, kind: "flow" }));
+        });
+
+        it("the first call's success and the retry's success converge into one next drip", () => {
+            const g = quest().graph;
+            const drip = g.nodes.find(
+                (n) => n.type === "comms.dialogue" && (n.data as { mail: { subject: string } }).mail.subject === "A name isn't proof.",
+            )!;
+            const gate = g.nodes.find(
+                (n) => n.type === "comms.dialogue" && (n.data as { phone: { branch: string } }).phone.branch === "gate",
+            )!;
+            const secondCall = g.nodes.find(
+                (n) => n.type === "comms.dialogue" && (n.data as { phone: { branch: string } }).phone.branch === "second",
+            )!;
+            const intoDrip = g.edges.filter((e) => e.kind === "flow" && e.target === drip.id);
+            expect(intoDrip).toHaveLength(2);
+            expect(intoDrip).toContainEqual(expect.objectContaining({ source: gate.id, sourceHandle: "out" }));
+            expect(intoDrip).toContainEqual(expect.objectContaining({ source: secondCall.id, sourceHandle: "out" }));
+        });
+
+        it("the fail route no longer ends the quest (no cut ending, one payment)", () => {
+            const g = quest().graph;
+            expect(quest().dialog.map((b) => b.name)).not.toContain("cut");
+            expect(g.nodes.filter((n) => n.type === "fx.pay")).toHaveLength(1);
+            expect(g.nodes.filter((n) => n.type === "fx.notify")).toHaveLength(1);
+        });
+    });
+
     /* Six Tries (r128) is the cracking route: these pins hold the three
        details that make it the hydra teacher. */
     describe("six-tries is the crack-and-log-in template", () => {

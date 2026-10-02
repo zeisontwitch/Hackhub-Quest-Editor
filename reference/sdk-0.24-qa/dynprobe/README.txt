@@ -1,25 +1,38 @@
-QE24 Dynamic Page Probe 1.3.0 (r249)
+QE24 Dynamic Page Probe 1.4.0 (r250)
 
-WHAT RUN 3 FOUND, AND WHY THERE IS A 1.3.0
-  Only ONE of the two test mails arrived - B, the one with NO to: field.
-  The mail addressed to "player@gomail.com" was accepted (we have its id)
-  and then never turned up. So the recipient field is what loses a mail.
-  Two very different explanations are left:
-    (1) that address simply does not exist, so the mail goes nowhere;
-    (2) ANY to: field sends the mail somewhere that is not your inbox.
-  `qedyn mail` now sends a THIRD mail to your REAL address to tell those
-  apart. And `qedyn inbox` lists what the game itself says is in the
-  inbox - if a missing mail is IN that list, then it exists and the
-  inbox screen is simply not drawing it, which is a different bug with a
-  different fix.
+READ THIS FIRST - OUR MISTAKE, AND WHAT IT MEANS FOR THIS RUN
+  Builds 1.0 to 1.3 sent their test mails to "player@gomail.com". That
+  address is a placeholder out of this repo's own QA project and has
+  NEVER EXISTED. We spent two rounds building theories about why the
+  game lost those mails. It did not lose them - they were addressed
+  nowhere, which is exactly what should happen.
+  The rule is the ordinary one: NO to: field means the mail goes to YOU.
+  So the "the to: field loses mails" result is withdrawn, and so is the
+  older "a page's own permissioned call does not work" result - those
+  tests used the same placeholder.
+  The good news: this re-opens the question the probe was built for. We
+  have still never sent a correctly-addressed mail from a page, so we do
+  not actually know whether a page can act. That is what this run is for.
 
-WHAT IS NEW IN 1.3.0
-  - `qedyn mail` sends THREE mails and prints your own address:
-      A  to: player@gomail.com   (the shape that never arrives)
-      B  no to: at all           (the shape that DOES arrive)
-      C  to: YOUR REAL ADDRESS   (the decider)
-  - `qedyn inbox`  prints every mail the game says is in the inbox, each
-      with its to: field, so we can tell "dropped" from "not drawn".
+WHAT TO RUN (the rows that matter)
+  DP-09 / DP-10   open /form and press BOTH buttons. Each now sends a mail
+                  with NO to: field, so it goes to you. Earlier runs
+                  concluded "a page cannot send mail" - that result is
+                  void, and these two rows are the first fair test.
+  DP-16           type `qedyn mail`. Three mails: one with no to: (should
+                  arrive), one to your REAL address (should arrive), and
+                  one to an address that does not exist (will not - the
+                  question is whether the game says anything when it does
+                  not).
+  `qedyn inbox`   lists what the game says is in your inbox, each with its
+                  to: field - a mail that is listed but not drawn is a
+                  different bug from one that was dropped.
+
+WHAT IS NEW IN 1.4.0
+  - Every probe mail goes to the player (no to: field, or your real
+    address), or nowhere on purpose and clearly labelled. A test now
+    fails if the placeholder address ever comes back.
+  - /form button A (direct) and button B (the bridge) both omit to:.
 
 WHAT IS NEW IN 1.2.0
   - `qedyn mail` - the decisive mail test. See the section below.

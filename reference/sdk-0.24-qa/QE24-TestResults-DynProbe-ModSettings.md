@@ -71,12 +71,23 @@ claimed after the pages were visited". Zeis corrected me and the log agreed
 with him — `QEDynProbeQuest started` (16:42:36) precedes every page visit. The
 listeners were armed; the finding stands.
 
-## 4. A page's own permissioned call does not work — proven with a clean A/B
+## 4. ~~A page's own permissioned call does not work~~ — **WITHDRAWN (r250)**
 
-> **Corrected by runs 2 and 3 (§5, §6).** The A/B was real, but the reading
-> was wrong: the page's mail is **accepted**, not refused — it is lost in
-> delivery, and §6 narrows the cause to the `to:` field. §4 is kept because the
-> A/B itself, and the silence around it, are still exactly what a tester sees.
+> **This section's conclusion is withdrawn.** The A/B it rests on was not
+> clean. Both sides were mails, but they differed in **two** ways at once: the
+> page's mail carried `to: "player@gomail.com"` and the quest's control mail
+> carried no `to:` at all. `player@gomail.com` is a placeholder that came out
+> of this repo's own QA project and **has never existed**, so the two sides
+> differed by recipient as well as by calling context — the experiment cannot
+> separate them, and it never could.
+>
+> **Whether a page can send mail at all is UNKNOWN, not disproven.** It is the
+> first thing probe 1.4.0 re-tests, with both buttons omitting `to`.
+>
+> What *did* survive from the runs is that the page's `Mail.send` returned a
+> real id (`yD1oMYYHUX`) — so it was **not** refused with `Mod "null"`, which
+> is what this section claimed. The original write-up follows, kept because the
+> silence it describes is real and is still the thing to fix.
 
 The `/form` button called `HackhubSDK.Mail.send(...)`. Nothing threw. **No mail
 arrived** — Zeis had his in-game inbox open in another browser tab.
@@ -121,18 +132,18 @@ Zeis re-ran the whole list. His log is on `QA-filedump` as
 | DP-13 `qedyn status` | **0** `Http.Response` events offered to the mod. The r166 fence is confirmed for dynamic pages |
 | DP-15 the feed | **The quest DID appear on the Hackhub feed** on a fresh save |
 
-### The mail result overturns the earlier theory
+### The mail result — partly right, partly our own error
 
-We had concluded the page's mail was **refused** (`Mod "null"`, as in §14).
-It was not: `Mail.send` returned an id from page context *and* through the
-bridge, so the call is accepted in both. The mail is lost in **delivery**, not
-at the permission gate.
+**Right:** the page's mail was **accepted**. `Mail.send` returned an id from
+page context *and* through the bridge, so the call is permitted in both. It was
+never refused at the permission gate.
 
-The one mail that has ever arrived — the startup mail from the quest's
-`OnStart()` — is the only one that carries **no `to` field**. Both mails that
-vanished specify `to: "player@gomail.com"`. That is now the prime suspect, and
-1.2.0 tests it directly: `qedyn mail` sends one mail of each shape from a
-trusted context, so the inbox decides.
+**Wrong:** we read the missing mails as a **delivery** bug. They were addressed
+to `player@gomail.com` — a placeholder out of this repo's own QA project that
+has never existed. They were not lost; they went nowhere, exactly as they
+should. The one mail that has ever arrived, the startup mail from `OnStart()`,
+is the only one carrying **no `to` field** — and that was not a clue, it was
+the rule: no `to` means the player. See §6.
 
 ### Two things the run exposed about the probe itself
 
@@ -145,52 +156,75 @@ trusted context, so the inbox decides.
   post was the load-time bug in 1.1.0 (§6 below) rather than the game-side
   feed problem — though a fresh save could also explain it.
 
-## 6. The third run (1.2.0, 2026-10-02) — the `to:` field is what loses a mail
+## 6. The correction (r250): two findings were measuring our own placeholder
 
-Zeis installed 1.2.0 on a fresh save and ran the one row that mattered:
-
-| Row | Result |
-|---|---|
-| DP-16 `qedyn mail` | **Only ONE of the two mails arrived: B, the one with no `to:` field.** Mail A, addressed to `player@gomail.com`, was accepted (1.2.0 prints the id) and never turned up |
-
-The mail that arrived:
+Zeis installed 1.2.0 on a fresh save and ran the row that mattered. Of the two
+test mails, **only B arrived** — the one with no `to:` field:
 
 > **QE24 dynprobe: talk-back [B no-to]**
 > From: qe24-dyn@qe24.test
 > Test B: sent WITHOUT a to: field - the shape the startup mail uses.
 
-So the suspicion from run 2 holds: **`to:` is what loses a mail.** It still
-does not tell us *why*, and the two remaining explanations lead to different
-fixes:
+I concluded that the `to:` field is what loses a mail, and built 1.3.0 to work
+out why. Zeis's answer to that was blunt, and he was right:
 
-1. `player@gomail.com` **does not exist** in Zeis's save, so the mail is
-   routed to a mailbox that is not there and quietly dropped. A correct
-   address would have arrived.
-2. **Any** `to:` field routes the mail away from the player's inbox, whatever
-   the address says. In that case `to` means "send this to somebody else" and
-   a mod filling it in — the obvious thing to do — always loses the mail.
+> *"Why were you sending mails to that address? That address has never existed
+> and no other agent before you ever tried to send anything there. I could've
+> told you that leaving the `to:` field empty defaults to sending the mail to
+> the player — that's standard game behavior we figured out in like round 2."*
 
-`Mail.send` is documented as *"Send an email to the player's inbox"* and `to`
-is not documented at all, which is why this is easy to walk into.
+He is right on both counts. `player@gomail.com` is a placeholder in this repo's
+own QA project (`reference/sdk-0.24-qa/projects/sdk-0.24-ingame-qa.project.json`,
+seven mail nodes), and it had been copied from there into the probe. The rule
+that an empty `to:` means the player is not new knowledge either — the editor's
+Mail inspector has said *"Leave blank to send it to the player"* for a long
+time, and `compile.test.ts` pins the same default. **The answer was in the
+repo; I did not look, and I theorised instead.**
 
-### How 1.3.0 separates them
+So two findings are withdrawn:
 
-The SDK has two readers we had not used: `Mail.getPlayerEmail()` (the
-player's real address) and `Mail.getInbox()` (every mail in the inbox). They
-turn the question into two commands:
+| Finding | Status |
+|---|---|
+| "The `to:` field is what loses a mail" (§6 of the previous revision, r249) | **Withdrawn.** The mail went to an address that does not exist. That is correct behaviour, not a bug |
+| "A page's own permissioned call does not work" (§4, r238/r245) | **Withdrawn.** The A/B differed by recipient as well as by calling context, so it proved nothing about page context |
+| "The page's mail is accepted, not refused" (§5) | **Stands.** Both page-context sends returned real ids |
+| `Http.Response` never reaches a mod for its own site (§3) | **Stands** — independent of all this (DP-13 counted 0) |
+| The bcc.com pattern is reproducible by a mod (§5) | **Stands** — DP-07 was green and never touched mail |
+| `qedyn status` printed nothing; `qedyn tick 1` did nothing | **Stands** — both were real bugs in my own command, both fixed |
 
-- `qedyn mail` now sends **three** mails — A with `to: player@gomail.com` (the
-  known-lost shape), B with no `to:` (the known-arriving control) and **C with
-  the player's real address** — and prints all three ids plus the address it
-  used. **C arrives ⇒ explanation 1, the address was simply wrong. C does not
-  arrive ⇒ explanation 2, any `to:` loses the mail.**
-- `qedyn inbox` lists every mail the game says is in the inbox, each with its
-  `to:` field. **A mail that appears in this list but not on screen has not
-  been dropped at all — the inbox screen is simply not drawing it**, which is a
-  different bug with a different fix.
+### What is left, and it is worth having
 
-Two new objective rows carry this: `dp-16-mail-to-field` and
-`dp-17-inbox-roll-call`.
+- **The silence is real.** `Mail.send` accepted a mail that could never be
+  delivered and returned a plausible id. There is a `Mail.sendBounce()` for the
+  player-facing version of exactly this mistake, so the mod-side silence looks
+  like an oversight. Filed in docs/03 §25.
+- **A page's `Mail.send` was not refused.** That contradicts the blanket rule
+  in the other modder's notes ("any permissioned call from a page or an
+  `Exports` function fails with `Mod "null"`"), which was demonstrated for
+  `Files.create` and `SaveStorage.set`. The fence looks **per-API**. That is a
+  real result and it changes what a page editor has to generate.
+- **The page question is open again, and it is the interesting one.** We have
+  still never sent a correctly-addressed mail from a page. If it arrives, a
+  page can act — which is the thing the whole dynamic-pages investigation was
+  trying to establish.
+
+### Probe 1.4.0 re-tests it
+
+Both `/form` buttons now omit `to:` entirely (A direct, B via the bridge), and
+`qedyn mail` sends three honestly-labelled mails: one with no `to:`, one to the
+player's **real** address from `Mail.getPlayerEmail()`, and one to a
+deliberately non-existent address, which is expected to vanish — the point
+being to record whether the game says anything when it does. A regression test
+now fails if `player@gomail.com` ever appears as a live address in the probe
+again.
+
+### The lesson, stated so it is not learned twice
+
+**Before theorising about the engine, check the literals.** Is this address
+real? Is this name the right one? Is this even the call being made? Three
+rounds and two "findings" went into an address nobody had ever used.
+
+## 6b. What the second run changed (2026-09-28, probe 1.2.0)
 
 ## 7. The follow-up probes
 
@@ -223,12 +257,15 @@ added `qedyn claim` for claiming without the feed.
 every subcommand now prints to the terminal as well as the log; and `qedyn
 tick` takes a row number as well as a name.
 
-**1.3.0** (r249) acts on the third run (§6), which confirmed the `to:` field is
-the culprit. `qedyn mail` sends a third mail, addressed to the player's real
-address from `Mail.getPlayerEmail()`, to tell "the address was wrong" apart
-from "any `to:` loses the mail"; and the new `qedyn inbox` lists what the game
-says is in the inbox, so a mail that exists but is not drawn is not mistaken
-for one that was dropped.
+**1.3.0** (r249) acted on the third run, which is now known to have measured a
+placeholder address (§6). Its `qedyn inbox` survives — listing what the game
+says is in the inbox is how you tell "dropped" from "not drawn".
+
+**1.4.0** (r250) is the correction. Every probe mail is now addressed either to
+the player (no `to:` field, or the real address from `Mail.getPlayerEmail()`)
+or nowhere on purpose and clearly labelled. The `/form` buttons no longer
+name a recipient, so the page-context question — can a page send mail at all? —
+is finally tested rather than assumed.
 
 Filed for the developers: `docs/03` §24 (HTTP events for a mod's own sites,
 and the double render) and §25 (a mail sent with a `to:` address that does not

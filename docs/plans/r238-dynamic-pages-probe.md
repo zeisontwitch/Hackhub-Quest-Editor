@@ -105,7 +105,13 @@ the iframe bridge) is answered by the run below.
    `QE24-Playtest-DynProbe.md` in this folder), then we read the results
    together and pick the phase-1 shape.
 
-## 5. QA checklist (1.1.0 — the rows the quest carries)
+## 5. QA checklist (1.4.0 — the rows the quest carries)
+
+**Read this before running it.** Rows DP-09, DP-10 and DP-16 were run with a
+mail addressed to `player@gomail.com` — a placeholder that has never existed —
+and their results are void (r250). The rows worth running now are **DP-09 and
+DP-10** (a page's mail, finally addressed to the player) and **DP-16** (how the
+game reports an undeliverable address). Everything else is already answered.
 
 For each row: **do** the thing, **record** what is asked, and tick the
 objective (or tick it by hand with `qedyn tick <row>` — most rows cannot tick
@@ -121,9 +127,9 @@ themselves, because `Http.Response` never reaches the mod).
 | **DP-06** fire the beat | Type **`qedyn beat`** in the terminal | The log line `beat fired (source=qedyn beat)` | The beat works at all — 1.0.0 could never fire it |
 | **DP-07** news after | Open `/news` **again** | The UPDATE article is #1, the old three dropped a slot; compare with **bcc.com** if you have a questline save | **The headline question**: the bcc pattern is reproducible by a mod |
 | **DP-08** state twice | Open `/state` twice | The counter must climb — expect **+2 per open** (the double render); phase reads `beat-fired` | Confirms the double render, and that nothing is cached |
-| **DP-09** direct mail | On `/form`, click **button A** | **What `Mail.send` returned**: `null` = refused, an id = accepted. Then check the inbox | **RUN 2: returned the id `yD1oMYYHUX` — accepted — and no mail arrived.** Not the §14 refusal; a delivery bug. Now docs/03 §25 |
-| **DP-10** bridge mail | Click **button B** | Did *this* mail arrive? | **RUN 2: returned the id `ra1DgwPOsB` — also accepted — and also never arrived.** The bridge does not rescue delivery either |
-| **DP-16** the `to:` test | Type **`qedyn mail`** in the terminal | It sends three mails: one **with** `to: "player@gomail.com"`, one **without** any `to`, and one with **your real address**, and prints all three ids plus your address. Report which ones land in the inbox | **RUN 3: only B (no `to`) arrived — the `to:` field is what loses a mail.** Whether that is a wrong address or any `to:` at all is what mail C decides |
+| **DP-09** direct mail | On `/form`, click **button A** | **What `Mail.send` returned**: `null` = refused, an id = accepted. Then check the inbox | **VOID (r250): this mail was addressed to `player@gomail.com`, a placeholder that has never existed.** It was accepted (`yD1oMYYHUX`) — that much stands — and the non-arrival proves nothing. **1.4.0 sends it with no `to:`; this row must be re-run** |
+| **DP-10** bridge mail | Click **button B** | Did *this* mail arrive? | **VOID for the same reason.** Accepted (`ra1DgwPOsB`); addressed nowhere. Re-run with 1.4.0 |
+| **DP-16** the `to:` test | Type **`qedyn mail`** in the terminal | It sends three mails: one with **no `to`** (the shape that always arrived), one to **your real address**, and one to a **deliberately non-existent** address, and prints all three ids plus your address. 1 and 2 should arrive; 3 will not | **RUN 3 was void:** the "with `to:`" mail used `player@gomail.com`, which has never existed — so "the `to:` field loses mails" was withdrawn (r250). What 1.4.0 measures instead is whether the game *says* anything when an address cannot be delivered |
 | **DP-11** page exports | Open `/exports?article=2` | The span must read `article-2` | Per-page exports reach page scripts |
 | **DP-12** site exports | Open `/site-exports` | A greeting for "zeis" | Site exports from a *dynamic* page (DP-01 was the static one) |
 | **DP-13** event roll-call | Type **`qedyn status`** | How many `Http.Response` events the mod was offered, and every one of them | **Zero is the expected result** — it confirms the r166 fence now covers dynamic pages too |
@@ -151,26 +157,40 @@ themselves, because `Http.Response` never reaches the mod).
 - DP-11/12 exports **absent** → phase 3 shrinks to server-side
   rendering only (no client-side interactivity).
 
-## 6. What the third run changed (2026-10-02, probe 1.3.0)
+## 6. What the third run changed (2026-10-02) — and the correction (r250)
 
-- **`to:` is confirmed as the culprit.** Only the mail with no `to:` arrived;
-  the one addressed to `player@gomail.com` was accepted and vanished. Two
-  explanations remain — *that address does not exist* versus *any `to:` sends
-  the mail away from the player's inbox* — and they need different fixes, so
-  `qedyn mail` now sends a third mail to the player's real address
-  (`Mail.getPlayerEmail()`), which the command prints.
-- **`Mail.getInbox()` separates "dropped" from "not drawn".** A mail that is
-  in the data but missing from the inbox screen is a display bug, not a
-  delivery bug, and the two look identical from the player's chair. `qedyn
-  inbox` prints the list so the run can tell them apart.
+**The third run's conclusion is withdrawn.** Only the mail with no `to:` field
+arrived, and I read that as "the `to:` field loses a mail". Zeis pointed out
+that `player@gomail.com` has never existed — it is a placeholder in this repo's
+own QA project — and that an empty `to:` meaning the player is standard
+behaviour known since round 2. Both true. **The mail that "vanished" went
+nowhere because it was addressed nowhere.**
+
+What survives, and what 1.4.0 does about it:
+
+- **DP-09 and DP-10 are void and must be re-run.** Every page-context mail test
+  used the placeholder, so we have never sent a correctly-addressed mail from a
+  page. Both `/form` buttons now omit `to:` entirely. **The page-context
+  question is open again** — and if a page's mail arrives, a page can act,
+  which is the thing this whole investigation was for.
+- **The page's `Mail.send` was accepted (real ids), so it is not refused.**
+  That contradicts the blanket "any permissioned call from a page fails
+  `Mod "null"`" rule from the other modder's notes (demonstrated for
+  `Files.create` / `SaveStorage.set`). The fence looks **per-API** — see the
+  r243 note below.
+- **`Mail.getInbox()` still separates "dropped" from "not drawn"**, and that
+  distinction is worth keeping: `qedyn inbox` stays.
+- **The remaining real question is the silence**: a send that cannot be
+  delivered returns an id and says nothing. Filed in docs/03 §25.
 
 ## 6b. What the second run changed (2026-09-28, probe 1.2.0)
 
-- **`to:` became the prime suspect.** DP-09 and DP-10 both returned real mail
-  ids, so the page's mail is *permitted* — it is lost afterwards. The one mail
-  that has ever arrived from this mod (the `OnStart()` startup mail) is the
-  only one carrying no `to` field. Hence **DP-16 / `qedyn mail`**: one mail of
-  each shape, sent from a context that already works, so the inbox decides.
+- **`to:` became the prime suspect — and then collapsed.** DP-09 and DP-10 both returned real mail
+  ids, so the page's mail is *permitted*. But the address they used,
+  `player@gomail.com`, was a placeholder from this repo's own QA project that
+  has never existed (r250), so their non-arrival meant nothing and the suspect
+  is gone. What survives is the acceptance itself: the page's mail was not
+  refused.
 - **Two bugs in my own command, both silent.** `qedyn status` wrote only to the
   game log and never to the terminal, so it looked broken; and `qedyn tick 1`
   demanded a full row name and said nothing when it got anything else. Both

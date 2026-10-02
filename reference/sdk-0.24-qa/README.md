@@ -6,7 +6,7 @@ Everything both runs established, with the evidence and the three corrections
 made along the way, is in
 [`QE24-TestResults-DynProbe-ModSettings.md`](QE24-TestResults-DynProbe-ModSettings.md).
 Zeis's own minute-by-minute log with the screenshots is on the `QA-filedump`
-branch. **The build to install now is `delivery/qe-sdk-024-dynprobe-1.3.0.zip`** — if the quest does not appear on the Hackhub feed, try a fresh save first (run 2 showed it surfacing on one); if it still does not, type `qedyn claim` in the terminal or claim it from the sandbox group in the journal.
+branch. **The build to install now is `delivery/qe-sdk-024-dynprobe-1.4.0.zip`** — if the quest does not appear on the Hackhub feed, try a fresh save first (run 2 showed it surfacing on one); if it still does not, type `qedyn claim` in the terminal or claim it from the sandbox group in the journal.
 — see the dynamic-page section below for what changed.
 
 ## ANSWERED: the ModSettings Probe (r239/r240) — the whole loop works
@@ -42,10 +42,13 @@ probe — one game session covers both**: do the seven MS rows first
 around the restart. **The checklist, the run order and the red-reading are in
 [`docs/plans/r239-modsettings-probe.md`](../../docs/plans/r239-modsettings-probe.md)**.
 
-## RUN TWICE, REBUILT TWICE: the Dynamic Page Probe (r238 → 1.1.0 → 1.3.0)
+## RUN TWICE, REBUILT THREE TIMES: the Dynamic Page Probe (r238 → 1.1.0 → 1.4.0)
 
 **Two runs are in, and they answer the headline question: YES — a mod can
-reproduce the game's own news-site behaviour.** `qedyn beat` fires the beat and
+reproduce the game's own news-site behaviour.** One caveat, and it is ours:
+every mail those runs sent went to `player@gomail.com`, a placeholder that has
+never existed, so the mail results are void and two findings are withdrawn
+(r250). The content and event findings are untouched. `qedyn beat` fires the beat and
 the UPDATE article then sits on top of `/news` with the old three dropping a
 slot. What is still open is the mail, and the two runs moved it a long way:
 run 2 proved a page's mail is **accepted** (`Mail.send` returns a real id) and
@@ -54,7 +57,7 @@ narrowed it further: of a pair of test mails, **only the one with no `to:`
 field arrived**. So the recipient field is what loses them, and 1.3.0 is built
 to say whether that is a wrong address or any `to:` at all.
 
-`dynprobe/` (+ `delivery/qe-sdk-024-dynprobe-1.3.0.zip`) answers the open
+`dynprobe/` (+ `delivery/qe-sdk-024-dynprobe-1.4.0.zip`) answers the open
 questions from the r237 dynamic-webpages investigation. The 1.0.0 run
 answered the content questions — path params arrive, no caching, the 404 look,
 site and per-page exports — and proved the hard way that `Http.Response`

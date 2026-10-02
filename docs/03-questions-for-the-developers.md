@@ -1040,7 +1040,77 @@ views. Without the event, the only remaining route is for the page's own code
 to call back into the quest — which is exactly the per-request-author-code
 boundary the no-code editor cannot cross.
 
-## 25. A mail sent from a page (or with a `to:` address) is accepted and then never delivered
+## 25. A mail addressed to a non-existent address is accepted, given an id, and then silently dropped
+
+**Corrected 2026-10-02 (r250).** The finding this section used to report was
+measuring our own test data, and it is withdrawn. What stands after the
+correction is smaller — and it is about *silence*, not delivery.
+
+### What we got wrong, and why it is worth writing down
+
+For three rounds the probe sent test mails to `player@gomail.com`, and when
+they never arrived we built theories about why the game had lost them: first
+that the call was refused (`Mod "null"`, §14), then that it was accepted and
+lost in delivery, then that the `to:` field itself was what lost a mail.
+
+`player@gomail.com` is a placeholder that came out of this repo's own QA
+project. **It has never existed.** The game's actual rule is the ordinary one —
+a mail with **no `to` field goes to the player**, and an address that does not
+exist is never delivered. Every one of those mails did exactly what it should
+have. Three rounds of "findings" were the probe measuring its own typo.
+
+The mail that reliably arrived — the startup mail from `OnStart()` — was the
+control that proved the rule, since it is the only one that never carried an
+address; we read it as a clue instead. The editor's own inspector already says
+"Leave blank to send it to the player", and the compiler's tests have pinned
+that default since round 2. The knowledge was in the repo; we did not look.
+
+The lesson generalises: **before theorising about the engine, check the
+literals.** Is this address real? Is this name the right one? Is this even the
+call being made?
+
+### What genuinely stands
+
+1. **The failure is silent, and it returns an id.** `Mail.send` accepted a mail
+   addressed to a non-existent mailbox and handed back a real-looking id
+   (`yD1oMYYHUX` from page context, `ra1DgwPOsB` through the `Events.emit`
+   bridge). The mail then simply never existed, and the caller has no way to
+   tell a delivered mail from a dropped one. `Mail.sendBounce(failedRecipient)`
+   exists for the player-facing version of exactly this — *"call this when the
+   player emails an address that doesn't exist, so they get clear feedback
+   instead of silence"* — which makes the mod-side silence look like an
+   oversight rather than a decision.
+2. **A page's `Mail.send` was NOT refused.** Both page-context sends returned
+   ids, so §14's `Mod "null"` refusal did not happen here. That matters because
+   the widely-circulated rule from another modder's notes — reproduced three
+   times, for `Files.create` and `SaveStorage.set` — is that *any* permissioned
+   call made directly from a page or an `Exports` function fails with
+   `Mod "null"`. `Mail.send` did not. **The fence looks per-API, not blanket**,
+   which changes what a page editor has to generate.
+3. **Whether a page's mail actually arrives is unknown.** Because every
+   page-context test used the placeholder address, we have never once sent a
+   correctly-addressed mail from a page. Probe 1.4.0 does that — both buttons
+   omit `to` entirely — so the question is open, not answered.
+
+### What we would like
+
+- **Should a `Mail.send` that cannot be delivered fail loudly?** Returning an
+  id for a mail that will never exist is the worst of both worlds. Failing, or
+  bouncing the way `Mail.sendBounce` does, would end this whole class of bug.
+- **What is `to` for?** `MailDefinition.to` is `to?: string` with no
+  documentation, while `Mail.send` is documented as *"Send an email to the
+  player's inbox"*. If `to` names a recipient other than the player, a mail
+  carrying one is not buggy when it fails to reach the player — but the
+  docstring should say so, and the undeliverable case should be visible.
+- **Is the page-context fence per-API?** `Files.create` and `SaveStorage.set`
+  are refused from a page; `Mail.send` was not. A list of what a page may call
+  directly would save every page author the detour.
+
+<details>
+<summary>The original report (r238–r249, now corrected)</summary>
+
+
+### (original, filed 2026-09-28)
 
 **Found running the r238 dynamic-page probe, confirmed by the player watching
 his inbox** (2026-09-28, game 1.3.13). Related to §14, and worth filing
@@ -1127,3 +1197,6 @@ anyway, with the mod named `null`. So this is not a manifest problem.
 Our workaround, which we will generate automatically if we ever build a
 no-code page editor: the page's action does a synchronous `Events.emit()`, and
 a top-level `Events.on()` handler performs the real permissioned work.
+
+
+</details>

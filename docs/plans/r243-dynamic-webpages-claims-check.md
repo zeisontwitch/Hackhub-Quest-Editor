@@ -62,6 +62,16 @@ complete an objective) need the bridge.
 - **Page actions:** anything permissioned must be emitted as `Events.emit()`
   from the page with the real work in a top-level `Events.on()` handler. Never
   a direct call from a button.
+
+> **r250 amendment — the evidence base for this is narrower than it looked.**
+> The claim above rests on the other modder's notes, where the `Mod "null"`
+> refusal was reproduced three times for **`Files.create` and `SaveStorage.set`**.
+> Our own mail test is no longer evidence for it: the probe's page-context
+> `Mail.send` returned real ids (`yD1oMYYHUX`, `ra1DgwPOsB`), so it was **not**
+> refused. The fence therefore looks **per-API**, not blanket. Keep the bridge
+> (it is proven for the filesystem calls, and it is harmless), but do not treat
+> it as universal — and if probe 1.4.0 shows a page's mail arriving, the
+> per-API nature of the fence becomes a docs/03 question of its own.
 - **"Show this page only when":** `return null` — confirmed shape, and we now
   know what the player sees.
 - **Searchable / nslookup-visible:** separate toggles from "has a page"
